@@ -1,5 +1,4 @@
 # McGill
-An open version of my work at McGill
 
-Did not licence it yet
-Playing with GitHub
+An open version of my work at McGill
+CC-BY-NC-SA_4.0
