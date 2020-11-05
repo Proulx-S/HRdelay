@@ -1,0 +1,11 @@
+function sessMeans = getSessMeans(data)
+
+condLabel = fields(data);
+sessMeans = nan([length(condLabel)+1 size(data.ori1)]);
+for sessInd = 1:numel(data.ori1)
+    for condInd = 1:length(condLabel)
+        %average runs
+        sessMeans(condInd,sessInd) = mean(data.(condLabel{condInd}){sessInd},1);
+    end
+    sessMeans(length(condLabel)+1,sessInd)
+end
