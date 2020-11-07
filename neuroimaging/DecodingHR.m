@@ -1,15 +1,16 @@
 clear all
 close all
 
+dataRepo = 'C:\Users\sebas\OneDrive - McGill University\bigData';
+dataDir = 'derived\DecodingHR';
 dataLevel = 'z';
-dataDir = 'C:\Users\sebas\OneDrive - McGill University\McGill\work\projects\170210_HRdecoding\C_processing';
 fileList = {'02jp_sess1' '03sk_sess1' '04sp_sess1' '05bm_sess1' '06sb_sess1' '07bj_sess1';...
             '02jp_sess2' '03sk_sess2' '04sp_sess2' '05bm_sess2' '06sb_sess2' '07bj_sess2'}';
 fileList
 
 
 % Load complex numbers representing the sinusoidal response
-data = loadData(dataLevel,dataDir,fileList)
+data = loadData(dataRepo,dataDir,dataLevel,fileList)
 data.ori1
 
 % Average voxels in cartesian space

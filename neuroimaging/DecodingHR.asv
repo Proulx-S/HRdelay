@@ -2,7 +2,8 @@ clear all
 close all
 
 dataLevel = 'z';
-dataDir = 'C:\Users\sebas\OneDrive - McGill University\McGill\work\projects\170210_HRdecoding\C_processing';
+dataRepo = 'C:\Users\sebas\OneDrive - McGill University\bigData';
+dataDir = 'C:\Users\sebas\OneDrive - McGill University\bigData\derived\DecodingHR';
 fileList = {'02jp_sess1' '03sk_sess1' '04sp_sess1' '05bm_sess1' '06sb_sess1' '07bj_sess1';...
             '02jp_sess2' '03sk_sess2' '04sp_sess2' '05bm_sess2' '06sb_sess2' '07bj_sess2'}';
 fileList
@@ -46,18 +47,12 @@ plotSubj(dataP,1,1);
 % Get session means (in cartesian space)
 sessMeans = getSessMeans(dataP); % cond[ori1 ori2 plaid ori] x subj x sess
 
-% % Average ori
-% sessMeans(4,:,:) = mean(sessMeans(1:2,:,:),1);
+% Get subject means in cartesian space then move to polar space
+subjMeans = mean(sessMeans,3);
 
-% Move to polar space (before averaging sessions because there are some session effects in some subject)
-sessMeans_theta = angle(sessMeans);
-sessMeans_rho = abs(sessMeans);
-
-% Get subject means
-subjMeans_theta = mean(sessMeans_theta,3);
-subjMeans_rho = mean(sessMeans_rho,3);
-
-% Plot group
+% Move to polar space
+subjMeans_theta = angle(subjMeans);
+subjMeans_rho = abs(subjMeans);
 
 
 % Compare amplitudes
