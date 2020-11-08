@@ -1,8 +1,9 @@
 clear all
 close all
 
-dataRepo = 'C:\Users\sebas\OneDrive - McGill University\bigData';
-dataDir = 'derived\DecodingHR';
+dataRepo_in = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
+dataRepo_out = dataRepo_out;
+dataDir = 'C-derived\DecodingHR';
 dataLevel = 'z';
 fileList = {'02jp_sess1' '03sk_sess1' '04sp_sess1' '05bm_sess1' '06sb_sess1' '07bj_sess1';...
             '02jp_sess2' '03sk_sess2' '04sp_sess2' '05bm_sess2' '06sb_sess2' '07bj_sess2'}';
