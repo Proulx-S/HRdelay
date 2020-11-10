@@ -1,6 +1,4 @@
-clear all
-close all
-
+function sinusoidalGroupAnalysis
 
 repoPath = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
 dataDir = 'C-derived\DecodingHR';
@@ -103,12 +101,23 @@ xData_rho = abs(xData);
 xDataMean = mean(xData,1);
 xDataMean_theta = angle(xDataMean);
 xDataMean_rho = abs(xDataMean);
+
 figure('WindowStyle','docked');
 hb = bar(xDataMean_rho(:,[4 3])); hold on
 hp = plot(hb.XData,xData_rho(:,[4 3])','k');
 xlim([0.25 2.75])
 ylabel({'Response amplitude' '(%BOLD)'})
 ax = gca; ax.XTickLabel = {'ori' 'plaid'};
+ylim([0 max(xData_rho(:)).*1.1])
+ax.PlotBoxAspectRatio = [0.2 1 1];
+figure('WindowStyle','docked');
+hb = bar(xDataMean_rho(:,[1 2])); hold on
+hp = plot(hb.XData,xData_rho(:,[1 2])','k');
+xlim([0.25 2.75])
+ylabel({'Response amplitude' '(%BOLD)'})
+ax = gca; ax.XTickLabel = {'ori1' 'ori2'};
+ylim([0 max(xData_rho(:)).*1.1])
+ax.PlotBoxAspectRatio = [0.2 1 1];
 
 figure('WindowStyle','docked');
 hb = barh(xDataMean_theta(:,[4 3])); hold on
@@ -116,148 +125,79 @@ hp = plot(xData_theta(:,[4 3])',hb.XData,'k');
 ylim([0.25 2.75]);
 xlabel({'Response Delay' '(rad)'})
 ax = gca; ax.YTickLabel = {'ori' 'plaid'};
+xlim([min(xData_theta(:)).*1.1 0])
+ax.PlotBoxAspectRatio = [1 0.1 1];
+figure('WindowStyle','docked');
+hb = barh(xDataMean_theta(:,[1 2])); hold on
+hp = plot(xData_theta(:,[1 2])',hb.XData,'k');
+ylim([0.25 2.75]);
+xlabel({'Response Delay' '(rad)'})
+ax = gca; ax.YTickLabel = {'ori1' 'ori2'};
+xlim([min(xData_theta(:)).*1.1 0])
+ax.PlotBoxAspectRatio = [1 0.1 1];
 
 %% Stats
+% On cartesian space (conservative)
+disp('---------------')
+disp('Cartesian Space')
+disp('---------------')
+disp('Ori vs Plaid:')
+X = cat(1,xData(:,4),xData(:,3));
+stats = T2Hot2d([real(X) imag(X)],0.05);
+disp('Hotelling''s T^2 multivariate test')
+disp([' T^2=' num2str(stats.T2,'%0.2f')]);
+disp([' p=' num2str(stats.P,'%0.2f')]);
+disp('Ori1 vs Ori2:')
+X = cat(1,xData(:,1),xData(:,2));
+stats = T2Hot2d([real(X) imag(X)],0.05);
+disp(' Hotelling''s T^2 multivariate test')
+disp([' T^2=' num2str(stats.T2,'%0.2f') '; p=' num2str(stats.P,'%0.2f')]);
 
-% Compare amplitudes
-plaidInd = 3;
-condInd = 4; % 1; 2; [1 2];
-disp('amplitude')
-[H,P,CI,STATS] = ttest(mean(xData_rho(condInd,:),1),xData_rho(plaidInd,:));
-[STATS.tstat P]
-[P,H,STATS] = signrank(mean(xData_rho(condInd,:),1),xData_rho(plaidInd,:));
-[STATS.signedrank P]
+% Amplitude in polar space
+disp('---------------')
+disp('Polar Amplitude')
+disp('---------------')
+disp('Ori vs Plaid:')
+x = abs(xData(:,4)); y = abs(xData(:,3));
+[H,P,CI,STATS] = ttest(x,y);
+disp(' Student''s t-test')
+disp([' t=' num2str(STATS.tstat,'%0.2f') '; p=' num2str(P,'%0.2f')]);
+[P,H,STATS] = signrank(x,y);
+disp(' Wilcoxon signed rank test')
+disp([' signed rank=' num2str(STATS.signedrank,'%0.2f') '; p=' num2str(P,'%0.2f')]);
+disp('Ori1 vs Ori2:')
+x = abs(xData(:,1)); y = abs(xData(:,2));
+[H,P,CI,STATS] = ttest(x,y);
+disp(' Student''s t-test')
+disp([' t=' num2str(STATS.tstat,'%0.2f') '; p=' num2str(P,'%0.2f')]);
+[P,H,STATS] = signrank(x,y);
+disp(' Wilcoxon signed rank test')
+disp([' signed rank=' num2str(STATS.signedrank,'%0.2f') '; p=' num2str(P,'%0.2f')]);
+
 % Compare delays
-disp('delay')
-[H,P,CI,STATS] = ttest(mean(xData_theta(condInd,:),1),xData_theta(plaidInd,:));
-[STATS.tstat P]
-[P,H,STATS] = signrank(mean(xData_theta(condInd,:),1),xData_theta(plaidInd,:));
-[STATS.signedrank P]
-[P,F] = circ_htest(mean(xData_theta(condInd,:),1),xData_theta(plaidInd,:));
-[F P]
+disp('-----------')
+disp('Polar Delay')
+disp('-----------')
+disp('Ori vs Plaid:')
+x = angle(xData(:,4)); y = angle(xData(:,3));
+[H,P,CI,STATS] = ttest(x,y);
+disp(' Student''s t-test')
+disp([' t=' num2str(STATS.tstat,'%0.2f') '; p=' num2str(P,'%0.2f')]);
+[P,H,STATS] = signrank(x,y);
+disp(' Wilcoxon signed rank test')
+disp([' signed rank=' num2str(STATS.signedrank,'%0.2f') '; p=' num2str(P,'%0.2f')]);
+[P,F] = circ_htest(x,y);
+disp(' Hotelling''s test for angular means')
+disp([' F=' num2str(STATS.signedrank,'%0.2f') '; p=' num2str(P,'%0.2f')]);
+disp('Ori1 vs Ori2:')
+x = angle(xData(:,1)); y = angle(xData(:,2));
+[H,P,CI,STATS] = ttest(x,y);
+disp(' Student''s t-test')
+disp([' t=' num2str(STATS.tstat,'%0.2f') '; p=' num2str(P,'%0.2f')]);
+[P,H,STATS] = signrank(x,y);
+disp(' Wilcoxon signed rank test')
+disp([' signed rank=' num2str(STATS.signedrank,'%0.2f') '; p=' num2str(P,'%0.2f')]);
+[P,F] = circ_htest(x,y);
+disp(' Hotelling''s test for angular means')
+disp([' F=' num2str(STATS.signedrank,'%0.2f') '; p=' num2str(P,'%0.2f')]);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-load(fullfile(repoPath,dataDir,funPath,funLevel,[subjList{subjInd} '.mat']),'d')
-ori1{subjInd,sessInd} = d.xData(d.label==1,:);
-ori2{subjInd,sessInd} = d.xData(d.label==2,:);
-plaid{subjInd,sessInd} = d.normData;
-
-
-data.ori1 = ori1;
-data.ori2 = ori2;
-data.plaid = plaid;
-
-
-data = loadData(dataRepo,dataDir,dataLevel,fileList)
-
-
-
-
-
-
-dataRepo_in = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
-dataRepo_out = dataRepo_in;
-dataDir = 'C-derived\DecodingHR';
-dataLevel = 'z';
-fileList = {'02jp_sess1' '03sk_sess1' '04sp_sess1' '05bm_sess1' '06sb_sess1' '07bj_sess1';...
-    '02jp_sess2' '03sk_sess2' '04sp_sess2' '05bm_sess2' '06sb_sess2' '07bj_sess2'}';
-fileList
-
-
-% Load complex numbers representing the sinusoidal response
-data = loadData(dataRepo,dataDir,dataLevel,fileList)
-data.ori1
-
-% Average voxels in cartesian space
-dataP = avVox(data);
-dataP.ori1
-rLim = getRlim(dataP);
-
-% Plot single subjects
-plotSubj(dataP,1,1);
-% for subjInd = 1:6
-%     plotSubj(dataP,subjInd,1,rLim);
-%     plotSubj(dataP,subjInd,2,rLim);
-% end
-
-% % Remove session effects (in cartesian space)
-% sessMeans = mean(getSessMeans(dataP),1);
-% subjMeans = mean(sessMeans,3);
-% condList = fields(dataP);
-% for condInd = 1:length(condList)
-%     for subjInd = 1:6
-%         for sessInd = 1:2
-%             dataP.(condList{condInd}){subjInd,sessInd} = dataP.(condList{condInd}){subjInd,sessInd} - sessMeans(:,subjInd,sessInd);
-%             dataP.(condList{condInd}){subjInd,sessInd} = dataP.(condList{condInd}){subjInd,sessInd} + subjMeans(:,subjInd);
-%         end
-%     end
-% end
-
-% % Plot single subjects
-% for subjInd = 1:6
-%     plotSubj(dataP,subjInd,1,rLim);
-%     plotSubj(dataP,subjInd,2,rLim);
-% end
-
-% Get session means (in cartesian space)
-sessMeans = getSessMeans(dataP); % cond[ori1 ori2 plaid ori] x subj x sess
-
-% Get subject means in cartesian space then move to polar space
-subjMeans = mean(sessMeans,3);
-
-% Move to polar space
-xData_theta = angle(subjMeans);
-xData_rho = abs(subjMeans);
-
-
-% Compare amplitudes
-condInd = 4; % 1; 2; [1 2];
-disp('amplitude')
-[H,P,CI,STATS] = ttest(mean(xData_rho(condInd,:),1),xData_rho(3,:));
-[STATS.tstat P]
-[P,H,STATS] = signrank(mean(xData_rho(condInd,:),1),xData_rho(3,:));
-[STATS.signedrank P]
-% Compare delays
-disp('delay')
-[H,P,CI,STATS] = ttest(mean(xData_theta(condInd,:),1),xData_theta(3,:));
-[STATS.tstat P]
-[P,H,STATS] = signrank(mean(xData_theta(condInd,:),1),xData_theta(3,:));
-[STATS.signedrank P]
-[P,F] = circ_htest(mean(xData_theta(condInd,:),1),xData_theta(3,:));
-[F P]
-
-%
-%
-% % ori1
-% %% Compare amplitudes
-% disp('amplitude')
-% [H,P,CI,STATS] = ttest(abs(subjMeans(1,:)),abs(subjMeans(3,:)));
-% P
-% [P,H,STATS] = signrank(abs(subjMeans(1,:)),abs(subjMeans(3,:)));
-% P
-% %% Compare delays
-% disp('delay')
-% [H,P,CI,STATS] = ttest(angle(subjMeans(1,:)),angle(subjMeans(3,:)));
-% P
-% [P,H,STATS] = signrank(angle(subjMeans(1,:)),angle(subjMeans(3,:)));
-% P
-% [P,F] = circ_htest(angle(subjMeans(1,:)),angle(subjMeans(3,:)));
-% P
