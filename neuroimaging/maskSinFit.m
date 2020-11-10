@@ -1,7 +1,7 @@
 function maskSinFit
 actuallyRun = 1;
 plotAll = 0;
-threshType = 'p'; %'p' or 'fdr'
+threshType = 'p'; % 'none', 'p' or 'fdr'
 threshVal = 0.05;
 
 %% Define paths

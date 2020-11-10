@@ -1,5 +1,8 @@
-function sinusoidalGroupAnalysis
-threshType = 'none'; % 'none' 'p' 'fdr'
+function sinusoidalGroupAnalysis(threshType)
+if ~exist('threshType','var')
+    threshType = 'none'; % 'none', 'p' or 'fdr'
+end
+threshVal = 0.05;
 
 
 repoPath = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
@@ -8,6 +11,11 @@ funPath = fullfile(repoPath,dataDir,'fun');
 funLevel = 'zSin';
 subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'}';
 fileSuffix = '_maskSinFit.mat';
+
+
+disp(['IN: Sinusoidal BOLD responses from anatomical V1 ROI (' fullfile(dataDir,funLevel) ')'])
+disp('F(IN)=OUT: threshold included voxels and analyse responses averaged across the ROI')
+disp(['OUT: figures and stats'])
 
 
 
@@ -24,8 +32,21 @@ d = dAll; clear dAll
 dP = d;
 rLim = (1:length(d))';
 for subjInd = 1:length(d)
-    dP{subjInd}.sess1.xData = mean(dP{subjInd}.sess1.xData,2);
-    dP{subjInd}.sess2.xData = mean(dP{subjInd}.sess2.xData,2);
+    switch threshType
+        % no voxel selection
+        case 'none' 
+            dP{subjInd}.sess1.xData = mean(dP{subjInd}.sess1.xData,2);
+            dP{subjInd}.sess2.xData = mean(dP{subjInd}.sess2.xData,2);
+        % voxel selection cross-validated between sessions
+        case 'p'
+            dP{subjInd}.sess1.xData = mean(dP{subjInd}.sess1.xData(:,dP{subjInd}.sess2.P<threshVal,:),2);
+            dP{subjInd}.sess2.xData = mean(dP{subjInd}.sess2.xData(:,dP{subjInd}.sess1.P<threshVal,:),2);
+        case 'fdr'
+            dP{subjInd}.sess1.xData = mean(dP{subjInd}.sess1.xData(:,dP{subjInd}.sess2.FDR<threshVal,:),2);
+            dP{subjInd}.sess2.xData = mean(dP{subjInd}.sess2.xData(:,dP{subjInd}.sess1.FDR<threshVal,:),2);
+        otherwise
+            error('X')
+    end
     
     rLim(subjInd) = max(abs([dP{subjInd}.sess1.xData(:); dP{subjInd}.sess2.xData(:)]));
 end
