@@ -75,16 +75,49 @@ xData = mean(xData,3);
 xDataInfo = 'subj x cond[or1, ori2, plaid, ori]';
 
 % Move to polar space
+
+%% Plot results
+% Cartesian space
+xDataNorm = xData - mean(xData(:,1:3),2) + mean(mean(xData(:,1:3),2),1);
+xDataNormMean = mean(xDataNorm,1);
+xDataNorm_theta = angle(xDataNorm);
+xDataNorm_rho = abs(xDataNorm);
+xDataNormMean_theta = angle(xDataNormMean);
+xDataNormMean_rho = abs(xDataNormMean);
+figure('WindowStyle','docked');
+for condInd = 1:3
+    h(condInd) = polarplot(xDataNorm_theta(:,condInd),xDataNorm_rho(:,condInd),'o'); hold on
+    hM(condInd) = polarplot(xDataNormMean_theta(:,condInd),xDataNormMean_rho(:,condInd),'o'); hold on
+    hM(condInd).MarkerFaceColor = h(condInd).Color;
+    hM(condInd).MarkerEdgeColor = 'w';
+end
+uistack(hM,'top')
+hl = legend(char({'ori1' 'ori2' 'plaid'}),'Location','east');
+hl.Color = 'none';
+hl.Box = 'off';
+title('Group Response')
+
+% Polar space
 xData_theta = angle(xData);
 xData_rho = abs(xData);
-
-% Plot
-xDataNorm = xData - mean(xData(:,1:3),2) + mean(mean(xData(:,1:3),2),1);
-xDataNorm_theta = angle(xData);
-xDataNorm_rho = abs(xData);
+xDataMean = mean(xData,1);
+xDataMean_theta = angle(xDataMean);
+xDataMean_rho = abs(xDataMean);
 figure('WindowStyle','docked');
-h = polarplot(xDataNorm_theta(:,1:3),xDataNorm_rho(:,1:3),'o'); hold on
-bar(xData_rho)
+hb = bar(xDataMean_rho(:,[4 3])); hold on
+hp = plot(hb.XData,xData_rho(:,[4 3])','k');
+xlim([0.25 2.75])
+ylabel({'Response amplitude' '(%BOLD)'})
+ax = gca; ax.XTickLabel = {'ori' 'plaid'};
+
+figure('WindowStyle','docked');
+hb = barh(xDataMean_theta(:,[4 3])); hold on
+hp = plot(xData_theta(:,[4 3])',hb.XData,'k');
+ylim([0.25 2.75]);
+xlabel({'Response Delay' '(rad)'})
+ax = gca; ax.YTickLabel = {'ori' 'plaid'};
+
+%% Stats
 
 % Compare amplitudes
 plaidInd = 3;
