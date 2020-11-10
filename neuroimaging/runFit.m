@@ -2,7 +2,6 @@ function runFit
 
 actuallyRun = 0;
 
-matFun = 'C:\Users\sebas\Documents\GitHub\McGill\neuroimaging\matlabFun';
 repo = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
     funDir = 'C-derived\DecodingHR\fun';
         inDir = 'x';
@@ -10,13 +9,13 @@ repo = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
     anatDir = 'C-derived\DecodingHR\anat\z';
     stimDir = 'B-clean\DecodingHR\stim\160118_cyclicStim\data';
 
-switch getenv('OS')
-    case 'Linux'
-        error('');
-        addpath(genpath('/mnt/hgfs/work/projects/160707_HRdecodingGLMdenoise/GLMdenoise-1.4_SinCos3'))
-    otherwise
-        addpath(genpath(matFun))
-end
+% switch getenv('OS')
+%     case 'Linux'
+%         error('');
+%         addpath(genpath('/mnt/hgfs/work/projects/160707_HRdecodingGLMdenoise/GLMdenoise-1.4_SinCos3'))
+%     otherwise
+%         
+% end
 
 % maskLabel = 'v1v2v3';
 maskLabel = 'v1';
@@ -29,7 +28,8 @@ subjStimList = {'jp' 'sk' 'sp' 'bm' 'sb' 'bj'};
 
 
 if ~actuallyRun
-    disp(['dependencies: ' matFun])
+    disp('Not actually running because way too long')
+    disp('Please get the data from the repo if not done already')
     disp(['data repo: ' repo])
     disp(['IN: anatomical V1 roi (' fullfile(anatDir) ')'])
     disp(['IN: preprocessed functionals (' fullfile(funDir,inDir) ')'])
