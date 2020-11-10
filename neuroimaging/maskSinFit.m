@@ -83,7 +83,7 @@ for subjInd = 1:length(subjList)
     if plotAll || subjInd==1
         sess = 'sess1';
         
-        f = figure();
+        f = figure('WindowStyle','docked');
         ax1 = subplot(2,2,1);
         imagesc(brain(:,:,10)); colormap gray; axis off;
         ax1.PlotBoxAspectRatio = [1 1 1];

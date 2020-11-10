@@ -130,17 +130,17 @@ F=((n-p)/(p*(n-1)))*T2;  %F approximation.
 v1=p;  %Numerator degrees of freedom.
 v2=nd-p;  %Denominator degrees of freedom.
 P=1-fcdf(F,v1,v2);  %Probability that null Ho: is true.
-disp(' ')
-fprintf('-----------------------------------------------------------------------------------------\n');
-disp('   n1      n2       Variables      T2          F           df1          df2          P')
-fprintf('-----------------------------------------------------------------------------------------\n');
-fprintf('%5.i%8.i%12.i%14.4f%11.4f%12.i%13.i%13.4f\n',n(1),n(2),p,T2,F,v1,v2,P);       
-fprintf('-----------------------------------------------------------------------------------------\n');
-if P >= alpha;
-   disp('Mean vectors result not significant.');
-else
-   disp('Mean vectors result significant.');
-end;
+% disp(' ')
+% fprintf('-----------------------------------------------------------------------------------------\n');
+% disp('   n1      n2       Variables      T2          F           df1          df2          P')
+% fprintf('-----------------------------------------------------------------------------------------\n');
+% fprintf('%5.i%8.i%12.i%14.4f%11.4f%12.i%13.i%13.4f\n',n(1),n(2),p,T2,F,v1,v2,P);       
+% fprintf('-----------------------------------------------------------------------------------------\n');
+% if P >= alpha;
+%    disp('Mean vectors result not significant.');
+% else
+%    disp('Mean vectors result significant.');
+% end;
 T2Hot2d.T2 = T2;
 T2Hot2d.F = F;
 T2Hot2d.df1 = v1;

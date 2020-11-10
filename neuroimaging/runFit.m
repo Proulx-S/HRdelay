@@ -38,7 +38,7 @@ if ~actuallyRun
     
     figure()
     run1 = results.OLS.mixed.designmatrix(:,[1 2 67:80]);
-    imagesc(run1(any(run1,2),:)); color map gray
+    imagesc(run1(any(run1,2),:)); colormap gray
     title('Design matrix for one run');
     ax = gca; ax.XTick = []; ax.YTick = [];
     xlabel('regressors'); ylabel('TRs');

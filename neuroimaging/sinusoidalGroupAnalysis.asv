@@ -1,5 +1,5 @@
 function sinusoidalGroupAnalysis
-threshType = 'none'; % 'none' 'p' 'fdr'
+threshType = 'none'; %
 
 
 repoPath = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
