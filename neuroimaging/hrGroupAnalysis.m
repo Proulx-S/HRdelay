@@ -10,9 +10,9 @@ repoPath = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
 dataDir = 'C-derived\DecodingHR';
 funPath = fullfile(repoPath,dataDir,'fun');
 funLevel = 'zHr';
+funLevelSin = 'zSin';
 subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'}';
 fileSuffix = '_maskSinAndHrFit.mat';
-
 
 disp(['IN: BOLD hemodynamic responses (HR) from anatomical V1 ROI (' fullfile(dataDir,funLevel) ')'])
 disp('F(IN)->OUT: threshold included voxels and analyse HR averaged across the ROI')
@@ -47,7 +47,7 @@ if ~strcmp(threshType,'none')
     dForThresh = dForThreshAll; clear dForThreshAll
 end
 %% Process data
-% Average voxels in cartesian space
+% Average voxels
 hrP = hr;
 rLim = (1:length(hr))';
 for subjInd = 1:length(hr)
@@ -87,6 +87,20 @@ for subjInd = 1:length(subjList)
         legend(char({'ori1 +/-SEM' 'ori2 +/-SEM' 'plaid +/-SEM'}),'Location','south','box','off','color','none')
         suptitle(subjList{subjInd})
     end
+end
+clear xData
+
+% Remove subjet effect
+sinData = load(fullfile(funPath,funLevelSin,'tmp.mat'),'xData','xDataInfo');
+rhoGroup = abs(mean(mean(sinData.xData(:,1:3),2),1));
+thetaGroup = angle(mean(mean(sinData.xData(:,1:3),2),1));
+for subjInd = 1:length(subjList)
+    % response amplitude
+    rhoSubj = abs(mean(sinData.xData(subjInd,1:3)));
+    hrP{subjInd}.sess1 = hrP{subjInd}.sess1./rhoSubj.*rhoGroup;
+    hrP{subjInd}.sess2 = hrP{subjInd}.sess2./rhoSubj.*rhoGroup;
+    %response delay
+    
 end
 
 % Average runs

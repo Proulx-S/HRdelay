@@ -28,10 +28,10 @@ end
 d = dAll; clear dAll
 
 %% Process data
-% Average voxels in cartesian space
+% Threshold and average voxels in cartesian space
 dP = d;
-rLim = (1:length(d))';
-for subjInd = 1:length(d)
+rLim = (1:length(dP))';
+for subjInd = 1:length(dP)
     switch threshType
         % no voxel selection
         case 'none' 
@@ -95,7 +95,8 @@ xDataInfo = 'subj x cond[or1, ori2, plaid, ori] x sess';
 xData = mean(xData,3);
 xDataInfo = 'subj x cond[or1, ori2, plaid, ori]';
 
-% Move to polar space
+% Save intermediary data for hrGroupAnalysis
+save(fullfile(funPath,funLevel,'tmp.mat'),'xData','xDataInfo')
 
 %% Plot results
 % Cartesian space

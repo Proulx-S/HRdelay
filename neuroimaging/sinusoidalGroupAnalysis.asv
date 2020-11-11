@@ -10,15 +10,12 @@ dataDir = 'C-derived\DecodingHR';
 funPath = fullfile(repoPath,dataDir,'fun');
 funLevel = 'zSin';
 subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'}';
-fileSuffix = '_maskSinFit.mat';
+fileSuffix = '_maskSinAndHrFit.mat';
 
 
-disp(['IN: anatomical V1 roi (C-derived\DecodingHR\anat\' anatLevel ')'])
-disp(['IN: voxel visual field eccentricity (C-derived\DecodingHR\anat\' anatLevel ')'])
-disp(['IN: sinusoidal fit results (C-derived\DecodingHR\fun\' funLevel2 ')'])
-disp('F(IN)=OUT: masks the fit according to voxel eccentricity and activation level')
-disp(['OUT: sinusoidal fit results (C-derived\DecodingHR\fun\' funLevel3 ')'])
-
+disp(['IN: Sinusoidal BOLD responses from anatomical V1 ROI (' fullfile(dataDir,funLevel) ')'])
+disp('F(IN)=OUT: threshold included voxels and analyse responses averaged across the ROI')
+disp(['OUT: figures and stats'])
 
 
 
@@ -31,10 +28,10 @@ end
 d = dAll; clear dAll
 
 %% Process data
-% Average voxels in cartesian space
+% Threshold and average voxels in cartesian space
 dP = d;
-rLim = (1:length(d))';
-for subjInd = 1:length(d)
+rLim = (1:length(dP))';
+for subjInd = 1:length(dP)
     switch threshType
         % no voxel selection
         case 'none' 
@@ -98,7 +95,9 @@ xDataInfo = 'subj x cond[or1, ori2, plaid, ori] x sess';
 xData = mean(xData,3);
 xDataInfo = 'subj x cond[or1, ori2, plaid, ori]';
 
-% Move to polar space
+% Save intermediary data for hrGroupAnalysis
+[a,b,c] = fileparts(fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]));
+save(fullfile(a,[b '__processed' c]),'xData','xDataInfo')
 
 %% Plot results
 % Cartesian space
@@ -119,7 +118,7 @@ uistack(hM,'top')
 hl = legend(char({'ori1' 'ori2' 'plaid'}),'Location','east');
 hl.Color = 'none';
 hl.Box = 'off';
-title('Group Response')
+title('Group Response (subject effect removed)')
 
 % Polar space
 xData_theta = angle(xData);
