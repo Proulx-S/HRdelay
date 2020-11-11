@@ -1,8 +1,11 @@
-function maskSinFit
-actuallyRun = 1;
+function maskSinAndHrFit(threshType)
+actuallyRun = 0;
 plotAll = 0;
-threshType = 'p'; % 'none', 'p' or 'fdr'
+if ~exist('threshType','var') % for plotting purpose only (does not affect data that is saved)
+    threshType = 'none'; % 'none', 'p' or 'fdr'
+end
 threshVal = 0.05;
+warning('off','images:imshow:magnificationMustBeFitForDockedFigure');
 
 %% Define paths
 repoPath = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
@@ -12,7 +15,10 @@ anatLevel = 'z';
 funPath = fullfile(repoPath,dataDir,'fun');
 funLevel1 = 'x';
 funLevel2 = 'y';
-funLevel3 = 'zSin';
+funLevel3Sin = 'zSin';
+funLevel3Hr = 'zHr';
+sinFitFile = 'v1SinCos_1perRun_move12.mat';
+hrFitFile = 'v1resp_1perRun_move12_resp.mat';
 subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'}';
 
 if ~actuallyRun
@@ -22,12 +28,16 @@ disp(['IN: anatomical V1 roi (C-derived\DecodingHR\anat\' anatLevel ')'])
 disp(['IN: voxel visual field eccentricity (C-derived\DecodingHR\anat\' anatLevel ')'])
 disp(['IN: sinusoidal fit results (C-derived\DecodingHR\fun\' funLevel2 ')'])
 disp('F(IN)=OUT: masks the fit according to voxel eccentricity and activation level')
-disp(['OUT: sinusoidal fit results (C-derived\DecodingHR\fun\' funLevel3 ')'])
+disp('Figures are additionally thresholded for activation level, but not the data that is saved!')
+disp(['OUT: sinusoidal fit results (C-derived\DecodingHR\fun\' funLevel3Sin ')'])
 
 
 for subjInd = 1:length(subjList)
     %% Load fun data
-    load(fullfile(funPath,funLevel2,subjList{subjInd},'v1SinCos_1perRun_move12.mat'),'results')
+    load(fullfile(funPath,funLevel2,subjList{subjInd},sinFitFile),'results')
+    tmp = load(fullfile(funPath,funLevel2,subjList{subjInd},hrFitFile),'results');
+    resultsResp = tmp.results; clear tmp
+    
     % brain
     tmpFilename = ls(fullfile(funPath,funLevel1,subjList{subjInd},'trun101_preprocessed.nii*'));
     a = load_nii(fullfile(funPath,funLevel1,subjList{subjInd},tmpFilename));
@@ -98,20 +108,27 @@ for subjInd = 1:length(subjList)
         im1 = brain(:,:,10);
         im1 = ind2rgb(uint8(im1./max(im1(:))*255),gray(256));
         F = maskFun.(sess).F(:,:,10);
+        F(isnan(F)) = 0;
         switch threshType
             case 'p'
                 thresh = maskFun.(sess).P(:,:,10);
             case 'fdr'
                 thresh = maskFun.(sess).FDR(:,:,10);
+            case 'none'
             otherwise
                 error('x')
         end
-        F(thresh>threshVal) = 0; % functional threshold here
-        F(isnan(F)) = 0; % functional threshold here
-        im2 = ind2rgb(uint8(F./max(F(:))*255),autumn(256));
+        if ~strcmp(threshType,'none')
+            F(thresh>threshVal) = 0; % functional threshold here
+        end
+        tmp = unique(F(:));
+        [~,b] = sort(tmp);
+        Fmin =  tmp(b(2)); clear b
+        Fmax = max(F(:));
+        im2 = ind2rgb(uint8((F-Fmin)./(Fmax-Fmin)*255),autumn(256));
         ind = repmat(F~=0,[1 1 3]);
         im1(ind) = im2(ind);
-        imshow(im1)
+        imshow(im1);
         ax3.PlotBoxAspectRatio = [1 1 1];
         
         axCB = copyobj(ax3,gcf);
@@ -122,9 +139,18 @@ for subjInd = 1:length(subjList)
         axCB.Position(1) = ax3.Position(1) - ax3.Position(3)*0.5;
         axCB.YAxis.Visible = 'on';
         axCB.YAxis.TickValues = [1 size(ax1.Children.CData,1)];
-        tmp = threshVal-thresh(:); tmp(tmp<0) = nan; [~,b] = min(tmp);
-        axCB.YAxis.TickLabels = {num2str(max(F(:)),'%0.1f') num2str(F(b),'%0.1f')};
-        axCB.YAxis.Label.String = {'F' ['p<' num2str(threshVal,'%0.2f')]};
+        if strcmp(threshType,'none')
+            axCB.YAxis.Label.String = 'F';
+            axCB.YAxis.TickLabels = {num2str(Fmax,'%0.1f') num2str(Fmin,'%0.1f')};
+        else
+            tmp = threshVal-thresh(:); tmp(tmp<0) = nan; [~,b] = min(tmp);
+            axCB.YAxis.TickLabels = {num2str(max(F(:)),'%0.1f') num2str(F(b),'%0.1f')};
+            if strcmp(threshType,'p')
+                axCB.YAxis.Label.String = {'F' ['p<' num2str(threshVal,'%0.2f')]};
+            elseif strcmp(threshType,'fdr')
+                axCB.YAxis.Label.String = {'F' ['FDR<' num2str(threshVal,'%0.2f')]};
+            end
+        end
         axCB.YAxis.Label.Rotation = 0;
         axCB.YAxis.Label.VerticalAlignment = 'middle';
         axCB.YAxis.Label.HorizontalAlignment = 'center';
@@ -139,10 +165,21 @@ for subjInd = 1:length(subjList)
         ax4.PlotBoxAspectRatio = [1 1 1];
         ylabel('vox count');
         xlabel('F')
-        line([1 1].*F(b),ylim,'Color','r');
-        text(F(b)+diff(xlim)*0.01,ax4.YLim(2)*0.95,['p=' num2str(threshVal,'%0.2f')])
+        switch threshType
+            case 'none'
+            case 'p'
+                line([1 1].*F(b),ylim,'Color','r');
+                text(F(b)+diff(xlim)*0.01,ax4.YLim(2)*0.95,['p=' num2str(threshVal,'%0.2f')])
+            case 'fdr'
+                line([1 1].*F(b),ylim,'Color','r');
+                text(F(b)+diff(xlim)*0.01,ax4.YLim(2)*0.95,['FDR=' num2str(threshVal,'%0.2f')])
+            otherwise
+                error('X')
+        end
         title('All ROI voxels')
-        ax4.XTick = sort([ax4.XTick round(F(b),2)]);
+        if ~strcmp(threshType,'none')
+            ax4.XTick = sort([ax4.XTick round(F(b),2)]);
+        end
         ax4.TickDir = 'out';
         ax4.XTick(ax4.XTick==0) = [];
         
@@ -160,7 +197,12 @@ for subjInd = 1:length(subjList)
     [X,Y] = pol2cart(results.OLS.mixed.delay,results.OLS.mixed.amp);
     data = complex(X,Y); clear X Y
     
+    hr.sess1 = resultsResp.OLS.mixed.sess1.resp;
+    hr.sess2 = resultsResp.OLS.mixed.sess2.resp;
+    hr.info = 'x X y X z X TR X run X cond[ori1,ori2,plaid]';
+    
     % mask and vectorize
+    % sin responses
     sz = size(data);
     dataX = nan(sz(4),sum(maskAnat(maskFit)));
     for runInd = 1:sz(4)
@@ -169,6 +211,7 @@ for subjInd = 1:length(subjList)
         tmp(:) = maskAnat(maskFit);
         dataX(runInd,:) = curData(tmp);
     end
+    % stats
     list = {'F' 'FDR' 'P'};
     for i = 1:3
         for sessInd = 1:2
@@ -178,6 +221,16 @@ for subjInd = 1:length(subjList)
             stats.(list{i}).(['sess' num2str(sessInd)]) = tmp;
         end
     end
+    % response shape
+    for sessInd = 1:2
+        tmp = permute(hr.(['sess' num2str(sessInd)]),[4 5 6 1 2 3]);
+        tmpMask = false(size(tmp,4:6));
+        tmpMask(:) = maskAnat(maskFit);
+        hr.(['sess' num2str(sessInd)]) = permute(tmp(:,:,:,tmpMask),[2 4 3 1]);
+        clear tmp tmpMask
+    end
+    hr.info = '%BOLD: run X vox X cond[ori1,ori2,plaid] X TR';
+%   
     
     % split sessions and conditions
     sessLabel = [results.inputs.opt.sessionLabel{:}];
@@ -202,11 +255,15 @@ for subjInd = 1:length(subjList)
     
     
     %% Save
-    if ~exist(fullfile(funPath,funLevel3),'dir')
-        mkdir(fullfile(funPath,funLevel3));
+    if ~exist(fullfile(funPath,funLevel3Sin),'dir')
+        mkdir(fullfile(funPath,funLevel3Sin));
+    end
+    if ~exist(fullfile(funPath,funLevel3Hr),'dir')
+        mkdir(fullfile(funPath,funLevel3Hr));
     end
     
-    save(fullfile(funPath,funLevel3,[subjList{subjInd} '_' mfilename]),'d')
+    save(fullfile(funPath,funLevel3Sin,[subjList{subjInd} '_' mfilename]),'d')
+    save(fullfile(funPath,funLevel3Hr,[subjList{subjInd} '_' mfilename]),'hr')
 end
 
 

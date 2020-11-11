@@ -10,7 +10,7 @@ dataDir = 'C-derived\DecodingHR';
 funPath = fullfile(repoPath,dataDir,'fun');
 funLevel = 'zSin';
 subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'}';
-fileSuffix = '_maskSinFit.mat';
+fileSuffix = '_maskSinAndHrFit.mat';
 
 
 disp(['IN: Sinusoidal BOLD responses from anatomical V1 ROI (' fullfile(dataDir,funLevel) ')'])
@@ -116,7 +116,7 @@ uistack(hM,'top')
 hl = legend(char({'ori1' 'ori2' 'plaid'}),'Location','east');
 hl.Color = 'none';
 hl.Box = 'off';
-title('Group Response')
+title('Group Response (subject effect removed)')
 
 % Polar space
 xData_theta = angle(xData);
