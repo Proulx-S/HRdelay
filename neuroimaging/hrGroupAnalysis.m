@@ -2,6 +2,7 @@ function hrGroupAnalysis(threshType)
 if ~exist('threshType','var')
     threshType = 'none'; % 'none', 'p' or 'fdr'
 end
+% threshType = 'fdr';
 threshVal = 0.05;
 plotAllSubj = 0;
 
@@ -165,7 +166,7 @@ xDataInfo = 'subj x cond[or1, ori2, plaid, ori] x t';
 
 %% Plot results
 fGroup = figure('WindowStyle','docked');
-xDataPlot = xData;
+xDataPlot = xData*100;
 tPlot = t;
 xDataPlot = cat(3,xDataPlot,xDataPlot(:,:,1:7));
 tPlot = cat(2,tPlot,tPlot(1:7)+n);
@@ -189,7 +190,9 @@ onBarX = [0 0 6 6 0];
 down = up-ht.Extent(4)*1.1;
 onBarY = [up down down up up];
 patch(onBarX,onBarY,'k')
-ht.Color = 'w'; ht.HorizontalAlignment = 'center'; ht.VerticalAlignment = 'middle';
+ht.Color = [1 1 1]*0.999999999999;
+% ht.Color = [1 1 1];
+ht.HorizontalAlignment = 'center'; ht.VerticalAlignment = 'middle';
 ht.Position([1 2]) = [mean(onBarX([2 3])) mean(onBarY([1 2]))];
 uistack(ht,'top');
 
@@ -197,14 +200,22 @@ onBarX = onBarX+n;
 patch(onBarX,onBarY,'k')
 ht = copyobj(ht,gca);
 ht.Position(1) = mean(onBarX([2 3]));
+uistack(ht,'top');
 
 ht = copyobj(ht,gca);
 ht.Position(1) = ht.Position(1) - n/2;
 ht.Color = 'k';
 ht.String = 'OFF 6sec';
 
-ax = gca; ax.XAxis.Visible = 'off';
+BOLDbarX = [0 0 up-down up-down 0];
+BOLDbarY = [0.5 0 0 0.5 0.5];
+patch(BOLDbarX,BOLDbarY,'k')
+text(BOLDbarX(3),mean(BOLDbarY([1 2])),'0.5 %BOLD');
+
+axis off
 axis tight
 ylabel('?%BOLD change?');
 legend(char({'ori +/-SEM' 'plaid +/-SEM'}),'Location','northeast','box','off','color','w')
 title('Group Hemodynamic Response')
+ax = gca;
+uistack(findobj(ax.Children,'type','Text'),'top')

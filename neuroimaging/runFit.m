@@ -64,7 +64,7 @@ for smLevel = {''}
 %         try
             
             %% Get data and design
-            clearvars -except tstart mask subjInd smLevel subjStimList subjList maskLabel matFun repo funDir anatDir stimDir
+            clearvars -except tstart mask subjInd smLevel subjStimList subjList maskLabel matFun repo funDir anatDir stimDir inDir outDir
             subj = subjList{subjInd}; subjStim = subjStimList{subjInd};
             
             switch getenv('OS')
@@ -135,7 +135,7 @@ for smLevel = {''}
             labelList = [45 135 999];
             condCount = zeros(1,3);
             for cond = 1:3
-                clearvars -except tstart mask subjInd subjList subjStimList smLevel subj funData_folderIN funData_folderOUT labelDir files label labelList cond sessionLabel data design extraRegr labelList curLabel condCount sessionLabel maskLabel matFun repo funDir anatDir stimDir
+                clearvars -except tstart mask subjInd subjList subjStimList smLevel subj funData_folderIN funData_folderOUT labelDir files label labelList cond sessionLabel data design extraRegr labelList curLabel condCount sessionLabel maskLabel matFun repo funDir anatDir stimDir inDir outDir
                 close all
                 curLabel = labelList(cond);
                 
@@ -188,7 +188,7 @@ for smLevel = {''}
             fprintf('The sampling rate (TR) is %.6f seconds.\n',tr);
             
             
-            clearvars -except tstart mask subjInd smLevel subjStimList subjList subj funData_folderIN funData_folderOUT labelDir data design extraRegr sessionLabel sessModel stimdur tr maskLabel repo funDir anatDir stimDir
+            clearvars -except tstart mask subjInd smLevel subjStimList subjList subj funData_folderIN funData_folderOUT labelDir data design extraRegr sessionLabel sessModel stimdur tr maskLabel repo funDir anatDir stimDir inDir outDir
             %% GLMdenoise on all sessions (not split)
             % - - - - - - - - - -
             % o x ------------
@@ -241,7 +241,7 @@ for smLevel = {''}
                 splitExtraRegr(ii:splitIn:numel(splitExtraRegr_tmp)) = splitExtraRegr_tmp(:,ii);
                 splitSessionLabel(ii:splitIn:length(splitDesign)) = splitSessionLabel_tmp(:,ii);
             end
-            clearvars -except tstart mask subjInd smLevel subjStimList subjList subj funData_folderIN funData_folderOUT labelDir data design extraRegr sessionLabel sessModel splitDesign splitData splitIn splitExtraRegr splitSessionLabel stimdur tr maskLabel repo funDir anatDir stimDir
+            clearvars -except tstart mask subjInd smLevel subjStimList subjList subj funData_folderIN funData_folderOUT labelDir data design extraRegr sessionLabel sessModel splitDesign splitData splitIn splitExtraRegr splitSessionLabel stimdur tr maskLabel repo funDir anatDir stimDir inDir outDir
             
             ana = 'resp';
             [results] = GLMresp(splitDesign,splitData,stimdur,tr,ana,[],struct('extraregressors',{splitExtraRegr},'sessionLabel',{splitSessionLabel},'splitedIn',splitIn),splitIn);
