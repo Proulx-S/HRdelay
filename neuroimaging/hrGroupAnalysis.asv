@@ -94,17 +94,55 @@ clear xData
 sinData = load(fullfile(funPath,funLevelSin,'tmp.mat'),'xData','xDataInfo');
 rhoGroup = abs(mean(mean(sinData.xData(:,1:3),2),1));
 thetaGroup = angle(mean(mean(sinData.xData(:,1:3),2),1));
+t = 0:11;
 for subjInd = 1:length(subjList)
     % response amplitude
     rhoSubj = abs(mean(sinData.xData(subjInd,1:3)));
     hrP{subjInd}.sess1 = hrP{subjInd}.sess1./rhoSubj.*rhoGroup;
     hrP{subjInd}.sess2 = hrP{subjInd}.sess2./rhoSubj.*rhoGroup;
-    %response delay
     
+%     % response delay
+%     interpMethod = 'cubic'; % cubic convolution as implemented in Matlab2020b
+%     for sessInd = 1:2
+%         %upsample
+%         curHR = hrP{subjInd}.(['sess' num2str(sessInd)]);
+%         curT = permute(linspace(0,11,size(curHR,4)),[1 3 4 2]);
+% 
+%         n = size(curHR,4);
+%         curHR = permute(curHR,[4 1 2 3]);
+%         curT = permute(curT,[4 1 2 3]);
+%         curHR2 = cat(1,curHR              ,curHR              ,curHR              ,curHR              ,curHR);
+%         curT2 =  cat(1,curT-2*n,curT-1*n,curT-0*n,curT+1*n,curT+2*n);
+%         
+%         delta = 0.001;
+%         curT3 = (min(curT2):delta:(max(curT2)+1-delta))';
+%         curHR3 = nan([length(curT3) size(curHR2,[2 3 4])]);
+%         for i = 1:prod(size(curHR2,[2 3 4]))
+%             curHR3(:,i) = interp1(curT2,curHR2(:,i),curT3,interpMethod);
+%         end
+% %         figure('WindowStyle','docked');
+% %         plot(curT2,curHR2(:,i),'o'); hold on
+% %         plot(curT3,curHR3(:,i),'-');
+%         
+%         %rotate
+%         thetaSubj = angle(mean(sinData.xData(subjInd,1:3)));
+%         deltaPi = 2*pi/(n/delta);
+%         curTheta = round((-thetaSubj+thetaGroup)/deltaPi);
+%         for i = 1:prod(size(curHR2,[2 3 4]))
+%             curHR3(:,i) = circshift(curHR3(:,i),curTheta);
+%         end
+% %         plot(curT3,curHR3(:,i),'-');
+%         
+%         %downsample
+%         curHR4 = nan(size(curHR));
+%         for i = 1:prod(size(curHR,[2 3 4]))
+%             curHR4(:,i) = interp1(curT3,curHR3(:,i),t,interpMethod);
+%         end
+% %         plot(curT,curHR4(:,i),'o');
+%         
+%         hrP{subjInd}.(['sess' num2str(sessInd)]) = permute(curHR4,[2 3 4 1]);
+%     end
 end
-sinData.xDataInfo
-size(xData)
-
 
 % Average runs
 condList = {'ori1' 'ori2' 'plaid'};
@@ -119,6 +157,9 @@ xData = squeeze(mean(xData,3));
 xDataInfo = 'subj x cond[or1, ori2, plaid] x t';
 
 %% Plot results
+figure('WindowStyle','docked');
+plot(squeeze(mean(xData,2))')
+
 fGroup = figure('WindowStyle','docked');
 for condInd = 1:size(xData,2)
     y = squeeze(xData(:,condInd,:));
