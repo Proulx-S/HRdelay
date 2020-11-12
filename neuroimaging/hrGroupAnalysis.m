@@ -96,8 +96,10 @@ rhoGroup = abs(mean(mean(sinData.xData(:,1:3),2),1));
 thetaGroup = angle(mean(mean(sinData.xData(:,1:3),2),1));
 t = 0:11;
 for subjInd = 1:length(subjList)
+    rhoSubj = abs(mean(sinData.xData(subjInd,1:3),2));
+    thetaSubj = angle(mean(sinData.xData(subjInd,1:3),2));
+    
     % response amplitude
-    rhoSubj = abs(mean(sinData.xData(subjInd,1:3)));
     hrP{subjInd}.sess1 = hrP{subjInd}.sess1./rhoSubj.*rhoGroup;
     hrP{subjInd}.sess2 = hrP{subjInd}.sess2./rhoSubj.*rhoGroup;
     
@@ -125,7 +127,6 @@ for subjInd = 1:length(subjList)
 %         plot(curT3,curHR3(:,i),'-');
         
         %rotate
-        thetaSubj = angle(mean(sinData.xData(subjInd,1:3)));
         deltaPi = 2*pi/(n/delta);
         curTheta = round((thetaGroup-thetaSubj)/deltaPi);
         for i = 1:prod(size(curHR2,[2 3 4]))
@@ -152,21 +153,27 @@ for subjInd = 1:length(subjList)
 end
 xDataInfo = 'subj x cond[or1, ori2, plaid] x sess x t';
 
+% Average ori
+xData = cat(2,xData,mean(xData(:,1:2,:,:),2));
+xDataInfo = 'subj x cond[or1, ori2, plaid, ori] x t';
+
 % Average sessions
 xData = squeeze(mean(xData,3));
-xDataInfo = 'subj x cond[or1, ori2, plaid] x t';
+xDataInfo = 'subj x cond[or1, ori2, plaid, ori] x t';
+
 
 %% Plot results
 fGroup = figure('WindowStyle','docked');
-for condInd = 1:size(xData,2)
+for condInd = [4 3]
     y = squeeze(xData(:,condInd,:));
     t = 0:11;
     yMean = mean(y,1);
     ySEM = std(y,[],1)./sqrt(size(y,1));
-    he = errorbar(t,yMean,ySEM); hold on
-    he.CapSize = 0;
+    he(condInd) = errorbar(t,yMean,ySEM); hold on
+    he(condInd).CapSize = 0;
 end
+he(4).Color = 'k';
 xlabel('time (sec)');
 ylabel('?%BOLD change?');
-legend(char({'ori1 +/-SEM' 'ori2 +/-SEM' 'plaid +/-SEM'}),'Location','south','box','off','color','w')
+legend(char({'ori +/-SEM' 'plaid +/-SEM'}),'Location','south','box','off','color','w')
 title('Group Hemodynamic Response')
