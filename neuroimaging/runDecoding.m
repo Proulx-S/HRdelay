@@ -1,5 +1,8 @@
-function runDecoding(threshType)
-if ~exist('threshType','var')
+function runDecoding(threshType,SVMspace)
+if ~exist('SVMspace','var') || isempty(SVMspace)
+    SVMspace = 'cartReal'; % 'cart', 'cartReal', 'cartImag', 'pol', 'polMag' or 'polDelay'
+end
+if ~exist('threshType','var') || isempty(threshType)
     threshType = 'fdr'; % 'none', 'p' or 'fdr'
 end
 threshVal = 0.05;
@@ -39,6 +42,8 @@ for subjInd = 1:length(dP)
         % no voxel selection
         case 'none'
             % voxel selection cross-validated between sessions
+            indSess1 = true(size(dP{subjInd}.sess1.F));
+            indSess2 = true(size(dP{subjInd}.sess1.F));
         case 'p'
             indSess1 = dP{subjInd}.sess1.P<threshVal;
             indSess2 = dP{subjInd}.sess2.P<threshVal;
@@ -68,13 +73,10 @@ dP = dP2; clear dP2
 
 
 %% Run svm
-acc.cart     = nan(size(dP));
-acc.cartReal = nan(size(dP));
-acc.cartImag = nan(size(dP));
-acc.pol      = nan(size(dP));
-acc.polMag   = nan(size(dP));
-acc.polDelay = nan(size(dP));
-nObs         = nan(size(dP));
+nVox = nan(size(dP));
+nDim = nan(size(dP));
+acc  = nan(size(dP));
+nObs = nan(size(dP));
 for i = 1:numel(dP)
     p.nVox = size(dP{i}.xData,2);
     p.nSamplePaired = size(dP{i}.xData,1);
@@ -97,7 +99,7 @@ for i = 1:numel(dP)
 %     x2 = complex(X,Y);
       
 
-    % Cartesian SVM
+    % SVM
     kList = unique(k);
     yTr = nan(length(y),length(kList));
     yTe = nan(length(y),1);
@@ -115,14 +117,28 @@ for i = 1:numel(dP)
         [X,Y] = pol2cart(angle(x)-theta,abs(x)./rho);
         x = complex(X,Y); clear X Y
         
-        % cartesian space normalization (mean=(0,0), std=1)
-        x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
-        
-        % convert to cartesian
-        x = cat(2,real(x),imag(x));
-        
-        % final zScore
-        x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
+        switch SVMspace
+            case 'cart'
+                x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
+                x = cat(2,real(x),imag(x));
+            case 'cartReal'
+                x = real(x);
+                x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
+            case 'cartImag'
+                x = imag(x);
+                x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
+            case 'pol'
+                x = cat(2,angle(x),abs(x));
+                x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
+            case 'polMag'
+                x = abs(x);
+                x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
+            case 'polDelay'
+                x = angle(x);
+                x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
+            otherwise
+                error('x')
+        end
         
         % runSVM
         model = svmtrain(y(~te,:),x(~te,:),'-t 2 -q');
@@ -132,227 +148,18 @@ for i = 1:numel(dP)
         [yTr(~te,kInd), ~, yHatTr(~te,kInd)] = svmpredict(y(~te,:),x(~te,:),model,'-q');
         [yTe(te,1), ~, yHatTe(te,1)] = svmpredict(y(te,:),x(te,:),model,'-q');
     end
+    nVox(i) = size(x1,2);
+    nDim(i) = size(x,2);
     nObs(i) = length(y);
-    acc.cart(i) = sum(yTe==y)./nObs(i);
-    
-    
-    % Cartesian SVM (amplitude)
-    kList = unique(k);
-    yTr = nan(length(y),length(kList));
-    yTe = nan(length(y),1);
-    yHatTr = nan(length(y),length(kList));
-    yHatTe = nan(length(y),1);
-    for kInd = 1:length(kList)
-        x = cat(1,x1,x2);
-        
-        % split train and test
-        te = k==kList(kInd);
-        
-        % polar space normalization (rho=1, theta=0)
-        rho = abs(mean(x(~te,:),1));
-        theta = angle(mean(x(~te,:),1));
-        [X,Y] = pol2cart(angle(x)-theta,abs(x)./rho);
-        x = complex(X,Y); clear X Y
-        
-        % convert to response amplitude
-        x = real(x);
-        
-        % final zScore
-        x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
-        
-        % runSVM
-        model = svmtrain(y(~te,:),x(~te,:),'-t 2 -q');
-%         w = model.sv_coef'*model.SVs;
-%         b = model.rho;
-%         yHat = cat(2,real(x(~te,:)),imag(x(~te,:)))*w';
-        [yTr(~te,kInd), ~, yHatTr(~te,kInd)] = svmpredict(y(~te,:),x(~te,:),model,'-q');
-        [yTe(te,1), ~, yHatTe(te,1)] = svmpredict(y(te,:),x(te,:),model,'-q');
-    end
-    nObs(i) = length(y);
-    acc.cartReal(i) = sum(yTe==y)./nObs(i);
-    
-    
-    % Cartesian SVM (off-amplitude)
-    kList = unique(k);
-    yTr = nan(length(y),length(kList));
-    yTe = nan(length(y),1);
-    yHatTr = nan(length(y),length(kList));
-    yHatTe = nan(length(y),1);
-    for kInd = 1:length(kList)
-        x = cat(1,x1,x2);
-        
-        % split train and test
-        te = k==kList(kInd);
-        
-        % polar space normalization (rho=1, theta=0)
-        rho = abs(mean(x(~te,:),1));
-        theta = angle(mean(x(~te,:),1));
-        [X,Y] = pol2cart(angle(x)-theta,abs(x)./rho);
-        x = complex(X,Y); clear X Y
-        
-        % convert to response amplitude
-        x = imag(x);
-        
-        % final zScore
-        x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
-        
-        % runSVM
-        model = svmtrain(y(~te,:),x(~te,:),'-t 2 -q');
-%         w = model.sv_coef'*model.SVs;
-%         b = model.rho;
-%         yHat = cat(2,real(x(~te,:)),imag(x(~te,:)))*w';
-        [yTr(~te,kInd), ~, yHatTr(~te,kInd)] = svmpredict(y(~te,:),x(~te,:),model,'-q');
-        [yTe(te,1), ~, yHatTe(te,1)] = svmpredict(y(te,:),x(te,:),model,'-q');
-    end
-    nObs(i) = length(y);
-    acc.cartImag(i) = sum(yTe==y)./nObs(i);
-    
-    
-    % Polar SVM
-    kList = unique(k);
-    yTr = nan(length(y),length(kList));
-    yTe = nan(length(y),1);
-    yHatTr = nan(length(y),length(kList));
-    yHatTe = nan(length(y),1);
-    for kInd = 1:length(kList)
-        x = cat(1,x1,x2);
-        
-        % split train and test
-        te = k==kList(kInd);
-        
-        % polar space normalization (rho=1, theta=0)
-        rho = abs(mean(x(~te,:),1));
-        theta = angle(mean(x(~te,:),1));
-        [X,Y] = pol2cart(angle(x)-theta,abs(x)./rho);
-        x = complex(X,Y); clear X Y
-        
-        % convert to polar
-        x = cat(2,angle(x),abs(x));
-        
-        % final zScore
-        x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
-        
-        % runSVM
-        model = svmtrain(y(~te,:),x(~te,:),'-t 2 -q');
-%         w = model.sv_coef'*model.SVs;
-%         b = model.rho;
-%         yHat = cat(2,real(x(~te,:)),imag(x(~te,:)))*w';
-        [yTr(~te,kInd), ~, yHatTr(~te,kInd)] = svmpredict(y(~te,:),x(~te,:),model,'-q');
-        [yTe(te,1), ~, yHatTe(te,1)] = svmpredict(y(te,:),x(te,:),model,'-q');
-    end
-    nObs(i) = length(y);
-    acc.pol(i) = sum(yTe==y)./nObs(i);
-    
-    
-    % Polar SVM (magnitude)
-    kList = unique(k);
-    yTr = nan(length(y),length(kList));
-    yTe = nan(length(y),1);
-    yHatTr = nan(length(y),length(kList));
-    yHatTe = nan(length(y),1);
-    for kInd = 1:length(kList)
-        x = cat(1,x1,x2);
-        
-        % split train and test
-        te = k==kList(kInd);
-        
-        % polar space normalization (rho=1, theta=0)
-        rho = abs(mean(x(~te,:),1));
-        theta = angle(mean(x(~te,:),1));
-        [X,Y] = pol2cart(angle(x)-theta,abs(x)./rho);
-        x = complex(X,Y); clear X Y
-        
-        % convert to polar rho
-        x = abs(x);
-        
-        % final zScore
-        x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
-        
-        % runSVM
-        model = svmtrain(y(~te,:),x(~te,:),'-t 2 -q');
-%         w = model.sv_coef'*model.SVs;
-%         b = model.rho;
-%         yHat = cat(2,real(x(~te,:)),imag(x(~te,:)))*w';
-        [yTr(~te,kInd), ~, yHatTr(~te,kInd)] = svmpredict(y(~te,:),x(~te,:),model,'-q');
-        [yTe(te,1), ~, yHatTe(te,1)] = svmpredict(y(te,:),x(te,:),model,'-q');
-    end
-    nObs(i) = length(y);
-    acc.polMag(i) = sum(yTe==y)./nObs(i);
-    
-    
-    % Polar SVM (delay)
-    kList = unique(k);
-    yTr = nan(length(y),length(kList));
-    yTe = nan(length(y),1);
-    yHatTr = nan(length(y),length(kList));
-    yHatTe = nan(length(y),1);
-    for kInd = 1:length(kList)
-        x = cat(1,x1,x2);
-        
-        % split train and test
-        te = k==kList(kInd);
-        
-        % polar space normalization (rho=1, theta=0)
-        rho = abs(mean(x(~te,:),1));
-        theta = angle(mean(x(~te,:),1));
-        [X,Y] = pol2cart(angle(x)-theta,abs(x)./rho);
-        x = complex(X,Y); clear X Y
-        
-        % convert to polar theta
-        x = angle(x);
-        
-        % final zScore
-        x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
-        
-        % runSVM
-        model = svmtrain(y(~te,:),x(~te,:),'-t 0 -q');
-%         w = model.sv_coef'*model.SVs;
-%         b = model.rho;
-%         yHat = cat(2,real(x(~te,:)),imag(x(~te,:)))*w';
-        [yTr(~te,kInd), ~, yHatTr(~te,kInd)] = svmpredict(y(~te,:),x(~te,:),model,'-q');
-        [yTe(te,1), ~, yHatTe(te,1)] = svmpredict(y(te,:),x(te,:),model,'-q');
-    end
-    nObs(i) = length(y);
-    acc.polDelay(i) = sum(yTe==y)./nObs(i);
+    acc(i) = sum(yTe==y)./nObs(i);
 end
-disp('Full response (cartesian)')
-% acc.cart
-% P = binocdf(acc.cart.*nObs,nObs,0.5,'upper')
-% mean(acc.cart,2)
-% P = binocdf(sum(acc.cart.*nObs,2),sum(nObs,2),0.5,'upper')
-mean(acc.cart(:))
-P = binocdf(sum(acc.cart(:).*nObs(:)),sum(nObs(:)),0.5,'upper')
-
-disp('Response amp (cartesian)')
-% acc.cartReal
-% P = binocdf(acc.cartReal.*nObs,nObs,0.5,'upper')
-% mean(acc.cartReal,2)
-% P = binocdf(sum(acc.cartReal.*nObs,2),sum(nObs,2),0.5,'upper')
-mean(acc.cartReal(:))
-P = binocdf(sum(acc.cartReal(:).*nObs(:)),sum(nObs(:)),0.5,'upper')
-
-disp('Response delay (cartesian)')
-% acc.cartImag
-% P = binocdf(acc.cartImag.*nObs,nObs,0.5,'upper')
-% mean(acc.cartImag,2)
-% P = binocdf(sum(acc.cartImag.*nObs,2),sum(nObs,2),0.5,'upper')
-mean(acc.cartImag(:))
-P = binocdf(sum(acc.cartImag(:).*nObs(:)),sum(nObs(:)),0.5,'upper')
-
-disp('Response magnitude')
-% acc.polMag
-% P = binocdf(acc.polMag.*nObs,nObs,0.5,'upper')
-% mean(acc.polMag,2)
-% P = binocdf(sum(acc.polMag.*nObs,2),sum(nObs,2),0.5,'upper')
-mean(acc.polMag(:))
-P = binocdf(sum(acc.polMag(:).*nObs(:)),sum(nObs(:)),0.5,'upper')
-
-disp('Response delay')
-% acc.polDelay
-% P = binocdf(acc.polDelay.*nObs,nObs,0.5,'upper')
-% mean(acc.polDelay,2)
-% P = binocdf(sum(acc.polDelay.*nObs,2),sum(nObs,2),0.5,'upper')
-mean(acc.polDelay(:))
-P = binocdf(sum(acc.polDelay(:).*nObs(:)),sum(nObs(:)),0.5,'upper')
-
+% acc
+% P = binocdf(acc.*nObs,nObs,0.5,'upper')
+% mean(acc,2)
+% P = binocdf(sum(acc.*nObs,2),sum(nObs,2),0.5,'upper')
+mean(acc(:))
+P = binocdf(sum(acc(:).*nObs(:)),sum(nObs(:)),0.5,'upper')
+nVox
+nDim
+nObs
 
