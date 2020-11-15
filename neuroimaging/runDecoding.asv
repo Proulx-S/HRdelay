@@ -77,6 +77,8 @@ res.nVox = nan(size(dP));
 res.nDim = nan(size(dP));
 res.acc  = nan(size(dP));
 res.nObs = nan(size(dP));
+res.p = nan(size(dP));
+res.subjList = subjList;
 for i = 1:numel(dP)
     nSamplePaired = size(dP{i}.xData,1);
     
@@ -110,17 +112,24 @@ for i = 1:numel(dP)
         % split train and test
         te = k==kList(kInd);
         
-        % polar space normalization (rho=1, theta=0)
-        rho = abs(mean(x(~te,:),1));
-        theta = angle(mean(x(~te,:),1));
-        [X,Y] = pol2cart(angle(x)-theta,abs(x)./rho);
-        x = complex(X,Y); clear X Y
+            % polar space normalization (rho=1, theta=0)
+            rho = abs(mean(x(~te,:),1));
+            theta = angle(mean(x(~te,:),1));
+            [X,Y] = pol2cart(angle(x)-theta,abs(x)./rho);
+            x = complex(X,Y); clear X Y
+        else
+            % polar space normalization (rho=1, theta=0)
+            rho = abs(mean(x(~te,:),1));
+            theta = angle(mean(mean(x(~te,:),1),2));
+            [X,Y] = pol2cart(angle(x)-theta,abs(x)./rho);
+            x = complex(X,Y); clear X Y
+        end
         
         switch SVMspace
             case 'cart'
                 x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
                 x = cat(2,real(x),imag(x));
-            case 'cartReal'
+            case {'cartReal'  'cartRealFixedDelay'}
                 x = real(x);
                 x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
             case 'cartImag'
@@ -155,9 +164,7 @@ for i = 1:numel(dP)
 end
 hit = sum(res.acc(:).*res.nObs(:));
 n = sum(res.nObs(:));
-disp(['Group accuracy = ' num2str(hit) '/' num2str(n) ' (' num2str(hit/n*100,'%0.1f') '%)'])
-P = binocdf(sum(res.acc(:).*res.nObs(:)),sum(res.nObs(:)),0.5,'upper')
-nVox
-nDim
-nObs
-
+p = binocdf(sum(res.acc(:).*res.nObs(:)),sum(res.nObs(:)),0.5,'upper');
+disp('---');
+disp(['SVM space: ' SVMspace '; Vox selection: ' threshType]);
+disp(['Group accuracy = ' num2str(hit) '/' num2str(n) ' (' num2str(hit/n*100,'%0.1f') '%; binomial p=' num2str(p,'%0.3f') ')'])

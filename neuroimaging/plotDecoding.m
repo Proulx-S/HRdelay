@@ -80,14 +80,17 @@ ax.TickLength = [0 0];
 y = 0.01;
 for subjInd = 1:length(subjList)
     x = hb(subjInd).XEndPoints;
-    ht(subjInd,:) = text(x-barWidth*0.05,[1 1 1].*y,subjList{subjInd},'Rotation',90,'VerticalAlignment','middle','HorizontalAlignment','left','FontSize',8);
+    ht(subjInd,:) = text(x-barWidth*0.05,ones(size(spaceList)).*y,subjList{subjInd},'Rotation',90,'VerticalAlignment','middle','HorizontalAlignment','left','FontSize',8);
 end
 subjInd = length(subjList)+1;
 x = hb(subjInd).XEndPoints;
-ht(subjInd,:) = text(x-barWidth*0.05,[1 1 1].*y,'median','Rotation',90,'VerticalAlignment','middle','HorizontalAlignment','left','FontSize',8,'Color','w');
+ht(subjInd,:) = text(x-barWidth*0.05,ones(size(spaceList)).*y,'median','Rotation',90,'VerticalAlignment','middle','HorizontalAlignment','left','FontSize',8,'Color','w');
 
-
-
+ax.YTick = 0:0.25:1;
+ax.YTickLabel = cellstr(num2str(ax.YTick'*100));
+ax.YLabel.String = {'Decoding Accuracy' '(%correct +/-CI)'};
+ax.XLabel.String = {'Decoded Response Features'};
+ax.Title.String = 'Decoding Brain Response for Stimulus Orientation';
 
 
 

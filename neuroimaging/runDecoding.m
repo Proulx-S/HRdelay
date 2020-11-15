@@ -113,8 +113,13 @@ for i = 1:numel(dP)
         te = k==kList(kInd);
         
         % polar space normalization (rho=1, theta=0)
-        rho = abs(mean(x(~te,:),1));
-        theta = angle(mean(x(~te,:),1));
+        if ~strcmp(SVMspace,'cartRealFixedDelay')
+            rho = abs(mean(x(~te,:),1));
+            theta = angle(mean(x(~te,:),1));
+        else
+            rho = abs(mean(mean(x(~te,:),1),2));
+            theta = angle(mean(mean(x(~te,:),1),2));
+        end
         [X,Y] = pol2cart(angle(x)-theta,abs(x)./rho);
         x = complex(X,Y); clear X Y
         
@@ -122,7 +127,7 @@ for i = 1:numel(dP)
             case 'cart'
                 x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
                 x = cat(2,real(x),imag(x));
-            case 'cartReal'
+            case {'cartReal'  'cartRealFixedDelay'}
                 x = real(x);
                 x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
             case 'cartImag'
