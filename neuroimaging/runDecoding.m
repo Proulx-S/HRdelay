@@ -1,4 +1,4 @@
-function runDecoding(threshType,SVMspace)
+function res = runDecoding(threshType,SVMspace)
 if ~exist('SVMspace','var') || isempty(SVMspace)
     SVMspace = 'cartReal'; % 'cart', 'cartReal', 'cartImag', 'pol', 'polMag' or 'polDelay'
 end
@@ -73,21 +73,22 @@ dP = dP2; clear dP2
 
 
 %% Run svm
-nVox = nan(size(dP));
-nDim = nan(size(dP));
-acc  = nan(size(dP));
-nObs = nan(size(dP));
+res.nVox = nan(size(dP));
+res.nDim = nan(size(dP));
+res.acc  = nan(size(dP));
+res.nObs = nan(size(dP));
+res.p = nan(size(dP));
+res.subjList = subjList;
 for i = 1:numel(dP)
-    p.nVox = size(dP{i}.xData,2);
-    p.nSamplePaired = size(dP{i}.xData,1);
+    nSamplePaired = size(dP{i}.xData,1);
     
     x1 = dP{i}.xData(:,:,1);
-    y1 = 1.*ones(p.nSamplePaired,1);
-    k1 = (1:p.nSamplePaired)';
+    y1 = 1.*ones(nSamplePaired,1);
+    k1 = (1:nSamplePaired)';
     
     x2 = dP{i}.xData(:,:,2);
-    y2 = 2.*ones(p.nSamplePaired,1);
-    k2 = (1:p.nSamplePaired)';
+    y2 = 2.*ones(nSamplePaired,1);
+    k2 = (1:nSamplePaired)';
     
     
     y = cat(1,y1,y2); clear y1 y2
@@ -148,18 +149,15 @@ for i = 1:numel(dP)
         [yTr(~te,kInd), ~, yHatTr(~te,kInd)] = svmpredict(y(~te,:),x(~te,:),model,'-q');
         [yTe(te,1), ~, yHatTe(te,1)] = svmpredict(y(te,:),x(te,:),model,'-q');
     end
-    nVox(i) = size(x1,2);
-    nDim(i) = size(x,2);
-    nObs(i) = length(y);
-    acc(i) = sum(yTe==y)./nObs(i);
+    res.nVox(i) = size(x1,2);
+    res.nDim(i) = size(x,2);
+    res.nObs(i) = length(y);
+    res.acc(i) = sum(yTe==y)./res.nObs(i);
+    res.p(i) = binocdf(res.acc(i).*res.nObs(i),res.nObs(i),0.5,'upper');
 end
-% acc
-% P = binocdf(acc.*nObs,nObs,0.5,'upper')
-% mean(acc,2)
-% P = binocdf(sum(acc.*nObs,2),sum(nObs,2),0.5,'upper')
-mean(acc(:))
-P = binocdf(sum(acc(:).*nObs(:)),sum(nObs(:)),0.5,'upper')
-nVox
-nDim
-nObs
-
+hit = sum(res.acc(:).*res.nObs(:));
+n = sum(res.nObs(:));
+p = binocdf(sum(res.acc(:).*res.nObs(:)),sum(res.nObs(:)),0.5,'upper');
+disp('---');
+disp(['SVM space: ' SVMspace '; Vox selection: ' threshType]);
+disp(['Group accuracy = ' num2str(hit) '/' num2str(n) ' (' num2str(hit/n*100,'%0.1f') '%; binomial p=' num2str(p,'%0.3f') ')'])
