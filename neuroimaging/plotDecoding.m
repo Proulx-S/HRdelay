@@ -23,8 +23,8 @@ for spaceInd = 1:length(spaceList)
     pGroup(1,spaceInd) = P;
     
 end
-rankGroup
-pGroup
+disp(['signedrank = ' num2str(rankGroup,2)])
+disp(['         p = ' num2str(pGroup,2)])
 
 %% Pseudomedian 90%CI (because one-sided test)
 accPseudoMedian = pseudomedian(accSubj,1);

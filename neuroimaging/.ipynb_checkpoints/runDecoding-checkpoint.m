@@ -1,11 +1,11 @@
-function res = runDecoding(featSelType,SVMspace)
+function res = runDecoding(threshType,SVMspace)
 if ~exist('SVMspace','var') || isempty(SVMspace)
     SVMspace = 'polMag'; % 'cart', 'cartReal', 'cartRealFixedDelay', 'cartImag', 'pol', 'polMag' or 'polDelay'
 end
-if ~exist('threshType','var') || isempty(featSelType)
-    featSelType = 'respF_fdr'; % 'none', 'respF_p', 'respF_fdr', 'oriT_nVoxAsF' or 'oriT_p'
+if ~exist('threshType','var') || isempty(threshType)
+    threshType = 'respF_fdr'; % 'none', 'respF_p', 'respF_fdr', 'oriT_nVoxAsF' or 'oriT_p'
 end
-switch featSelType
+switch threshType
     case {'none' 'respF_p' 'respF_fdr' 'oriT_nVoxAsF'}
         threshVal = 0.05;
     case {'oriT_p'}
@@ -47,7 +47,7 @@ dP = d;
 dP2 = cell(size(dP));
 for subjInd = 1:length(dP)
     for sessInd = 1:2
-        switch featSelType
+        switch threshType
             % no voxel selection
             case 'none'
                 % voxel selection cross-validated between sessions
@@ -210,5 +210,5 @@ hit = sum(res.acc(:).*res.nObs(:));
 n = sum(res.nObs(:));
 p = binocdf(sum(res.acc(:).*res.nObs(:)),sum(res.nObs(:)),0.5,'upper');
 disp('---');
-disp(['SVM space: ' SVMspace '; Vox selection: ' featSelType]);
+disp(['SVM space: ' SVMspace '; Vox selection: ' threshType]);
 disp(['Group accuracy = ' num2str(hit) '/' num2str(n) ' (' num2str(hit/n*100,'%0.1f') '%; binomial p=' num2str(p,'%0.3f') ')'])
