@@ -3,9 +3,17 @@ if ~exist('SVMspace','var') || isempty(SVMspace)
     SVMspace = 'cartReal'; % 'cart', 'cartReal', 'cartRealFixedDelay', 'cartImag', 'pol', 'polMag' or 'polDelay'
 end
 if ~exist('threshType','var') || isempty(threshType)
-    threshType = 'oriT'; % 'none', 'respF_p', 'respF_fdr' or 'oriT'
+    threshType = 'respF_fdr'; % 'none', 'respF_p', 'respF_fdr' or 'oriT'
 end
-threshVal = 0.05;
+switch threshType
+    case {'none' 'respF_p' 'respF_fdr'}
+        threshVal = 0.05;
+    case {'oriT'}
+        threshVal = 0.5;
+    otherwise
+        error('X')
+end
+
 
 
 repoPath = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
@@ -40,28 +48,24 @@ dP2 = cell(size(dP));
 oriT = [];
 p = [];
 for subjInd = 1:length(dP)
-    switch threshType
-        % no voxel selection
-        case 'none'
-            % voxel selection cross-validated between sessions
-            indSess1 = true(size(dP{subjInd}.sess1.F));
-            indSess2 = true(size(dP{subjInd}.sess1.F));
-        case 'respF_p'
-            indSess1 = dP{subjInd}.sess1.P<threshVal;
-            indSess2 = dP{subjInd}.sess2.P<threshVal;
-        case 'respF_fdr'
-            indSess1 = dP{subjInd}.sess1.FDR<threshVal;
-            indSess2 = dP{subjInd}.sess2.FDR<threshVal;
-        case 'oriT'
-            [~,P,~,STATS] = ttest(abs(dP{subjInd}.sess1.xData(:,:,1)),abs(dP{subjInd}.sess1.xData(:,:,2)));
-            oriT = [oriT STATS.tstat];
-            p = [p P];
-%             indSess1 = dP{subjInd}.sess1.FDR<threshVal;
-%             indSess2 = dP{subjInd}.sess2.FDR<threshVal;
-            indSess1 = true(size(dP{subjInd}.sess1.F));
-            indSess2 = true(size(dP{subjInd}.sess1.F));
-        otherwise
-            error('X')
+    for sessInd = 1:2
+        switch threshType
+            % no voxel selection
+            case 'none'
+                % voxel selection cross-validated between sessions
+                indTmp = true(size(dP{subjInd}.(['sess' num2str(sessInd)]).F));
+            case 'respF_p'
+                indTmp = dP{subjInd}.(['sess' num2str(sessInd)]).P<threshVal;
+            case 'respF_fdr'
+                indTmp = dP{subjInd}.(['sess' num2str(sessInd)]).FDR<threshVal;
+            case 'oriT_p'
+%                 [~,P,~,STATS] = ttest(abs(dP{subjInd}.(['sess' num2str(sessInd)]).xData(:,:,1)),abs(dP{subjInd}.(['sess' num2str(sessInd)]).xData(:,:,2)));
+%                 indSess1 = dP{subjInd}.(['sess' num2str(sessInd)]).FDR<threshVal;
+%                 indSess2 = dP{subjInd}.sess2.FDR<threshVal;
+            otherwise
+                error('X')
+        end
+        eval(['indSess' num2str(sessInd) ' = indTmp;']);
     end
     dP{subjInd}.sess1.xData = dP{subjInd}.sess1.xData(:,indSess2,:);
     dP{subjInd}.sess1.F     = dP{subjInd}.sess1.F(:,indSess2,:);
@@ -78,12 +82,6 @@ for subjInd = 1:length(dP)
     end
     dP{subjInd} = [];
 end
-figure('WindowStyle','docked');
-subplot(1,2,1)
-hist(oriT,100);
-subplot(1,2,2)
-hist(p,100);
-return
 dP = dP2; clear dP2
 
 

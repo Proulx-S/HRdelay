@@ -17,12 +17,14 @@ for spaceInd = 1:length(spaceList)
     nObsSubj(:,spaceInd) = nObs;
     pSubj(:,spaceInd) = p;
     accSubj5(:,spaceInd) = pci(:,1);
-    accSubj90(:,spaceInd) = pci(:,2);
+    accSubj95(:,spaceInd) = pci(:,2);
     
     rankGroup(1,spaceInd) = STATS.signedrank;
     pGroup(1,spaceInd) = P;
     
 end
+rankGroup
+pGroup
 
 %% Pseudomedian 90%CI (because one-sided test)
 accPseudoMedian = pseudomedian(accSubj,1);
@@ -37,13 +39,13 @@ while ~done
     for spaceInd = 1:length(spaceList)
         [P5(spaceInd),~,~] = signrank(accSubj(:,spaceInd),M(spaceInd),'tail','right');
     end
-    accPseudoMedian5(P5>0.05) = M(P5>0.05);
+    accPseudoMedian5(P5>=0.05) = M(P5>=0.05);
     
     M = accPseudoMedian+i*delta;
     for spaceInd = 1:length(spaceList)
         [P95(spaceInd),~,~] = signrank(accSubj(:,spaceInd),M(spaceInd),'tail','left');
     end
-    accPseudoMedian95(P95>0.05) = M(P95>0.05);
+    accPseudoMedian95(P95>=0.05) = M(P95>=0.05);
     
     if all([P95 P5]<0.05); done=1; end
 end
@@ -66,7 +68,7 @@ heb(i).Color = 'r';
 
 for subjInd = 1:6
     set(hb(subjInd),'FaceColor',[1 1 1].*0.8)
-    heb(subjInd) = errorbar(hb(subjInd).XEndPoints,accSubj(subjInd,:),accSubj(subjInd,:)-accSubj5(subjInd,:),accSubj(subjInd,:)-accSubj5(subjInd,:),'.');
+    heb(subjInd) = errorbar(hb(subjInd).XEndPoints,accSubj(subjInd,:),accSubj(subjInd,:)-accSubj5(subjInd,:),accSubj95(subjInd,:)-accSubj(subjInd,:),'.');
     heb(subjInd).Marker = 'none';
     heb(subjInd).CapSize = 0;
     heb(subjInd).Color = 'k';
