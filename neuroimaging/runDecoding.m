@@ -3,7 +3,7 @@ if ~exist('SVMspace','var') || isempty(SVMspace)
     SVMspace = 'cartReal'; % 'cart', 'cartReal', 'cartRealFixedDelay', 'cartImag', 'pol', 'polMag' or 'polDelay'
 end
 if ~exist('threshType','var') || isempty(threshType)
-    threshType = 'fdr'; % 'none', 'p' or 'fdr'
+    threshType = 'oriT'; % 'none', 'respF_p', 'respF_fdr' or 'oriT'
 end
 threshVal = 0.05;
 
@@ -33,10 +33,12 @@ for subjInd = 1:size(subjList,1)
 end
 d = dAll; clear dAll
 
-%% Pipe data
+%% Pip data
 % Threshold and average voxels in cartesian space
 dP = d;
 dP2 = cell(size(dP));
+oriT = [];
+p = [];
 for subjInd = 1:length(dP)
     switch threshType
         % no voxel selection
@@ -44,12 +46,20 @@ for subjInd = 1:length(dP)
             % voxel selection cross-validated between sessions
             indSess1 = true(size(dP{subjInd}.sess1.F));
             indSess2 = true(size(dP{subjInd}.sess1.F));
-        case 'p'
+        case 'respF_p'
             indSess1 = dP{subjInd}.sess1.P<threshVal;
             indSess2 = dP{subjInd}.sess2.P<threshVal;
-        case 'fdr'
+        case 'respF_fdr'
             indSess1 = dP{subjInd}.sess1.FDR<threshVal;
             indSess2 = dP{subjInd}.sess2.FDR<threshVal;
+        case 'oriT'
+            [~,P,~,STATS] = ttest(abs(dP{subjInd}.sess1.xData(:,:,1)),abs(dP{subjInd}.sess1.xData(:,:,2)));
+            oriT = [oriT STATS.tstat];
+            p = [p P];
+%             indSess1 = dP{subjInd}.sess1.FDR<threshVal;
+%             indSess2 = dP{subjInd}.sess2.FDR<threshVal;
+            indSess1 = true(size(dP{subjInd}.sess1.F));
+            indSess2 = true(size(dP{subjInd}.sess1.F));
         otherwise
             error('X')
     end
@@ -68,6 +78,12 @@ for subjInd = 1:length(dP)
     end
     dP{subjInd} = [];
 end
+figure('WindowStyle','docked');
+subplot(1,2,1)
+hist(oriT,100);
+subplot(1,2,2)
+hist(p,100);
+return
 dP = dP2; clear dP2
 
 
