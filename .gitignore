@@ -1,6 +1,7 @@
 # Matlab files #
 ######################
-.asv
+*.asv
+**/*.asv
 
 # OS generated files #
 ######################
