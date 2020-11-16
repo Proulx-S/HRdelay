@@ -1,14 +1,14 @@
 function res = runDecoding(threshType,SVMspace)
 if ~exist('SVMspace','var') || isempty(SVMspace)
-    SVMspace = 'cartReal'; % 'cart', 'cartReal', 'cartRealFixedDelay', 'cartImag', 'pol', 'polMag' or 'polDelay'
+    SVMspace = 'polMag'; % 'cart', 'cartReal', 'cartRealFixedDelay', 'cartImag', 'pol', 'polMag' or 'polDelay'
 end
 if ~exist('threshType','var') || isempty(threshType)
-    threshType = 'respF_fdr'; % 'none', 'respF_p', 'respF_fdr' or 'oriT'
+    threshType = 'respF_fdr'; % 'none', 'respF_p', 'respF_fdr', 'oriT_nVoxAsF' or 'oriT_p'
 end
 switch threshType
-    case {'none' 'respF_p' 'respF_fdr'}
+    case {'none' 'respF_p' 'respF_fdr' 'oriT_nVoxAsF'}
         threshVal = 0.05;
-    case {'oriT'}
+    case {'oriT_p'}
         threshVal = 0.5;
     otherwise
         error('X')
@@ -45,8 +45,6 @@ d = dAll; clear dAll
 % Threshold and average voxels in cartesian space
 dP = d;
 dP2 = cell(size(dP));
-oriT = [];
-p = [];
 for subjInd = 1:length(dP)
     for sessInd = 1:2
         switch threshType
@@ -59,9 +57,43 @@ for subjInd = 1:length(dP)
             case 'respF_fdr'
                 indTmp = dP{subjInd}.(['sess' num2str(sessInd)]).FDR<threshVal;
             case 'oriT_p'
-%                 [~,P,~,STATS] = ttest(abs(dP{subjInd}.(['sess' num2str(sessInd)]).xData(:,:,1)),abs(dP{subjInd}.(['sess' num2str(sessInd)]).xData(:,:,2)));
-%                 indSess1 = dP{subjInd}.(['sess' num2str(sessInd)]).FDR<threshVal;
-%                 indSess2 = dP{subjInd}.sess2.FDR<threshVal;
+                error('codeThat')
+            case 'oriT_nVoxAsF'
+                switch SVMspace
+                    case 'cart'
+                        error('codeThat')
+                    case 'cartReal'
+                        error('codeThat')
+                    case 'cartRealFixedDelay'
+                        error('codeThat')
+                    case 'cartImag'
+                        error('codeThat')
+                    case 'pol'
+                        x = dP{subjInd}.(['sess' num2str(sessInd)]).xData(:,:,1:2);
+                        statsCirc = nan([1 size(x,2)]);
+                        for voxInd = 1:size(x,2)
+                            [~, statsCirc(voxInd)] = circ_htest(angle(x(:,1,1)),angle(x(:,1,2)));
+                        end
+                        [~,~,~,STATS] = ttest(x(:,:,1),x(:,:,2));
+                        stats = STATS.tstat;
+                        stats = cat(2,statsCirc,stats);
+                    case 'polMag'
+                        x = abs(dP{subjInd}.(['sess' num2str(sessInd)]).xData(:,:,1:2));
+                        [~,~,~,STATS] = ttest(x(:,:,1),x(:,:,2));
+                        stats = STATS.tstat;
+                    case 'polDelay'
+                        x = angle(dP{subjInd}.(['sess' num2str(sessInd)]).xData(:,:,1:2));
+                        statsCirc = nan([1 size(x,2)]);
+                        for voxInd = 1:size(x,2)
+                            [~, statsCirc(voxInd)] = circ_htest(angle(x(:,1,1)),angle(x(:,1,2)));
+                        end
+                        stats = statsCirc;
+                    otherwise
+                        error('x')
+                end
+                indTmp = false(size(dP{subjInd}.(['sess' num2str(sessInd)]).F));
+                [~,b] = sort(abs(stats),'descend');
+                indTmp(b(1:sum(dP{subjInd}.(['sess' num2str(sessInd)]).FDR<threshVal))) = true;
             otherwise
                 error('X')
         end
