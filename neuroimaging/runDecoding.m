@@ -1,6 +1,6 @@
 function res = runDecoding(threshType,SVMspace)
 if ~exist('SVMspace','var') || isempty(SVMspace)
-    SVMspace = 'cartReal'; % 'cart', 'cartReal', 'cartImag', 'pol', 'polMag' or 'polDelay'
+    SVMspace = 'cartReal'; % 'cart', 'cartReal', 'cartRealFixedDelay', 'cartImag', 'pol', 'polMag' or 'polDelay'
 end
 if ~exist('threshType','var') || isempty(threshType)
     threshType = 'fdr'; % 'none', 'p' or 'fdr'
@@ -57,10 +57,10 @@ for subjInd = 1:length(dP)
     dP{subjInd}.sess1.F     = dP{subjInd}.sess1.F(:,indSess2,:);
     dP{subjInd}.sess1.FDR   = dP{subjInd}.sess1.FDR(:,indSess2,:);
     dP{subjInd}.sess1.P     = dP{subjInd}.sess1.P(:,indSess2,:);
-    dP{subjInd}.sess2.xData = dP{subjInd}.sess2.xData(:,indSess2,:);
-    dP{subjInd}.sess2.F     = dP{subjInd}.sess2.F(:,indSess2,:);
-    dP{subjInd}.sess2.FDR   = dP{subjInd}.sess2.FDR(:,indSess2,:);
-    dP{subjInd}.sess2.P     = dP{subjInd}.sess2.P(:,indSess2,:);
+    dP{subjInd}.sess2.xData = dP{subjInd}.sess2.xData(:,indSess1,:);
+    dP{subjInd}.sess2.F     = dP{subjInd}.sess2.F(:,indSess1,:);
+    dP{subjInd}.sess2.FDR   = dP{subjInd}.sess2.FDR(:,indSess1,:);
+    dP{subjInd}.sess2.P     = dP{subjInd}.sess2.P(:,indSess1,:);
     
     sessList = fields(dP{subjInd});
     for sessInd = 1:length(sessList)
