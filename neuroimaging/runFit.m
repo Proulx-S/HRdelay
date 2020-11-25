@@ -2,12 +2,25 @@ function runFit
 
 actuallyRun = 0;
 
-repo = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
+if ismac
+    repo = '/Users/sebastienproulx/OneDrive - McGill University/dataBig';
+else
+    repo = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
+end
     funDir = 'C-derived\DecodingHR\fun';
         inDir = 'x';
         outDir = 'y';
     anatDir = 'C-derived\DecodingHR\anat\z';
     stimDir = 'B-clean\DecodingHR\stim\160118_cyclicStim\data';
+
+%make sure everything is forward slash for mac, linux pc compatibility
+for tmpPath = {'repo' 'funDir' 'anatDir' 'stimDir'}
+    eval([char(tmpPath) '(strfind(' char(tmpPath) ',''\''))=''/'';']);
+end
+
+funDir
+anatDir
+stimDir
 
 % switch getenv('OS')
 %     case 'Linux'
