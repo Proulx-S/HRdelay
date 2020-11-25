@@ -34,55 +34,64 @@ disp('F(IN)=OUT: 2-df sinusoidal fit to single voxel time series')
 disp(['OUT: fit params and stats + HRF estimates (' fullfile(funDir,outDir) ')'])
 
 if ~actuallyRun
-    subjInd = 1;
     disp('Not actually running because way too long')
-    load(fullfile(repo,funDir,outDir,subjList{subjInd},'v1SinCos_1perRun_move12.mat'),'results')
     
-    fSin = figure();
+    subjInd = 1;
+%     f = figure('WindowStyle','docked');
+    f = figure();
+    
+    subplot(1,16+25,0+(1:16))
+    load(fullfile(repo,funDir,outDir,subjList{subjInd},'v1SinCos_1perRun_move12.mat'),'results')
     run1 = results.OLS.mixed.designmatrix(:,[1 2 67:80]);
     imagesc(run1(any(run1,2),:)); colormap gray
-    title({'Design Matrix' 'for Sinusoidal Fit'});
-    ax = gca; ax.XTick = []; ax.YTick = [];
-    xlabel('Regressors'); ylabel('TRs');
-    ax.XTick = 1:size(run1,2);
-    ax.Box = 'off';
-    ax.TickDir = 'out';
-    ax.XTickLabel = {'sin' 'cos' 'constant' 'drift' 'x' 'y' 'z' 'pitch' 'roll' 'yaw' 'x''' 'y''' 'z''' 'pitch''' 'roll''' 'yaw'''};
-    ax.XTickLabelRotation = -90;
-    ax.YAxis.Color = 'none';
-    ax.YAxis.Label.Visible = 'on';
-    ax.YAxis.Label.Color = 'k';
-    saveas(fSin,fullfile(repo,funDir,outDir,'designMatrix_sinCos'))
-    disp(fullfile(repo,funDir,outDir,'designMatrix_sinCos.fig'))
+    title('Sinusoidal Fit');
+    ax1 = gca; ax1.XTick = []; ax1.YTick = [];
+%     xlabel('Regressors');
+    ylabel('TRs');
+    ax1.XTick = 1:size(run1,2);
+    ax1.Box = 'off';
+    ax1.TickDir = 'out';
+    ax1.XTickLabel = {'sin' 'cos' 'constant' 'drift' 'x' 'y' 'z' 'pitch' 'roll' 'yaw' 'x''' 'y''' 'z''' 'pitch''' 'roll''' 'yaw'''};
+    ax1.XTickLabelRotation = -90;
+    ax1.YAxis.Color = 'none';
+    ax1.YAxis.Label.Visible = 'on';
+    ax1.YAxis.Label.Color = 'k';
     
+    xVal = diff(ax1.XLim);
+    xWidth = ax1.Position(3);
+    
+    subplot(1,16+25,16+(1:25))
     tmp = load(fullfile(repo,funDir,outDir,subjList{1},'v1resp_1perRun_move12_resp.mat'));
-    fResp = figure();
     run1 = tmp.results.OLS.mixed.designmatrix(:,[1:12 397:409]);
     imagesc(run1(any(run1,2),:)); colormap gray
-    title({'Design Matrix' 'for Response Extraction'});
-    ax = gca; ax.XTick = []; ax.YTick = [];
-    xlabel('Regressors'); ylabel('TRs');
-    ax.XTick = 1:size(run1,2);
-    ax.Box = 'off';
-    ax.TickDir = 'out';
-    ax.XTickLabel = cat(1,cellstr([repmat('t+',12,1) num2str((0:11)','%-d')]),{'drift'},{'x' 'y' 'z' 'pitch' 'roll' 'yaw' 'x''' 'y''' 'z''' 'pitch''' 'roll''' 'yaw'''}');
-    ax.XTickLabelRotation = -90;
-    ax.YAxis.Color = 'none';
-    ax.YAxis.Label.Visible = 'on';
-    ax.YAxis.Label.Color = 'k';
-    saveas(fResp,fullfile(repo,funDir,outDir,'designMatrix_resp'))
-    disp(fullfile(repo,funDir,outDir,'designMatrix_resp.fig'))
+    title('Response Extraction');
+    ax2 = gca; ax2.XTick = []; ax2.YTick = [];
+%     xlabel('Regressors');% ylabel('TRs');
+    ax2.XTick = 1:size(run1,2);
+    ax2.Box = 'off';
+    ax2.TickDir = 'out';
+    ax2.XTickLabel = cat(1,cellstr([repmat('t+',12,1) num2str((0:11)','%-d')]),{'drift'},{'x' 'y' 'z' 'pitch' 'roll' 'yaw' 'x''' 'y''' 'z''' 'pitch''' 'roll''' 'yaw'''}');
+    ax2.XTickLabelRotation = -90;
+    ax2.YAxis.Color = 'none';
+    ax2.YAxis.Label.Visible = 'on';
+    ax2.YAxis.Label.Color = 'k';
     
-%     sessLabel = [results.inputs.opt.sessionLabel{:}];
-%     condLabel = repmat(1:3,[length(results.inputs.opt.sessionLabel)/3 1]); condLabel = condLabel(:)';
-%     ind = sessLabel==1 & condLabel==1;
-%     ind1 = repmat(ind,[2 1]);
-%     ind1 = find(ind1(:))';
-%     ind2 = repmat(ind,[14 1]);
-%     ind2 = find(ind2(:))';
-%     sess1cond1 = results.OLS.mixed.designmatrix(:,[ind1 length(sessLabel)*2+ind2]);
-%     sess1cond1 = sess1cond1(any(sess1cond1,2),:);
-%     imagesc(sess1cond1)
+    suptitle('Design Matrices');
+    
+    ax1.XAxis.FontSize = ax1.XAxis.FontSize*0.8;
+    ax2.XAxis.FontSize = ax2.XAxis.FontSize*0.8;
+    
+    
+%     drawnow
+%     scale = 1;
+%     ax1.Position([2 4]) = ax1.Position([2 4]) + [1 -1].*ax1.Position(2)*scale;
+%     ax2.Position([2 4]) = ax2.Position([2 4]) + [1 -1].*ax2.Position(2)*scale;
+%     drawnow
+%     ax2.XAxis.Label.Position(2) = ax1.XAxis.Label.Position(2);
+%     drawnow
+    
+    saveas(f,fullfile(repo,funDir,outDir,'designMatrices'))
+    disp(fullfile(repo,funDir,outDir,'designMatrices.fig'))
     return
 end
 
