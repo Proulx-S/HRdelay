@@ -52,9 +52,17 @@ if ~actuallyRun
     figure()
     run1 = results.OLS.mixed.designmatrix(:,[1 2 67:80]);
     imagesc(run1(any(run1,2),:)); colormap gray
-    title('Design matrix for Sinusoidal Fit');
+    title({'Design Matrix' 'for Sinusoidal Fit'});
     ax = gca; ax.XTick = []; ax.YTick = [];
-    xlabel('regressors'); ylabel('TRs');
+    xlabel('Regressors'); ylabel('TRs');
+    ax.XTick = 1:size(run1,2);
+    ax.Box = 'off';
+    ax.TickDir = 'out';
+    ax.XTickLabel = {'sin' 'cos' 'constant' 'drift' 'x' 'y' 'z' 'pitch' 'roll' 'yaw' 'x''' 'y''' 'z''' 'pitch''' 'roll''' 'yaw'''};
+    ax.XTickLabelRotation = -90;
+    ax.YAxis.Color = 'none';
+    ax.YAxis.Label.Visible = 'on';
+    ax.YAxis.Label.Color = 'k';
     
     tmp = load(fullfile(repo,funDir,outDir,subjList{1},'v1resp_1perRun_move12_resp.mat'));
     figure()
