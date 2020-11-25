@@ -18,18 +18,6 @@ for tmpPath = {'repo' 'funDir' 'anatDir' 'stimDir'}
     eval([char(tmpPath) '(strfind(' char(tmpPath) ',''\''))=''/'';']);
 end
 
-funDir
-anatDir
-stimDir
-
-% switch getenv('OS')
-%     case 'Linux'
-%         error('');
-%         addpath(genpath('/mnt/hgfs/work/projects/160707_HRdecodingGLMdenoise/GLMdenoise-1.4_SinCos3'))
-%     otherwise
-%         
-% end
-
 % maskLabel = 'v1v2v3';
 maskLabel = 'v1';
 
@@ -46,10 +34,11 @@ disp('F(IN)=OUT: 2-df sinusoidal fit to single voxel time series')
 disp(['OUT: fit params and stats + HRF estimates (' fullfile(funDir,outDir) ')'])
 
 if ~actuallyRun
+    subjInd = 1;
     disp('Not actually running because way too long')
-    load(fullfile(repo,funDir,outDir,subjList{1},'v1SinCos_1perRun_move12.mat'),'results')
+    load(fullfile(repo,funDir,outDir,subjList{subjInd},'v1SinCos_1perRun_move12.mat'),'results')
     
-    figure()
+    fSin = figure();
     run1 = results.OLS.mixed.designmatrix(:,[1 2 67:80]);
     imagesc(run1(any(run1,2),:)); colormap gray
     title({'Design Matrix' 'for Sinusoidal Fit'});
@@ -63,24 +52,26 @@ if ~actuallyRun
     ax.YAxis.Color = 'none';
     ax.YAxis.Label.Visible = 'on';
     ax.YAxis.Label.Color = 'k';
+    saveas(fSin,fullfile(repo,funDir,outDir,'designMatrix_sinCos'))
+    disp(fullfile(repo,funDir,outDir,'designMatrix_sinCos.fig'))
     
     tmp = load(fullfile(repo,funDir,outDir,subjList{1},'v1resp_1perRun_move12_resp.mat'));
-    figure()
+    fResp = figure();
     run1 = tmp.results.OLS.mixed.designmatrix(:,[1:12 397:409]);
     imagesc(run1(any(run1,2),:)); colormap gray
     title({'Design Matrix' 'for Response Extraction'});
     ax = gca; ax.XTick = []; ax.YTick = [];
     xlabel('Regressors'); ylabel('TRs');
-    ax.XTick = [1:12 13 mean(14:25)];
-    ax.XTick = [1:size(run1,2)];
+    ax.XTick = 1:size(run1,2);
     ax.Box = 'off';
     ax.TickDir = 'out';
     ax.XTickLabel = cat(1,cellstr([repmat('t+',12,1) num2str((0:11)','%-d')]),{'drift'},{'x' 'y' 'z' 'pitch' 'roll' 'yaw' 'x''' 'y''' 'z''' 'pitch''' 'roll''' 'yaw'''}');
-    ax.XTickLabel
     ax.XTickLabelRotation = -90;
     ax.YAxis.Color = 'none';
     ax.YAxis.Label.Visible = 'on';
     ax.YAxis.Label.Color = 'k';
+    saveas(fResp,fullfile(repo,funDir,outDir,'designMatrix_resp'))
+    disp(fullfile(repo,funDir,outDir,'designMatrix_resp.fig'))
     
 %     sessLabel = [results.inputs.opt.sessionLabel{:}];
 %     condLabel = repmat(1:3,[length(results.inputs.opt.sessionLabel)/3 1]); condLabel = condLabel(:)';
