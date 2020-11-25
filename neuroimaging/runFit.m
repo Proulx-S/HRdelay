@@ -52,9 +52,27 @@ if ~actuallyRun
     figure()
     run1 = results.OLS.mixed.designmatrix(:,[1 2 67:80]);
     imagesc(run1(any(run1,2),:)); colormap gray
-    title('Design matrix for one run');
+    title('Design matrix for Sinusoidal Fit');
     ax = gca; ax.XTick = []; ax.YTick = [];
     xlabel('regressors'); ylabel('TRs');
+    
+    tmp = load(fullfile(repo,funDir,outDir,subjList{1},'v1resp_1perRun_move12_resp.mat'));
+    figure()
+    run1 = tmp.results.OLS.mixed.designmatrix(:,[1:12 397:409]);
+    imagesc(run1(any(run1,2),:)); colormap gray
+    title({'Design Matrix' 'for Response Extraction'});
+    ax = gca; ax.XTick = []; ax.YTick = [];
+    xlabel('Regressors'); ylabel('TRs');
+    ax.XTick = [1:12 13 mean(14:25)];
+    ax.XTick = [1:size(run1,2)];
+    ax.Box = 'off';
+    ax.TickDir = 'out';
+    ax.XTickLabel = cat(1,cellstr([repmat('t+',12,1) num2str((0:11)','%-d')]),{'drift'},{'x' 'y' 'z' 'pitch' 'roll' 'yaw' 'x''' 'y''' 'z''' 'pitch''' 'roll''' 'yaw'''}');
+    ax.XTickLabel
+    ax.XTickLabelRotation = -90;
+    ax.YAxis.Color = 'none';
+    ax.YAxis.Label.Visible = 'on';
+    ax.YAxis.Label.Color = 'k';
     
 %     sessLabel = [results.inputs.opt.sessionLabel{:}];
 %     condLabel = repmat(1:3,[length(results.inputs.opt.sessionLabel)/3 1]); condLabel = condLabel(:)';
