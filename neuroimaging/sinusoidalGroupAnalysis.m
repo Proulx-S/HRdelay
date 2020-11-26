@@ -3,17 +3,29 @@ if ~exist('threshType','var')
     threshType = 'none'; % 'none', 'p' or 'fdr'
 end
 threshVal = 0.05;
+adjVoxDelay = 0;
 
-
-repoPath = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
+if ismac
+    repoPath = '/Users/sebastienproulx/OneDrive - McGill University/dataBig';
+else
+    repoPath = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
+end
 dataDir = 'C-derived\DecodingHR';
 funPath = fullfile(repoPath,dataDir,'fun');
 funLevel = 'zSin';
 subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'}';
 fileSuffix = '_maskSinAndHrFit.mat';
 
+%make sure everything is forward slash for mac, linux pc compatibility
+for tmpPath = {'repoPath' 'dataDir' 'funPath'}
+    eval([char(tmpPath) '(strfind(' char(tmpPath) ',''\''))=''/'';']);
+end
+
+
 
 disp(['IN: Sinusoidal BOLD responses from anatomical V1 ROI (' fullfile(dataDir,funLevel) ')'])
+disp(['threshVal=' num2str(threshVal)])
+disp(['adjVoxDelay=' num2str(adjVoxDelay)])
 disp('F(IN)=OUT: threshold included voxels and analyse responses averaged across the ROI')
 disp(['OUT: figures and stats'])
 
@@ -28,8 +40,36 @@ end
 d = dAll; clear dAll
 
 %% Process data
-% Threshold and average voxels in cartesian space
 dP = d;
+% Remove inter-voxel variations in delay, using delay from the other
+% session
+if adjVoxDelay
+    voxDelaySess1 = angle(mean(mean(dP{subjInd}.sess1.xData,3),1)) - angle(mean(dP{subjInd}.sess1.xData(:)));
+    voxDelaySess2 = angle(mean(mean(dP{subjInd}.sess2.xData,3),1)) - angle(mean(dP{subjInd}.sess2.xData(:)));
+    
+    theta = angle(dP{subjInd}.sess1.xData) - voxDelaySess2;
+    rho = abs(dP{subjInd}.sess1.xData);
+    [X,Y] = pol2cart(theta,rho);
+    dP{subjInd}.sess1.xData = complex(X,Y);
+    
+    theta = angle(dP{subjInd}.sess2.xData) - voxDelaySess1;
+    rho = abs(dP{subjInd}.sess2.xData);
+    [X,Y] = pol2cart(theta,rho);
+    dP{subjInd}.sess2.xData = complex(X,Y); clear X Y theta rho voxDelaySess1 voxDelaySess2
+end
+
+% figure('WindowStyle','docked')
+% subplot(2,1,1)
+% % polarplot(squeeze(mean(d{subjInd}.sess1.xData,1)),'o');
+% polarplot(squeeze(mean(d{subjInd}.sess1.xData,2)),'o');
+% abs(mean(d{subjInd}.sess1.xData(:)))
+% subplot(2,1,2)
+% % polarplot(squeeze(mean(dP{subjInd}.sess1.xData,1)),'o');
+% polarplot(squeeze(mean(dP{subjInd}.sess1.xData,2)),'o');
+% abs(mean(dP{subjInd}.sess1.xData(:)))
+
+% Threshold and average voxels in cartesian space, using statistical tests
+% on the other session
 rLim = (1:length(dP))';
 for subjInd = 1:length(dP)
     switch threshType
