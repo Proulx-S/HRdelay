@@ -6,14 +6,23 @@ end
 threshVal = 0.05;
 plotAllSubj = 0;
 
-
-repoPath = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
+if ismac
+    repoPath = '/Users/sebastienproulx/OneDrive - McGill University/dataBig';
+else
+    repoPath = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
+end
 dataDir = 'C-derived\DecodingHR';
 funPath = fullfile(repoPath,dataDir,'fun');
 funLevel = 'zHr';
 funLevelSin = 'zSin';
 subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'}';
 fileSuffix = '_maskSinAndHrFit.mat';
+
+%make sure everything is forward slash for mac, linux pc compatibility
+for tmpPath = {'repoPath' 'dataDir' 'funPath'}
+    eval([char(tmpPath) '(strfind(' char(tmpPath) ',''\''))=''/'';']);
+end
+
 
 disp(['IN: BOLD hemodynamic responses (HR) from anatomical V1 ROI (' fullfile(dataDir,funLevel) ')'])
 disp('F(IN)->OUT: threshold included voxels and analyse HR averaged across the ROI')

@@ -15,8 +15,11 @@ switch featSelType
 end
 
 
-
-repoPath = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
+if ismac
+    repoPath = '/Users/sebastienproulx/OneDrive - McGill University/dataBig';
+else
+    repoPath = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
+end
 dataDir = 'C-derived\DecodingHR';
 funPath = fullfile(repoPath,dataDir,'fun');
 funLevel_in = 'zSin';
@@ -25,6 +28,10 @@ subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'}';
 fileSuffix_in = '_maskSinAndHrFit.mat';
 fileSuffix_out = '_decoding.mat';
 
+%make sure everything is forward slash for mac, linux pc compatibility
+for tmpPath = {'repoPath' 'dataDir' 'funPath' 'funLevel_out'}
+    eval([char(tmpPath) '(strfind(' char(tmpPath) ',''\''))=''/'';']);
+end
 
 
 disp(['IN: Sinusoidal BOLD responses from anatomical V1 ROI (' fullfile(dataDir,funLevel_in) ')'])
@@ -193,7 +200,7 @@ for i = 1:numel(dP)
         end
         
         % runSVM
-        model = svmtrain(y(~te,:),x(~te,:),'-t 0 -q');
+        model = svmtrain(y(~te,:),x(~te,:),'-t 2 -q');
 %         w = model.sv_coef'*model.SVs;
 %         b = model.rho;
 %         yHat = cat(2,real(x(~te,:)),imag(x(~te,:)))*w';
@@ -212,3 +219,4 @@ p = binocdf(sum(res.acc(:).*res.nObs(:)),sum(res.nObs(:)),0.5,'upper');
 disp('---');
 disp(['SVM space: ' SVMspace '; Vox selection: ' featSelType]);
 disp(['Group accuracy = ' num2str(hit) '/' num2str(n) ' (' num2str(hit/n*100,'%0.1f') '%; binomial p=' num2str(p,'%0.3f') ')'])
+disp('------')

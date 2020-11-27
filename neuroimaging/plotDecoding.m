@@ -11,7 +11,8 @@ for spaceInd = 1:length(spaceList)
     nObs = sum(nObs,2);
     p = binocdf(acc.*nObs,nObs,0.5,'upper');
     [P,~,STATS] = signrank(acc,0.5,'tail','right');
-    [~,pci] = binofit(acc.*nObs,nObs,0.05);
+    [~,pci] = binofit(round(acc.*nObs),nObs,0.05);
+%     [~,pci] = binofit(acc.*nObs,nObs,0.05);
     
     accSubj(:,spaceInd) = acc;
     nObsSubj(:,spaceInd) = nObs;

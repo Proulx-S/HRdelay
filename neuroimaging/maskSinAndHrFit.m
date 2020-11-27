@@ -11,7 +11,11 @@ threshVal = 0.05;
 warning('off','images:imshow:magnificationMustBeFitForDockedFigure');
 
 %% Define paths
-repoPath = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
+if ismac
+    repoPath = '/Users/sebastienproulx/OneDrive - McGill University/dataBig';
+else
+    repoPath = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
+end
 dataDir = 'C-derived\DecodingHR';
 anatPath = fullfile(repoPath,dataDir,'anat');
 anatLevel = 'z';
@@ -23,6 +27,12 @@ funLevel3Hr = 'zHr';
 sinFitFile = 'v1SinCos_1perRun_move12.mat';
 hrFitFile = 'v1resp_1perRun_move12_resp.mat';
 subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'}';
+
+%make sure everything is forward slash for mac, linux pc compatibility
+for tmpPath = {'repoPath' 'dataDir' 'anatPath' 'funPath'}
+    eval([char(tmpPath) '(strfind(' char(tmpPath) ',''\''))=''/'';']);
+end
+
 
 if ~actuallyRun
     disp('Not actually running to save some time')
@@ -42,24 +52,31 @@ for subjInd = 1:length(subjList)
     resultsResp = tmp.results; clear tmp
     
     % brain
-    tmpFilename = ls(fullfile(funPath,funLevel1,subjList{subjInd},'trun101_preprocessed.nii*'));
+    tmpFilename = dir(fullfile(funPath,funLevel1,subjList{subjInd},'trun101_preprocessed.nii*'));
+    if all(size(tmpFilename)==[1 1]); tmpFilename = tmpFilename.name; else; error('X'); end
     a = load_nii(fullfile(funPath,funLevel1,subjList{subjInd},tmpFilename));
     brain = flip(permute(a.img,[3 1 2 4]),1); clear a
     brain = brain(:,:,:,1);
     
     %% Set masks
     % maskV1
-    tmpFilename = ls(fullfile(anatPath,anatLevel,subjList{subjInd},'v1.nii*'));
+    tmpFilename = dir(fullfile(anatPath,anatLevel,subjList{subjInd},'v1.nii*'));
+    if all(size(tmpFilename)==[1 1]); tmpFilename = tmpFilename.name; else; error('X'); end
+%     tmpFilename = ls(fullfile(anatPath,anatLevel,subjList{subjInd},'v1.nii*'));
     a = load_nii(fullfile(anatPath,anatLevel,subjList{subjInd},tmpFilename));
     maskV1 = flipdim(permute(a.img,[3 1 2 4]),1); clear a
     maskV1(:,:,1) = zeros(size(maskV1,1),size(maskV1,2));% Remove corrupted slices
     maskV1(:,:,end) = zeros(size(maskV1,1),size(maskV1,2));% Remove corrupted slices
     
     % maskECC
-    tmpFilename = ls(fullfile(anatPath,anatLevel,subjList{subjInd},'lh.ecc.nii*'));
+    tmpFilename = dir(fullfile(anatPath,anatLevel,subjList{subjInd},'lh.ecc.nii*'));
+    if all(size(tmpFilename)==[1 1]); tmpFilename = tmpFilename.name; else; error('X'); end
+%     tmpFilename = ls(fullfile(anatPath,anatLevel,subjList{subjInd},'lh.ecc.nii*'));
     a = load_nii(fullfile(anatPath,anatLevel,subjList{subjInd},tmpFilename));
     eccL = flipdim(permute(a.img,[3 1 2 4]),1); clear a
-    tmpFilename = ls(fullfile(anatPath,anatLevel,subjList{subjInd},'rh.ecc.nii*'));
+    tmpFilename = dir(fullfile(anatPath,anatLevel,subjList{subjInd},'rh.ecc.nii*'));
+    if all(size(tmpFilename)==[1 1]); tmpFilename = tmpFilename.name; else; error('X'); end
+%     tmpFilename = ls(fullfile(anatPath,anatLevel,subjList{subjInd},'rh.ecc.nii*'));
     a = load_nii(fullfile(anatPath,anatLevel,subjList{subjInd},tmpFilename));
     eccR = flipdim(permute(a.img,[3 1 2 4]),1); clear a
     find((eccL~=0 & eccR~=0));
