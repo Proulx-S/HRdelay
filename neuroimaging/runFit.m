@@ -40,11 +40,11 @@ if ~actuallyRun
 %     f = figure('WindowStyle','docked');
     f = figure();
     
-    subplot(1,16+25,0+(1:16))
+    subplot(1,16+25,25+(1:16))
     load(fullfile(repo,funDir,outDir,subjList{subjInd},'v1SinCos_1perRun_move12.mat'),'results')
     run1 = results.OLS.mixed.designmatrix(:,[1 2 67:80]);
     imagesc(run1(any(run1,2),:)); colormap gray
-    title('Sinusoidal Fit');
+    title('Sinusoidal Response');
     ax1 = gca; ax1.XTick = []; ax1.YTick = [];
 %     xlabel('Regressors');
     ylabel('TRs');
@@ -60,11 +60,11 @@ if ~actuallyRun
     xVal = diff(ax1.XLim);
     xWidth = ax1.Position(3);
     
-    subplot(1,16+25,16+(1:25))
+    subplot(1,16+25,0+(1:25))
     tmp = load(fullfile(repo,funDir,outDir,subjList{1},'v1resp_1perRun_move12_resp.mat'));
     run1 = tmp.results.OLS.mixed.designmatrix(:,[1:12 397:409]);
     imagesc(run1(any(run1,2),:)); colormap gray
-    title('Response Extraction');
+    title('Model-Free Response');
     ax2 = gca; ax2.XTick = []; ax2.YTick = [];
 %     xlabel('Regressors');% ylabel('TRs');
     ax2.XTick = 1:size(run1,2);

@@ -41,7 +41,7 @@ for subjInd = 1:size(subjList,1)
 end
 d = dAll; clear dAll
 
-%% Pip data
+%% Pipe data
 % Threshold and average voxels in cartesian space
 dP = d;
 dP2 = cell(size(dP));
@@ -159,12 +159,12 @@ for i = 1:numel(dP)
         te = k==kList(kInd);
         
         % polar space normalization (rho=1, theta=0)
-        if ~strcmp(SVMspace,'cartRealFixedDelay')
-            rho = abs(mean(x(~te,:),1));
-            theta = angle(mean(x(~te,:),1));
-        else
+        if strcmp(SVMspace,'cartRealFixedDelay')
             rho = abs(mean(mean(x(~te,:),1),2));
             theta = angle(mean(mean(x(~te,:),1),2));
+        else
+            rho = abs(mean(x(~te,:),1));
+            theta = angle(mean(x(~te,:),1));
         end
         [X,Y] = pol2cart(angle(x)-theta,abs(x)./rho);
         x = complex(X,Y); clear X Y
@@ -193,7 +193,7 @@ for i = 1:numel(dP)
         end
         
         % runSVM
-        model = svmtrain(y(~te,:),x(~te,:),'-t 2 -q');
+        model = svmtrain(y(~te,:),x(~te,:),'-t 0 -q');
 %         w = model.sv_coef'*model.SVs;
 %         b = model.rho;
 %         yHat = cat(2,real(x(~te,:)),imag(x(~te,:)))*w';
