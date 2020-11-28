@@ -33,7 +33,7 @@ for tmpPath = {'repoPath' 'dataDir' 'funPath' 'funLevel_out'}
     eval([char(tmpPath) '(strfind(' char(tmpPath) ',''\''))=''/'';']);
 end
 
-
+disp('------')
 disp(['IN: Sinusoidal BOLD responses from anatomical V1 ROI (' fullfile(dataDir,funLevel_in) ')'])
 disp('F(IN)=OUT: threshold included voxels and decode ROI response pattern to predict stimulus orientation')
 disp(['OUT: figures and stats (' fullfile(dataDir,funLevel_in) ')'])
@@ -219,4 +219,3 @@ p = binocdf(sum(res.acc(:).*res.nObs(:)),sum(res.nObs(:)),0.5,'upper');
 disp('---');
 disp(['SVM space: ' SVMspace '; Vox selection: ' featSelType]);
 disp(['Group accuracy = ' num2str(hit) '/' num2str(n) ' (' num2str(hit/n*100,'%0.1f') '%; binomial p=' num2str(p,'%0.3f') ')'])
-disp('------')
