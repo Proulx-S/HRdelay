@@ -1,4 +1,4 @@
-function res = runDecoding(featSelType,SVMspace)
+function res = runDecoding(SVMspace,featSelType)
 if ~exist('SVMspace','var') || isempty(SVMspace)
     SVMspace = 'polMag'; % 'cart', 'cartReal', 'cartRealFixedDelay', 'cartImag', 'pol', 'polMag' or 'polDelay'
 end

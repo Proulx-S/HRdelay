@@ -4,7 +4,7 @@ if ~exist('threshType','var')
 end
 % threshType = 'fdr';
 threshVal = 0.05;
-plotAllSubj = 0;
+plotAllSubj = 1;
 
 %colors
 colors = [  0         0.4470    0.7410
@@ -101,6 +101,12 @@ for subjInd = 1:length(subjList)
         end
         legend(char({'ori1 +/-SEM' 'ori2 +/-SEM' 'plaid +/-SEM'}),'Location','south','box','off','color','none')
         suptitle(subjList{subjInd})
+        
+        filename = fullfile(pwd,mfilename);
+        if ~exist(filename,'dir'); mkdir(filename); end
+        filename = fullfile(filename,[subjList{subjInd} '_HrFit']);
+        saveas(fSubj(subjInd),filename)
+        disp([filename '.fig'])
     end
 end
 clear xData
@@ -235,6 +241,11 @@ title('Group Hemodynamic Response')
 ax = gca;
 uistack(findobj(ax.Children,'type','Text'),'top')
 
+filename = fullfile(pwd,mfilename);
+if ~exist(filename,'dir'); mkdir(filename); end
+filename = fullfile(filename,'group_HrFit');
+saveas(fGroup,filename)
+disp([filename '.fig'])
 
 % rhoGroup
 % phi = thetaGroup/(2*pi)*12;
