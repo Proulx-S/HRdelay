@@ -6,6 +6,11 @@ end
 threshVal = 0.05;
 plotAllSubj = 0;
 
+%colors
+colors = [  0         0.4470    0.7410
+            0.8500    0.3250    0.0980
+            0.9290    0.6940    0.1250];
+
 if ismac
     repoPath = '/Users/sebastienproulx/OneDrive - McGill University/dataBig';
 else
@@ -191,6 +196,7 @@ for condInd = [4 3]
 end
 he(4).Color = 'k';
 he(3).Color = fSubj(1).Children(end).Children(1).Color;
+cat(1,fSubj(1).Children(end).Children(:).Color)
 
 
 ht = text(0,0,'ON 6sec');

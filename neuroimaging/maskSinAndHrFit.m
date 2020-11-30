@@ -5,7 +5,7 @@ if ~exist('fitType','var')
     fitType = 'mixed'; % 'mixed' (different regressors for each run) or 'fixed' (different regressors for each session)
 end
 if ~exist('threshType','var') % for plotting purpose only (does not affect data that is saved)
-    threshType = 'none'; % 'none', 'p' or 'fdr'
+    threshType = 'fdr'; % 'none', 'p' or 'fdr'
 end
 threshVal = 0.05;
 warning('off','images:imshow:magnificationMustBeFitForDockedFigure');

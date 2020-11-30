@@ -5,6 +5,12 @@ end
 threshVal = 0.05;
 adjVoxDelay = 0;
 
+%colors
+colors = [  0         0.4470    0.7410
+            0.8500    0.3250    0.0980
+            0.9290    0.6940    0.1250];
+lw = 1.5;
+
 if ismac
     repoPath = '/Users/sebastienproulx/OneDrive - McGill University/dataBig';
 else
@@ -102,10 +108,11 @@ for subjInd = 1:length(subjList)
             for condInd = 1:size(xData,2)
                 [theta,rho] = cart2pol(real(xData(:,condInd)),imag(xData(:,condInd)));
                 h(condInd) = polarplot(theta,rho,'o'); hold on
+                h(condInd).Color = colors(condInd,:);
                 [theta,rho] = cart2pol(real(mean(xData(:,condInd),1)),imag(mean(xData(:,condInd),1)));
                 hAv(condInd) = polarplot(theta,rho,'o'); hold on
                 hAv(condInd).MarkerEdgeColor = 'w';
-                hAv(condInd).MarkerFaceColor = h(condInd).Color;
+                hAv(condInd).MarkerFaceColor = colors(condInd,:);
                 hAv(condInd).LineWidth = 0.25;
             end
             uistack(hAv,'top')
@@ -158,8 +165,9 @@ xDataNormMean_rho = abs(xDataNormMean);
 fGroup(1) = figure('WindowStyle','docked');
 for condInd = 1:3
     h(condInd) = polarplot(xDataNorm_theta(:,condInd),xDataNorm_rho(:,condInd),'o'); hold on
+    h(condInd).Color = colors(condInd,:);
     hM(condInd) = polarplot(xDataNormMean_theta(:,condInd),xDataNormMean_rho(:,condInd),'o'); hold on
-    hM(condInd).MarkerFaceColor = h(condInd).Color;
+    hM(condInd).MarkerFaceColor = colors(condInd,:);
     hM(condInd).MarkerEdgeColor = 'w';
 end
 uistack(hM,'top')
@@ -185,46 +193,68 @@ xDataMean_theta = -angle(xDataMean)./pi*6;
 xDataMean_rho = abs(xDataMean);
 
 fGroup(2) = figure('WindowStyle','docked');
-subplot(1,2,1)
+[ax, pos] = tight_subplot(1,2);
+spInd = 1;
+axes(ax(spInd));
 hb = bar(xDataMean_rho(:,[4 3])); hold on
-hp = plot(hb.XData,xData_rho(:,[4 3])','k');
+hb1 = bar(hb.XData(1),hb.YData(1),'FaceColor','k');
+hb2 = bar(hb.XData(2),hb.YData(2),'FaceColor',colors(3,:));
+hp = plot(hb.XData,xData_rho(:,[4 3])','color',[1 1 1].*0.5);
+set(hp,'LineWidth',lw);
+delete(hb)
 xlim([0.25 2.75])
 ylabel({'Response amplitude' '(%BOLD)'})
-ax = gca; ax.XTickLabel = {'ori' 'plaid'};
+ax(spInd).XTickLabel = {'ori' 'plaid'};
 ylim([0 max(xData_rho(:)).*1.1])
-ax.PlotBoxAspectRatio = [0.2 1 1];
+ax(spInd).PlotBoxAspectRatio = [0.2 1 1];
 box off
-subplot(1,2,2)
+spInd = 2;
+axes(ax(spInd));
 hb = bar(xDataMean_rho(:,[1 2])); hold on
-hp = plot(hb.XData,xData_rho(:,[1 2])','k');
+hb1 = bar(hb.XData(1),hb.YData(1),'FaceColor',colors(1,:));
+hb2 = bar(hb.XData(2),hb.YData(2),'FaceColor',colors(2,:));
+hp = plot(hb.XData,xData_rho(:,[1 2])','color',[1 1 1].*0.5);
+set(hp,'LineWidth',lw);
+delete(hb)
 xlim([0.25 2.75])
 ylabel({'Response amplitude' '(%BOLD)'})
-ax = gca; ax.XTickLabel = {'ori1' 'ori2'};
+ax(spInd).XTickLabel = {'ori1' 'ori2'};
 ylim([0 max(xData_rho(:)).*1.1])
-ax.PlotBoxAspectRatio = [0.2 1 1];
+ax(spInd).PlotBoxAspectRatio = [0.2 1 1];
 box off
 disp('***')
 disp(['delay diff=' num2str(abs(diff(xDataMean_rho(:,[1 2]))),'%0.3fms')])
 disp('***')
 
 fGroup(3) = figure('WindowStyle','docked');
-subplot(2,1,1)
+[ax, pos] = tight_subplot(2, 1,[0],[0.1 0],[0.1 0]);
+spInd = 1;
+axes(ax(spInd));
 hb = barh(xDataMean_theta(:,[4 3])); hold on
-hp = plot(xData_theta(:,[4 3])',hb.XData,'k');
+hb1 = barh(hb.XData(1),hb.YData(1),'FaceColor','k');
+hb2 = barh(hb.XData(2),hb.YData(2),'FaceColor',colors(3,:));
+hp = plot(xData_theta(:,[4 3])',hb.XData,'color',[1 1 1].*0.5);
+set(hp,'LineWidth',lw);
+delete(hb)
 ylim([0.25 2.75]);
 xlabel({'Response Delay' '(sec)'})
-ax = gca; ax.YTickLabel = {'ori' 'plaid'};
+ax(spInd).YTickLabel = {'ori' 'plaid'};
 xlim([0 max(xData_theta(:)).*1.1])
-ax.PlotBoxAspectRatio = [1 0.1 1];
+ax(spInd).PlotBoxAspectRatio = [1 0.2 1];
 box off
-subplot(2,1,2)
+spInd = 2;
+axes(ax(spInd));
 hb = barh(xDataMean_theta(:,[1 2])); hold on
-hp = plot(xData_theta(:,[1 2])',hb.XData,'k');
+hb1 = barh(hb.XData(1),hb.YData(1),'FaceColor',colors(1,:));
+hb2 = barh(hb.XData(2),hb.YData(2),'FaceColor',colors(2,:));
+hp = plot(xData_theta(:,[1 2])',hb.XData,'color',[1 1 1].*0.5);
+set(hp,'LineWidth',lw);
+delete(hb)
 ylim([0.25 2.75]);
 xlabel({'Response Delay' '(sec)'})
-ax = gca; ax.YTickLabel = {'ori1' 'ori2'};
+ax(spInd).YTickLabel = {'ori1' 'ori2'};
 xlim([0 max(xData_theta(:)).*1.1])
-ax.PlotBoxAspectRatio = [1 0.1 1];
+ax(spInd).PlotBoxAspectRatio = [1 0.2 1];
 box off
 
 figure(fSubj(1)); drawnow
