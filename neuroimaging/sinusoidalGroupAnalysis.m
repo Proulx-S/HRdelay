@@ -132,6 +132,18 @@ for subjInd = 1:length(subjList)
         hl = legend(char({'ori1' 'ori2' 'plaid'}),'Location','east');
         hl.Color = 'none';
         hl.Box = 'off';
+        
+        filename = fullfile(pwd,mfilename);
+        if ~exist(filename,'dir'); mkdir(filename); end
+        filename = fullfile(filename,subjList{subjInd});
+        fSubj(subjInd).Color = 'none';
+        set(findobj(fSubj(subjInd).Children,'type','Axes'),'color','none')
+        set(findobj(fSubj(subjInd).Children,'type','PolarAxes'),'color','none')
+        saveas(fSubj(subjInd),[filename '.svg']); disp([filename '.svg'])
+        fSubj(subjInd).Color = 'w';
+        set(findobj(fSubj(subjInd).Children,'type','Axes'),'color','w')
+        set(findobj(fSubj(subjInd).Children,'type','PolarAxes'),'color','w')
+        saveas(fSubj(subjInd),filename); disp([filename '.fig'])
     end
 end
 
@@ -184,6 +196,18 @@ ax.ThetaAxis.Label.HorizontalAlignment = 'left';
 ax.RAxis.Label.String = 'amp (%BOLD)';
 ax.RAxis.Label.Rotation = 80;
 
+filename = fullfile(pwd,mfilename);
+if ~exist(filename,'dir'); mkdir(filename); end
+filename = fullfile(filename,'group');
+fGroup(1).Color = 'none';
+set(findobj(fGroup(1).Children,'type','Axes'),'color','none')
+set(findobj(fGroup(1).Children,'type','PolarAxes'),'color','none')
+saveas(fGroup(1),[filename '.svg']); disp([filename '.svg'])
+fGroup(1).Color = 'w';
+set(findobj(fGroup(1).Children,'type','Axes'),'color','w')
+set(findobj(fGroup(1).Children,'type','PolarAxes'),'color','w')
+saveas(fGroup(1),filename); disp([filename '.fig'])
+
 
 % Polar space
 xData_theta = -angle(xData)./pi*6;
@@ -226,6 +250,17 @@ disp('***')
 disp(['delay diff=' num2str(abs(diff(xDataMean_rho(:,[1 2]))),'%0.3fms')])
 disp('***')
 
+filename = fullfile(pwd,mfilename);
+if ~exist(filename,'dir'); mkdir(filename); end
+filename = fullfile(filename,'groupAmp');
+fGroup(2).Color = 'none';
+set(findobj(fGroup(2).Children,'type','Axes'),'color','none')
+saveas(fGroup(2),[filename '.svg']); disp([filename '.svg'])
+fGroup(2).Color = 'w';
+set(findobj(fGroup(2).Children,'type','Axes'),'color','w')
+saveas(fGroup(2),filename); disp([filename '.fig'])
+
+
 fGroup(3) = figure('WindowStyle','docked');
 [ax, pos] = tight_subplot(2, 1,[0],[0.1 0],[0.1 0]);
 spInd = 1;
@@ -257,10 +292,19 @@ xlim([0 max(xData_theta(:)).*1.1])
 ax(spInd).PlotBoxAspectRatio = [1 0.2 1];
 box off
 
-figure(fSubj(1)); drawnow
+filename = fullfile(pwd,mfilename);
+if ~exist(filename,'dir'); mkdir(filename); end
+filename = fullfile(filename,'groupDelay');
+fGroup(3).Color = 'none';
+set(findobj(fGroup(3).Children,'type','Axes'),'color','none')
+saveas(fGroup(3),[filename '.svg']); disp([filename '.svg'])
+fGroup(3).Color = 'w';
+set(findobj(fGroup(3).Children,'type','Axes'),'color','w')
+saveas(fGroup(3),filename); disp([filename '.fig'])
+
+
 %% Stats
 % On cartesian space (conservative)
-figure(fGroup(1)); drawnow
 disp('---------------')
 disp('Cartesian Space')
 disp('---------------')
@@ -277,7 +321,6 @@ disp(' Hotelling''s T^2 multivariate test')
 disp([' T^2=' num2str(stats.T2,'%0.2f') '; p=' num2str(stats.P,'%0.2f')]);
 
 % Amplitude in polar space
-figure(fGroup(2)); drawnow
 disp('---------------')
 disp('Polar Amplitude')
 disp('---------------')
@@ -299,7 +342,6 @@ disp(' Wilcoxon signed rank test')
 disp([' signed rank=' num2str(STATS.signedrank,'%0.2f') '; p=' num2str(P,'%0.2f')]);
 
 % Compare delays
-figure(fGroup(3)); drawnow
 disp('-----------')
 disp('Polar Delay')
 disp('-----------')

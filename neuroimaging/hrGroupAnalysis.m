@@ -4,7 +4,7 @@ if ~exist('threshType','var')
 end
 % threshType = 'fdr';
 threshVal = 0.05;
-plotAllSubj = 1;
+plotAllSubj = 0;
 
 %colors
 colors = [  0         0.4470    0.7410
@@ -85,8 +85,9 @@ end
 for subjInd = 1:length(subjList)
     if plotAllSubj || subjInd==1
         fSubj(subjInd) = figure('WindowStyle','docked');
+        clear yLim ax
         for sessInd = 1:2
-            subplot(1,2,sessInd)
+            ax(sessInd) = subplot(1,2,sessInd);
             xData = squeeze(hrP{subjInd}.(['sess' num2str(sessInd)]));
             for condInd = 1:size(xData,2)
                 y = squeeze(xData(:,condInd,:));
@@ -98,15 +99,24 @@ for subjInd = 1:length(subjList)
             end
             title(['Sess' num2str(sessInd)])
             ylim([min(xData(:)) max(xData(:))])
+            box off
+            yLim(sessInd,:) = ylim;
         end
-        legend(char({'ori1 +/-SEM' 'ori2 +/-SEM' 'plaid +/-SEM'}),'Location','south','box','off','color','none')
+        for sessInd = 1:2
+            ax(sessInd).YLim = [min(yLim(:)) max(yLim(:))];
+        end
+        legend(char({'ori1 +/-SEM' 'ori2 +/-SEM' 'plaid +/-SEM'}),'Location','south','box','off')
         suptitle(subjList{subjInd})
         
         filename = fullfile(pwd,mfilename);
         if ~exist(filename,'dir'); mkdir(filename); end
-        filename = fullfile(filename,[subjList{subjInd} '_HrFit']);
-        saveas(fSubj(subjInd),filename)
-        disp([filename '.fig'])
+        filename = fullfile(filename,[subjList{subjInd}]);
+        fSubj(subjInd).Color = 'none';
+        set(findobj(fSubj(subjInd).Children,'type','Axes'),'color','none')
+        saveas(fSubj(subjInd),[filename '.svg']); disp([filename '.svg'])
+        fSubj(subjInd).Color = 'w';
+        set(findobj(fSubj(subjInd).Children,'type','Axes'),'color','w')
+        saveas(fSubj(subjInd),filename); disp([filename '.fig'])
     end
 end
 clear xData
@@ -244,8 +254,12 @@ uistack(findobj(ax.Children,'type','Text'),'top')
 filename = fullfile(pwd,mfilename);
 if ~exist(filename,'dir'); mkdir(filename); end
 filename = fullfile(filename,'group_HrFit');
-saveas(fGroup,filename)
-disp([filename '.fig'])
+fGroup.Color = 'none';
+set(findobj(fGroup.Children,'type','Axes'),'color','none')
+saveas(fGroup,[filename '.svg']); disp([filename '.svg'])
+fGroup.Color = 'w';
+set(findobj(fGroup.Children,'type','Axes'),'color','w')
+saveas(fGroup,filename); disp([filename '.fig'])
 
 % rhoGroup
 % phi = thetaGroup/(2*pi)*12;
