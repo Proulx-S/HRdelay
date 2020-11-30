@@ -1,6 +1,6 @@
 function hrGroupAnalysis(threshType)
 if ~exist('threshType','var')
-    threshType = 'none'; % 'none', 'p' or 'fdr'
+    threshType = 'fdr'; % 'none', 'p' or 'fdr'
 end
 % threshType = 'fdr';
 threshVal = 0.05;
@@ -228,3 +228,11 @@ legend(char({'ori +/-SEM' 'plaid +/-SEM'}),'Location','northeast','box','off','c
 title('Group Hemodynamic Response')
 ax = gca;
 uistack(findobj(ax.Children,'type','Text'),'top')
+
+
+% rhoGroup
+% phi = thetaGroup/(2*pi)*12;
+% x = 0:0.01:18;
+% y = sin((x+phi)/12*2*pi).*(rhoGroup+0.05)-0.25;
+% plot(x,y)
+

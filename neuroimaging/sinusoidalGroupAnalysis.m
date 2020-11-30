@@ -1,6 +1,6 @@
 function sinusoidalGroupAnalysis(threshType)
 if ~exist('threshType','var')
-    threshType = 'none'; % 'none', 'p' or 'fdr'
+    threshType = 'fdr'; % 'none', 'p' or 'fdr'
 end
 threshVal = 0.05;
 adjVoxDelay = 0;
@@ -111,6 +111,15 @@ for subjInd = 1:length(subjList)
             uistack(hAv,'top')
             title(['Sess' num2str(sessInd)])
             rlim([0 max(rLim)])
+            
+            ax = gca;
+            ax.ThetaTickLabel = 12-ax.ThetaTick(1:end)/360*12;
+            ax.ThetaTickLabel(1,:) = '0 ';
+%             ax.ThetaAxis.Label.String = {'delay' '(sec)'};
+%             ax.ThetaAxis.Label.Rotation = 0;
+%             ax.ThetaAxis.Label.HorizontalAlignment = 'left';
+%             ax.RAxis.Label.String = 'amp (%BOLD)';
+%             ax.RAxis.Label.Rotation = 80;
         end
         suptitle(subjList{subjInd})
         hl = legend(char({'ori1' 'ori2' 'plaid'}),'Location','east');
@@ -158,12 +167,21 @@ hl = legend(char({'ori1' 'ori2' 'plaid'}),'Location','east');
 hl.Color = 'none';
 hl.Box = 'off';
 title('Group Response (subject effect removed)')
+ax = gca;
+ax.ThetaTickLabel = 12-ax.ThetaTick(1:end)/360*12;
+ax.ThetaTickLabel(1,:) = '0 ';
+ax.ThetaAxis.Label.String = {'delay' '(sec)'};
+ax.ThetaAxis.Label.Rotation = 0;
+ax.ThetaAxis.Label.HorizontalAlignment = 'left';
+ax.RAxis.Label.String = 'amp (%BOLD)';
+ax.RAxis.Label.Rotation = 80;
+
 
 % Polar space
-xData_theta = angle(xData);
+xData_theta = -angle(xData)./pi*6;
 xData_rho = abs(xData);
 xDataMean = mean(xData,1);
-xDataMean_theta = angle(xDataMean);
+xDataMean_theta = -angle(xDataMean)./pi*6;
 xDataMean_rho = abs(xDataMean);
 
 fGroup(2) = figure('WindowStyle','docked');
@@ -185,28 +203,29 @@ ax = gca; ax.XTickLabel = {'ori1' 'ori2'};
 ylim([0 max(xData_rho(:)).*1.1])
 ax.PlotBoxAspectRatio = [0.2 1 1];
 box off
+disp('***')
+disp(['delay diff=' num2str(abs(diff(xDataMean_rho(:,[1 2]))),'%0.3fms')])
+disp('***')
 
 fGroup(3) = figure('WindowStyle','docked');
 subplot(2,1,1)
 hb = barh(xDataMean_theta(:,[4 3])); hold on
 hp = plot(xData_theta(:,[4 3])',hb.XData,'k');
 ylim([0.25 2.75]);
-xlabel({'Response Delay' '(rad)'})
+xlabel({'Response Delay' '(sec)'})
 ax = gca; ax.YTickLabel = {'ori' 'plaid'};
-xlim([min(xData_theta(:)).*1.1 0])
+xlim([0 max(xData_theta(:)).*1.1])
 ax.PlotBoxAspectRatio = [1 0.1 1];
 box off
-ax.YAxisLocation = 'right';
 subplot(2,1,2)
 hb = barh(xDataMean_theta(:,[1 2])); hold on
 hp = plot(xData_theta(:,[1 2])',hb.XData,'k');
 ylim([0.25 2.75]);
-xlabel({'Response Delay' '(rad)'})
+xlabel({'Response Delay' '(sec)'})
 ax = gca; ax.YTickLabel = {'ori1' 'ori2'};
-xlim([min(xData_theta(:)).*1.1 0])
+xlim([0 max(xData_theta(:)).*1.1])
 ax.PlotBoxAspectRatio = [1 0.1 1];
 box off
-ax.YAxisLocation = 'right';
 
 figure(fSubj(1)); drawnow
 %% Stats
