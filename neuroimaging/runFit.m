@@ -1,6 +1,7 @@
 function runFit
 
-actuallyRun = 0;
+actuallyRun = 1;
+noMovement = 1;
 
 if ismac
     repo = '/Users/sebastienproulx/OneDrive - McGill University/dataBig';
@@ -103,7 +104,7 @@ for smLevel = {''}
 %         try
             
             %% Get data and design
-            clearvars -except tstart mask subjInd smLevel subjStimList subjList maskLabel matFun repo funDir anatDir stimDir inDir outDir
+            clearvars -except tstart mask subjInd smLevel subjStimList subjList maskLabel matFun repo funDir anatDir stimDir inDir outDir noMovement
             subj = subjList{subjInd}; subjStim = subjStimList{subjInd};
             
             switch getenv('OS')
@@ -174,7 +175,7 @@ for smLevel = {''}
             labelList = [45 135 999];
             condCount = zeros(1,3);
             for cond = 1:3
-                clearvars -except tstart mask subjInd subjList subjStimList smLevel subj funData_folderIN funData_folderOUT labelDir files label labelList cond sessionLabel data design extraRegr labelList curLabel condCount sessionLabel maskLabel matFun repo funDir anatDir stimDir inDir outDir
+                clearvars -except tstart mask subjInd subjList subjStimList smLevel subj funData_folderIN funData_folderOUT labelDir files label labelList cond sessionLabel data design extraRegr labelList curLabel condCount sessionLabel maskLabel matFun repo funDir anatDir stimDir inDir outDir noMovement
                 close all
                 curLabel = labelList(cond);
                 
@@ -227,7 +228,7 @@ for smLevel = {''}
             fprintf('The sampling rate (TR) is %.6f seconds.\n',tr);
             
             
-            clearvars -except tstart mask subjInd smLevel subjStimList subjList subj funData_folderIN funData_folderOUT labelDir data design extraRegr sessionLabel sessModel stimdur tr maskLabel repo funDir anatDir stimDir inDir outDir
+            clearvars -except tstart mask subjInd smLevel subjStimList subjList subj funData_folderIN funData_folderOUT labelDir data design extraRegr sessionLabel sessModel stimdur tr maskLabel repo funDir anatDir stimDir inDir outDir noMovement
             %% GLMdenoise on all sessions (not split)
             % - - - - - - - - - -
             % o x ------------
@@ -280,21 +281,37 @@ for smLevel = {''}
                 splitExtraRegr(ii:splitIn:numel(splitExtraRegr_tmp)) = splitExtraRegr_tmp(:,ii);
                 splitSessionLabel(ii:splitIn:length(splitDesign)) = splitSessionLabel_tmp(:,ii);
             end
-            clearvars -except tstart mask subjInd smLevel subjStimList subjList subj funData_folderIN funData_folderOUT labelDir data design extraRegr sessionLabel sessModel splitDesign splitData splitIn splitExtraRegr splitSessionLabel stimdur tr maskLabel repo funDir anatDir stimDir inDir outDir
+            clearvars -except tstart mask subjInd smLevel subjStimList subjList subj funData_folderIN funData_folderOUT labelDir data design extraRegr sessionLabel sessModel splitDesign splitData splitIn splitExtraRegr splitSessionLabel stimdur tr maskLabel repo funDir anatDir stimDir inDir outDir noMovement
             
-            ana = 'resp';
-            [results] = GLMresp(splitDesign,splitData,stimdur,tr,ana,[],struct('extraregressors',{splitExtraRegr},'sessionLabel',{splitSessionLabel},'splitedIn',splitIn),splitIn);
-            outName = fullfile(funData_folderOUT,[maskLabel ana '_' num2str(splitIn) 'perRun_move12' smLevel{1}]);
-            save([outName '_resp.mat'],'results'); clear results
-            
-            ana = 'SinCos';
-            outName = fullfile(funData_folderOUT,[maskLabel ana '_' num2str(splitIn) 'perRun_move12' smLevel{1}]);
-            [resultsTmp,~] = GLMsinCos3(splitDesign,splitData,stimdur,tr,ana,[],struct('extraregressors',{splitExtraRegr},'sessionLabel',{splitSessionLabel},'splitedIn',splitIn),splitIn);
-            resultsTmp.OLS.fixed = []; resultsTmp.OLS.fixed_sessReg = []; resultsTmp.OLS.mixed_sessRm = [];
-            [results,dataDetrend] = GLMsinCos5(splitDesign,splitData,stimdur,tr,ana,[],struct('extraregressors',{splitExtraRegr},'sessionLabel',{splitSessionLabel},'splitedIn',splitIn),splitIn);
-            results.OLS.mixed = resultsTmp.OLS.mixed; clear resultsTmp
-            results.mask = mask;
-            save([outName '.mat'],'results','-v7.3');
+            if noMovement
+                ana = 'resp';
+                [results] = GLMresp(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'splitedIn',splitIn),splitIn);
+                outName = fullfile(funData_folderOUT,[maskLabel ana '_' num2str(splitIn) 'perRun' smLevel{1}]);
+                save([outName '_resp.mat'],'results'); clear results
+                
+                ana = 'SinCos';
+                outName = fullfile(funData_folderOUT,[maskLabel ana '_' num2str(splitIn) 'perRun' smLevel{1}]);
+                [resultsTmp,~] = GLMsinCos3(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'splitedIn',splitIn),splitIn);
+                resultsTmp.OLS.fixed = []; resultsTmp.OLS.fixed_sessReg = []; resultsTmp.OLS.mixed_sessRm = [];
+                [results,dataDetrend] = GLMsinCos5(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'splitedIn',splitIn),splitIn);
+                results.OLS.mixed = resultsTmp.OLS.mixed; clear resultsTmp
+                results.mask = mask;
+                save([outName '.mat'],'results','-v7.3');
+            else
+                ana = 'resp';
+                [results] = GLMresp(splitDesign,splitData,stimdur,tr,ana,[],struct('extraregressors',{splitExtraRegr},'sessionLabel',{splitSessionLabel},'splitedIn',splitIn),splitIn);
+                outName = fullfile(funData_folderOUT,[maskLabel ana '_' num2str(splitIn) 'perRun_move12' smLevel{1}]);
+                save([outName '_resp.mat'],'results'); clear results
+                
+                ana = 'SinCos';
+                outName = fullfile(funData_folderOUT,[maskLabel ana '_' num2str(splitIn) 'perRun_move12' smLevel{1}]);
+                [resultsTmp,~] = GLMsinCos3(splitDesign,splitData,stimdur,tr,ana,[],struct('extraregressors',{splitExtraRegr},'sessionLabel',{splitSessionLabel},'splitedIn',splitIn),splitIn);
+                resultsTmp.OLS.fixed = []; resultsTmp.OLS.fixed_sessReg = []; resultsTmp.OLS.mixed_sessRm = [];
+                [results,dataDetrend] = GLMsinCos5(splitDesign,splitData,stimdur,tr,ana,[],struct('extraregressors',{splitExtraRegr},'sessionLabel',{splitSessionLabel},'splitedIn',splitIn),splitIn);
+                results.OLS.mixed = resultsTmp.OLS.mixed; clear resultsTmp
+                results.mask = mask;
+                save([outName '.mat'],'results','-v7.3');
+            end
 
 %             [results,dataDetrend] = GLMsinCos5(splitDesign,splitData,stimdur,tr,ana,[],struct('extraregressors',{splitExtraRegr},'sessionLabel',{splitSessionLabel},'splitedIn',splitIn),splitIn);
 %             save([outName '_detrend.mat'],'dataDetrend','-v7.3');

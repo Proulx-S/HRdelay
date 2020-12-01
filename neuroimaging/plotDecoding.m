@@ -36,7 +36,7 @@ end
 disp(['signedrank   = ' num2str(signedrank,'%0.2f  ')])
 disp(['signedrank p = ' num2str(signedrankP,'%0.3f  ')])
 disp(['group accuracy  = ' num2str(accGroup*100,'%0.2f%%  ')])
-disp(['signedrank p    = ' num2str(pGroup,'%0.3f   ')])
+disp(['binomial   p    = ' num2str(pGroup,'%0.3f   ')])
 
 %% Group stats
 switch groupStatMethod
@@ -129,7 +129,7 @@ end
 
 ax.YTick = 0:0.05:1;
 ax.YTickLabel = cellstr(num2str(ax.YTick'*100,'%3.0f%%'));
-ax.YLabel.String = {'Decoding Accuracy' '(CI 5% lower bound)'};
+ax.YLabel.String = {'Decoding Accuracy' '(5% lower bound of binomial distribution)'};
 ax.XLabel.String = {'Decoded Response Features'};
 ax.Title.String = 'Decoding Brain Response for Stimulus Orientation';
 
