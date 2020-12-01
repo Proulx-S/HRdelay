@@ -76,7 +76,7 @@ end
 
 %% Pseudomedian 
 
-figure('WindowStyle','docked');
+f = figure('WindowStyle','docked');
 y = cat(1,accSubj,groupE)';
 hb = bar(y);
 ylim([0 1])
@@ -91,7 +91,7 @@ heb(i) = errorbar(hb(i).XEndPoints,groupE,groupE-groupCI5,[],'.');
 heb(i).Marker = 'none';
 heb(i).LineWidth = lw;
 heb(i).CapSize = 0;
-heb(i).Color = 'w';
+heb(i).Color = 'r';
 % heb(i).Color = [1 1 1].*0.5;
 
 
@@ -117,17 +117,39 @@ for subjInd = 1:length(subjList)
 end
 subjInd = length(subjList)+1;
 x = hb(subjInd).XEndPoints;
-ht(subjInd,:) = text(x-barWidth*0.05,ones(size(spaceList)).*y,'median','Rotation',90,'VerticalAlignment','middle','HorizontalAlignment','left','FontSize',8,'Color','w');
+switch groupStatMethod
+    case 'pseudoMedian'
+        ht(subjInd,:) = text(x-barWidth*0.05,ones(size(spaceList)).*y,'median','Rotation',90,'VerticalAlignment','middle','HorizontalAlignment','left','FontSize',8,'Color','w');
+    case 'binomial'
+        ht(subjInd,:) = text(x-barWidth*0.05,ones(size(spaceList)).*y,'all participants','Rotation',90,'VerticalAlignment','middle','HorizontalAlignment','left','FontSize',8,'Color','w');
+    otherwise
+        error('x')
+end
 
-ax.YTick = 0:0.25:1;
-ax.YTickLabel = cellstr(num2str(ax.YTick'*100));
-ax.YLabel.String = {'Decoding Accuracy' '(%correct, with CI 5% lower bound)'};
+
+ax.YTick = 0:0.05:1;
+ax.YTickLabel = cellstr(num2str(ax.YTick'*100,'%3.0f%%'));
+ax.YLabel.String = {'Decoding Accuracy' '(CI 5% lower bound)'};
 ax.XLabel.String = {'Decoded Response Features'};
 ax.Title.String = 'Decoding Brain Response for Stimulus Orientation';
 
-ylim([0.25 0.75])
-ax.XGrid = 'off';
+tmp = findobj(ax.Children,'type','Text');
+for i = 1:length(tmp)
+    tmp(i).Position(2) = tmp(i).Position(2)+0.23-0.005;
+end
+ylim([0.23 0.75])
 ax.YGrid = 'on';
-ax.YMinorGrid = 'on';
+ax.Box = 'off';
+
+filename = fullfile(pwd,mfilename);
+if ~exist(filename,'dir'); mkdir(filename); end
+filename = fullfile(filename,'acc');
+f.Color = 'none';
+set(findobj(f.Children,'type','Axes'),'color','none')
+saveas(f,[filename '.svg']); disp([filename '.svg'])
+f.Color = 'w';
+set(findobj(f.Children,'type','Axes'),'color','w')
+saveas(f,filename); disp([filename '.fig'])
+
 
 

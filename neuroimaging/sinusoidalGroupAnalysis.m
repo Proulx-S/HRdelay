@@ -247,7 +247,7 @@ ylim([0 max(xData_rho(:)).*1.1])
 ax(spInd).PlotBoxAspectRatio = [0.2 1 1];
 box off
 disp('***')
-disp(['delay diff=' num2str(abs(diff(xDataMean_rho(:,[1 2]))),'%0.3fms')])
+disp(['delay diff=' num2str(abs(diff(xDataMean_rho(:,[1 2]))),'%0.3fs')])
 disp('***')
 
 filename = fullfile(pwd,mfilename);
