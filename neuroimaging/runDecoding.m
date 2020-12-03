@@ -5,10 +5,10 @@ if ~exist('SVMspace','var') || isempty(SVMspace)
     SVMspace = 'polMag'; % 'cart', 'cartReal', 'cartRealFixedDelay', 'cartImag', 'pol', 'polMag' or 'polDelay'
 end
 if ~exist('featSelType','var') || isempty(featSelType)
-    featSelType = 'respF_fdr'; % 'none', 'respF_p', 'respF_fdr', 'oriT_nVoxAsF' or 'oriT_p'
+    featSelType = 'respF_fdr'; % 'none', 'respF_p', 'respF_fdr', 'T2_nVoxAsF', 'oriT_nVoxAsF' or 'oriT_p'
 end
 switch featSelType
-    case {'none' 'respF_p' 'respF_fdr' 'oriT_nVoxAsF'}
+    case {'none' 'respF_p' 'respF_fdr' 'oriT_nVoxAsF' 'T2_nVoxAsF'}
         threshVal = 0.05;
     case {'oriT_p'}
         threshVal = 0.5;
@@ -71,6 +71,28 @@ for subjInd = 1:length(dP)
                 indTmp = dP{subjInd}.(['sess' num2str(sessInd)]).FDR<threshVal;
             case 'oriT_p'
                 error('codeThat')
+            case 'T2_nVoxAsF'
+                switch SVMspace
+                    case {'cart' 'pol' 'cartReal' 'cartImag' 'polMag' 'polDelay'}
+                        sz = size(dP{subjInd}.(['sess' num2str(sessInd)]).xData(:,:,1:2));
+                        stats = nan(1,sz(2));
+                        %                         y = zeros([sz(1) 1 sz(3)]);
+                        %                         y(:,:,1) = 1; y(:,:,2) = 2;
+                        parfor voxInd = 1:sz(2)
+                            x = cat(2,real(dP{subjInd}.(['sess' num2str(sessInd)]).xData(:,voxInd,1:2)),...
+                                imag(dP{subjInd}.(['sess' num2str(sessInd)]).xData(:,voxInd,1:2)));
+                            %                         x = cat(1,cat(2,y(:,:,1),x(:,:,1)),cat(2,y(:,:,2),x(:,:,2)));
+                            %                         stats = T2Hot2iho(x);
+                            x = cat(1,x(:,:,1),x(:,:,2));
+                            tmp = T2Hot2d(x);
+                            stats(voxInd) = tmp.T2;
+                        end
+                    otherwise
+                        error('x')
+                end
+                indTmp = false(size(dP{subjInd}.(['sess' num2str(sessInd)]).F));
+                [~,b] = sort(abs(stats),'descend');
+                indTmp(b(1:sum(dP{subjInd}.(['sess' num2str(sessInd)]).FDR<threshVal))) = true;
             case 'oriT_nVoxAsF'
                 switch SVMspace
                     case 'cart'

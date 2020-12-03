@@ -1,6 +1,6 @@
 function maskSinAndHrFit(fitType,threshType)
 noMovement = 1;
-actuallyRun = 0;
+actuallyRun = 1;
 plotAll = 0;
 if ~exist('fitType','var') || isempty(fitType)
     fitType = 'mixed'; % 'mixed' (different regressors for each run) or 'fixed' (different regressors for each session)

@@ -87,8 +87,8 @@ hold on
 
 i = length(hb);
 set(hb(i),'FaceColor',[1 1 1].*0)
-heb(i) = errorbar(hb(i).XEndPoints,groupE,groupE-groupCI5,[],'.');
-% heb(i) = errorbar(hb(i).XEndPoints,groupE,groupE-groupCI5,groupCI95-groupE,'.');
+% heb(i) = errorbar(hb(i).XEndPoints,groupE,groupE-groupCI5,[],'.');
+heb(i) = errorbar(hb(i).XEndPoints,groupE,groupE-groupCI5,groupCI95-groupE,'.');
 heb(i).Marker = 'none';
 heb(i).LineWidth = lw;
 heb(i).CapSize = 0;
@@ -98,8 +98,8 @@ heb(i).Color = 'r';
 
 for subjInd = 1:length(hb)-1
     set(hb(subjInd),'FaceColor',[1 1 1].*0.9)
-    heb(subjInd) = errorbar(hb(subjInd).XEndPoints,accSubj(subjInd,:),accSubj(subjInd,:)-accSubj5(subjInd,:),[],'.');
-%     heb(subjInd) = errorbar(hb(subjInd).XEndPoints,accSubj(subjInd,:),accSubj(subjInd,:)-accSubj5(subjInd,:),accSubj95(subjInd,:)-accSubj(subjInd,:),'.');
+%     heb(subjInd) = errorbar(hb(subjInd).XEndPoints,accSubj(subjInd,:),accSubj(subjInd,:)-accSubj5(subjInd,:),[],'.');
+    heb(subjInd) = errorbar(hb(subjInd).XEndPoints,accSubj(subjInd,:),accSubj(subjInd,:)-accSubj5(subjInd,:),accSubj95(subjInd,:)-accSubj(subjInd,:),'.');
     heb(subjInd).Marker = 'none';
     heb(subjInd).LineWidth = lw;
     heb(subjInd).CapSize = 0;

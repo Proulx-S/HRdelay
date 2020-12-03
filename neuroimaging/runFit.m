@@ -1,6 +1,6 @@
 function runFit
 
-actuallyRun = 0;
+actuallyRun = 1;
 noMovement = 1;
 
 if ismac
@@ -22,10 +22,10 @@ end
 % maskLabel = 'v1v2v3';
 maskLabel = 'v1';
 
-% subjList = {'07bj'};
-% subjStimList = {'bj'};
-subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'};
-subjStimList = {'jp' 'sk' 'sp' 'bm' 'sb' 'bj'};
+subjList = {'02jp'};
+subjStimList = {'jp'};
+% subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'};
+% subjStimList = {'jp' 'sk' 'sp' 'bm' 'sb' 'bj'};
 
 
 disp('Please get the data from the repo if not done already')
