@@ -73,7 +73,7 @@ for subjInd = 1:length(dP)
                 error('codeThat')
             case 'T2_nVoxAsF'
                 switch SVMspace
-                    case {'cart' 'pol' 'cartReal' 'cartImag' 'polMag' 'polDelay'}
+                    case {'cart' 'cartReal' 'cartImag'}
                         sz = size(dP{subjInd}.(['sess' num2str(sessInd)]).xData(:,:,1:2));
                         stats = nan(1,sz(2));
                         %                         y = zeros([sz(1) 1 sz(3)]);
@@ -85,6 +85,18 @@ for subjInd = 1:length(dP)
                             %                         stats = T2Hot2iho(x);
                             x = cat(1,x(:,:,1),x(:,:,2));
                             tmp = T2Hot2d(x);
+                            stats(voxInd) = tmp.T2;
+                        end
+                    case {'pol' 'polMag' 'polDelay'}
+                        sz = size(dP{subjInd}.(['sess' num2str(sessInd)]).xData(:,:,1:2));
+                        stats = nan(1,sz(2));
+                        x = dP{subjInd}.(['sess' num2str(sessInd)]).xData(:,:,1:2);
+                        parfor voxInd = 1:sz(2)
+                            x1 = abs(x(:,voxInd,:));
+                            x2 = angle(x(:,voxInd,:)); x2 = wrapToPi(x2-mean(x2(:)));
+                            xT2 = cat(2,x1,x2);
+                            xT2 = cat(1,xT2(:,:,1),xT2(:,:,2));
+                            tmp = T2Hot2d(xT2);
                             stats(voxInd) = tmp.T2;
                         end
                     otherwise
