@@ -1,8 +1,9 @@
 function hrGroupAnalysis(threshType)
-if ~exist('threshType','var')
+if ~exist('threshType','var') || isempty(threshType)
     threshType = 'fdr'; % 'none', 'p' or 'fdr'
 end
-% threshType = 'fdr';
+noMovement = 1;
+saveFig = 0;
 threshVal = 0.05;
 plotAllSubj = 0;
 
@@ -21,7 +22,12 @@ funPath = fullfile(repoPath,dataDir,'fun');
 funLevel = 'zHr';
 funLevelSin = 'zSin';
 subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'}';
-fileSuffix = '_maskSinAndHrFit.mat';
+% subjList = {'02jp' '03sk' '04sp'}';
+if noMovement
+    fileSuffix = '_maskSinAndHrFit_noMovement.mat';
+else
+    fileSuffix = '_maskSinAndHrFit.mat';
+end
 
 %make sure everything is forward slash for mac, linux pc compatibility
 for tmpPath = {'repoPath' 'dataDir' 'funPath'}
@@ -108,21 +114,29 @@ for subjInd = 1:length(subjList)
         legend(char({'ori1 +/-SEM' 'ori2 +/-SEM' 'plaid +/-SEM'}),'Location','south','box','off')
         suptitle(subjList{subjInd})
         
-        filename = fullfile(pwd,mfilename);
-        if ~exist(filename,'dir'); mkdir(filename); end
-        filename = fullfile(filename,[subjList{subjInd}]);
-        fSubj(subjInd).Color = 'none';
-        set(findobj(fSubj(subjInd).Children,'type','Axes'),'color','none')
-        saveas(fSubj(subjInd),[filename '.svg']); disp([filename '.svg'])
-        fSubj(subjInd).Color = 'w';
-        set(findobj(fSubj(subjInd).Children,'type','Axes'),'color','w')
-        saveas(fSubj(subjInd),filename); disp([filename '.fig'])
+        
+        if saveFig
+            filename = fullfile(pwd,mfilename);
+            if ~exist(filename,'dir'); mkdir(filename); end
+            filename = fullfile(filename,[subjList{subjInd}]);
+            fSubj(subjInd).Color = 'none';
+            set(findobj(fSubj(subjInd).Children,'type','Axes'),'color','none')
+            saveas(fSubj(subjInd),[filename '.svg']); disp([filename '.svg'])
+            fSubj(subjInd).Color = 'w';
+            set(findobj(fSubj(subjInd).Children,'type','Axes'),'color','w')
+            saveas(fSubj(subjInd),filename); disp([filename '.fig'])
+        end
     end
 end
 clear xData
 
 % Remove subjet effect
-sinData = load(fullfile(funPath,funLevelSin,'tmp.mat'),'xData','xDataInfo');
+try
+    sinData = load(fullfile(funPath,funLevelSin,'tmp.mat'),'xData','xDataInfo');
+catch
+    error('Need to run ''sinusoidalGroupAnalysis.m'' first.')
+end
+delete(fullfile(funPath,funLevelSin,'tmp.mat'));
 rhoGroup = abs(mean(mean(sinData.xData(:,1:3),2),1));
 thetaGroup = angle(mean(mean(sinData.xData(:,1:3),2),1));
 thetaShift = 0; % arbitrary delay (just removing thetaGroup gives phase=0)
@@ -251,16 +265,17 @@ title('Group Hemodynamic Response')
 ax = gca;
 uistack(findobj(ax.Children,'type','Text'),'top')
 
-filename = fullfile(pwd,mfilename);
-if ~exist(filename,'dir'); mkdir(filename); end
-filename = fullfile(filename,'group_HrFit');
-fGroup.Color = 'none';
-set(findobj(fGroup.Children,'type','Axes'),'color','none')
-saveas(fGroup,[filename '.svg']); disp([filename '.svg'])
-fGroup.Color = 'w';
-set(findobj(fGroup.Children,'type','Axes'),'color','w')
-saveas(fGroup,filename); disp([filename '.fig'])
-
+if saveFig
+    filename = fullfile(pwd,mfilename);
+    if ~exist(filename,'dir'); mkdir(filename); end
+    filename = fullfile(filename,'group_HrFit');
+    fGroup.Color = 'none';
+    set(findobj(fGroup.Children,'type','Axes'),'color','none')
+    saveas(fGroup,[filename '.svg']); disp([filename '.svg'])
+    fGroup.Color = 'w';
+    set(findobj(fGroup.Children,'type','Axes'),'color','w')
+    saveas(fGroup,filename); disp([filename '.fig'])
+end
 % rhoGroup
 % phi = thetaGroup/(2*pi)*12;
 % x = 0:0.01:18;

@@ -1,6 +1,6 @@
 function runFit
 
-actuallyRun = 1;
+actuallyRun = 0;
 noMovement = 1;
 
 if ismac
@@ -22,6 +22,8 @@ end
 % maskLabel = 'v1v2v3';
 maskLabel = 'v1';
 
+% subjList = {'07bj'};
+% subjStimList = {'bj'};
 subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'};
 subjStimList = {'jp' 'sk' 'sp' 'bm' 'sb' 'bj'};
 
@@ -42,8 +44,13 @@ if ~actuallyRun
     f = figure();
     
     subplot(1,16+25,25+(1:16))
-    load(fullfile(repo,funDir,outDir,subjList{subjInd},'v1SinCos_1perRun_move12.mat'),'results')
-    run1 = results.OLS.mixed.designmatrix(:,[1 2 67:80]);
+    if noMovement
+        load(fullfile(repo,funDir,outDir,subjList{subjInd},'v1SinCos_1perRun.mat'),'results')
+        run1 = results.OLS.mixed.designmatrix(:,[1 2 67:68]);
+    else
+        load(fullfile(repo,funDir,outDir,subjList{subjInd},'v1SinCos_1perRun_move12.mat'),'results')
+        run1 = results.OLS.mixed.designmatrix(:,[1 2 67:80]);
+    end
     imagesc(run1(any(run1,2),:)); colormap gray
     title('Sinusoidal Response');
     ax1 = gca; ax1.XTick = []; ax1.YTick = [];
@@ -62,8 +69,13 @@ if ~actuallyRun
     xWidth = ax1.Position(3);
     
     subplot(1,16+25,0+(1:25))
-    tmp = load(fullfile(repo,funDir,outDir,subjList{1},'v1resp_1perRun_move12_resp.mat'));
-    run1 = tmp.results.OLS.mixed.designmatrix(:,[1:12 397:409]);
+    if noMovement
+        tmp = load(fullfile(repo,funDir,outDir,subjList{1},'v1resp_1perRun_resp.mat'));
+        run1 = tmp.results.OLS.mixed.designmatrix(:,[1:12 397]);
+    else
+        tmp = load(fullfile(repo,funDir,outDir,subjList{1},'v1resp_1perRun_move12_resp.mat'));
+        run1 = tmp.results.OLS.mixed.designmatrix(:,[1:12 397:409]);
+    end
     imagesc(run1(any(run1,2),:)); colormap gray
     title('Model-Free Response');
     ax2 = gca; ax2.XTick = []; ax2.YTick = [];

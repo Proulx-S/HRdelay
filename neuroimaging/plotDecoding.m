@@ -1,5 +1,6 @@
 function plotDecoding(res)
 groupStatMethod = 'binomial'; % 'binomial' or 'pseudoMedian'
+saveFig = 1;
 
 lw = 1;
 spaceList = fields(res)';
@@ -84,7 +85,7 @@ hl = line(xlim,[1 1].*0.5,'color','k');
 uistack(hl,'bottom')
 hold on
 
-i = 7;
+i = length(hb);
 set(hb(i),'FaceColor',[1 1 1].*0)
 heb(i) = errorbar(hb(i).XEndPoints,groupE,groupE-groupCI5,[],'.');
 % heb(i) = errorbar(hb(i).XEndPoints,groupE,groupE-groupCI5,groupCI95-groupE,'.');
@@ -95,7 +96,7 @@ heb(i).Color = 'r';
 % heb(i).Color = [1 1 1].*0.5;
 
 
-for subjInd = 1:6
+for subjInd = 1:length(hb)-1
     set(hb(subjInd),'FaceColor',[1 1 1].*0.9)
     heb(subjInd) = errorbar(hb(subjInd).XEndPoints,accSubj(subjInd,:),accSubj(subjInd,:)-accSubj5(subjInd,:),[],'.');
 %     heb(subjInd) = errorbar(hb(subjInd).XEndPoints,accSubj(subjInd,:),accSubj(subjInd,:)-accSubj5(subjInd,:),accSubj95(subjInd,:)-accSubj(subjInd,:),'.');
@@ -107,6 +108,7 @@ end
 barWidth = (hb(2).XEndPoints(1) - hb(1).XEndPoints(1)) * hb(1).BarWidth;
 
 ax = gca;
+ax.XTick = 1:length(spaceList);
 ax.XTickLabel = spaceList;
 ax.TickLength = [0 0];
 
@@ -141,15 +143,16 @@ ylim([0.23 0.75])
 ax.YGrid = 'on';
 ax.Box = 'off';
 
-filename = fullfile(pwd,mfilename);
-if ~exist(filename,'dir'); mkdir(filename); end
-filename = fullfile(filename,'acc');
-f.Color = 'none';
-set(findobj(f.Children,'type','Axes'),'color','none')
-saveas(f,[filename '.svg']); disp([filename '.svg'])
-f.Color = 'w';
-set(findobj(f.Children,'type','Axes'),'color','w')
-saveas(f,filename); disp([filename '.fig'])
-
+if saveFig
+    filename = fullfile(pwd,mfilename);
+    if ~exist(filename,'dir'); mkdir(filename); end
+    filename = fullfile(filename,'acc');
+    f.Color = 'none';
+    set(findobj(f.Children,'type','Axes'),'color','none')
+    saveas(f,[filename '.svg']); disp([filename '.svg'])
+    f.Color = 'w';
+    set(findobj(f.Children,'type','Axes'),'color','w')
+    saveas(f,filename); disp([filename '.fig'])
+end
 
 

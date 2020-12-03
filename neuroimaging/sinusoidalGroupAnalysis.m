@@ -1,7 +1,8 @@
 function sinusoidalGroupAnalysis(threshType)
-if ~exist('threshType','var')
+if ~exist('threshType','var') || isempty(threshType)
     threshType = 'fdr'; % 'none', 'p' or 'fdr'
 end
+noMovement = 1;
 threshVal = 0.05;
 adjVoxDelay = 0;
 
@@ -20,7 +21,12 @@ dataDir = 'C-derived\DecodingHR';
 funPath = fullfile(repoPath,dataDir,'fun');
 funLevel = 'zSin';
 subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'}';
-fileSuffix = '_maskSinAndHrFit.mat';
+% subjList = {'02jp' '03sk' '04sp'}';
+if noMovement
+    fileSuffix = '_maskSinAndHrFit_noMovement.mat';
+else
+    fileSuffix = '_maskSinAndHrFit.mat';
+end
 
 %make sure everything is forward slash for mac, linux pc compatibility
 for tmpPath = {'repoPath' 'dataDir' 'funPath'}

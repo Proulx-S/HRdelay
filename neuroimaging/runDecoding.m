@@ -1,8 +1,10 @@
 function res = runDecoding(SVMspace,featSelType)
+noMovement = 1;
+
 if ~exist('SVMspace','var') || isempty(SVMspace)
     SVMspace = 'polMag'; % 'cart', 'cartReal', 'cartRealFixedDelay', 'cartImag', 'pol', 'polMag' or 'polDelay'
 end
-if ~exist('threshType','var') || isempty(featSelType)
+if ~exist('featSelType','var') || isempty(featSelType)
     featSelType = 'respF_fdr'; % 'none', 'respF_p', 'respF_fdr', 'oriT_nVoxAsF' or 'oriT_p'
 end
 switch featSelType
@@ -24,8 +26,13 @@ dataDir = 'C-derived\DecodingHR';
 funPath = fullfile(repoPath,dataDir,'fun');
 funLevel_in = 'zSin';
 funLevel_out = 'zSin/decoding';
+% subjList = {'02jp' '03sk' '04sp'}';
 subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'}';
-fileSuffix_in = '_maskSinAndHrFit.mat';
+if noMovement
+    fileSuffix_in = '_maskSinAndHrFit_noMovement.mat';
+else
+    fileSuffix_in = '_maskSinAndHrFit.mat';
+end
 fileSuffix_out = '_decoding.mat';
 
 %make sure everything is forward slash for mac, linux pc compatibility
@@ -55,9 +62,8 @@ dP2 = cell(size(dP));
 for subjInd = 1:length(dP)
     for sessInd = 1:2
         switch featSelType
-            % no voxel selection
-            case 'none'
-                % voxel selection cross-validated between sessions
+            % voxel selection cross-validated between sessions
+            case 'none' % no voxel selection
                 indTmp = true(size(dP{subjInd}.(['sess' num2str(sessInd)]).F));
             case 'respF_p'
                 indTmp = dP{subjInd}.(['sess' num2str(sessInd)]).P<threshVal;
@@ -69,21 +75,27 @@ for subjInd = 1:length(dP)
                 switch SVMspace
                     case 'cart'
                         error('codeThat')
+                        % should use HotellingT2.m
                     case 'cartReal'
-                        error('codeThat')
+                        x = real(dP{subjInd}.(['sess' num2str(sessInd)]).xData(:,:,1:2));
+                        [~,~,~,STATS] = ttest(x(:,:,1),x(:,:,2));
+                        stats = STATS.tstat;
                     case 'cartRealFixedDelay'
                         error('codeThat')
                     case 'cartImag'
-                        error('codeThat')
-                    case 'pol'
-                        x = dP{subjInd}.(['sess' num2str(sessInd)]).xData(:,:,1:2);
-                        statsCirc = nan([1 size(x,2)]);
-                        for voxInd = 1:size(x,2)
-                            [~, statsCirc(voxInd)] = circ_htest(angle(x(:,1,1)),angle(x(:,1,2)));
-                        end
+                        x = imag(dP{subjInd}.(['sess' num2str(sessInd)]).xData(:,:,1:2));
                         [~,~,~,STATS] = ttest(x(:,:,1),x(:,:,2));
                         stats = STATS.tstat;
-                        stats = cat(2,statsCirc,stats);
+                    case 'pol'
+                        % should use HotellingT2.m instead
+%                         x = dP{subjInd}.(['sess' num2str(sessInd)]).xData(:,:,1:2);
+%                         statsCirc = nan([1 size(x,2)]);
+%                         for voxInd = 1:size(x,2)
+%                             [~, statsCirc(voxInd)] = circ_htest(angle(x(:,1,1)),angle(x(:,1,2)));
+%                         end
+%                         [~,~,~,STATS] = ttest(abs(x(:,:,1)),abs(x(:,:,2)));
+%                         stats = STATS.tstat;
+%                         stats = cat(2,statsCirc,stats);
                     case 'polMag'
                         x = abs(dP{subjInd}.(['sess' num2str(sessInd)]).xData(:,:,1:2));
                         [~,~,~,STATS] = ttest(x(:,:,1),x(:,:,2));
@@ -92,7 +104,7 @@ for subjInd = 1:length(dP)
                         x = angle(dP{subjInd}.(['sess' num2str(sessInd)]).xData(:,:,1:2));
                         statsCirc = nan([1 size(x,2)]);
                         for voxInd = 1:size(x,2)
-                            [~, statsCirc(voxInd)] = circ_htest(angle(x(:,1,1)),angle(x(:,1,2)));
+                            [~, statsCirc(voxInd)] = circ_htest(angle(x(:,voxInd,1)),angle(x(:,voxInd,2)));
                         end
                         stats = statsCirc;
                     otherwise
@@ -200,7 +212,7 @@ for i = 1:numel(dP)
         end
         
         % runSVM
-        model = svmtrain(y(~te,:),x(~te,:),'-t 2 -q');
+        model = svmtrain(y(~te,:),x(~te,:),'-t 0 -q');
 %         w = model.sv_coef'*model.SVs;
 %         b = model.rho;
 %         yHat = cat(2,real(x(~te,:)),imag(x(~te,:)))*w';

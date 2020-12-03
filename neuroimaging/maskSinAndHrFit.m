@@ -1,10 +1,11 @@
 function maskSinAndHrFit(fitType,threshType)
+noMovement = 1;
 actuallyRun = 0;
 plotAll = 0;
-if ~exist('fitType','var')
+if ~exist('fitType','var') || isempty(fitType)
     fitType = 'mixed'; % 'mixed' (different regressors for each run) or 'fixed' (different regressors for each session)
 end
-if ~exist('threshType','var') % for plotting purpose only (does not affect data that is saved)
+if ~exist('threshType','var') || isempty(threshType) % for plotting purpose only (does not affect data that is saved)
     threshType = 'fdr'; % 'none', 'p' or 'fdr'
 end
 threshVal = 0.05;
@@ -24,9 +25,15 @@ funLevel1 = 'x';
 funLevel2 = 'y';
 funLevel3Sin = 'zSin';
 funLevel3Hr = 'zHr';
-sinFitFile = 'v1SinCos_1perRun_move12.mat';
-hrFitFile = 'v1resp_1perRun_move12_resp.mat';
+if noMovement
+    sinFitFile = 'v1SinCos_1perRun.mat';
+    hrFitFile = 'v1resp_1perRun_resp.mat';
+else
+    sinFitFile = 'v1SinCos_1perRun_move12.mat';
+    hrFitFile = 'v1resp_1perRun_move12_resp.mat';
+end
 subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'}';
+% subjList = {'02jp' '03sk' '04sp'}';
 
 %make sure everything is forward slash for mac, linux pc compatibility
 for tmpPath = {'repoPath' 'dataDir' 'anatPath' 'funPath'}
@@ -121,7 +128,7 @@ for subjInd = 1:length(subjList)
     if plotAll || subjInd==1
         sess = 'sess1';
         
-        f = figure('WindowStyle','docked');
+        fSubj = figure('WindowStyle','docked');
         ax1 = subplot(2,2,1);
         imagesc(brain(:,:,10)); colormap gray; axis off;
         ax1.PlotBoxAspectRatio = [1 1 1];
@@ -212,8 +219,16 @@ for subjInd = 1:length(subjList)
         ax4.XTick(ax4.XTick==0) = [];
         
         suptitle([subjList{subjInd} '; ' sess])
-        f.Color = 'none';
-        drawnow
+        
+        filename = fullfile(pwd,mfilename);
+        if ~exist(filename,'dir'); mkdir(filename); end
+        filename = fullfile(filename,[subjList{subjInd}]);
+        fSubj(subjInd).Color = 'none';
+        set(findobj(fSubj(subjInd).Children,'type','Axes'),'color','none')
+        saveas(fSubj(subjInd),[filename '.svg']); disp([filename '.svg'])
+        fSubj(subjInd).Color = 'w';
+        set(findobj(fSubj(subjInd).Children,'type','Axes'),'color','w')
+        saveas(fSubj(subjInd),filename); disp([filename '.fig'])
     end
     
     %% Stop here if not actually runing
@@ -290,8 +305,13 @@ for subjInd = 1:length(subjList)
         mkdir(fullfile(funPath,funLevel3Hr));
     end
     
-    save(fullfile(funPath,funLevel3Sin,[subjList{subjInd} '_' mfilename]),'d')
-    save(fullfile(funPath,funLevel3Hr,[subjList{subjInd} '_' mfilename]),'hr')
+    if noMovement
+        save(fullfile(funPath,funLevel3Sin,[subjList{subjInd} '_' mfilename '_noMovement']),'d')
+        save(fullfile(funPath,funLevel3Hr,[subjList{subjInd} '_' mfilename '_noMovement']),'hr')
+    else
+        save(fullfile(funPath,funLevel3Sin,[subjList{subjInd} '_' mfilename]),'d')
+        save(fullfile(funPath,funLevel3Hr,[subjList{subjInd} '_' mfilename]),'hr')
+    end
 end
 
 
