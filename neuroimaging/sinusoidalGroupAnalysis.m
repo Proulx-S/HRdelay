@@ -1,6 +1,6 @@
 function sinusoidalGroupAnalysis(threshType)
 if ~exist('threshType','var') || isempty(threshType)
-    threshType = 'fdr'; % 'none', 'p' or 'fdr'
+    threshType = 'p'; % 'none', 'p' or 'fdr'
 end
 noMovement = 1;
 threshVal = 0.05;
