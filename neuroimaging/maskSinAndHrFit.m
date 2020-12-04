@@ -1,10 +1,10 @@
 function maskSinAndHrFit(fitType,threshType)
 noMovement = 1;
-actuallyRun = 0;
+actuallyRun = 1;
 saveFig = 0;
 plotAllSubj = 0;
 if ~exist('fitType','var') || isempty(fitType)
-    fitType = 'fixed'; % 'mixed' (different regressors for each run) or 'fixed' (different regressors for each session)
+    fitType = 'mixed'; % 'mixed' (different regressors for each run) or 'fixed' (different regressors for each session)
 end
 if ~exist('threshType','var') || isempty(threshType) % for plotting purpose only (does not affect data that is saved)
     threshType = 'p'; % 'none', 'p' or 'fdr'
@@ -251,11 +251,13 @@ for subjInd = 1:length(subjList)
     % sin responses
     sz = size(data);
     dataX = nan(sz(4),sum(maskAnat(maskFit)));
+    runLabelX = nan(sz(4),1);
     for runInd = 1:sz(4)
         curData = data(:,:,:,runInd);
         tmp = false(size(curData));
         tmp(:) = maskAnat(maskFit);
         dataX(runInd,:) = curData(tmp);
+        runLabelX(runInd,1) = results.inputs.opt.runLabel{runInd};
     end
     % stats
     list = {'F' 'FDR' 'P'};
@@ -287,10 +289,15 @@ for subjInd = 1:length(subjList)
             d.(['sess' num2str(sessInd)]).xData(:,:,condInd) = dataX(sessLabel==sessInd & condLabel==condInd,:);
         end
         d.(['sess' num2str(sessInd)]).info = '%BOLD: run x vox x cond[ori1, ori2, plaid]';
+        d.(['sess' num2str(sessInd)]).runLabel = nan(sum(sessLabel==sessInd)/3,1,3);
+        for condInd = 1:3
+            d.(['sess' num2str(sessInd)]).runLabel(:,:,condInd) = runLabelX(sessLabel==sessInd & condLabel==condInd,1);
+        end
         for i = 1:3
             d.(['sess' num2str(sessInd)]).(list{i}) = stats.(list{i}).(['sess' num2str(sessInd)]);
         end
     end
+    d.sess2.runLabel = d.sess2.runLabel - min(d.sess2.runLabel(:)) + 1;
     
     
     % new = cat(1,d.(sess).xData(:,:,1),d.(sess).xData(:,:,2),d.(sess).xData(:,:,3));

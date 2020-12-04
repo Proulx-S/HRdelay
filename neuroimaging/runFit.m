@@ -22,10 +22,10 @@ end
 % maskLabel = 'v1v2v3';
 maskLabel = 'v1';
 
-subjList = {'02jp'};
-subjStimList = {'jp'};
-% subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'};
-% subjStimList = {'jp' 'sk' 'sp' 'bm' 'sb' 'bj'};
+% subjList = {'02jp'};
+% subjStimList = {'jp'};
+subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'};
+subjStimList = {'jp' 'sk' 'sp' 'bm' 'sb' 'bj'};
 
 
 disp('Please get the data from the repo if not done already')
@@ -116,7 +116,7 @@ for smLevel = {''}
 %         try
             
             %% Get data and design
-            clearvars -except tstart mask subjInd smLevel subjStimList subjList maskLabel matFun repo funDir anatDir stimDir inDir outDir noMovement
+            clearvars -except tstart mask subjInd smLevel subjStimList subjList maskLabel matFun repo funDir anatDir stimDir inDir outDir noMovement runInd
             subj = subjList{subjInd}; subjStim = subjStimList{subjInd};
             
             switch getenv('OS')
@@ -184,10 +184,11 @@ for smLevel = {''}
             data = cell(3,length(files)/3);
             design = cell(3,length(files)/3);
             extraRegr = cell(3,length(files)/3);
+            runInd = nan(3,length(files)/3);
             labelList = [45 135 999];
             condCount = zeros(1,3);
             for cond = 1:3
-                clearvars -except tstart mask subjInd subjList subjStimList smLevel subj funData_folderIN funData_folderOUT labelDir files label labelList cond sessionLabel data design extraRegr labelList curLabel condCount sessionLabel maskLabel matFun repo funDir anatDir stimDir inDir outDir noMovement
+                clearvars -except tstart mask subjInd subjList subjStimList smLevel subj funData_folderIN funData_folderOUT labelDir files label labelList cond sessionLabel data design extraRegr labelList curLabel condCount sessionLabel maskLabel matFun repo funDir anatDir stimDir inDir outDir noMovement runInd
                 close all
                 curLabel = labelList(cond);
                 
@@ -197,6 +198,7 @@ for smLevel = {''}
                         condCount(curLabel==labelList) = condCount(curLabel==labelList)+1;
                         curInd1 = cond;
                         curInd2 = condCount(curLabel==labelList);
+                        runInd(curInd1,curInd2) = i;
                         display(['Loading condition ' num2str(cond) '; run ' num2str(curInd2) '; ' subjList{subjInd}])
                         %Load data
                         nDataPtsToCensor = 12;
@@ -240,7 +242,7 @@ for smLevel = {''}
             fprintf('The sampling rate (TR) is %.6f seconds.\n',tr);
             
             
-            clearvars -except tstart mask subjInd smLevel subjStimList subjList subj funData_folderIN funData_folderOUT labelDir data design extraRegr sessionLabel sessModel stimdur tr maskLabel repo funDir anatDir stimDir inDir outDir noMovement
+            clearvars -except tstart mask subjInd smLevel subjStimList subjList subj funData_folderIN funData_folderOUT labelDir data design extraRegr sessionLabel sessModel stimdur tr maskLabel repo funDir anatDir stimDir inDir outDir noMovement runInd
             %% GLMdenoise on all sessions (not split)
             % - - - - - - - - - -
             % o x ------------
@@ -252,11 +254,13 @@ for smLevel = {''}
             splitDesign = design;
             splitExtraRegr = extraRegr;
             splitSessionLabel = sessionLabel;
+            splitRunInd = num2cell(runInd);
             
             splitData = cat(2,splitData(1,:),splitData(2,:),splitData(3,:)); splitData(cellfun('isempty',splitData)) = [];
             splitDesign = cat(2,splitDesign(1,:),splitDesign(2,:),splitDesign(3,:)); splitDesign(cellfun('isempty',splitDesign)) = [];
             splitExtraRegr = cat(2,splitExtraRegr(1,:),splitExtraRegr(2,:),splitExtraRegr(3,:)); splitExtraRegr(cellfun('isempty',splitExtraRegr)) = [];
             splitSessionLabel = cat(2,splitSessionLabel(1,:),splitSessionLabel(2,:),splitSessionLabel(3,:)); splitSessionLabel(cellfun('isempty',splitSessionLabel)) = [];
+            splitRunInd = cat(2,splitRunInd(1,:),splitRunInd(2,:),splitRunInd(3,:)); splitRunInd(cellfun('isempty',splitRunInd)) = [];
             
             splitRun_tmp = cell(length(splitData),splitIn);
             splitInd_tmp = cell(length(splitData),splitIn);
@@ -264,6 +268,7 @@ for smLevel = {''}
             splitDesign_tmp = cell(length(splitData),splitIn);
             splitExtraRegr_tmp = cell(length(splitData),splitIn);
             splitSessionLabel_tmp = cell(length(splitData),splitIn);
+            splitRunInd_tmp = cell(length(splitData),splitIn);
             for i = 1:length(splitData)
                 %remove another cycle at the begining, keep the end
                 splitData{i}(:,:,:,1:12) = [];
@@ -277,6 +282,7 @@ for smLevel = {''}
                     splitDesign_tmp{i,ii} = splitDesign{i}(splitInd_tmp{i,ii});
                     splitExtraRegr_tmp{i,ii} = splitExtraRegr{i}(splitInd_tmp{i,ii},:);
                     splitSessionLabel_tmp{i,ii} = splitSessionLabel{i};
+                    splitRunInd_tmp{i,ii} = splitRunInd{i};
                 end
             end
             splitRun = cell(1,numel(splitRun_tmp));
@@ -285,6 +291,7 @@ for smLevel = {''}
             splitDesign = cell(1,numel(splitDesign_tmp));
             splitExtraRegr = cell(1,numel(splitExtraRegr_tmp));
             splitSessionLabel = cell(1,numel(splitSessionLabel_tmp));
+            splitRunInd = cell(1,numel(splitRunInd_tmp));
             for ii = 1:splitIn
                 splitRun(ii:splitIn:numel(splitRun_tmp)) = splitRun_tmp(:,ii);
                 splitInd(ii:splitIn:numel(splitInd_tmp)) = splitInd_tmp(:,ii);
@@ -292,8 +299,10 @@ for smLevel = {''}
                 splitDesign(ii:splitIn:numel(splitDesign_tmp)) = splitDesign_tmp(:,ii);
                 splitExtraRegr(ii:splitIn:numel(splitExtraRegr_tmp)) = splitExtraRegr_tmp(:,ii);
                 splitSessionLabel(ii:splitIn:length(splitDesign)) = splitSessionLabel_tmp(:,ii);
+                splitRunInd(ii:splitIn:length(splitDesign)) = splitRunInd_tmp(:,ii);
             end
-            clearvars -except tstart mask subjInd smLevel subjStimList subjList subj funData_folderIN funData_folderOUT labelDir data design extraRegr sessionLabel sessModel splitDesign splitData splitIn splitExtraRegr splitSessionLabel stimdur tr maskLabel repo funDir anatDir stimDir inDir outDir noMovement
+            clearvars -except tstart mask subjInd smLevel subjStimList subjList subj funData_folderIN funData_folderOUT labelDir data design extraRegr sessionLabel sessModel splitDesign splitData splitIn splitExtraRegr splitSessionLabel stimdur tr maskLabel repo funDir anatDir stimDir inDir outDir noMovement runInd splitRunInd
+            
             
             if noMovement
                 ana = 'resp';
@@ -308,6 +317,7 @@ for smLevel = {''}
                 [results,dataDetrend] = GLMsinCos5(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'splitedIn',splitIn),splitIn);
                 results.OLS.mixed = resultsTmp.OLS.mixed; clear resultsTmp
                 results.mask = mask;
+                results.inputs.opt.runLabel = splitRunInd;
                 save([outName '.mat'],'results','-v7.3');
             else
                 ana = 'resp';
@@ -322,6 +332,7 @@ for smLevel = {''}
                 [results,dataDetrend] = GLMsinCos5(splitDesign,splitData,stimdur,tr,ana,[],struct('extraregressors',{splitExtraRegr},'sessionLabel',{splitSessionLabel},'splitedIn',splitIn),splitIn);
                 results.OLS.mixed = resultsTmp.OLS.mixed; clear resultsTmp
                 results.mask = mask;
+                results.inputs.opt.runLabel = splitRunInd;
                 save([outName '.mat'],'results','-v7.3');
             end
 

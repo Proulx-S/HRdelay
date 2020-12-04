@@ -1,11 +1,11 @@
-function res = runDecoding(SVMspace,featSelType)
+function res = runDecoding(SVMspace,featSelType,exclusion)
 noMovement = 1;
 
 if ~exist('SVMspace','var') || isempty(SVMspace)
-    SVMspace = 'polMag'; % 'cart', 'cartReal', 'cartRealFixedDelay', 'cartImag', 'pol', 'polMag' or 'polDelay'
+    SVMspace = 'cartReal'; % 'cart', 'cartReal', 'cartRealFixedDelay', 'cartImag', 'pol', 'polMag' or 'polDelay'
 end
 if ~exist('featSelType','var') || isempty(featSelType)
-    featSelType = 'respF_fdr'; % 'none', 'respF_p', 'respF_fdr', 'T2_nVoxAsF', 'oriT_nVoxAsF' or 'oriT_p'
+    featSelType = 'respF_p'; % 'none', 'respF_p', 'respF_fdr', 'T2_nVoxAsF', 'oriT_nVoxAsF' or 'oriT_p'
 end
 switch featSelType
     case {'none' 'respF_p' 'respF_fdr' 'oriT_nVoxAsF' 'T2_nVoxAsF'}
@@ -54,6 +54,15 @@ for subjInd = 1:size(subjList,1)
     dAll{subjInd} = d;
 end
 d = dAll; clear dAll
+
+%% Exclude
+if exist('exclusion','var') && ~isempty(exclusion) && ~isempty(exclusion.subj)
+    for i = 1:length(exclusion.subj)
+        d{exclusion.subj(i)}.(['sess' num2str(i)]).xData(exclusion.run,:,:) = [];
+        d{exclusion.subj(i)}.(['sess' num2str(i)]).runLabel(exclusion.run,:,:) = [];
+    end
+end
+
 
 %% Pipe data
 % Threshold and average voxels in cartesian space

@@ -4,7 +4,7 @@ saveFig = 0;
 
 plotUpperErrorBar = 0;
 lw = 1;
-yLim = [22 90]./100;
+yLim = [12 75]./100;
 % yLim = 'auto';
 
 spaceList = fields(res)';
@@ -21,7 +21,7 @@ for spaceInd = 1:length(spaceList)
     nObs(end+1) = sum(nObs,1);
     p = binocdf(acc.*nObs,nObs,0.5,'upper');
     [P,~,STATS] = signrank(acc(1:end-1),0.5,'tail','right');
-    [~,pci] = binofit(round(acc.*nObs)+1,nObs,0.1);
+    [~,pci] = binofit(round(acc.*nObs),nObs,0.1);
 %     [~,pci] = binofit(acc.*nObs,nObs,0.05);
     
     accGroup(:,spaceInd) = acc(end);
@@ -38,10 +38,11 @@ for spaceInd = 1:length(spaceList)
     signedrank(1,spaceInd) = STATS.signedrank; clear STATS
     signedrankP(1,spaceInd) = P; clear P
 end
+disp(spaceList)
 disp(['signedrank   = ' num2str(signedrank,'%0.2f  ')])
-disp(['signedrank p = ' num2str(signedrankP,'%0.3f  ')])
+disp(['signedrank p = ' num2str(signedrankP,'%0.4f  ')])
 disp(['group accuracy  = ' num2str(accGroup*100,'%0.2f%%  ')])
-disp(['binomial   p    = ' num2str(pGroup,'%0.3f   ')])
+disp(['binomial   p    = ' num2str(pGroup,'%0.4f   ')])
 
 %% Group stats
 switch groupStatMethod

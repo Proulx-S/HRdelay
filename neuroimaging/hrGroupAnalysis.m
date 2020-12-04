@@ -1,6 +1,6 @@
-function hrGroupAnalysis(threshType)
+function hrGroupAnalysis(threshType,exclusion)
 if ~exist('threshType','var') || isempty(threshType)
-    threshType = 'fdr'; % 'none', 'p' or 'fdr'
+    threshType = 'p'; % 'none', 'p' or 'fdr'
 end
 noMovement = 1;
 threshVal = 0.05;
@@ -63,10 +63,19 @@ for subjInd = 1:size(subjList,1)
             error('X')
     end
 end
+
 hr = hrAll; clear dAll
 if ~strcmp(threshType,'none')
     dForThresh = dForThreshAll; clear dForThreshAll
 end
+
+%% Exclude
+if exist('exclusion','var') && ~isempty(exclusion) && ~isempty(exclusion.subj)
+    for i = 1:length(exclusion.subj)
+        hr{exclusion.subj(i)}.(['sess' num2str(i)])(exclusion.run,:,:,:) = [];
+    end
+end
+
 %% Process data
 % Average voxels
 hrP = hr;

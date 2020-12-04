@@ -1,4 +1,4 @@
-function sinusoidalGroupAnalysis(threshType)
+function exclusion = sinusoidalGroupAnalysis(threshType)
 if ~exist('threshType','var') || isempty(threshType)
     threshType = 'p'; % 'none', 'p' or 'fdr'
 end
@@ -105,6 +105,74 @@ for subjInd = 1:length(dP)
     rLim(subjInd) = max(abs([dP{subjInd}.sess1.xData(:); dP{subjInd}.sess2.xData(:)]));
 end
 
+% Show scanner trigger problem
+clear tmp tmp1 tmp2 tmpData
+figure('WindowStyle','docked');
+sz = 0;
+for subjInd = 1:length(subjList)
+    tmp = size(dP{subjInd}.sess1.xData,1);
+    if tmp>sz; sz = tmp; end
+    tmpData(subjInd,1) = circ_mean(angle(dP{subjInd}.sess1.xData(:)));
+    tmpData(subjInd,2) = circ_mean(angle(dP{subjInd}.sess2.xData(:)));
+end
+
+for subjInd = 1:length(subjList)
+    tmp1 = squeeze(dP{subjInd}.sess1.xData)';
+    tmpInd = squeeze(dP{subjInd}.sess1.runLabel)';
+    tmp1 = tmp1(tmpInd);
+    tmp1 = tmp1(:);
+    tmp1 = angle(tmp1);
+    tmp1 = wrapToPi(tmp1-circ_mean(tmp1));
+    
+    tmp2 = squeeze(dP{subjInd}.sess2.xData)';
+    tmpInd = squeeze(dP{subjInd}.sess2.runLabel)';
+    tmp2 = tmp2(tmpInd);
+    tmp2 = tmp2(:);
+    tmp2 = angle(tmp2);
+    tmp2 = wrapToPi(tmp2-circ_mean(tmp2));
+    
+    tmp = cat(1,tmp1,nan(sz*3-length(tmp1)+1,1),tmp2);
+%     tmp = wrapToPi(tmp-circ_mean(tmp(~isnan(tmp))));
+    
+%     tmp = wrapToPi(tmp + circ_mean(tmpData(:)));
+    
+    hp(subjInd) = plot(tmp,'-o'); hold on
+end
+TR = 1;
+stimCycleLength = 12;
+TRrad = TR/stimCycleLength*(2*pi);
+ax = gca;
+yTickRad = -pi:TRrad:pi;
+yTickSec = yTickRad/(2*pi)*stimCycleLength;
+ax.YTick = yTickRad;
+ax.YTickLabel = num2str(yTickSec');
+ylim([yTickRad(1) yTickRad(end)])
+ax.YGrid = 'on';
+xlabel({'Functional runs' 'in order of acquisition'})
+ylabel('TRs');
+legend(char([subjList; {'1TR'}]))
+
+% Exclude
+subjInd = 2;
+sessInd = 1;
+dataTmp = angle(dP{subjInd}.(['sess' num2str(sessInd)]).xData);
+dataTmp = wrapToPi(dataTmp - circ_mean(dataTmp));
+dataTmp = abs(dataTmp);
+a = max(dataTmp(:),[],1);
+[runInd,condInd] = find(squeeze(dataTmp)==a);
+exclusion.subj = subjInd;
+exclusion.sess = sessInd;
+exclusion.run = runInd;
+exclusion.cond = condInd;
+
+if exist('exclusion','var') && ~isempty(exclusion) && ~isempty(exclusion.subj)
+    for i = 1:length(exclusion.subj)
+        dP{exclusion.subj(i)}.(['sess' num2str(i)]).xData(exclusion.run,:,:) = [];
+        dP{exclusion.subj(i)}.(['sess' num2str(i)]).runLabel(exclusion.run,:,:) = [];
+    end
+end
+
+
 % Plot single subjects
 for subjInd = 1:length(subjList)
     if plotAllSubj || subjInd==1
@@ -155,6 +223,7 @@ for subjInd = 1:length(subjList)
         end
     end
 end
+
 
 % Average runs in cartesian space
 condList = {'ori1' 'ori2' 'plaid'};
