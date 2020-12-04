@@ -4,10 +4,10 @@ actuallyRun = 0;
 saveFig = 0;
 plotAllSubj = 0;
 if ~exist('fitType','var') || isempty(fitType)
-    fitType = 'mixed'; % 'mixed' (different regressors for each run) or 'fixed' (different regressors for each session)
+    fitType = 'fixed'; % 'mixed' (different regressors for each run) or 'fixed' (different regressors for each session)
 end
 if ~exist('threshType','var') || isempty(threshType) % for plotting purpose only (does not affect data that is saved)
-    threshType = 'fdr'; % 'none', 'p' or 'fdr'
+    threshType = 'p'; % 'none', 'p' or 'fdr'
 end
 threshVal = 0.05;
 warning('off','images:imshow:magnificationMustBeFitForDockedFigure');
