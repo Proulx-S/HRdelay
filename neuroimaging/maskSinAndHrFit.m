@@ -1,7 +1,8 @@
 function maskSinAndHrFit(fitType,threshType)
 noMovement = 1;
-actuallyRun = 1;
-plotAll = 0;
+actuallyRun = 0;
+saveFig = 0;
+plotAllSubj = 0;
 if ~exist('fitType','var') || isempty(fitType)
     fitType = 'mixed'; % 'mixed' (different regressors for each run) or 'fixed' (different regressors for each session)
 end
@@ -125,10 +126,10 @@ for subjInd = 1:length(subjList)
     end
     
     %% Plot masking
-    if plotAll || subjInd==1
+    if plotAllSubj || subjInd==1
         sess = 'sess1';
         
-        fSubj = figure('WindowStyle','docked');
+        fSubj(subjInd) = figure('WindowStyle','docked');
         ax1 = subplot(2,2,1);
         imagesc(brain(:,:,10)); colormap gray; axis off;
         ax1.PlotBoxAspectRatio = [1 1 1];
@@ -186,8 +187,8 @@ for subjInd = 1:length(subjList)
                 axCB.YAxis.Label.String = {'F' ['FDR<' num2str(threshVal,'%0.2f')]};
             end
         end
-        axCB.YAxis.Label.Rotation = 0;
-        axCB.YAxis.Label.VerticalAlignment = 'middle';
+        axCB.YAxis.Label.Rotation = 90;
+        axCB.YAxis.Label.VerticalAlignment = 'top';
         axCB.YAxis.Label.HorizontalAlignment = 'center';
         
         ax3.Title.String = 'Visual Activation';
@@ -220,15 +221,17 @@ for subjInd = 1:length(subjList)
         
         suptitle([subjList{subjInd} '; ' sess])
         
-        filename = fullfile(pwd,mfilename);
-        if ~exist(filename,'dir'); mkdir(filename); end
-        filename = fullfile(filename,[subjList{subjInd}]);
-        fSubj(subjInd).Color = 'none';
-        set(findobj(fSubj(subjInd).Children,'type','Axes'),'color','none')
-        saveas(fSubj(subjInd),[filename '.svg']); disp([filename '.svg'])
-        fSubj(subjInd).Color = 'w';
-        set(findobj(fSubj(subjInd).Children,'type','Axes'),'color','w')
-        saveas(fSubj(subjInd),filename); disp([filename '.fig'])
+        if saveFig
+            filename = fullfile(pwd,mfilename);
+            if ~exist(filename,'dir'); mkdir(filename); end
+            filename = fullfile(filename,[subjList{subjInd}]);
+            fSubj(subjInd).Color = 'none';
+            set(findobj(fSubj(subjInd).Children,'type','Axes'),'color','none')
+            saveas(fSubj(subjInd),[filename '.svg']); disp([filename '.svg'])
+            fSubj(subjInd).Color = 'w';
+            set(findobj(fSubj(subjInd).Children,'type','Axes'),'color','w')
+            saveas(fSubj(subjInd),filename); disp([filename '.fig'])
+        end
     end
     
     %% Stop here if not actually runing

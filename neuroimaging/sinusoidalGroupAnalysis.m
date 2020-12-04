@@ -5,6 +5,8 @@ end
 noMovement = 1;
 threshVal = 0.05;
 adjVoxDelay = 0;
+plotAllSubj = 0;
+saveFig = 0;
 
 %colors
 colors = [  0         0.4470    0.7410
@@ -104,9 +106,8 @@ for subjInd = 1:length(dP)
 end
 
 % Plot single subjects
-plotAll = 0;
 for subjInd = 1:length(subjList)
-    if plotAll || subjInd==1
+    if plotAllSubj || subjInd==1
         fSubj(subjInd) = figure('WindowStyle','docked');
         for sessInd = 1:2
             subplot(1,2,sessInd)
@@ -139,17 +140,19 @@ for subjInd = 1:length(subjList)
         hl.Color = 'none';
         hl.Box = 'off';
         
-        filename = fullfile(pwd,mfilename);
-        if ~exist(filename,'dir'); mkdir(filename); end
-        filename = fullfile(filename,subjList{subjInd});
-        fSubj(subjInd).Color = 'none';
-        set(findobj(fSubj(subjInd).Children,'type','Axes'),'color','none')
-        set(findobj(fSubj(subjInd).Children,'type','PolarAxes'),'color','none')
-        saveas(fSubj(subjInd),[filename '.svg']); disp([filename '.svg'])
-        fSubj(subjInd).Color = 'w';
-        set(findobj(fSubj(subjInd).Children,'type','Axes'),'color','w')
-        set(findobj(fSubj(subjInd).Children,'type','PolarAxes'),'color','w')
-        saveas(fSubj(subjInd),filename); disp([filename '.fig'])
+        if saveFig
+            filename = fullfile(pwd,mfilename);
+            if ~exist(filename,'dir'); mkdir(filename); end
+            filename = fullfile(filename,subjList{subjInd});
+            fSubj(subjInd).Color = 'none';
+            set(findobj(fSubj(subjInd).Children,'type','Axes'),'color','none')
+            set(findobj(fSubj(subjInd).Children,'type','PolarAxes'),'color','none')
+            saveas(fSubj(subjInd),[filename '.svg']); disp([filename '.svg'])
+            fSubj(subjInd).Color = 'w';
+            set(findobj(fSubj(subjInd).Children,'type','Axes'),'color','w')
+            set(findobj(fSubj(subjInd).Children,'type','PolarAxes'),'color','w')
+            saveas(fSubj(subjInd),filename); disp([filename '.fig'])
+        end
     end
 end
 
@@ -202,18 +205,19 @@ ax.ThetaAxis.Label.HorizontalAlignment = 'left';
 ax.RAxis.Label.String = 'amp (%BOLD)';
 ax.RAxis.Label.Rotation = 80;
 
-filename = fullfile(pwd,mfilename);
-if ~exist(filename,'dir'); mkdir(filename); end
-filename = fullfile(filename,'group');
-fGroup(1).Color = 'none';
-set(findobj(fGroup(1).Children,'type','Axes'),'color','none')
-set(findobj(fGroup(1).Children,'type','PolarAxes'),'color','none')
-saveas(fGroup(1),[filename '.svg']); disp([filename '.svg'])
-fGroup(1).Color = 'w';
-set(findobj(fGroup(1).Children,'type','Axes'),'color','w')
-set(findobj(fGroup(1).Children,'type','PolarAxes'),'color','w')
-saveas(fGroup(1),filename); disp([filename '.fig'])
-
+if saveFig
+    filename = fullfile(pwd,mfilename);
+    if ~exist(filename,'dir'); mkdir(filename); end
+    filename = fullfile(filename,'group');
+    fGroup(1).Color = 'none';
+    set(findobj(fGroup(1).Children,'type','Axes'),'color','none')
+    set(findobj(fGroup(1).Children,'type','PolarAxes'),'color','none')
+    saveas(fGroup(1),[filename '.svg']); disp([filename '.svg'])
+    fGroup(1).Color = 'w';
+    set(findobj(fGroup(1).Children,'type','Axes'),'color','w')
+    set(findobj(fGroup(1).Children,'type','PolarAxes'),'color','w')
+    saveas(fGroup(1),filename); disp([filename '.fig'])
+end
 
 % Polar space
 xData_theta = -angle(xData)./pi*6;
@@ -256,16 +260,17 @@ disp('***')
 disp(['delay diff=' num2str(abs(diff(xDataMean_rho(:,[1 2]))),'%0.3fs')])
 disp('***')
 
-filename = fullfile(pwd,mfilename);
-if ~exist(filename,'dir'); mkdir(filename); end
-filename = fullfile(filename,'groupAmp');
-fGroup(2).Color = 'none';
-set(findobj(fGroup(2).Children,'type','Axes'),'color','none')
-saveas(fGroup(2),[filename '.svg']); disp([filename '.svg'])
-fGroup(2).Color = 'w';
-set(findobj(fGroup(2).Children,'type','Axes'),'color','w')
-saveas(fGroup(2),filename); disp([filename '.fig'])
-
+if saveFig
+    filename = fullfile(pwd,mfilename);
+    if ~exist(filename,'dir'); mkdir(filename); end
+    filename = fullfile(filename,'groupAmp');
+    fGroup(2).Color = 'none';
+    set(findobj(fGroup(2).Children,'type','Axes'),'color','none')
+    saveas(fGroup(2),[filename '.svg']); disp([filename '.svg'])
+    fGroup(2).Color = 'w';
+    set(findobj(fGroup(2).Children,'type','Axes'),'color','w')
+    saveas(fGroup(2),filename); disp([filename '.fig'])
+end
 
 fGroup(3) = figure('WindowStyle','docked');
 [ax, pos] = tight_subplot(2, 1,[0],[0.1 0],[0.1 0]);
@@ -298,16 +303,17 @@ xlim([0 max(xData_theta(:)).*1.1])
 ax(spInd).PlotBoxAspectRatio = [1 0.2 1];
 box off
 
-filename = fullfile(pwd,mfilename);
-if ~exist(filename,'dir'); mkdir(filename); end
-filename = fullfile(filename,'groupDelay');
-fGroup(3).Color = 'none';
-set(findobj(fGroup(3).Children,'type','Axes'),'color','none')
-saveas(fGroup(3),[filename '.svg']); disp([filename '.svg'])
-fGroup(3).Color = 'w';
-set(findobj(fGroup(3).Children,'type','Axes'),'color','w')
-saveas(fGroup(3),filename); disp([filename '.fig'])
-
+if saveFig
+    filename = fullfile(pwd,mfilename);
+    if ~exist(filename,'dir'); mkdir(filename); end
+    filename = fullfile(filename,'groupDelay');
+    fGroup(3).Color = 'none';
+    set(findobj(fGroup(3).Children,'type','Axes'),'color','none')
+    saveas(fGroup(3),[filename '.svg']); disp([filename '.svg'])
+    fGroup(3).Color = 'w';
+    set(findobj(fGroup(3).Children,'type','Axes'),'color','w')
+    saveas(fGroup(3),filename); disp([filename '.fig'])
+end
 
 %% Stats
 % On cartesian space (conservative)

@@ -3,8 +3,8 @@ if ~exist('threshType','var') || isempty(threshType)
     threshType = 'fdr'; % 'none', 'p' or 'fdr'
 end
 noMovement = 1;
-saveFig = 0;
 threshVal = 0.05;
+saveFig = 0;
 plotAllSubj = 0;
 
 %colors
