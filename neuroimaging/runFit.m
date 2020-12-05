@@ -2,6 +2,7 @@ function runFit
 
 actuallyRun = 0;
 noMovement = 1;
+saveFig = 0;
 
 if ismac
     repo = '/Users/sebastienproulx/OneDrive - McGill University/dataBig';
@@ -103,8 +104,10 @@ if ~actuallyRun
 %     ax2.XAxis.Label.Position(2) = ax1.XAxis.Label.Position(2);
 %     drawnow
     
-    saveas(f,fullfile(repo,funDir,outDir,'designMatrices'))
-    disp(fullfile(repo,funDir,outDir,'designMatrices.fig'))
+    if saveFig
+        saveas(f,fullfile(repo,funDir,outDir,'designMatrices'))
+        disp(fullfile(repo,funDir,outDir,'designMatrices.fig'))
+    end
     return
 end
 

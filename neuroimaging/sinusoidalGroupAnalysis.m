@@ -325,9 +325,6 @@ ax(spInd).XTickLabel = {'ori1' 'ori2'};
 ylim([0 max(xData_rho(:)).*1.1])
 ax(spInd).PlotBoxAspectRatio = [0.2 1 1];
 box off
-disp('***')
-disp(['delay diff=' num2str(abs(diff(xDataMean_rho(:,[1 2]))),'%0.3fs')])
-disp('***')
 
 if saveFig
     filename = fullfile(pwd,mfilename);
@@ -371,6 +368,10 @@ ax(spInd).YTickLabel = {'ori1' 'ori2'};
 xlim([0 max(xData_theta(:)).*1.1])
 ax(spInd).PlotBoxAspectRatio = [1 0.2 1];
 box off
+
+disp('***')
+disp(['delay diff=' num2str(abs(diff(xDataMean_rho(:,[1 2]))),'%0.3fs')])
+disp('***')
 
 if saveFig
     filename = fullfile(pwd,mfilename);
@@ -448,4 +449,29 @@ disp([' signed rank=' num2str(STATS.signedrank,'%0.2f') '; p=' num2str(P,'%0.2f'
 [P,F] = circ_htest(x,y);
 disp(' Hotelling''s test for angular means')
 disp([' F=' num2str(STATS.signedrank,'%0.2f') '; p=' num2str(P,'%0.2f')]);
+
+disp('Ori1 vs Plaid:')
+x = angle(xData(:,1)); y = angle(xData(:,3));
+[H,P,CI,STATS] = ttest(x,y);
+disp(' Student''s t-test')
+disp([' t=' num2str(STATS.tstat,'%0.2f') '; p=' num2str(P,'%0.2f')]);
+[P,H,STATS] = signrank(x,y);
+disp(' Wilcoxon signed rank test')
+disp([' signed rank=' num2str(STATS.signedrank,'%0.2f') '; p=' num2str(P,'%0.2f')]);
+[P,F] = circ_htest(x,y);
+disp(' Hotelling''s test for angular means')
+disp([' F=' num2str(STATS.signedrank,'%0.2f') '; p=' num2str(P,'%0.2f')]);
+
+disp('Ori2 vs Plaid:')
+x = angle(xData(:,2)); y = angle(xData(:,3));
+[H,P,CI,STATS] = ttest(x,y);
+disp(' Student''s t-test')
+disp([' t=' num2str(STATS.tstat,'%0.2f') '; p=' num2str(P,'%0.2f')]);
+[P,H,STATS] = signrank(x,y);
+disp(' Wilcoxon signed rank test')
+disp([' signed rank=' num2str(STATS.signedrank,'%0.2f') '; p=' num2str(P,'%0.2f')]);
+[P,F] = circ_htest(x,y);
+disp(' Hotelling''s test for angular means')
+disp([' F=' num2str(STATS.signedrank,'%0.2f') '; p=' num2str(P,'%0.2f')]);
+
 
