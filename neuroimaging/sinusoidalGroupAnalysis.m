@@ -4,7 +4,6 @@ if ~exist('threshType','var') || isempty(threshType)
 end
 noMovement = 1;
 threshVal = 0.05;
-adjVoxDelay = 0;
 plotAllSubj = 0;
 saveFig = 0;
 
@@ -39,7 +38,6 @@ end
 
 disp(['IN: Sinusoidal BOLD responses from anatomical V1 ROI (' fullfile(dataDir,funLevel) ')'])
 disp(['threshVal=' num2str(threshVal)])
-disp(['adjVoxDelay=' num2str(adjVoxDelay)])
 disp('F(IN)=OUT: threshold included voxels and analyse responses averaged across the ROI')
 disp(['OUT: figures and stats'])
 
@@ -55,22 +53,6 @@ d = dAll; clear dAll
 
 %% Process data
 dP = d;
-% Remove inter-voxel variations in delay, using delay from the other
-% session
-if adjVoxDelay
-    voxDelaySess1 = angle(mean(mean(dP{subjInd}.sess1.xData,3),1)) - angle(mean(dP{subjInd}.sess1.xData(:)));
-    voxDelaySess2 = angle(mean(mean(dP{subjInd}.sess2.xData,3),1)) - angle(mean(dP{subjInd}.sess2.xData(:)));
-    
-    theta = angle(dP{subjInd}.sess1.xData) - voxDelaySess2;
-    rho = abs(dP{subjInd}.sess1.xData);
-    [X,Y] = pol2cart(theta,rho);
-    dP{subjInd}.sess1.xData = complex(X,Y);
-    
-    theta = angle(dP{subjInd}.sess2.xData) - voxDelaySess1;
-    rho = abs(dP{subjInd}.sess2.xData);
-    [X,Y] = pol2cart(theta,rho);
-    dP{subjInd}.sess2.xData = complex(X,Y); clear X Y theta rho voxDelaySess1 voxDelaySess2
-end
 
 % figure('WindowStyle','docked')
 % subplot(2,1,1)
