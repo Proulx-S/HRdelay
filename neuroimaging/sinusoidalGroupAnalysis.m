@@ -457,3 +457,85 @@ disp(' Hotelling''s test for angular means')
 disp([' F=' num2str(STATS.signedrank,'%0.2f') '; p=' num2str(P,'%0.2f')]);
 
 
+%% Correlations
+% Between-subject correlation
+xData = [];
+xLabel = [];
+for subjInd = 1:length(subjList)
+    for sessInd = 1:2
+        tmp = squeeze(dP{subjInd}.(['sess' num2str(sessInd)]).xData);
+        tmp = mean(tmp,1);
+        xData = cat(1,xData,tmp);
+        sz = size(tmp);
+        xLabel = cat(1,xLabel,[ones(sz(1),1).*subjInd ones(sz(1),1).*sessInd]);
+    end
+%     xData = cat(1,xData(1:end-2,:),mean(xData(end-1:end,:),1));
+%     xLabel = cat(1,xLabel(1:end-2,:),xLabel(end,:));
+end
+xData = cat(2,mean(xData(:,1:2),2),xData(:,3));
+xDataMean = mean(xData(:));
+
+amp = abs(xData);
+delay = angle(xData);
+delay = wrapToPi(delay - angle(xDataMean));
+delay = -(delay + angle(xDataMean))/pi*6;
+
+f = figure('WindowStyle','docked');
+x = wrapToPi(delay(:,2)-delay(:,1));
+y = amp(:,2) - amp(:,1);
+hScat = scatter(x,y);
+[R,P] = corr(x,y,'type','Spearman');
+xlabel('delay (plaid - ori)')
+ylabel('amp (plaid - ori)')
+refFit = polyfit(x,y,1);
+title({'Subj*Sess' ['Spearman''s R=' num2str(R,'%0.2f') '; p=' num2str(P,'%0.3f') '; slope=' num2str(refFit(1),'%0.2f')]})
+refline
+
+
+xLabel = xLabel(:,1);
+cMap = jet(length(subjList));
+cData = nan(length(x),3);
+for subjInd = 1:length(subjList)
+    cData(xLabel==subjInd,:) = repmat(cMap(subjInd,:),[sum(xLabel==subjInd) 1]);
+end
+hScat.CData = cData;
+hScat.MarkerFaceColor = hScat.MarkerEdgeColor;
+
+
+% Between-run correlation
+xData = [];
+xLabel = [];
+i = 0;
+for subjInd = 1:length(subjList)
+    for sessInd = 1:2
+        i = i+1;
+        tmp = squeeze(dP{subjInd}.(['sess' num2str(sessInd)]).xData);
+        xData = cat(1,xData,tmp);
+        sz = size(tmp);
+        xLabel = cat(1,xLabel,[ones(sz(1),1).*subjInd ones(sz(1),1).*sessInd ones(sz(1),1).*i]);
+    end
+end
+% remove subject*cond effects
+xDataMean = mean(xData(:));
+for ii = 1:length(unique(xLabel(:,end)))
+    ind = ii==xLabel(:,end);
+    xData(ind,:) = xData(ind,:) - mean(xData(ind,:),1);
+end
+xData = xData+xDataMean;
+
+amp = abs(xData);
+delay = angle(xData);
+delay = wrapToPi(delay - angle(xDataMean));
+delay = -(delay + angle(xDataMean))/pi*6;
+
+f = figure('WindowStyle','docked');
+x = delay(:);
+y = amp(:);
+hScat = scatter(x,y);
+[R,P] = corr(x,y);
+xlabel('delay')
+ylabel('amp')
+refFit = polyfit(x,y,1);
+title({'Individual Runs, subj*sess*cond effect removed' ['Pearson''s R=' num2str(R,'%0.2f') '; p=' num2str(P,'%0.3f') '; slope=' num2str(refFit(1),'%0.2f')]})
+refline;
+
