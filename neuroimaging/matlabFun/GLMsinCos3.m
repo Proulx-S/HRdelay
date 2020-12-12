@@ -188,8 +188,8 @@ results.OLS.mixed.parameters = ...
     mtimescell(olsmatrix2(results.OLS.mixed.designmatrix), ...
     cellfun(@(x) squish(x,dimdata)',data,'UniformOutput',0));  % regressors x voxels
 
-%% Compute F for cond 3
-display('computing F stats for cond 3')
+%% Compute F
+display('computing F stats')
 % Set-up full and reduced design matrices
 designMatrixFull = results.OLS.mixed.designmatrix;
 designMatrixReduced = designMatrixFull;
@@ -220,6 +220,7 @@ ind_cond3sess2 = size(fullModel,4)*5/6+1:size(fullModel,4)*6/6;
 
 % Compute RSSs
 RSSfull = bsxfun(@minus, fullModel, catcell(4,data));
+ResidFull = squeeze(mat2cell(RSSfull,xyzsize(1),xyzsize(2),xyzsize(3),ones(numruns,1).*numtime))';
 RSSfull = bsxfun(@times, RSSfull, RSSfull);
 RSSfull_cond3 = sum(RSSfull(:,:,:,ind_cond3),4);
 RSSfull_sess1 = sum(RSSfull(:,:,:,ind_sess1),4);
@@ -229,6 +230,7 @@ RSSfull_cond3sess2 = sum(RSSfull(:,:,:,ind_cond3sess2),4);
 RSSfull = sum(RSSfull,4);
 
 RSSreduced = bsxfun(@minus, reducedModel, catcell(4,data));
+% ResidReduced = squeeze(mat2cell(RSSreduced,xyzsize(1),xyzsize(2),xyzsize(3),ones(numruns,1).*numtime))';
 RSSreduced = bsxfun(@times, RSSreduced, RSSreduced);
 RSSreduced_cond3 = sum(RSSreduced(:,:,:,ind_cond3),4);
 RSSreduced_sess1 = sum(RSSreduced(:,:,:,ind_sess1),4);
@@ -351,13 +353,21 @@ tic
 fprintf('*** CONVERTING BOLD TIME SERIES TO PERCENT BOLD ***\n');
 for run = 1:size(results.OLS.mixed.constant.brain,4)
     oneOver_curBrain = 1./results.OLS.mixed.constant.brain(:,:,:,run);
-    curData = data(results.OLS.mixed.runInd(1:2:end)==run);
     
-    for i = 1:length(curData)
-        curData{i} = bsxfun(@times,curData{i},oneOver_curBrain);
-    end
-    data(results.OLS.mixed.runInd(1:2:end)==run) = curData;
+    curData = data{results.OLS.mixed.runInd(1:2:end)==run};
+    curData = bsxfun(@times,curData,oneOver_curBrain);
+    data{results.OLS.mixed.runInd(1:2:end)==run} = curData;
 end
+
+fprintf('*** COMPUTE VEIN (SD of residual / signal baseline) ***\n');
+
+results.OLS.mixed.vein = nan([xyzsize numruns]);
+for run = 1:size(results.OLS.mixed.constant.brain,4)
+    sd = std(ResidFull{run},[],4);
+    base = results.OLS.mixed.constant.brain(:,:,:,run);
+    results.OLS.mixed.vein(:,:,:,run) = sd./base;
+end
+
 toc
 
 
