@@ -94,6 +94,8 @@ for subjInd = 1:length(subjList)
     % maskAnat
     maskAnat = maskV1 & maskECC;
     
+    % maskVein
+    
     % maskFit area
     maskFit = results.mask;
     

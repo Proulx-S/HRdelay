@@ -132,7 +132,7 @@ ylim([yTickRad(1) yTickRad(end)])
 ax.YGrid = 'on';
 xlabel({'Functional runs' 'in order of acquisition'})
 ylabel('TRs');
-legend(char([subjList; {'1TR'}]))
+legend(char(subjList))
 
 % Exclude
 subjInd = 2;
@@ -357,7 +357,10 @@ ax(spInd).PlotBoxAspectRatio = [1 0.2 1];
 box off
 
 disp('***')
-disp(['delay diff=' num2str(abs(diff(xDataMean_rho(:,[1 2]))),'%0.3fs')])
+disp(['delay (plaid-ori) = ' num2str(diff(xDataMean_theta(:,[4 3])),'%0.3fs')])
+disp(['delay (ori2-ori1) = ' num2str(diff(xDataMean_theta(:,[1 2])),'%0.3fs')])
+disp(['amp (plaid-ori) = ' num2str(diff(xDataMean_rho(:,[4 3])),'%0.3f%%BOLD')])
+disp(['amp (ori2-ori1) = ' num2str(diff(xDataMean_rho(:,[1 2])),'%0.3f%%BOLD')])
 disp('***')
 
 if saveFig
