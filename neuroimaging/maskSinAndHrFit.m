@@ -3,6 +3,8 @@ noMovement = 1;
 actuallyRun = 1;
 saveFig = 0;
 plotAllSubj = 0;
+doVein = 1;
+veinPerc = 5;
 if ~exist('fitType','var') || isempty(fitType)
     fitType = 'mixed'; % 'mixed' (different regressors for each run) or 'fixed' (different regressors for each session)
 end
@@ -94,10 +96,39 @@ for subjInd = 1:length(subjList)
     % maskAnat
     maskAnat = maskV1 & maskECC;
     
-    % maskVein
-    
     % maskFit area
     maskFit = results.mask;
+    
+    % maskVein
+    %find vein thresh
+    vein = nan(size(maskAnat));
+    vein(maskFit) = mean(results.OLS.mixed.vein,4);
+    perc = prctile(vein(maskAnat),0:5:100);
+    figure('WindowStyle','docked');
+    histogram(vein(maskAnat)); hold on
+    for i = 1:length(sess1Perc)
+        plot(ones(1,2).*perc(i),ylim,'r')
+    end
+    veinThresh = prctile(vein(maskAnat),100-veinPerc);
+    %apply vein thresh
+    sessLabel = [results.inputs.opt.sessionLabel{:}]';
+    vein = nan([size(maskAnat) 2]);
+    for sessInd = 1:2
+        tmp = nan(size(maskAnat));
+        tmp(maskFit) = mean(results.OLS.mixed.vein(:,:,:,sessLabel==sessInd),4);
+        vein(:,:,:,sessInd) = tmp;
+    end
+    maskVein = vein>veinThresh;
+    figure('WindowStyle','docked');
+    imagesc(brain(:,:,10))
+    figure('WindowStyle','docked');
+    imagesc(vein(:,:,10,1),[0 max(max(max(vein(:,:,10,:))))])
+    figure('WindowStyle','docked');
+    imagesc(vein(:,:,10,2),[0 max(max(max(vein(:,:,10,:))))])
+    figure('WindowStyle','docked');
+    imagesc(maskVein(:,:,10,1))
+    figure('WindowStyle','docked');
+    imagesc(maskVein(:,:,10,2))
     
     % maskFun
     for sessInd = 1:2
