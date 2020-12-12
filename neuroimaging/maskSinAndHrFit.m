@@ -100,36 +100,35 @@ for subjInd = 1:length(subjList)
     maskFit = results.mask;
     
     % maskVein
-    %find vein thresh
-    vein = nan(size(maskAnat));
-    vein(maskFit) = mean(results.OLS.mixed.vein,4);
-    perc = prctile(vein(maskAnat),0:5:100);
-    figure('WindowStyle','docked');
-    histogram(vein(maskAnat)); hold on
-    for i = 1:length(sess1Perc)
-        plot(ones(1,2).*perc(i),ylim,'r')
-    end
-    veinThresh = prctile(vein(maskAnat),100-veinPerc);
-    %apply vein thresh
     sessLabel = [results.inputs.opt.sessionLabel{:}]';
-    vein = nan([size(maskAnat) 2]);
     for sessInd = 1:2
-        tmp = nan(size(maskAnat));
-        tmp(maskFit) = mean(results.OLS.mixed.vein(:,:,:,sessLabel==sessInd),4);
-        vein(:,:,:,sessInd) = tmp;
+        vein.(['sess' num2str(sessInd)]).noiseOverMean = nan(size(maskAnat));
+        vein.(['sess' num2str(sessInd)]).noiseOverMean(maskFit) = mean(results.OLS.mixed.vein(:,:,:,sessLabel==sessInd),4);
+        vein.(['sess' num2str(sessInd)]).noiseOverMean(~maskAnat) = nan;
     end
-    maskVein = vein>veinThresh;
     figure('WindowStyle','docked');
-    imagesc(brain(:,:,10))
-    figure('WindowStyle','docked');
-    imagesc(vein(:,:,10,1),[0 max(max(max(vein(:,:,10,:))))])
-    figure('WindowStyle','docked');
-    imagesc(vein(:,:,10,2),[0 max(max(max(vein(:,:,10,:))))])
-    figure('WindowStyle','docked');
-    imagesc(maskVein(:,:,10,1))
-    figure('WindowStyle','docked');
-    imagesc(maskVein(:,:,10,2))
-    
+    imagesc(vein.sess2.noiseOverMean(:,:,10))
+    x = vein.sess1.noiseOverMean(maskAnat);
+    y = vein.sess2.noiseOverMean(maskAnat);
+    hScat = scatter(x,y,4,'filled','k'); hold on
+    alpha(hScat,0.2);
+    xlabel({'Sess1 vein-ness' 'temporal noise / mean'})
+    ylabel({'Sess2 vein-ness' 'temporal noise / mean'})
+    ax1 = gca;
+    ax1.PlotBoxAspectRatio = [1 1 1];
+    tmp = [vein.sess1.noiseOverMean(maskAnat); vein.sess2.noiseOverMean(maskAnat)];
+    lim = [min(tmp) max(tmp)];
+    lim = lim.*[0.95 1.05];
+    xlim([0 lim(2)]); ylim([0 lim(2)]);
+    refline;
+    grid on
+    vein.sess1.thresh = prctile(x,100-veinPerc);
+    vein.sess2.thresh = prctile(y,100-veinPerc);
+    plot([1 1].*vein.sess1.thresh,ylim,'r')
+    plot(xlim,[1 1].*vein.sess2.thresh,'r')
+    vein.sess1.mask = vein.sess1.noiseOverMean<vein.sess1.thresh;
+    vein.sess2.mask = vein.sess2.noiseOverMean<vein.sess2.thresh;
+        
     % maskFun
     for sessInd = 1:2
         switch fitType
