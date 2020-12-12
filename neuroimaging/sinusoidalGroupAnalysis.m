@@ -146,6 +146,11 @@ exclusion.subj = subjInd;
 exclusion.sess = sessInd;
 exclusion.run = runInd;
 exclusion.cond = condInd;
+% exclusion.subj = subjList(subjInd)
+% exclusion.subj = {'03sk'};
+% exclusion.sess = 1;
+% exclusion.run = 4;
+% exclusion.cond = 2;
 
 if exist('exclusion','var') && ~isempty(exclusion) && ~isempty(exclusion.subj)
     for i = 1:length(exclusion.subj)

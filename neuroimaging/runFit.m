@@ -3,6 +3,12 @@ function runFit
 actuallyRun = 0;
 noMovement = 1;
 saveFig = 0;
+exclude = 1;
+exclusion.subj = {'03sk'};
+exclusion.sess = 1;
+exclusion.run = 4;
+exclusion.cond = 2;
+
 
 if ismac
     repo = '/Users/sebastienproulx/OneDrive - McGill University/dataBig';
@@ -23,8 +29,8 @@ end
 % maskLabel = 'v1v2v3';
 maskLabel = 'v1';
 
-% subjList = {'02jp'};
-% subjStimList = {'jp'};
+% subjList = {'03sk'};
+% subjStimList = {'sk'};
 subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'};
 subjStimList = {'jp' 'sk' 'sp' 'bm' 'sb' 'bj'};
 
@@ -119,7 +125,7 @@ for smLevel = {''}
 %         try
             
             %% Get data and design
-            clearvars -except tstart mask subjInd smLevel subjStimList subjList maskLabel matFun repo funDir anatDir stimDir inDir outDir noMovement runInd
+            clearvars -except tstart mask subjInd smLevel subjStimList subjList maskLabel matFun repo funDir anatDir stimDir inDir outDir noMovement runInd exclude exclusion
             subj = subjList{subjInd}; subjStim = subjStimList{subjInd};
             
             switch getenv('OS')
@@ -158,6 +164,7 @@ for smLevel = {''}
                 i = i+1;
             end
             
+            
             %% Load mask
             if strcmp(maskLabel,'v1v2v3')
                 mask = load_nii(fullfile(anatData_folder,'v1.nii.gz'));
@@ -191,7 +198,7 @@ for smLevel = {''}
             labelList = [45 135 999];
             condCount = zeros(1,3);
             for cond = 1:3
-                clearvars -except tstart mask subjInd subjList subjStimList smLevel subj funData_folderIN funData_folderOUT labelDir files label labelList cond sessionLabel data design extraRegr labelList curLabel condCount sessionLabel maskLabel matFun repo funDir anatDir stimDir inDir outDir noMovement runInd
+                clearvars -except tstart mask subjInd subjList subjStimList smLevel subj funData_folderIN funData_folderOUT labelDir files label labelList cond sessionLabel data design extraRegr labelList curLabel condCount sessionLabel maskLabel matFun repo funDir anatDir stimDir inDir outDir noMovement runInd exclude exclusion
                 close all
                 curLabel = labelList(cond);
                 
@@ -245,7 +252,7 @@ for smLevel = {''}
             fprintf('The sampling rate (TR) is %.6f seconds.\n',tr);
             
             
-            clearvars -except tstart mask subjInd smLevel subjStimList subjList subj funData_folderIN funData_folderOUT labelDir data design extraRegr sessionLabel sessModel stimdur tr maskLabel repo funDir anatDir stimDir inDir outDir noMovement runInd
+            clearvars -except tstart mask subjInd smLevel subjStimList subjList subj funData_folderIN funData_folderOUT labelDir data design extraRegr sessionLabel sessModel stimdur tr maskLabel repo funDir anatDir stimDir inDir outDir noMovement runInd exclude exclusion
             %% GLMdenoise on all sessions (not split)
             % - - - - - - - - - -
             % o x ------------
@@ -304,20 +311,30 @@ for smLevel = {''}
                 splitSessionLabel(ii:splitIn:length(splitDesign)) = splitSessionLabel_tmp(:,ii);
                 splitRunInd(ii:splitIn:length(splitDesign)) = splitRunInd_tmp(:,ii);
             end
-            clearvars -except tstart mask subjInd smLevel subjStimList subjList subj funData_folderIN funData_folderOUT labelDir data design extraRegr sessionLabel sessModel splitDesign splitData splitIn splitExtraRegr splitSessionLabel stimdur tr maskLabel repo funDir anatDir stimDir inDir outDir noMovement runInd splitRunInd
+            clearvars -except tstart mask subjInd smLevel subjStimList subjList subj funData_folderIN funData_folderOUT labelDir data design extraRegr sessionLabel sessModel splitDesign splitData splitIn splitExtraRegr splitSessionLabel stimdur tr maskLabel repo funDir anatDir stimDir inDir outDir noMovement runInd splitRunInd exclude exclusion
             
             
             if noMovement
+                disp('--- Response Time Course Extraction ---')
                 ana = 'resp';
                 [results] = GLMresp(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'splitedIn',splitIn),splitIn);
                 outName = fullfile(funData_folderOUT,[maskLabel ana '_' num2str(splitIn) 'perRun' smLevel{1}]);
                 save([outName '_resp.mat'],'results'); clear results
                 
+                disp('--- Response Sinusoidal Fit ---')
                 ana = 'SinCos';
                 outName = fullfile(funData_folderOUT,[maskLabel ana '_' num2str(splitIn) 'perRun' smLevel{1}]);
                 [resultsTmp,~] = GLMsinCos3(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'splitedIn',splitIn),splitIn);
                 resultsTmp.OLS.fixed = []; resultsTmp.OLS.fixed_sessReg = []; resultsTmp.OLS.mixed_sessRm = [];
-                [results,dataDetrend] = GLMsinCos5(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'splitedIn',splitIn),splitIn);
+                if exclude && ismember(subjList(subjInd),exclusion.subj)
+                    exclInd = ismember(exclusion.subj,subjList(subjInd));
+                    curExclusion.sess = exclusion.sess(exclInd);
+                    curExclusion.run = exclusion.run(exclInd);
+                    curExclusion.cond = exclusion.cond(exclInd);
+                    [results,~] = GLMsinCos5(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'splitedIn',splitIn),splitIn,curExclusion);
+                else
+                    [results,~] = GLMsinCos5(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'splitedIn',splitIn),splitIn);
+                end
                 results.OLS.mixed = resultsTmp.OLS.mixed; clear resultsTmp
                 results.mask = mask;
                 results.inputs.opt.runLabel = splitRunInd;
@@ -332,7 +349,15 @@ for smLevel = {''}
                 outName = fullfile(funData_folderOUT,[maskLabel ana '_' num2str(splitIn) 'perRun_move12' smLevel{1}]);
                 [resultsTmp,~] = GLMsinCos3(splitDesign,splitData,stimdur,tr,ana,[],struct('extraregressors',{splitExtraRegr},'sessionLabel',{splitSessionLabel},'splitedIn',splitIn),splitIn);
                 resultsTmp.OLS.fixed = []; resultsTmp.OLS.fixed_sessReg = []; resultsTmp.OLS.mixed_sessRm = [];
-                [results,dataDetrend] = GLMsinCos5(splitDesign,splitData,stimdur,tr,ana,[],struct('extraregressors',{splitExtraRegr},'sessionLabel',{splitSessionLabel},'splitedIn',splitIn),splitIn);
+                if exclude && ismember(subjList(subjInd),exclusion.subj)
+                    exclInd = ismember(exclusion.subj,subjList(subjInd));
+                    curExclusion.sess = exclusion.sess(exclInd);
+                    curExclusion.run = exclusion.run(exclInd);
+                    curExclusion.cond = exclusion.cond(exclInd);
+                    [results,~] = GLMsinCos5(splitDesign,splitData,stimdur,tr,ana,[],struct('extraregressors',{splitExtraRegr},'sessionLabel',{splitSessionLabel},'splitedIn',splitIn),splitIn,curExclusion);
+                else
+                    [results,~] = GLMsinCos5(splitDesign,splitData,stimdur,tr,ana,[],struct('extraregressors',{splitExtraRegr},'sessionLabel',{splitSessionLabel},'splitedIn',splitIn),splitIn);
+                end
                 results.OLS.mixed = resultsTmp.OLS.mixed; clear resultsTmp
                 results.mask = mask;
                 results.inputs.opt.runLabel = splitRunInd;

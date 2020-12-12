@@ -1,9 +1,30 @@
-function [results,dataDetrend] = GLMsinCos5(design,data,stimdur,tr,hrfmodel,hrfknobs,opt,splitIn)
+function [results,dataDetrend] = GLMsinCos5(design,data,stimdur,tr,hrfmodel,hrfknobs,opt,splitIn,exclusion)
 
 %WARNINGWARNINGWARNINGWARNINGWARNINGWARNINGWARNING
 %stimdur is internally fixed to 6 in GLMestimatemodel>fitmodel_helper at 884
 %WARNINGWARNINGWARNINGWARNINGWARNINGWARNINGWARNING
 
+
+%% Exclude
+if exist('exclusion','var')
+    numruns = length(data);
+    condLabel = cat(1,ones(numruns/3,1)*1,ones(numruns/3,1)*2,ones(numruns/3,1)*3);
+    sessLabel = cell2mat(opt.sessionLabel)';
+    sessList = unique(sessLabel);
+    condList = unique(condLabel);
+    runLabel = nan(size(sessLabel));
+    for sessInd = 1:length(sessList)
+        for condInd = 1:length(condList)
+            curInd = sessLabel==sessList(sessInd) & condLabel==condList(condInd);
+            runLabel(curInd) = 1:length(runLabel(curInd));
+        end
+    end
+    exclInd = exclusion.sess==sessLabel & exclusion.run==runLabel;
+    
+    design = design(~exclInd);
+    data = data(~exclInd);
+    opt.sessionLabel = opt.sessionLabel(~exclInd);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% DEAL WITH INPUTS, ETC.
 
@@ -279,34 +300,35 @@ for sess = 1:2
 end
 
 %% Detrend data
-display('detrending data')
-params =   reshape(results.OLS.fixed.parameters',  [xyzsize size(results.OLS.fixed.parameters,1)]);
-designmatrix = results.OLS.fixed.designmatrix;
-designmatrix(:,any(results.OLS.fixed.designmatrixPieces.cond,1)) = 0;
-confoundInd = find(any(results.OLS.fixed.designmatrixPieces.constant,1));
-dataDetrend = data;
-
-% Detrend data
-for runInd = 1:size(data,2)
-    curRunInd = logical(results.OLS.fixed.designmatrixPieces.constant(:,confoundInd(runInd)));
-    curModel = designmatrix(curRunInd,:);
-    curData = data{runInd};
-    curDataDetrend = curData;
-    
-    for x = 1:size(curData,1)
-        for y = 1:size(curData,2)
-            for z = 1:size(curData,3)
-                curParam = squeeze(params(x,y,z,:));
-                constant = curParam(find(any(curModel,1),1)).*(vectorlength(ones(numtime,1))/numtime); % for %BOLD   (vectorlength(ones(numtime,1))/numtime is the value in the design matrix)
-                curParam = repmat(curParam',size(curData,4),1);
-                curDataDetrend(x,y,z,:) = squeeze(curData(x,y,z,:)) - sum(curParam.*curModel,2);
-                % convert to %BOLD
-                curDataDetrend(x,y,z,:) = curDataDetrend(x,y,z,:)./constant;
-            end
-        end
-    end
-    dataDetrend{runInd} = curDataDetrend;
-end
+dataDetrend = [];
+% display('detrending data')
+% params =   reshape(results.OLS.fixed.parameters',  [xyzsize size(results.OLS.fixed.parameters,1)]);
+% designmatrix = results.OLS.fixed.designmatrix;
+% designmatrix(:,any(results.OLS.fixed.designmatrixPieces.cond,1)) = 0;
+% confoundInd = find(any(results.OLS.fixed.designmatrixPieces.constant,1));
+% dataDetrend = data;
+% 
+% % Detrend data
+% for runInd = 1:size(data,2)
+%     curRunInd = logical(results.OLS.fixed.designmatrixPieces.constant(:,confoundInd(runInd)));
+%     curModel = designmatrix(curRunInd,:);
+%     curData = data{runInd};
+%     curDataDetrend = curData;
+%     
+%     for x = 1:size(curData,1)
+%         for y = 1:size(curData,2)
+%             for z = 1:size(curData,3)
+%                 curParam = squeeze(params(x,y,z,:));
+%                 constant = curParam(find(any(curModel,1),1)).*(vectorlength(ones(numtime,1))/numtime); % for %BOLD   (vectorlength(ones(numtime,1))/numtime is the value in the design matrix)
+%                 curParam = repmat(curParam',size(curData,4),1);
+%                 curDataDetrend(x,y,z,:) = squeeze(curData(x,y,z,:)) - sum(curParam.*curModel,2);
+%                 % convert to %BOLD
+%                 curDataDetrend(x,y,z,:) = curDataDetrend(x,y,z,:)./constant;
+%             end
+%         end
+%     end
+%     dataDetrend{runInd} = curDataDetrend;
+% end
 
 
 
