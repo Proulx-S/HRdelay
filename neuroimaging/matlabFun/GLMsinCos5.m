@@ -24,6 +24,7 @@ if exist('exclusion','var')
     design = design(~exclInd);
     data = data(~exclInd);
     opt.sessionLabel = opt.sessionLabel(~exclInd);
+    opt.runLabel = opt.runLabel(~exclInd);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% DEAL WITH INPUTS, ETC.
