@@ -111,9 +111,9 @@ end
 
 
 
-%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% MIXED-EFFECT FIT
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% MIXED-EFFECT (random) FIT
 tic
-fprintf('*** MIXED-EFFECT FIT ***\n');
+fprintf('*** MIXED-EFFECT (random) FIT ***\n');
 %% Construct design matrix
 poly = cell(1,numruns);
 polyNmotion = cell(1,numruns);
@@ -230,7 +230,7 @@ RSSfull_cond3sess2 = sum(RSSfull(:,:,:,ind_cond3sess2),4);
 RSSfull = sum(RSSfull,4);
 
 RSSreduced = bsxfun(@minus, reducedModel, catcell(4,data));
-% ResidReduced = squeeze(mat2cell(RSSreduced,xyzsize(1),xyzsize(2),xyzsize(3),ones(numruns,1).*numtime))';
+ResidReduced = squeeze(mat2cell(RSSreduced,xyzsize(1),xyzsize(2),xyzsize(3),ones(numruns,1).*numtime))';
 RSSreduced = bsxfun(@times, RSSreduced, RSSreduced);
 RSSreduced_cond3 = sum(RSSreduced(:,:,:,ind_cond3),4);
 RSSreduced_sess1 = sum(RSSreduced(:,:,:,ind_sess1),4);
@@ -361,11 +361,18 @@ end
 
 fprintf('*** COMPUTE VEIN (SD of residual / signal baseline) ***\n');
 
-results.OLS.mixed.vein = nan([xyzsize numruns]);
+results.OLS.mixed.veinFull = nan([xyzsize numruns]);
+results.OLS.mixed.veinFull_info = 'std of full model (including regressors of interest) residuals  /  constant term';
+results.OLS.mixed.veinReduced = nan([xyzsize numruns]);
+results.OLS.mixed.veinReduced_info = 'std of reduced model (excluding regressors of interest) residuals  /  constant term';
 for run = 1:size(results.OLS.mixed.constant.brain,4)
-    sd = std(ResidFull{run},[],4);
     base = results.OLS.mixed.constant.brain(:,:,:,run);
-    results.OLS.mixed.vein(:,:,:,run) = sd./base;
+    
+    sd = std(ResidFull{run},[],4);
+    results.OLS.mixed.veinFull(:,:,:,run) = sd./base;
+    
+    sd = std(ResidReduced{run},[],4);
+    results.OLS.mixed.veinReduced(:,:,:,run) = sd./base;
 end
 
 toc
@@ -848,8 +855,8 @@ if opt.splitedIn==1 || ~isfield(opt,'sessModel')
 % 
 % 
 % tic
-% %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% MIXED-EFFECT FIT WITH SESSION EFFECT FROM FIXED-EFFECT MODEL REMOVED FROM DATA
-% fprintf('*** MIXED-EFFECT FIT WITH SESSION EFFECT FROM FIXED-EFFECT MODEL REMOVED FROM DATA ***\n');
+% %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% MIXED-EFFECT (random) FIT WITH SESSION EFFECT FROM FIXED-EFFECT MODEL REMOVED FROM DATA
+% fprintf('*** MIXED-EFFECT (random) FIT WITH SESSION EFFECT FROM FIXED-EFFECT MODEL REMOVED FROM DATA ***\n');
 % %% Construct design matrix
 % % Polynomials and motion
 % poly = cell(1,numruns);

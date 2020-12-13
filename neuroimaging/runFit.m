@@ -1,8 +1,8 @@
 function runFit
 
-actuallyRun = 0;
+actuallyRun = 1;
 noMovement = 1;
-saveFig = 0;
+saveFig = 1;
 exclude = 1;
 exclusion.subj = {'03sk'};
 exclusion.sess = 1;
@@ -47,7 +47,8 @@ if ~actuallyRun
     disp('Not actually running because way too long')
     
     subjInd = 1;
-%     f = figure('WindowStyle','docked');
+    
+    % Random Effect Model
     f = figure();
     
     subplot(1,16+25,25+(1:16))
@@ -96,19 +97,45 @@ if ~actuallyRun
     ax2.YAxis.Label.Visible = 'on';
     ax2.YAxis.Label.Color = 'k';
     
-    suptitle('Design Matrices');
+    suptitle('Design Matrices (random-effect)');
     
     ax1.XAxis.FontSize = ax1.XAxis.FontSize*0.8;
     ax2.XAxis.FontSize = ax2.XAxis.FontSize*0.8;
     
     
-%     drawnow
-%     scale = 1;
-%     ax1.Position([2 4]) = ax1.Position([2 4]) + [1 -1].*ax1.Position(2)*scale;
-%     ax2.Position([2 4]) = ax2.Position([2 4]) + [1 -1].*ax2.Position(2)*scale;
-%     drawnow
-%     ax2.XAxis.Label.Position(2) = ax1.XAxis.Label.Position(2);
-%     drawnow
+    % Fixed Effect model
+    error('Code the Fixed Effect Model figure here')
+    f = figure();
+    ind = results.OLS.fixed.designmatrixSessInd==1;
+    if noMovement
+        load(fullfile(repo,funDir,outDir,subjList{subjInd},'v1SinCos_1perRun.mat'),'results')
+%         run1 = results.OLS.fixed.designmatrix(:,[1 2 67:68]);
+    else
+        load(fullfile(repo,funDir,outDir,subjList{subjInd},'v1SinCos_1perRun_move12.mat'),'results')
+%         run1 = results.OLS.fixed.designmatrix(:,[1 2 67:80]);
+    end
+    run1 = results.OLS.fixed.sess1.designMatrixFull;
+    imagesc(run1); colormap gray
+    imagesc(results.OLS.fixed.designmatrixPieces.cond)
+    imagesc(results.OLS.fixed.designmatrix); colormap gray
+    imagesc(run1(any(run1,2),:)); colormap gray
+    title('Sinusoidal Response');
+    ax1 = gca; ax1.XTick = []; ax1.YTick = [];
+%     xlabel('Regressors');
+    ylabel('TRs');
+    ax1.XTick = 1:size(run1,2);
+    ax1.Box = 'off';
+    ax1.TickDir = 'out';
+    ax1.XTickLabel = {'sin' 'cos' 'constant' 'drift' 'x' 'y' 'z' 'pitch' 'roll' 'yaw' 'x''' 'y''' 'z''' 'pitch''' 'roll''' 'yaw'''};
+    ax1.XTickLabelRotation = -90;
+    ax1.YAxis.Color = 'none';
+    ax1.YAxis.Label.Visible = 'on';
+    ax1.YAxis.Label.Color = 'k';
+    
+    xVal = diff(ax1.XLim);
+    xWidth = ax1.Position(3);
+    
+    
     
     if saveFig
         saveas(f,fullfile(repo,funDir,outDir,'designMatrices'))
@@ -324,20 +351,19 @@ for smLevel = {''}
                 disp('--- Response Sinusoidal Fit ---')
                 ana = 'SinCos';
                 outName = fullfile(funData_folderOUT,[maskLabel ana '_' num2str(splitIn) 'perRun' smLevel{1}]);
-                [resultsTmp,~] = GLMsinCos3(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'splitedIn',splitIn),splitIn);
+                [resultsTmp,~] = GLMsinCos3(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'runLabel',{splitRunInd},'splitedIn',splitIn),splitIn);
                 resultsTmp.OLS.fixed = []; resultsTmp.OLS.fixed_sessReg = []; resultsTmp.OLS.mixed_sessRm = [];
                 if exclude && ismember(subjList(subjInd),exclusion.subj)
                     exclInd = ismember(exclusion.subj,subjList(subjInd));
                     curExclusion.sess = exclusion.sess(exclInd);
                     curExclusion.run = exclusion.run(exclInd);
                     curExclusion.cond = exclusion.cond(exclInd);
-                    [results,~] = GLMsinCos5(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'splitedIn',splitIn),splitIn,curExclusion);
+                    [results,~] = GLMsinCos5(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'runLabel',{splitRunInd},'splitedIn',splitIn),splitIn,curExclusion);
                 else
-                    [results,~] = GLMsinCos5(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'splitedIn',splitIn),splitIn);
+                    [results,~] = GLMsinCos5(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'runLabel',{splitRunInd},'splitedIn',splitIn),splitIn);
                 end
                 results.OLS.mixed = resultsTmp.OLS.mixed; clear resultsTmp
                 results.mask = mask;
-                results.inputs.opt.runLabel = splitRunInd;
                 save([outName '.mat'],'results','-v7.3');
             else
                 ana = 'resp';
@@ -347,16 +373,16 @@ for smLevel = {''}
                 
                 ana = 'SinCos';
                 outName = fullfile(funData_folderOUT,[maskLabel ana '_' num2str(splitIn) 'perRun_move12' smLevel{1}]);
-                [resultsTmp,~] = GLMsinCos3(splitDesign,splitData,stimdur,tr,ana,[],struct('extraregressors',{splitExtraRegr},'sessionLabel',{splitSessionLabel},'splitedIn',splitIn),splitIn);
+                [resultsTmp,~] = GLMsinCos3(splitDesign,splitData,stimdur,tr,ana,[],struct('extraregressors',{splitExtraRegr},'sessionLabel',{splitSessionLabel},'runLabel',{splitRunInd},'splitedIn',splitIn),splitIn);
                 resultsTmp.OLS.fixed = []; resultsTmp.OLS.fixed_sessReg = []; resultsTmp.OLS.mixed_sessRm = [];
                 if exclude && ismember(subjList(subjInd),exclusion.subj)
                     exclInd = ismember(exclusion.subj,subjList(subjInd));
                     curExclusion.sess = exclusion.sess(exclInd);
                     curExclusion.run = exclusion.run(exclInd);
                     curExclusion.cond = exclusion.cond(exclInd);
-                    [results,~] = GLMsinCos5(splitDesign,splitData,stimdur,tr,ana,[],struct('extraregressors',{splitExtraRegr},'sessionLabel',{splitSessionLabel},'splitedIn',splitIn),splitIn,curExclusion);
+                    [results,~] = GLMsinCos5(splitDesign,splitData,stimdur,tr,ana,[],struct('extraregressors',{splitExtraRegr},'sessionLabel',{splitSessionLabel},'runLabel',{splitRunInd},'splitedIn',splitIn),splitIn,curExclusion);
                 else
-                    [results,~] = GLMsinCos5(splitDesign,splitData,stimdur,tr,ana,[],struct('extraregressors',{splitExtraRegr},'sessionLabel',{splitSessionLabel},'splitedIn',splitIn),splitIn);
+                    [results,~] = GLMsinCos5(splitDesign,splitData,stimdur,tr,ana,[],struct('extraregressors',{splitExtraRegr},'sessionLabel',{splitSessionLabel},'runLabel',{splitRunInd},'splitedIn',splitIn),splitIn);
                 end
                 results.OLS.mixed = resultsTmp.OLS.mixed; clear resultsTmp
                 results.mask = mask;

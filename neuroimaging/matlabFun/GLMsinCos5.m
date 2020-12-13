@@ -4,21 +4,27 @@ function [results,dataDetrend] = GLMsinCos5(design,data,stimdur,tr,hrfmodel,hrfk
 %stimdur is internally fixed to 6 in GLMestimatemodel>fitmodel_helper at 884
 %WARNINGWARNINGWARNINGWARNINGWARNINGWARNINGWARNING
 
+numruns = length(data);
+sessLabel = cell2mat(opt.sessionLabel)';
+condLabel = cat(1,ones(numruns/3,1)*1,ones(numruns/3,1)*2,ones(numruns/3,1)*3);
+runOrder = cell2mat(opt.runLabel)';
+
+sessList = unique(sessLabel);
+condList = unique(condLabel);
+
+runLabel = nan(size(sessLabel));
+for sessInd = 1:length(sessList)
+    for condInd = 1:length(condList)
+        curInd = sessLabel==sessList(sessInd) & condLabel==condList(condInd);
+        runLabel(curInd) = 1:length(runLabel(curInd));
+    end
+end
+runList = unique(runLabel);
+
+
 
 %% Exclude
 if exist('exclusion','var')
-    numruns = length(data);
-    condLabel = cat(1,ones(numruns/3,1)*1,ones(numruns/3,1)*2,ones(numruns/3,1)*3);
-    sessLabel = cell2mat(opt.sessionLabel)';
-    sessList = unique(sessLabel);
-    condList = unique(condLabel);
-    runLabel = nan(size(sessLabel));
-    for sessInd = 1:length(sessList)
-        for condInd = 1:length(condList)
-            curInd = sessLabel==sessList(sessInd) & condLabel==condList(condInd);
-            runLabel(curInd) = 1:length(runLabel(curInd));
-        end
-    end
     exclInd = exclusion.sess==sessLabel & exclusion.run==runLabel;
     
     design = design(~exclInd);
@@ -169,9 +175,6 @@ end
 clear polyNmotion_b constant_b
 
 % Conditions
-condLabel = cat(1,ones(numruns/3,1)*1,ones(numruns/3,1)*2,ones(numruns/3,1)*3);
-sessLabel = cell2mat(opt.sessionLabel)';
-
 condDesign1 = cell(1,3);
 polyNmotionDesign1 = cell(1,3);
 constantDesign1 = cell(1,3);
@@ -236,8 +239,12 @@ results.OLS.fixed.parameters = ...
 
 
 %% Compute F session-wise
-tmpSessLabel = repmat(sessLabel',numtime,1);
-results.OLS.fixed.designmatrixSessInd = reshape(tmpSessLabel,numel(tmpSessLabel),1);
+tmp = repmat(sessLabel',numtime,1);
+results.OLS.fixed.designmatrixSessInd = reshape(tmp,numel(tmp),1);
+tmp = repmat(condLabel',numtime,1);
+results.OLS.fixed.designmatrixCondInd = reshape(tmp,numel(tmp),1);
+tmp = repmat(runOrder',numtime,1);
+results.OLS.fixed.designmatrixRunInd = reshape(tmp,numel(tmp),1);
 
 for sess = 1:2
     display(['Computing F for sess' num2str(sess)])
