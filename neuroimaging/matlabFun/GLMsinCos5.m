@@ -31,6 +31,26 @@ if exist('exclusion','var')
     data = data(~exclInd);
     opt.sessionLabel = opt.sessionLabel(~exclInd);
     opt.runLabel = opt.runLabel(~exclInd);
+    
+    
+    
+    
+    numruns = length(data);
+    sessLabel = cell2mat(opt.sessionLabel)';
+    condLabel = cat(1,ones(numruns/3,1)*1,ones(numruns/3,1)*2,ones(numruns/3,1)*3);
+    runOrder = cell2mat(opt.runLabel)';
+    
+    sessList = unique(sessLabel);
+    condList = unique(condLabel);
+    
+    runLabel = nan(size(sessLabel));
+    for sessInd = 1:length(sessList)
+        for condInd = 1:length(condList)
+            curInd = sessLabel==sessList(sessInd) & condLabel==condList(condInd);
+            runLabel(curInd) = 1:length(runLabel(curInd));
+        end
+    end
+    runList = unique(runLabel);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% DEAL WITH INPUTS, ETC.
