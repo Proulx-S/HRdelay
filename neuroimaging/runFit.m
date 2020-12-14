@@ -2,7 +2,7 @@ function runFit
 
 actuallyRun = 0;
 noMovement = 1;
-saveFig = 1;
+saveFig = 0;
 exclude = 1;
 exclusion.subj = {'03sk'};
 exclusion.sess = 1;

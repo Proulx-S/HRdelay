@@ -5,8 +5,8 @@ end
 doVein = 1;
 noMovement = 1;
 threshVal = 0.05;
-plotAllSubj = 1;
-saveFig = 1;
+plotAllSubj = 0;
+saveFig = 0;
 
 %colors
 colors = [  0         0.4470    0.7410
@@ -290,17 +290,20 @@ if saveFig
 end
 
 % Polar space
-xData_theta = -angle(xData)./pi*6;
+thetaRef = angle(mean(xData(:)));
+xData_theta = wrapToPi(angle(xData) - thetaRef);
+xData_theta = -xData_theta./pi*6;
+thetaRef = -thetaRef./pi*6;
+xData_theta = xData_theta + thetaRef; clear thetaRef
+xData_thetaMean = mean(xData_theta,1);
 xData_rho = abs(xData);
-xDataMean = mean(xData,1);
-xDataMean_theta = -angle(xDataMean)./pi*6;
-xDataMean_rho = abs(xDataMean);
+xData_rhoMean = mean(xData_rho,1);
 
 fGroup(2) = figure('WindowStyle','docked');
 [ax, pos] = tight_subplot(1,2);
 spInd = 1;
 axes(ax(spInd));
-hb = bar(xDataMean_rho(:,[4 3])); hold on
+hb = bar(xData_rhoMean(:,[4 3])); hold on
 hb1 = bar(hb.XData(1),hb.YData(1),'FaceColor','k');
 hb2 = bar(hb.XData(2),hb.YData(2),'FaceColor',colors(3,:));
 hp = plot(hb.XData,xData_rho(:,[4 3])','color',[1 1 1].*0.5);
@@ -314,7 +317,7 @@ ax(spInd).PlotBoxAspectRatio = [0.2 1 1];
 box off
 spInd = 2;
 axes(ax(spInd));
-hb = bar(xDataMean_rho(:,[1 2])); hold on
+hb = bar(xData_rhoMean(:,[1 2])); hold on
 hb1 = bar(hb.XData(1),hb.YData(1),'FaceColor',colors(1,:));
 hb2 = bar(hb.XData(2),hb.YData(2),'FaceColor',colors(2,:));
 hp = plot(hb.XData,xData_rho(:,[1 2])','color',[1 1 1].*0.5);
@@ -344,7 +347,7 @@ fGroup(3) = figure('WindowStyle','docked');
 [ax, pos] = tight_subplot(2, 1,[0],[0.1 0],[0.1 0]);
 spInd = 1;
 axes(ax(spInd));
-hb = barh(xDataMean_theta(:,[4 3])); hold on
+hb = barh(xData_thetaMean(:,[4 3])); hold on
 hb1 = barh(hb.XData(1),hb.YData(1),'FaceColor','k');
 hb2 = barh(hb.XData(2),hb.YData(2),'FaceColor',colors(3,:));
 hp = plot(xData_theta(:,[4 3])',hb.XData,'color',[1 1 1].*0.5);
@@ -358,7 +361,7 @@ ax(spInd).PlotBoxAspectRatio = [1 0.2 1];
 box off
 spInd = 2;
 axes(ax(spInd));
-hb = barh(xDataMean_theta(:,[1 2])); hold on
+hb = barh(xData_thetaMean(:,[1 2])); hold on
 hb1 = barh(hb.XData(1),hb.YData(1),'FaceColor',colors(1,:));
 hb2 = barh(hb.XData(2),hb.YData(2),'FaceColor',colors(2,:));
 hp = plot(xData_theta(:,[1 2])',hb.XData,'color',[1 1 1].*0.5);
@@ -372,10 +375,10 @@ ax(spInd).PlotBoxAspectRatio = [1 0.2 1];
 box off
 
 disp('***')
-disp(['delay (plaid-ori) = ' num2str(diff(xDataMean_theta(:,[4 3])),'%0.3fs')])
-disp(['delay (ori2-ori1) = ' num2str(diff(xDataMean_theta(:,[1 2])),'%0.3fs')])
-disp(['amp (plaid-ori) = ' num2str(diff(xDataMean_rho(:,[4 3])),'%0.3f%%BOLD')])
-disp(['amp (ori2-ori1) = ' num2str(diff(xDataMean_rho(:,[1 2])),'%0.3f%%BOLD')])
+disp(['delay (plaid-ori) = ' num2str(diff(xData_thetaMean(:,[4 3])),'%0.3fs')])
+disp(['delay (ori2-ori1) = ' num2str(diff(xData_thetaMean(:,[1 2])),'%0.3fs')])
+disp(['amp (plaid-ori) = ' num2str(diff(xData_rhoMean(:,[4 3])),'%0.3f%%BOLD')])
+disp(['amp (ori2-ori1) = ' num2str(diff(xData_rhoMean(:,[1 2])),'%0.3f%%BOLD')])
 disp('***')
 
 if saveFig
