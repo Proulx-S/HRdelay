@@ -98,6 +98,7 @@ for subjInd = 1:length(dP)
     else
         disp('masking out inactive vox')
     end
+    disp(['Leaving ' num2str(size(dP{subjInd}.sess1.data,2)) ' and ' num2str(size(dP{subjInd}.sess2.data,2)) ' vox in sess1 and sess2']);
     disp('+++')
     
     % average within ROI's selected voxels
@@ -255,8 +256,8 @@ xDataInfo = 'subj x cond[or1, ori2, plaid, ori] x sess';
 xData = mean(xData,3);
 xDataInfo = 'subj x cond[or1, ori2, plaid, ori]';
 
-% Save intermediary data for hrGroupAnalysis
-save(fullfile(funPath,funLevel,'tmp.mat'),'xData','xDataInfo')
+% % Save intermediary data for hrGroupAnalysis
+% save(fullfile(funPath,funLevel,'tmp.mat'),'xData','xDataInfo')
 
 %% Plot results
 % Cartesian space

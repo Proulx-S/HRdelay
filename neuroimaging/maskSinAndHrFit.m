@@ -1,8 +1,8 @@
 function maskSinAndHrFit(fitType,threshType,veinPerc)
 noMovement = 1;
 actuallyRun = 1;
-saveFig = 0;
-plotAllSubj = 0;
+saveFig = 1;
+plotAllSubj = 1;
 if ~exist('veinPerc','var') || isempty(veinPerc) || veinPerc==0
     doVein = 0;
 else
