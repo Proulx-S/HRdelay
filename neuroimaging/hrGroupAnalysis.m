@@ -4,8 +4,8 @@ if ~exist('threshType','var') || isempty(threshType)
 end
 noMovement = 1;
 threshVal = 0.05;
-saveFig = 0;
-plotAllSubj = 0;
+saveFig = 1;
+plotAllSubj = 1;
 
 %colors
 colors = [  0         0.4470    0.7410
@@ -19,7 +19,7 @@ else
 end
 dataDir = 'C-derived\DecodingHR';
 funPath = fullfile(repoPath,dataDir,'fun');
-funLevel = 'zHr';
+funLevel = 'z';
 funLevelSin = 'zSin';
 subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'}';
 % subjList = {'02jp' '03sk' '04sp'}';

@@ -2,6 +2,7 @@ function exclusion = sinusoidalGroupAnalysis(threshType)
 if ~exist('threshType','var') || isempty(threshType)
     threshType = 'p'; % 'none', 'p' or 'fdr'
 end
+doVein = 1;
 noMovement = 1;
 threshVal = 0.05;
 plotAllSubj = 1;
@@ -45,61 +46,52 @@ disp(['OUT: figures and stats'])
 
 %% Load data
 dAll = cell(size(subjList,1),1);
+featSelStats = cell(size(subjList,1),1);
+if doVein
+    veinAll = cell(size(subjList,1),1);
+end
 for subjInd = 1:size(subjList,1)
-    load(fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]),'d','featSelStats','vein');
+    if doVein
+        load(fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]),'d','featSelStats','vein');
+        veinAll{subjInd} = vein;
+    else
+        load(fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]),'d','featSelStats');
+    end
     dAll{subjInd} = d;
     featSelStatsAll{subjInd} = featSelStats;
-    veinAll{subjInd} = vein;
 end
 d = dAll; clear dAll
 featSelStats = featSelStatsAll; clear featSelStatsAll
-vein = veinAll; clear veinAll
+if doVein
+    vein = veinAll; clear veinAll
+end
 
 %% Process data
 dP = d;
-
-% figure('WindowStyle','docked')
-% subplot(2,1,1)
-% % polarplot(squeeze(mean(d{subjInd}.sess1.data,1)),'o');
-% polarplot(squeeze(mean(d{subjInd}.sess1.data,2)),'o');
-% abs(mean(d{subjInd}.sess1.data(:)))
-% subplot(2,1,2)
-% % polarplot(squeeze(mean(dP{subjInd}.sess1.data,1)),'o');
-% polarplot(squeeze(mean(dP{subjInd}.sess1.data,2)),'o');
-% abs(mean(dP{subjInd}.sess1.data(:)))
 
 % Threshold and average voxels in cartesian space, using statistical tests
 % on the other session
 rLim = nan(length(dP),1);
 for subjInd = 1:length(dP)
     if ~strcmp(threshType,'none')
-        ind = featSelStats{subjInd}.anyCondActivation.sess2.(upper(threshType))<threshVal;
-        dP{subjInd}.sess1.data = dP{subjInd}.sess1.data(:,ind,:,:);
-        ind = featSelStats{subjInd}.anyCondActivation.sess1.(upper(threshType))<threshVal;
-        dP{subjInd}.sess2.data = dP{subjInd}.sess2.data(:,ind,:,:);
+        indAct = featSelStats{subjInd}.anyCondActivation.sess2.(upper(threshType))<threshVal;
+        if doVein; indVein = vein{subjInd}.sess2.mask; end
+        dP{subjInd}.sess1.data = dP{subjInd}.sess1.data(:,indAct&indVein,:,:);
+        
+        indAct = featSelStats{subjInd}.anyCondActivation.sess1.(upper(threshType))<threshVal;
+        if doVein; indVein = vein{subjInd}.sess1.mask; end
+        dP{subjInd}.sess2.data = dP{subjInd}.sess2.data(:,indAct&indVein,:,:);
+    else
+        if doVein; indVein = vein{subjInd}.sess2.mask; end
+        dP{subjInd}.sess1.data = dP{subjInd}.sess1.data(:,indVein,:,:);
+        if doVein; indVein = vein{subjInd}.sess1.mask; end
+        dP{subjInd}.sess2.data = dP{subjInd}.sess2.data(:,indVein,:,:);
     end
     dP{subjInd}.sess1.data = mean(dP{subjInd}.sess1.data,2);
     dP{subjInd}.sess2.data = mean(dP{subjInd}.sess2.data,2);
     dP{subjInd}.sess1 = rmfield(dP{subjInd}.sess1,'hr');
     dP{subjInd}.sess2 = rmfield(dP{subjInd}.sess2,'hr');
-%     switch threshType
-%         % no voxel selection
-%         case 'none' 
-%             dP{subjInd}.sess1.data = mean(dP{subjInd}.sess1.data,2);
-%             dP{subjInd}.sess2.data = mean(dP{subjInd}.sess2.data,2);
-%         % voxel selection cross-validated between sessions
-%         case 'p'
-%             ind = featSelStats.anyCondActivation.sess2.(upper(threshType))<threshVal;
-%             dP{subjInd}.sess1.data = mean(dP{subjInd}.sess1.data(:,ind,:,:),2);
-%             ind = featSelStats.anyCondActivation.sess1.(upper(threshType))<threshVal;
-%             dP{subjInd}.sess2.data = mean(dP{subjInd}.sess2.data(:,ind,:,:),2);
-%         case 'fdr'
-%             dP{subjInd}.sess1.data = mean(dP{subjInd}.sess1.data(:,dP{subjInd}.sess2.FDR<threshVal,:),2);
-%             dP{subjInd}.sess2.data = mean(dP{subjInd}.sess2.data(:,dP{subjInd}.sess1.FDR<threshVal,:),2);
-%         otherwise
-%             error('X')
-%     end
-    
+
     rLim(subjInd) = max(abs([dP{subjInd}.sess1.data(:); dP{subjInd}.sess2.data(:)]));
 end
 
