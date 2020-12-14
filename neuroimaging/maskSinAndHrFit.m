@@ -1,11 +1,14 @@
-function maskSinAndHrFit(fitType,threshType)
+function maskSinAndHrFit(fitType,threshType,veinPerc)
 noMovement = 1;
 actuallyRun = 1;
 saveFig = 0;
 plotAllSubj = 0;
-doVein = 1;
-veinSource = 'reducedModelResid'; % 'reducedModelResid' (stimulus-driven signal included in std) or 'fullModelResid (stimulus-driven signal excluded in std)'
-veinPerc = 10;
+if ~exist('veinPerc','var') || isempty(veinPerc) || veinPerc==0
+    doVein = 0;
+else
+    doVein = 1;
+    veinSource = 'reducedModelResid'; % 'reducedModelResid' (stimulus-driven signal included in std) or 'fullModelResid (stimulus-driven signal excluded in std)'
+end
 if ~exist('fitType','var') || isempty(fitType)
     fitType = 'mixed'; % 'mixed' (different regressors for each run) or 'fixed' (different regressors for each session)
 end
@@ -174,63 +177,65 @@ for subjInd = 1:length(subjList)
         %thresholded
         f(end+1) = figure('WindowStyle','docked','color','w');
         axBak = plotIm(axes,brain(:,:,slice));
-        maskThresh = featSel.(sess).anyCondActivation.(upper(threshType))<threshVal;
+        maskFull = maskAnat;
+        if ~strcmp(threshType,'none')
+            maskThresh = featSel.(sess).anyCondActivation.(upper(threshType))<threshVal;
+            maskFull = maskFull & maskThresh;
+        end
         if doVein
-            maskVein = vein.(sess).mask;
-            maskFull = maskThresh & ~maskVein & maskAnat;
-        else
-            maskFull = maskThresh & maskAnat;
+            maskFull = maskFull & ~vein.(sess).mask;
         end
         im(~maskFull(:,:,slice)) = nan;
         axOver = plotIm(axes,im,cLim);
         alphaData = ~isnan(im);
         makeOverlay(axBak,axOver,alphaData,cMap_F,'log',cLim)
         ylabel({'Activation Level (F value)' ['\fontsize{8}Thresholded (' threshType '<' num2str(threshVal,'%0.2f') ') within ROI']});
-        %hist
-        f(end+1) = figure('WindowStyle','docked','color','w');
-        vol = featSel.(sess).anyCondActivation.F(maskAnat);
-        vol = log(vol);
-        hHist = histogram(vol,1000); hold on
-        tip = 0.001;
-        [~,bHigh] = min(abs(cumsum(hHist.Values)./sum(hHist.Values)-(1-tip)));
-        [~,bLow] = min(abs(cumsum(hHist.Values)./sum(hHist.Values)-tip));
-        xLim = [hHist.BinEdges(bLow) hHist.BinEdges(bHigh+1)];
-        xlim(xLim);
-        i = 0;
-        done = 0;
-        XTicks = [];
-        XTickLabel = [];
-        while ~done
-            XTicks = [XTicks (0:0.1:1)*(10^i)];
-            XTickLabel = [XTickLabel (10^i)];
-            i = i+1;
-            done = XTicks(end)>exp(xLim(2));
+        if ~strcmp(threshType,'none')
+            %hist
+            f(end+1) = figure('WindowStyle','docked','color','w');
+            vol = featSel.(sess).anyCondActivation.F(maskAnat);
+            vol = log(vol);
+            hHist = histogram(vol,1000); hold on
+            tip = 0.001;
+            [~,bHigh] = min(abs(cumsum(hHist.Values)./sum(hHist.Values)-(1-tip)));
+            [~,bLow] = min(abs(cumsum(hHist.Values)./sum(hHist.Values)-tip));
+            xLim = [hHist.BinEdges(bLow) hHist.BinEdges(bHigh+1)];
+            xlim(xLim);
+            i = 0;
+            done = 0;
+            XTicks = [];
+            XTickLabel = [];
+            while ~done
+                XTicks = [XTicks (0:0.1:1)*(10^i)];
+                XTickLabel = [XTickLabel (10^i)];
+                i = i+1;
+                done = XTicks(end)>exp(xLim(2));
+            end
+            imMin = xLim(1);
+            imMax = xLim(2);
+            XTicks = sort(unique(XTicks));
+            XTicks = XTicks(XTicks>exp(imMin) & XTicks<exp(imMax));
+            ax = gca;
+            ax.XTick = log(XTicks);
+            ax.XTickLabel = cellstr(num2str(XTicks'));
+            tmp = ax.XTickLabel;
+            tmp(~ismember(XTicks,XTickLabel)) = {''};
+            ax.XTickLabel = tmp;
+            ax.XTickLabel(1) = {num2str(XTicks(1))};
+            ax.XTickLabel(end) = {num2str(XTicks(end))};
+            ax.TickDir = 'out';
+            ax.Box = 'off';
+            hHist.FaceColor = 'k'; hHist.EdgeColor = 'none';
+            ylabel('voxel count')
+            xlabel('F-value')
+            tmp = featSel.(sess).anyCondActivation.(upper(threshType))(maskAnat);
+            [~,b] = min(abs(tmp-threshVal));
+            yLim = ylim;
+            plot([1 1].*vol(b),yLim,'r')
+            hTex = text(vol(b),yLim(2),['F=' num2str(exp(vol(b)),'%0.1f') ', ' threshType '=' num2str(threshVal,'%0.2f')]);
+            hTex.VerticalAlignment = 'top';
+            hTex.Position(1) = hTex.Position(1) + hTex.Extent(3).*0.02;
         end
-        imMin = xLim(1);
-        imMax = xLim(2);
-        XTicks = sort(unique(XTicks));
-        XTicks = XTicks(XTicks>exp(imMin) & XTicks<exp(imMax));
-        ax = gca;
-        ax.XTick = log(XTicks);
-        ax.XTickLabel = cellstr(num2str(XTicks'));
-        tmp = ax.XTickLabel;
-        tmp(~ismember(XTicks,XTickLabel)) = {''};
-        ax.XTickLabel = tmp;
-        ax.XTickLabel(1) = {num2str(XTicks(1))};
-        ax.XTickLabel(end) = {num2str(XTicks(end))};
-        ax.TickDir = 'out';
-        ax.Box = 'off';
-        hHist.FaceColor = 'k'; hHist.EdgeColor = 'none';
-        ylabel('voxel count')
-        xlabel('F-value')
-        tmp = featSel.(sess).anyCondActivation.(upper(threshType))(maskAnat);
-        [~,b] = min(abs(tmp-threshVal));
-        yLim = ylim;
-        plot([1 1].*vol(b),yLim,'r')
-        hTex = text(vol(b),yLim(2),['F=' num2str(exp(vol(b)),'%0.1f') ', ' threshType '=' num2str(threshVal,'%0.2f')]);
-        hTex.VerticalAlignment = 'top';
-        hTex.Position(1) = hTex.Position(1) + hTex.Extent(3).*0.02;
-        
         
         if doVein
             %Vein overlay
@@ -271,10 +276,12 @@ for subjInd = 1:length(subjList)
         axBak = plotIm(axes,brain(:,:,slice));
         axV1 = plotIm(axes,double(maskAnat(:,:,slice)));
         makeOverlay(axBak,axV1,maskAnat(:,:,slice),[0 0 0; 255 255 0]./255)
-        tmp = double(vein.(sess).mask(:,:,slice));
-        tmp(~maskAnat(:,:,slice)) = 0;
-        axVein = plotIm(axes,tmp);
-        makeOverlay(axBak,axVein,tmp,[0 0 0; 0 140 225]./255)
+        if doVein
+            tmp = double(vein.(sess).mask(:,:,slice));
+            tmp(~maskAnat(:,:,slice)) = 0;
+            axVein = plotIm(axes,tmp);
+            makeOverlay(axBak,axVein,tmp,[0 0 0; 0 140 225]./255)
+        end
         
         % Save
         if saveFig
@@ -355,18 +362,19 @@ for subjInd = 1:length(subjList)
         featSelStats.anyCondActivation.(sess).info = '1 x vox';
         
         % vein
-        list = {'noiseOverMean' 'mask'};
-        for i = 1:length(list)
-            tmp = nan(sz(1:3));
-            tmp(:) = vein.(sess).(list{i})(maskFit);
-            vein.(sess).(list{i}) = tmp(ind)';
+        if doVein
+            list = {'noiseOverMean' 'mask'};
+            for i = 1:length(list)
+                tmp = nan(sz(1:3));
+                tmp(:) = vein.(sess).(list{i})(maskFit);
+                vein.(sess).(list{i}) = tmp(ind)';
+            end
+        else
+            vein.(sess).mask = false(size(featSelStats.anyCondActivation.(sess).F));
         end
         vein.(sess).info = '1 x vox';
+        
     end
-    sess = 'sess1';
-%     d.(sess)
-%     featSelStats.anyCondActivation.(sess)
-%     vein.(sess)
     clear hr
     
     %% Save
