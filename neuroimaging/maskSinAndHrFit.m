@@ -1,9 +1,10 @@
 function maskSinAndHrFit(fitType,threshType)
 noMovement = 1;
 actuallyRun = 1;
-saveFig = 0;
-plotAllSubj = 0;
+saveFig = 1;
+plotAllSubj = 1;
 doVein = 1;
+veinSource = 'reducedModelResid'; % 'reducedModelResid' (stimulus-driven signal included in std) or 'fullModelResid (stimulus-driven signal excluded in std)'
 veinPerc = 10;
 if ~exist('fitType','var') || isempty(fitType)
     fitType = 'mixed'; % 'mixed' (different regressors for each run) or 'fixed' (different regressors for each session)
@@ -100,25 +101,30 @@ for subjInd = 1:length(subjList)
     maskFit = results.mask;
     
     % maskVein
-    sessLabel = [results.inputs.opt.sessionLabel{:}]';
-    for sessInd = 1:2
-        vein.(['sess' num2str(sessInd)]).noiseOverMean = nan(size(maskAnat));
-        vein.(['sess' num2str(sessInd)]).noiseOverMean(maskFit) = mean(results.OLS.mixed.vein(:,:,:,sessLabel==sessInd),4);
-        vein.(['sess' num2str(sessInd)]).thresh = prctile(vein.(['sess' num2str(sessInd)]).noiseOverMean(maskAnat),100-veinPerc);
-        vein.(['sess' num2str(sessInd)]).mask = vein.(['sess' num2str(sessInd)]).noiseOverMean>vein.(['sess' num2str(sessInd)]).thresh;
+    if doVein
+        sessLabel = [results.inputs.opt.sessionLabel{:}]';
+        for sessInd = 1:2
+            vein.(['sess' num2str(sessInd)]).noiseOverMean = nan(size(maskAnat));
+            switch veinSource
+                case 'reducedModelResid'
+                    vein.(['sess' num2str(sessInd)]).noiseOverMean(maskFit) = mean(results.OLS.mixed.veinFull(:,:,:,sessLabel==sessInd),4);
+                case 'fullModelResid'
+                    vein.(['sess' num2str(sessInd)]).noiseOverMean(maskFit) = mean(results.OLS.mixed.veinReduced(:,:,:,sessLabel==sessInd),4);
+            end
+            vein.(['sess' num2str(sessInd)]).thresh = prctile(vein.(['sess' num2str(sessInd)]).noiseOverMean(maskAnat),100-veinPerc);
+            vein.(['sess' num2str(sessInd)]).mask = vein.(['sess' num2str(sessInd)]).noiseOverMean>vein.(['sess' num2str(sessInd)]).thresh;
+        end
     end
     
     % feature selection
     for sessInd = 1:2
         switch fitType
             case 'mixed'
-                eval(['F = results.OLS.mixed.Fsess' num2str(sessInd) '.val.F;']);
-%                 eval(['F = results.OLS.mixed.Fsess' num2str(sessInd) '.val.F(maskAnat(maskFit));']);
-                eval(['df = results.OLS.mixed.Fsess' num2str(sessInd) '.df;']);
+                F = results.OLS.(fitType).(['Fsess' num2str(sessInd)]).val.F;
+                df = results.OLS.(fitType).(['Fsess' num2str(sessInd)]).df;
             case 'fixed'
-                eval(['F = results.OLS.fixed.sess' num2str(sessInd) '.F.val.F;']);
-%                 eval(['F = results.OLS.fixed.sess' num2str(sessInd) '.F.val.F(maskAnat(maskFit));']);
-                eval(['df = results.OLS.fixed.sess' num2str(sessInd) '.F.df;']);
+                F = results.OLS.(fitType).(['sess' num2str(sessInd)]).F.val.F;
+                df = results.OLS.(fitType).(['sess' num2str(sessInd)]).F.df;
             otherwise
                 error('X')
         end
@@ -144,401 +150,148 @@ for subjInd = 1:length(subjList)
         filename = fullfile(pwd,mfilename);
         if ~exist(filename,'dir'); mkdir(filename); end
         filename = fullfile(filename,'cmap');
-%         FMap = brewermap(256,'reds');
-%         VeinMap = brewermap(256,'blues');
-%         save(filename,'FMap','VeinMap');
-        load(filename,'FMap','VeinMap');
+%         cMap_F = brewermap(256,'reds');
+%         cMap_vein = brewermap(256,'blues');
+%         save(filename,'cMap_F','cMap_vein');
+        load(filename,'cMap_F','cMap_vein');
         
+        f = [];
         %Brain
-        f = figure('WindowStyle','docked','color','w');
+        f(end+1) = figure('WindowStyle','docked','color','w');
         axBak = plotIm(axes,brain(:,:,slice));
         title('BOLD image (1 TR)')
         
         %Activation overlay
-        f = figure('WindowStyle','docked','color','w');
+        f(end+1) = figure('WindowStyle','docked','color','w');
         axBak = plotIm(axes,brain(:,:,slice));
-        axOver = plotIm(axes,log(featSel.(sess).anyCondActivation.F(:,:,slice)));
-        alphaData = ~isnan(featSel.(sess).anyCondActivation.F(:,:,slice));
-        makeOverlay(axOver,alphaData,FMap,'log')
-
-        %Vein overlay
-        f = figure('WindowStyle','docked','color','w');
+        im = featSel.(sess).anyCondActivation.F(:,:,slice);
+        im = log(im);
+        cLim = [min(im(:)) max(im(:))];
+        cLim(1) = cLim(1) + diff(cLim)*0.2;
+        axOver = plotIm(axes,im,cLim);
+        alphaData = ~isnan(im);
+        makeOverlay(axBak,axOver,alphaData,cMap_F,'log',cLim)
+        ylabel('Activation Level (F value)');
+        %thresholded
+        f(end+1) = figure('WindowStyle','docked','color','w');
         axBak = plotIm(axes,brain(:,:,slice));
-        axOver = plotIm(axes,vein.(sess).noiseOverMean(:,:,slice));
-        alphaData = ~isnan(featSel.(sess).anyCondActivation.F(:,:,slice));
-        cLim = vein.(sess).noiseOverMean(:,:,slice);
-        cLim = cLim(maskAnat(:,:,slice));
-        cLim = [min(cLim) max(cLim)];
-        makeOverlay(axOver,alphaData,VeinMap,'lin',cLim)
+        maskThresh = featSel.(sess).anyCondActivation.(upper(threshType))<threshVal;
+        if doVein
+            maskVein = vein.(sess).mask;
+            maskFull = maskThresh & ~maskVein & maskAnat;
+        else
+            maskFull = maskThresh & maskAnat;
+        end
+        im(~maskFull(:,:,slice)) = nan;
+        axOver = plotIm(axes,im,cLim);
+        alphaData = ~isnan(im);
+        makeOverlay(axBak,axOver,alphaData,cMap_F,'log',cLim)
+        ylabel({'Activation Level (F value)' ['\fontsize{8}Thresholded (' threshType '<' num2str(threshVal,'%0.2f') ') within ROI']});
+        %hist
+        f(end+1) = figure('WindowStyle','docked','color','w');
+        vol = featSel.(sess).anyCondActivation.F(maskAnat);
+        vol = log(vol);
+        hHist = histogram(vol,1000); hold on
+        tip = 0.001;
+        [~,bHigh] = min(abs(cumsum(hHist.Values)./sum(hHist.Values)-(1-tip)));
+        [~,bLow] = min(abs(cumsum(hHist.Values)./sum(hHist.Values)-tip));
+        xLim = [hHist.BinEdges(bLow) hHist.BinEdges(bHigh+1)];
+        xlim(xLim);
+        i = 0;
+        done = 0;
+        XTicks = [];
+        XTickLabel = [];
+        while ~done
+            XTicks = [XTicks (0:0.1:1)*(10^i)];
+            XTickLabel = [XTickLabel (10^i)];
+            i = i+1;
+            done = XTicks(end)>exp(xLim(2));
+        end
+        imMin = xLim(1);
+        imMax = xLim(2);
+        XTicks = sort(unique(XTicks));
+        XTicks = XTicks(XTicks>exp(imMin) & XTicks<exp(imMax));
+        ax = gca;
+        ax.XTick = log(XTicks);
+        ax.XTickLabel = cellstr(num2str(XTicks'));
+        tmp = ax.XTickLabel;
+        tmp(~ismember(XTicks,XTickLabel)) = {''};
+        ax.XTickLabel = tmp;
+        ax.XTickLabel(1) = {num2str(XTicks(1))};
+        ax.XTickLabel(end) = {num2str(XTicks(end))};
+        ax.TickDir = 'out';
+        ax.Box = 'off';
+        hHist.FaceColor = 'k'; hHist.EdgeColor = 'none';
+        ylabel('voxel count')
+        xlabel('F-value')
+        tmp = featSel.(sess).anyCondActivation.(upper(threshType))(maskAnat);
+        [~,b] = min(abs(tmp-threshVal));
+        yLim = ylim;
+        plot([1 1].*vol(b),yLim,'r')
+        hTex = text(vol(b),yLim(2),['F=' num2str(exp(vol(b)),'%0.1f') ', ' threshType '=' num2str(threshVal,'%0.2f')]);
+        hTex.VerticalAlignment = 'top';
+        hTex.Position(1) = hTex.Position(1) + hTex.Extent(3).*0.02;
         
+        
+        if doVein
+            %Vein overlay
+            f(end+1) = figure('WindowStyle','docked','color','w');
+            axBak = plotIm(axes,brain(:,:,slice));
+            axOver = plotIm(axes,vein.(sess).noiseOverMean(:,:,slice));
+            alphaData = ~isnan(featSel.(sess).anyCondActivation.F(:,:,slice));
+            cLim = vein.(sess).noiseOverMean(:,:,slice);
+            cLim = cLim(maskAnat(:,:,slice));
+            cLim = [min(cLim) max(cLim)];
+            makeOverlay(axBak,axOver,alphaData,cMap_vein,'lin',cLim)
+            ylabel('Veinness (signal std / signal mean)')
+            %hist
+            f(end+1) = figure('WindowStyle','docked','color','w');
+            vol = vein.(sess).noiseOverMean(maskAnat);
+            hHist = histogram(vol,100); hold on
+            tip = 0.001;
+            [~,bHigh] = min(abs(cumsum(hHist.Values)./sum(hHist.Values)-(1-tip)));
+            [~,bLow] = min(abs(cumsum(hHist.Values)./sum(hHist.Values)-tip));
+            xLim = [hHist.BinEdges(bLow) hHist.BinEdges(bHigh+1)];
+            xlim(xLim);
+            ax = gca;
+            ax.TickDir = 'out';
+            ax.Box = 'off';
+            hHist.FaceColor = 'k'; hHist.EdgeColor = 'none';
+            ylabel('voxel count')
+            xlabel('Veinness (BOLD std/mean)')
+            tmp = vein.(sess).thresh;
+            yLim = ylim;
+            plot([1 1].*tmp,yLim,'b')
+            hTex = text(tmp,yLim(2),num2str(100-veinPerc,'%0.0f%%ile'));
+            hTex.VerticalAlignment = 'top';
+            hTex.Position(1) = hTex.Position(1) + hTex.Extent(3).*0.02;
+        end
         
         %V1 retinotopic representation + Vein
-        f = figure('WindowStyle','docked','color','w');
+        f(end+1) = figure('WindowStyle','docked','color','w');
         axBak = plotIm(axes,brain(:,:,slice));
         axV1 = plotIm(axes,double(maskAnat(:,:,slice)));
-        makeOverlay(axV1,maskAnat(:,:,slice),[0 0 0; 255 255 0]./255)
+        makeOverlay(axBak,axV1,maskAnat(:,:,slice),[0 0 0; 255 255 0]./255)
         tmp = double(vein.(sess).mask(:,:,slice));
         tmp(~maskAnat(:,:,slice)) = 0;
         axVein = plotIm(axes,tmp);
-        makeOverlay(axVein,tmp,[0 0 0; 0 140 225]./255)
+        makeOverlay(axBak,axVein,tmp,[0 0 0; 0 140 225]./255)
         
-        
-        
-        
-%         figure('WindowStyle','docked');
-%         im = brain(:,:,slice);
-%         im = uint8(im./max(im(:)).*255);
-%         im = uint8(ind2rgb(im,gray(256)).*255);
-%         im = permute(im,[3 1 2]);
-%         
-%         im(1,maskAnat(:,:,slice)) = 255;
-%         im(2,maskAnat(:,:,slice)) = 255;
-%         im(3,maskAnat(:,:,slice)) = 40;
-%         
-%         im(1,vein.(sess).mask(:,:,slice)) = 28;
-%         im(2,vein.(sess).mask(:,:,slice)) = 150;
-%         im(3,vein.(sess).mask(:,:,slice)) = 255;
-%         
-%         im = permute(im,[2 3 1]);
-%         imshow(im)
-%         title({'ROI + Veins' '\fontsize{8} (V1, 1 to 6 dva eccentricity)'})
-%         
-% %         ax3 = subplot(2,2,3); axis off
-%         figure('WindowStyle','docked');
-%         F = featSel.(sess).anyCondActivation.F(:,:,slice);
-%         F(isnan(F)) = 0;
-%         switch threshType
-%             case 'p'
-%                 thresh = featSel.(sess).anyCondActivation.P(:,:,slice);
-%             case 'fdr'
-%                 thresh = featSel.(sess).anyCondActivation.FDR(:,:,slice);
-%             case 'none'
-%             otherwise
-%                 error('x')
-%         end
-%         if ~strcmp(threshType,'none')
-%             F(thresh>threshVal) = 0; % functional threshold here
-%         end
-%         tmp = unique(F(:));
-%         [~,b] = sort(tmp);
-%         Fmin =  tmp(b(2)); clear b
-%         Fmax = max(F(:));
-%         imF = uint8((F-Fmin)./(Fmax-Fmin)*255);
-%         imF = uint8(ind2rgb(imF,autumn(256))*255);
-%         
-%         im = brain(:,:,slice);
-%         im = uint8(im./max(im(:)).*255);
-%         im = uint8(ind2rgb(im,gray(256)).*255);
-%         
-%         im = permute(im,[3 1 2]);
-%         imF = permute(imF,[3 1 2]);
-%         for rgb = 1:3
-%             im(rgb,F~=0) = imF(rgb,F~=0);
-%         end
-%         im = permute(im,[2 3 1]); clear imF
-%         imshow(im)
-%         
-%         
-%         
-%         
-%         
-%         
-%         
-%         %vein overlay
-%         f = figure('WindowStyle','docked','color','w');
-%         axBak = plotIm(axes,brain(:,:,slice));
-%         axOver = plotIm(axes,vein.(sess).noiseOverMean(:,:,slice));
-%         alphaData = ~isnan(featSel.(sess).anyCondActivation.F(:,:,slice));
-%         makeOverlay(axOver,alphaData,FMap,'log')
-% 
-%         ax = axF;
-%         hIm = findobj(ax.Children,'Type','Image');
-%         i = 0;
-%         done = 0;
-%         YTicks = [];
-%         YTickLabel = [];
-%         while ~done
-%             YTicks = [YTicks (0:0.1:1)*(10^i)];
-%             YTickLabel = [YTickLabel (10^i)];
-%             i = i+1;
-%             done = YTicks(end)>exp(axF.CLim(2));
-%         end
-%         imMin = min(hIm.CData(:));
-%         imMax = max(hIm.CData(:));
-%         YTicks = sort(unique(YTicks));
-%         YTicks = YTicks(YTicks>exp(imMin) & YTicks<exp(imMax));
-%         ax.YTick = interp1([imMin imMax],[1 size(im,1)],log(YTicks));
-%         ax.YTickLabel = cellstr(num2str(YTicks'));
-%         tmp = ax.YTickLabel;
-%         tmp(~ismember(YTicks,YTickLabel)) = {''};
-%         ax.YTickLabel = tmp;
-%         ax.YTickLabel(1) = {num2str(YTicks(1))};
-%         ax.YTickLabel(end) = {num2str(YTicks(end))};
-%         ax.TickDir = 'out';
-%         
-%         
-%         ylabel('F value')
-%         title({'Visual Activation' '\fontsize{8} (within ROI)'})
-%         
-%         
-%         
-%         
-%         
-%         
-%         
-%         axF.Children.AlphaData(logical(axF.Children.AlphaData)) = ~isnan(featSel.(sess).anyCondActivation.F(:,:,slice));
-%         axF.Children.AlphaData = axF.Children.AlphaData.*1
-%         
-%         
-%         
-%         im = featSel.(sess).anyCondActivation.F(:,:,slice);
-%         cLim = [min(im(:)) max(im(:))];
-%         cb = linspace(cLim(1),cLim(2),size(im,1))';
-%         cb = repmat(cb,1,round(size(im,1).*cbWidth));
-%         im = cat(2,cb,im);
-%         axF.Children.CData = im;
-%         axF.CLim = cLim;
-%         axF.Colormap = FMap;
-%         
-%         hIm.YData = fliplr(hIm.YData);
-%         axBrain = gca;
-%         axBrain.YDir = 'normal';
-%         axBrain.PlotBoxAspectRatio = [1+cbWidth 1 1];
-%         xticks([]); yticks([]);
-%         axBrain.Colormap = colormap('gray');
-%         
-%         
-%         
-%         
-%         
-%         
-%         
-%         F = featSel.(sess).anyCondActivation.F(:,:,slice);
-%         alphaData = ~isnan(F);
-%         F = log(F);
-%         Fmin = min(F(:));
-%         Fmax = max(F(:));
-%         imF = uint8((F-Fmin)./(Fmax-Fmin)*255);
-%         imF = uint8(ind2rgb(imF,FMap)*255);
-%         axF.Children.CData = imF;
-%         axF.Children.AlphaData = alphaData.*1;
-%         axF.PositionConstraint = 'innerposition';
-%         cb=colorbar(axF)
-%         
-%         
-%         
-%         tmp = colormap('gray')
-%         axBrain = gca;
-%         axBrain.PlotBoxAspectRatio = [1 1 1];
-%         
-%         im = uint8(im./max(im(:)).*255);
-%         im = uint8(ind2rgb(im,gray(256)).*255);
-%         
-%         colormap(size(im,1))
-%         %add colorbar
-%         imCB = uint8(autumn(size(im,1))*255);
-%         imCB = permute(flipud(imCB),[1 3 2]);
-%         imCB = repmat(imCB,[1 round(size(im,1).*0.03) 1]);
-%         im = cat(2,imCB,im);
-%         hIm = imshow(im);
-%         
-%         
-%         imshow(im);
-%         axBrain = gca;
-%         
-%         axF = copyobj(axBrain,f);
-%         F = featSel.(sess).anyCondActivation.F(:,:,slice);
-%         alphaData = ~isnan(F);
-%         F = log(F);
-%         Fmin = min(F(:));
-%         Fmax = max(F(:));
-%         imF = uint8((F-Fmin)./(Fmax-Fmin)*255);
-%         imF = uint8(ind2rgb(imF,FMap)*255);
-%         axF.Children.CData = imF;
-%         axF.Children.AlphaData = alphaData.*1;
-%         axF.PositionConstraint = 'innerposition';
-%         cb=colorbar(axF)
-%         cb
-%         
-%         
-%         
-%         
-%         
-%         
-%         
-%             fSubj(subjInd).Color = 'none';
-%             set(findobj(fSubj(subjInd).Children,'type','Axes'),'color','none')
-%             saveas(fSubj(subjInd),[filename '.svg']); disp([filename '.svg'])
-%             fSubj(subjInd).Color = 'w';
-%             set(findobj(fSubj(subjInd).Children,'type','Axes'),'color','w')
-%             saveas(fSubj(subjInd),filename); disp([filename '.fig'])
-%         save()
-%         
-%         
-%         %Activation
-%         figure('WindowStyle','docked');
-%         F = log(featSel.(sess).anyCondActivation.F(:,:,slice));
-%         Fmin = min(F(:));
-%         Fmax = max(F(:));
-%         imF = uint8((F-Fmin)./(Fmax-Fmin)*255);
-%         imF = uint8(ind2rgb(imF,autumn(256))*255);
-%         
-%         im = brain(:,:,slice);
-%         im = uint8(im./max(im(:)).*255);
-%         im = uint8(ind2rgb(im,gray(256)).*255);
-%         
-%         im = permute(im,[3 1 2]);
-%         imF = permute(imF,[3 1 2]);
-%         for rgb = 1:3
-%             im(rgb,~isnan(F)) = imF(rgb,~isnan(F));
-%         end
-%         im = permute(im,[2 3 1]); clear imF
-%         %add colorbar
-%         imCB = uint8(autumn(size(im,1))*255);
-%         imCB = permute(flipud(imCB),[1 3 2]);
-%         imCB = repmat(imCB,[1 round(size(im,1).*0.03) 1]);
-%         im = cat(2,imCB,im);
-%         hIm = imshow(im);
-%         
-%         ax = gca;
-%         hIm.YData = [128 1];
-%         ax.YDir = 'normal';
-%         ax.YAxis.Visible = 'on';
-%         YTicks = sort(unique([0:0.1:1 1:1:10 10:10:100 100:100:1000]));
-%         YTicks = YTicks(YTicks>exp(Fmin) & YTicks<exp(Fmax));
-%         ax.YTick = interp1([Fmin Fmax],[1 size(im,1)],log(YTicks));
-%         ax.YTickLabel = cellstr(num2str(YTicks'));
-%         YTickLabel = ax.YTickLabel;
-%         YTickLabel(~ismember(YTicks,[1 10 100 1000])) = {''};
-%         ax.YTickLabel = YTickLabel;
-%         ax.YTickLabel(1) = {num2str(YTicks(1))};
-%         ax.YTickLabel(end) = {num2str(YTicks(end))};
-%         ylabel('F value')
-%         title({'Visual Activation' '\fontsize{8} (within ROI)'})
-%         
-%         
-%         %V1 + Vein
-% %         ax2 = subplot(2,2,2);
-%         figure('WindowStyle','docked');
-%         im = brain(:,:,slice);
-%         im = uint8(im./max(im(:)).*255);
-%         im = uint8(ind2rgb(im,gray(256)).*255);
-%         im = permute(im,[3 1 2]);
-%         
-%         im(1,maskAnat(:,:,slice)) = 255;
-%         im(2,maskAnat(:,:,slice)) = 255;
-%         im(3,maskAnat(:,:,slice)) = 40;
-%         
-%         im(1,vein.(sess).mask(:,:,slice)) = 28;
-%         im(2,vein.(sess).mask(:,:,slice)) = 150;
-%         im(3,vein.(sess).mask(:,:,slice)) = 255;
-%         
-%         im = permute(im,[2 3 1]);
-%         imshow(im)
-%         title({'ROI + Veins' '\fontsize{8} (V1, 1 to 6 dva eccentricity)'})
-%         
-% %         ax3 = subplot(2,2,3); axis off
-%         figure('WindowStyle','docked');
-%         F = featSel.(sess).anyCondActivation.F(:,:,slice);
-%         F(isnan(F)) = 0;
-%         switch threshType
-%             case 'p'
-%                 thresh = featSel.(sess).anyCondActivation.P(:,:,slice);
-%             case 'fdr'
-%                 thresh = featSel.(sess).anyCondActivation.FDR(:,:,slice);
-%             case 'none'
-%             otherwise
-%                 error('x')
-%         end
-%         if ~strcmp(threshType,'none')
-%             F(thresh>threshVal) = 0; % functional threshold here
-%         end
-%         tmp = unique(F(:));
-%         [~,b] = sort(tmp);
-%         Fmin =  tmp(b(2)); clear b
-%         Fmax = max(F(:));
-%         imF = uint8((F-Fmin)./(Fmax-Fmin)*255);
-%         imF = uint8(ind2rgb(imF,autumn(256))*255);
-%         
-%         im = brain(:,:,slice);
-%         im = uint8(im./max(im(:)).*255);
-%         im = uint8(ind2rgb(im,gray(256)).*255);
-%         
-%         im = permute(im,[3 1 2]);
-%         imF = permute(imF,[3 1 2]);
-%         for rgb = 1:3
-%             im(rgb,F~=0) = imF(rgb,F~=0);
-%         end
-%         im = permute(im,[2 3 1]); clear imF
-%         imshow(im)
-% 
-%         axCB = copyobj(ax3,gcf);
-%         axes(axCB);
-%         CB = permute(flipud(autumn(size(ax1.Children.CData,1))),[1 3 2]);
-%         CB = repmat(CB,[1 round(0.1*size(ax1.Children.CData,2)) 1]);
-%         imshow(CB);
-%         axCB.Position(1) = ax3.Position(1) - ax3.Position(3)*0.5;
-%         axCB.YAxis.Visible = 'on';
-%         axCB.YAxis.TickValues = [1 size(ax1.Children.CData,1)];
-%         if strcmp(threshType,'none')
-%             axCB.YAxis.Label.String = 'F';
-%             axCB.YAxis.TickLabels = {num2str(Fmax,'%0.1f') num2str(Fmin,'%0.1f')};
-%         else
-%             tmp = threshVal-thresh(:); tmp(tmp<0) = nan; [~,b] = min(tmp);
-%             axCB.YAxis.TickLabels = {num2str(max(F(:)),'%0.1f') num2str(F(b),'%0.1f')};
-%             if strcmp(threshType,'p')
-%                 axCB.YAxis.Label.String = {'F' ['p<' num2str(threshVal,'%0.2f')]};
-%             elseif strcmp(threshType,'fdr')
-%                 axCB.YAxis.Label.String = {'F' ['FDR<' num2str(threshVal,'%0.2f')]};
-%             end
-%         end
-%         axCB.YAxis.Label.Rotation = 90;
-%         axCB.YAxis.Label.VerticalAlignment = 'top';
-%         axCB.YAxis.Label.HorizontalAlignment = 'center';
-%         title('Activation Map')
-%         
-%         
-%         
-%         figure('WindowStyle','docked');
-%         ax4 = subplot(2,2,4);
-%         hm = histogram(featSel.(sess).anyCondActivation.F(maskAnat),1000); hold on
-%         xlim([0 20])
-%         ylim(ylim*1.05)
-%         hm.FaceColor = 'k';
-%         ax4.PlotBoxAspectRatio = [1 1 1];
-%         ylabel('vox count');
-%         xlabel('F')
-%         switch threshType
-%             case 'none'
-%             case 'p'
-%                 line([1 1].*F(b),ylim,'Color','r');
-%                 text(F(b)+diff(xlim)*0.01,ax4.YLim(2)*0.95,['p=' num2str(threshVal,'%0.2f')])
-%             case 'fdr'
-%                 line([1 1].*F(b),ylim,'Color','r');
-%                 text(F(b)+diff(xlim)*0.01,ax4.YLim(2)*0.95,['FDR=' num2str(threshVal,'%0.2f')])
-%             otherwise
-%                 error('X')
-%         end
-%         title('All ROI voxels')
-%         if ~strcmp(threshType,'none')
-%             ax4.XTick = sort([ax4.XTick round(F(b),2)]);
-%         end
-%         ax4.TickDir = 'out';
-%         ax4.XTick(ax4.XTick==0) = [];
-        
-        
-        
-        
+        % Save
         if saveFig
             filename = fullfile(pwd,mfilename);
             if ~exist(filename,'dir'); mkdir(filename); end
             filename = fullfile(filename,[subjList{subjInd}]);
-            fSubj(subjInd).Color = 'none';
-            set(findobj(fSubj(subjInd).Children,'type','Axes'),'color','none')
-            saveas(fSubj(subjInd),[filename '.svg']); disp([filename '.svg'])
-            fSubj(subjInd).Color = 'w';
-            set(findobj(fSubj(subjInd).Children,'type','Axes'),'color','w')
-            saveas(fSubj(subjInd),filename); disp([filename '.fig'])
+            for i = 1:length(f)
+                curF = figure(f(i));
+                curF.Color = 'none';
+                set(findobj(curF.Children,'type','Axes'),'color','none')
+                saveas(curF,[filename '_' num2str(i) '.svg']); disp([filename '_' num2str(i) '.svg'])
+                curF.Color = 'w';
+%                 set(findobj(curF.Children,'type','Axes'),'color','w')
+                saveas(curF,[filename '_' num2str(i)]); disp([filename '_' num2str(i) '.fig'])
+                saveas(curF,[filename '_' num2str(i) '.jpg']); disp([filename '_' num2str(i) '.jpg'])
+            end
         end
     end
     

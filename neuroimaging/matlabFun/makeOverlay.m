@@ -1,4 +1,7 @@
-function makeOverlay(ax,alphaData,cMap,cBar,cLim)
+function makeOverlay(axBak,ax,alphaData,cMap,cBar,cLim)
+
+linkaxes([axBak ax]);
+linkprop([axBak ax],'position')
 
 hIm = findobj(ax.Children,'Type','Image');
 ind = logical(hIm.AlphaData);
@@ -9,6 +12,8 @@ if exist('cMap','var') && ~isempty(cMap)
 end
 if exist('cLim','var') && ~isempty(cLim)
     ax.CLim = cLim;
+else
+    cLim = ax.CLim;
 end
 
 if exist('cBar','var') && ~isempty(cBar)
@@ -27,8 +32,10 @@ if exist('cBar','var') && ~isempty(cBar)
                 i = i+1;
                 done = YTicks(end)>exp(ax.CLim(2));
             end
-            imMin = min(hIm.CData(:));
-            imMax = max(hIm.CData(:));
+%             imMin = min(hIm.CData(:));
+%             imMax = max(hIm.CData(:));
+            imMin = ax.CLim(1);
+            imMax = ax.CLim(2);
             YTicks = sort(unique(YTicks));
             YTicks = YTicks(YTicks>exp(imMin) & YTicks<exp(imMax));
             ax.YTick = interp1([imMin imMax],[1 size(hIm.CData,1)],log(YTicks));
@@ -54,6 +61,7 @@ if exist('cBar','var') && ~isempty(cBar)
             end
             ax.YTick = interp1(cLim,[1 size(hIm.CData,1)],YTicks);
             ax.YTickLabel = cellstr(num2str(YTicks'));
+            ax.TickDir = 'out';
         otherwise
             error('X')
     end
