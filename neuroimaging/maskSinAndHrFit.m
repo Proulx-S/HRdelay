@@ -1,8 +1,8 @@
 function maskSinAndHrFit(fitType,threshType)
 noMovement = 1;
 actuallyRun = 1;
-saveFig = 1;
-plotAllSubj = 1;
+saveFig = 0;
+plotAllSubj = 0;
 doVein = 1;
 veinSource = 'reducedModelResid'; % 'reducedModelResid' (stimulus-driven signal included in std) or 'fullModelResid (stimulus-driven signal excluded in std)'
 veinPerc = 10;
@@ -27,8 +27,7 @@ anatLevel = 'z';
 funPath = fullfile(repoPath,dataDir,'fun');
 funLevel1 = 'x';
 funLevel2 = 'y';
-funLevel3Sin = 'zSin';
-funLevel3Hr = 'zHr';
+funLevel3 = 'z';
 if noMovement
     sinFitFile = 'v1SinCos_1perRun.mat';
     hrFitFile = 'v1resp_1perRun_resp.mat';
@@ -53,7 +52,7 @@ disp(['IN: voxel visual field eccentricity (C-derived\DecodingHR\anat\' anatLeve
 disp(['IN: sinusoidal fit results (C-derived\DecodingHR\fun\' funLevel2 ')'])
 disp('F(IN)=OUT: masks the fit according to voxel eccentricity and activation level')
 disp('Figures are additionally thresholded for activation level, but not the data that is saved!')
-disp(['OUT: sinusoidal fit results (C-derived\DecodingHR\fun\' funLevel3Sin ')'])
+disp(['OUT: sinusoidal fit results (C-derived\DecodingHR\fun\' funLevel3 ')'])
 
 
 for subjInd = 1:length(subjList)
@@ -339,24 +338,21 @@ for subjInd = 1:length(subjList)
         d.(sess).data = permute(data.(sess).data,[4 5 1 2 3]);
         d.(sess).data = d.(sess).data(:,:,ind);
         d.(sess).data = permute(d.(sess).data,[1 3 2]);
+        d.(sess).hr = permute(hr.(sess),[4 5 6 1 2 3]);
+        d.(sess).hr = d.(sess).hr(:,:,:,ind);
+        d.(sess).hr = permute(d.(sess).hr,[2 4 3 1]);
         d.(sess).runLabel = permute(data.(sess).runLabel,[4 5 1 2 3]);
         d.(sess).runLabel = permute(d.(sess).runLabel,[1 3 2]);
-        d.(sess).info = '%BOLD: run x vox x cond[ori1, ori2, plaid]';
+        d.(sess).info = '%BOLD: run x vox x cond[ori1, ori2, plaid] X TR';
         
-        % stats
+        % feature slection stats
         list = {'F' 'FDR' 'P'};
         for i = 1:3
             tmp = nan(sz(1:3));
             tmp(:) = featSel.(sess).anyCondActivation.(list{i})(maskFit);
-            stats.(sess).(list{i}) = tmp(ind)';
+            featSelStats.anyCondActivation.(sess).(list{i}) = tmp(ind)';
         end
-        stats.(sess).info = '1 x vox';
-        
-        % response shape
-        hrTmp.(sess).data = permute(hr.(sess),[4 5 6 1 2 3]);
-        hrTmp.(sess).data = hrTmp.(sess).data(:,:,:,ind);
-        hrTmp.(sess).data = permute(hrTmp.(sess).data,[2 4 3 1]);
-        hrTmp.(sess).info = '%BOLD: run X vox X cond[ori1,ori2,plaid] X TR';
+        featSelStats.anyCondActivation.(sess).info = '1 x vox';
         
         % vein
         list = {'noiseOverMean' 'mask'};
@@ -367,24 +363,23 @@ for subjInd = 1:length(subjList)
         end
         vein.(sess).info = '1 x vox';
     end
-    hr = hrTmp; clear hrTmp
-    
+    sess = 'sess1';
+%     d.(sess)
+%     featSelStats.anyCondActivation.(sess)
+%     vein.(sess)
+    clear hr
     
     %% Save
-    if ~exist(fullfile(funPath,funLevel3Sin),'dir')
-        mkdir(fullfile(funPath,funLevel3Sin));
+    if ~exist(fullfile(funPath,funLevel3),'dir')
+        mkdir(fullfile(funPath,funLevel3));
     end
-    if ~exist(fullfile(funPath,funLevel3Hr),'dir')
-        mkdir(fullfile(funPath,funLevel3Hr));
-    end
-    
+
+    tmp = fullfile(funPath,funLevel3,[subjList{subjInd} '_' mfilename]);
     if noMovement
-        save(fullfile(funPath,funLevel3Sin,[subjList{subjInd} '_' mfilename '_noMovement']),'d','stats','vein')
-        save(fullfile(funPath,funLevel3Hr,[subjList{subjInd} '_' mfilename '_noMovement']),'hr','stats','vein')
-    else
-        save(fullfile(funPath,funLevel3Sin,[subjList{subjInd} '_' mfilename]),'d','stats','vein')
-        save(fullfile(funPath,funLevel3Hr,[subjList{subjInd} '_' mfilename]),'hr','stats','vein')
+        tmp = [tmp '_noMovement'];
     end
+    save(tmp,'d','featSelStats','vein')
+    disp(['Saving to: ' tmp])
 end
 
 

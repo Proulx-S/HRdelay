@@ -4,8 +4,8 @@ if ~exist('threshType','var') || isempty(threshType)
 end
 noMovement = 1;
 threshVal = 0.05;
-plotAllSubj = 0;
-saveFig = 0;
+plotAllSubj = 1;
+saveFig = 1;
 
 %colors
 colors = [  0         0.4470    0.7410
@@ -20,7 +20,7 @@ else
 end
 dataDir = 'C-derived\DecodingHR';
 funPath = fullfile(repoPath,dataDir,'fun');
-funLevel = 'zSin';
+funLevel = 'z';
 subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'}';
 % subjList = {'02jp' '03sk' '04sp'}';
 if noMovement
@@ -46,45 +46,61 @@ disp(['OUT: figures and stats'])
 %% Load data
 dAll = cell(size(subjList,1),1);
 for subjInd = 1:size(subjList,1)
-    load(fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]),'d');
+    load(fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]),'d','featSelStats','vein');
     dAll{subjInd} = d;
+    featSelStatsAll{subjInd} = featSelStats;
+    veinAll{subjInd} = vein;
 end
 d = dAll; clear dAll
+featSelStats = featSelStatsAll; clear featSelStatsAll
+vein = veinAll; clear veinAll
 
 %% Process data
 dP = d;
 
 % figure('WindowStyle','docked')
 % subplot(2,1,1)
-% % polarplot(squeeze(mean(d{subjInd}.sess1.xData,1)),'o');
-% polarplot(squeeze(mean(d{subjInd}.sess1.xData,2)),'o');
-% abs(mean(d{subjInd}.sess1.xData(:)))
+% % polarplot(squeeze(mean(d{subjInd}.sess1.data,1)),'o');
+% polarplot(squeeze(mean(d{subjInd}.sess1.data,2)),'o');
+% abs(mean(d{subjInd}.sess1.data(:)))
 % subplot(2,1,2)
-% % polarplot(squeeze(mean(dP{subjInd}.sess1.xData,1)),'o');
-% polarplot(squeeze(mean(dP{subjInd}.sess1.xData,2)),'o');
-% abs(mean(dP{subjInd}.sess1.xData(:)))
+% % polarplot(squeeze(mean(dP{subjInd}.sess1.data,1)),'o');
+% polarplot(squeeze(mean(dP{subjInd}.sess1.data,2)),'o');
+% abs(mean(dP{subjInd}.sess1.data(:)))
 
 % Threshold and average voxels in cartesian space, using statistical tests
 % on the other session
-rLim = (1:length(dP))';
+rLim = nan(length(dP),1);
 for subjInd = 1:length(dP)
-    switch threshType
-        % no voxel selection
-        case 'none' 
-            dP{subjInd}.sess1.xData = mean(dP{subjInd}.sess1.xData,2);
-            dP{subjInd}.sess2.xData = mean(dP{subjInd}.sess2.xData,2);
-        % voxel selection cross-validated between sessions
-        case 'p'
-            dP{subjInd}.sess1.xData = mean(dP{subjInd}.sess1.xData(:,dP{subjInd}.sess2.P<threshVal,:),2);
-            dP{subjInd}.sess2.xData = mean(dP{subjInd}.sess2.xData(:,dP{subjInd}.sess1.P<threshVal,:),2);
-        case 'fdr'
-            dP{subjInd}.sess1.xData = mean(dP{subjInd}.sess1.xData(:,dP{subjInd}.sess2.FDR<threshVal,:),2);
-            dP{subjInd}.sess2.xData = mean(dP{subjInd}.sess2.xData(:,dP{subjInd}.sess1.FDR<threshVal,:),2);
-        otherwise
-            error('X')
+    if ~strcmp(threshType,'none')
+        ind = featSelStats{subjInd}.anyCondActivation.sess2.(upper(threshType))<threshVal;
+        dP{subjInd}.sess1.data = dP{subjInd}.sess1.data(:,ind,:,:);
+        ind = featSelStats{subjInd}.anyCondActivation.sess1.(upper(threshType))<threshVal;
+        dP{subjInd}.sess2.data = dP{subjInd}.sess2.data(:,ind,:,:);
     end
+    dP{subjInd}.sess1.data = mean(dP{subjInd}.sess1.data,2);
+    dP{subjInd}.sess2.data = mean(dP{subjInd}.sess2.data,2);
+    dP{subjInd}.sess1 = rmfield(dP{subjInd}.sess1,'hr');
+    dP{subjInd}.sess2 = rmfield(dP{subjInd}.sess2,'hr');
+%     switch threshType
+%         % no voxel selection
+%         case 'none' 
+%             dP{subjInd}.sess1.data = mean(dP{subjInd}.sess1.data,2);
+%             dP{subjInd}.sess2.data = mean(dP{subjInd}.sess2.data,2);
+%         % voxel selection cross-validated between sessions
+%         case 'p'
+%             ind = featSelStats.anyCondActivation.sess2.(upper(threshType))<threshVal;
+%             dP{subjInd}.sess1.data = mean(dP{subjInd}.sess1.data(:,ind,:,:),2);
+%             ind = featSelStats.anyCondActivation.sess1.(upper(threshType))<threshVal;
+%             dP{subjInd}.sess2.data = mean(dP{subjInd}.sess2.data(:,ind,:,:),2);
+%         case 'fdr'
+%             dP{subjInd}.sess1.data = mean(dP{subjInd}.sess1.data(:,dP{subjInd}.sess2.FDR<threshVal,:),2);
+%             dP{subjInd}.sess2.data = mean(dP{subjInd}.sess2.data(:,dP{subjInd}.sess1.FDR<threshVal,:),2);
+%         otherwise
+%             error('X')
+%     end
     
-    rLim(subjInd) = max(abs([dP{subjInd}.sess1.xData(:); dP{subjInd}.sess2.xData(:)]));
+    rLim(subjInd) = max(abs([dP{subjInd}.sess1.data(:); dP{subjInd}.sess2.data(:)]));
 end
 
 % Show scanner trigger problem
@@ -92,22 +108,26 @@ clear tmp tmp1 tmp2 tmpData
 figure('WindowStyle','docked');
 sz = 0;
 for subjInd = 1:length(subjList)
-    tmp = size(dP{subjInd}.sess1.xData,1);
+    tmp = size(dP{subjInd}.sess1.data,1);
     if tmp>sz; sz = tmp; end
-    tmpData(subjInd,1) = circ_mean(angle(dP{subjInd}.sess1.xData(:)));
-    tmpData(subjInd,2) = circ_mean(angle(dP{subjInd}.sess2.xData(:)));
+    tmpData(subjInd,1) = circ_mean(angle(dP{subjInd}.sess1.data(:)));
+    tmpData(subjInd,2) = circ_mean(angle(dP{subjInd}.sess2.data(:)));
 end
 
 for subjInd = 1:length(subjList)
-    tmp1 = squeeze(dP{subjInd}.sess1.xData)';
+    tmp1 = squeeze(dP{subjInd}.sess1.data)';
     tmpInd = squeeze(dP{subjInd}.sess1.runLabel)';
+    [~,b] = sort(tmpInd(:));
+    tmpInd(b) = 1:numel(tmpInd);
     tmp1 = tmp1(tmpInd);
     tmp1 = tmp1(:);
     tmp1 = angle(tmp1);
     tmp1 = wrapToPi(tmp1-circ_mean(tmp1));
     
-    tmp2 = squeeze(dP{subjInd}.sess2.xData)';
+    tmp2 = squeeze(dP{subjInd}.sess2.data)';
     tmpInd = squeeze(dP{subjInd}.sess2.runLabel)';
+    [~,b] = sort(tmpInd(:));
+    tmpInd(b) = 1:numel(tmpInd);
     tmp2 = tmp2(tmpInd);
     tmp2 = tmp2(:);
     tmp2 = angle(tmp2);
@@ -137,7 +157,7 @@ legend(char(subjList))
 % Exclude
 subjInd = 2;
 sessInd = 1;
-dataTmp = angle(dP{subjInd}.(['sess' num2str(sessInd)]).xData);
+dataTmp = angle(dP{subjInd}.(['sess' num2str(sessInd)]).data);
 dataTmp = wrapToPi(dataTmp - circ_mean(dataTmp));
 dataTmp = abs(dataTmp);
 a = max(dataTmp(:),[],1);
@@ -154,7 +174,7 @@ exclusion.cond = condInd;
 
 if exist('exclusion','var') && ~isempty(exclusion) && ~isempty(exclusion.subj)
     for i = 1:length(exclusion.subj)
-        dP{exclusion.subj(i)}.(['sess' num2str(i)]).xData(exclusion.run,:,:) = [];
+        dP{exclusion.subj(i)}.(['sess' num2str(i)]).data(exclusion.run,:,:) = [];
         dP{exclusion.subj(i)}.(['sess' num2str(i)]).runLabel(exclusion.run,:,:) = [];
     end
 end
@@ -166,7 +186,7 @@ for subjInd = 1:length(subjList)
         fSubj(subjInd) = figure('WindowStyle','docked');
         for sessInd = 1:2
             subplot(1,2,sessInd)
-            xData = squeeze(dP{subjInd}.(['sess' num2str(sessInd)]).xData);
+            xData = squeeze(dP{subjInd}.(['sess' num2str(sessInd)]).data);
             for condInd = 1:size(xData,2)
                 [theta,rho] = cart2pol(real(xData(:,condInd)),imag(xData(:,condInd)));
                 h(condInd) = polarplot(theta,rho,'o'); hold on
@@ -204,9 +224,10 @@ for subjInd = 1:length(subjList)
             set(findobj(fSubj(subjInd).Children,'type','PolarAxes'),'color','none')
             saveas(fSubj(subjInd),[filename '.svg']); disp([filename '.svg'])
             fSubj(subjInd).Color = 'w';
-            set(findobj(fSubj(subjInd).Children,'type','Axes'),'color','w')
-            set(findobj(fSubj(subjInd).Children,'type','PolarAxes'),'color','w')
+%             set(findobj(fSubj(subjInd).Children,'type','Axes'),'color','w')
+%             set(findobj(fSubj(subjInd).Children,'type','PolarAxes'),'color','w')
             saveas(fSubj(subjInd),filename); disp([filename '.fig'])
+            saveas(fSubj(subjInd),filename); disp([filename '.jpg'])
         end
     end
 end
@@ -216,7 +237,7 @@ end
 condList = {'ori1' 'ori2' 'plaid'};
 xData = nan(length(subjList),length(condList),2);
 for subjInd = 1:length(subjList)
-    xData(subjInd,:,:) = permute(cat(1,mean(dP{subjInd}.sess1.xData,1),mean(dP{subjInd}.sess2.xData,1)),[2 3 1]);
+    xData(subjInd,:,:) = permute(cat(1,mean(dP{subjInd}.sess1.data,1),mean(dP{subjInd}.sess2.data,1)),[2 3 1]);
 end
 xDataInfo = 'subj x cond[or1, ori2, plaid] x sess';
 
@@ -270,9 +291,10 @@ if saveFig
     set(findobj(fGroup(1).Children,'type','PolarAxes'),'color','none')
     saveas(fGroup(1),[filename '.svg']); disp([filename '.svg'])
     fGroup(1).Color = 'w';
-    set(findobj(fGroup(1).Children,'type','Axes'),'color','w')
-    set(findobj(fGroup(1).Children,'type','PolarAxes'),'color','w')
+%     set(findobj(fGroup(1).Children,'type','Axes'),'color','w')
+%     set(findobj(fGroup(1).Children,'type','PolarAxes'),'color','w')
     saveas(fGroup(1),filename); disp([filename '.fig'])
+    saveas(fGroup(1),filename); disp([filename '.jpg'])
 end
 
 % Polar space
@@ -321,8 +343,9 @@ if saveFig
     set(findobj(fGroup(2).Children,'type','Axes'),'color','none')
     saveas(fGroup(2),[filename '.svg']); disp([filename '.svg'])
     fGroup(2).Color = 'w';
-    set(findobj(fGroup(2).Children,'type','Axes'),'color','w')
+%     set(findobj(fGroup(2).Children,'type','Axes'),'color','w')
     saveas(fGroup(2),filename); disp([filename '.fig'])
+    saveas(fGroup(2),filename); disp([filename '.jpg'])
 end
 
 fGroup(3) = figure('WindowStyle','docked');
@@ -371,8 +394,9 @@ if saveFig
     set(findobj(fGroup(3).Children,'type','Axes'),'color','none')
     saveas(fGroup(3),[filename '.svg']); disp([filename '.svg'])
     fGroup(3).Color = 'w';
-    set(findobj(fGroup(3).Children,'type','Axes'),'color','w')
+%     set(findobj(fGroup(3).Children,'type','Axes'),'color','w')
     saveas(fGroup(3),filename); disp([filename '.fig'])
+    saveas(fGroup(3),filename); disp([filename '.jpg'])
 end
 
 %% Stats
@@ -396,12 +420,12 @@ disp([' T^2=' num2str(stats.T2,'%0.2f') '; p=' num2str(stats.P,'%0.2f')]);
 disp('---------------')
 disp('Polar Amplitude')
 disp('---------------')
-disp('Ori vs Plaid:')
+disp('Ori vs Plaid (one-tailed):')
 x = abs(xData(:,4)); y = abs(xData(:,3));
-[H,P,CI,STATS] = ttest(x,y);
+[H,P,CI,STATS] = ttest(x,y,'tail','right');
 disp(' Student''s t-test')
 disp([' t=' num2str(STATS.tstat,'%0.2f') '; p=' num2str(P,'%0.2f')]);
-[P,H,STATS] = signrank(x,y);
+[P,H,STATS] = signrank(x,y,'tail','right');
 disp(' Wilcoxon signed rank test')
 disp([' signed rank=' num2str(STATS.signedrank,'%0.2f') '; p=' num2str(P,'%0.2f')]);
 disp('Ori1 vs Ori2:')
@@ -417,17 +441,17 @@ disp([' signed rank=' num2str(STATS.signedrank,'%0.2f') '; p=' num2str(P,'%0.2f'
 disp('-----------')
 disp('Polar Delay')
 disp('-----------')
-disp('Ori vs Plaid:')
+disp('Ori vs Plaid (one-tail):')
 x = angle(xData(:,4)); y = angle(xData(:,3));
-[H,P,CI,STATS] = ttest(x,y);
+[H,P,CI,STATS] = ttest(x,y,'tail','right');
 disp(' Student''s t-test')
 disp([' t=' num2str(STATS.tstat,'%0.2f') '; p=' num2str(P,'%0.2f')]);
-[P,H,STATS] = signrank(x,y);
+[P,H,STATS] = signrank(x,y,'tail','right');
 disp(' Wilcoxon signed rank test')
 disp([' signed rank=' num2str(STATS.signedrank,'%0.2f') '; p=' num2str(P,'%0.2f')]);
 [P,F] = circ_htest(x,y);
 disp(' Hotelling''s test for angular means')
-disp([' F=' num2str(STATS.signedrank,'%0.2f') '; p=' num2str(P,'%0.2f')]);
+disp([' F=' num2str(STATS.signedrank,'%0.2f') '; p=' num2str(P/2,'%0.2f')]);
 disp('Ori1 vs Ori2:')
 x = angle(xData(:,1)); y = angle(xData(:,2));
 [H,P,CI,STATS] = ttest(x,y);
@@ -440,29 +464,29 @@ disp([' signed rank=' num2str(STATS.signedrank,'%0.2f') '; p=' num2str(P,'%0.2f'
 disp(' Hotelling''s test for angular means')
 disp([' F=' num2str(STATS.signedrank,'%0.2f') '; p=' num2str(P,'%0.2f')]);
 
-disp('Ori1 vs Plaid:')
+disp('Ori1 vs Plaid (one-tail):')
 x = angle(xData(:,1)); y = angle(xData(:,3));
-[H,P,CI,STATS] = ttest(x,y);
+[H,P,CI,STATS] = ttest(x,y,'tail','right');
 disp(' Student''s t-test')
 disp([' t=' num2str(STATS.tstat,'%0.2f') '; p=' num2str(P,'%0.2f')]);
-[P,H,STATS] = signrank(x,y);
+[P,H,STATS] = signrank(x,y,'tail','right');
 disp(' Wilcoxon signed rank test')
 disp([' signed rank=' num2str(STATS.signedrank,'%0.2f') '; p=' num2str(P,'%0.2f')]);
 [P,F] = circ_htest(x,y);
 disp(' Hotelling''s test for angular means')
-disp([' F=' num2str(STATS.signedrank,'%0.2f') '; p=' num2str(P,'%0.2f')]);
+disp([' F=' num2str(STATS.signedrank,'%0.2f') '; p=' num2str(P/2,'%0.2f')]);
 
-disp('Ori2 vs Plaid:')
+disp('Ori2 vs Plaid (one-tail):')
 x = angle(xData(:,2)); y = angle(xData(:,3));
-[H,P,CI,STATS] = ttest(x,y);
+[H,P,CI,STATS] = ttest(x,y,'tail','right');
 disp(' Student''s t-test')
 disp([' t=' num2str(STATS.tstat,'%0.2f') '; p=' num2str(P,'%0.2f')]);
-[P,H,STATS] = signrank(x,y);
+[P,H,STATS] = signrank(x,y,'tail','right');
 disp(' Wilcoxon signed rank test')
 disp([' signed rank=' num2str(STATS.signedrank,'%0.2f') '; p=' num2str(P,'%0.2f')]);
 [P,F] = circ_htest(x,y);
 disp(' Hotelling''s test for angular means')
-disp([' F=' num2str(STATS.signedrank,'%0.2f') '; p=' num2str(P,'%0.2f')]);
+disp([' F=' num2str(STATS.signedrank,'%0.2f') '; p=' num2str(P/2,'%0.2f')]);
 
 
 %% Correlations
@@ -471,7 +495,7 @@ xData = [];
 xLabel = [];
 for subjInd = 1:length(subjList)
     for sessInd = 1:2
-        tmp = squeeze(dP{subjInd}.(['sess' num2str(sessInd)]).xData);
+        tmp = squeeze(dP{subjInd}.(['sess' num2str(sessInd)]).data);
         tmp = mean(tmp,1);
         xData = cat(1,xData,tmp);
         sz = size(tmp);
@@ -517,7 +541,7 @@ i = 0;
 for subjInd = 1:length(subjList)
     for sessInd = 1:2
         i = i+1;
-        tmp = squeeze(dP{subjInd}.(['sess' num2str(sessInd)]).xData);
+        tmp = squeeze(dP{subjInd}.(['sess' num2str(sessInd)]).data);
         xData = cat(1,xData,tmp);
         sz = size(tmp);
         xLabel = cat(1,xLabel,[ones(sz(1),1).*subjInd ones(sz(1),1).*sessInd ones(sz(1),1).*i]);

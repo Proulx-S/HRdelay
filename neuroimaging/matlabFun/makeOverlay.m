@@ -1,7 +1,7 @@
 function makeOverlay(axBak,ax,alphaData,cMap,cBar,cLim)
 
 linkaxes([axBak ax]);
-linkprop([axBak ax],'position')
+linkprop([axBak ax],'position');
 
 hIm = findobj(ax.Children,'Type','Image');
 ind = logical(hIm.AlphaData);
