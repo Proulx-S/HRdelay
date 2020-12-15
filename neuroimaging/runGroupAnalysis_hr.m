@@ -1,10 +1,7 @@
 function runGroupAnalysis_hr()
 close all
-
-plotAllSubj = 1;
 saveFig = 1;
 
-%colors
 colors = [  0         0.4470    0.7410
             0.8500    0.3250    0.0980
             0.9290    0.6940    0.1250];
@@ -48,8 +45,8 @@ disp(['OUT: figures and stats'])
 %% Load data
 dCAll = cell(size(subjList,1),1);
 for subjInd = 1:size(subjList,1)
-    load(fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]),'d');
-    dCAll{subjInd} = d;
+    load(fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]),'dC');
+    dCAll{subjInd} = dC;
 end
 dC = dCAll; clear dAll
 
@@ -62,75 +59,34 @@ for subjInd = 1:length(subjList)
     end
 end
 
-
-
-% Plot single subjects
+% Average runs in cartesian space (just to remove between-subject variation in delay from the hr)
+condList = {'ori1' 'ori2' 'plaid'};
+xData = nan(length(subjList),length(condList),2);
 for subjInd = 1:length(subjList)
-    if plotAllSubj || subjInd==1
-        fSubj(subjInd) = figure('WindowStyle','docked');
-        clear yLim ax
-        for sessInd = 1:2
-            ax(sessInd) = subplot(1,2,sessInd);
-            xData = squeeze(hrP{subjInd}.(['sess' num2str(sessInd)]));
-            for condInd = 1:size(xData,2)
-                y = squeeze(xData(:,condInd,:));
-                t = 0:11;
-                yMean = mean(y,1);
-                ySEM = std(y,[],1)./sqrt(size(y,1));
-                he = errorbar(t,yMean,ySEM); hold on
-                he.CapSize = 0;
-            end
-            title(['Sess' num2str(sessInd)])
-            ylim([min(xData(:)) max(xData(:))])
-            box off
-            yLim(sessInd,:) = ylim;
-        end
-        for sessInd = 1:2
-            ax(sessInd).YLim = [min(yLim(:)) max(yLim(:))];
-        end
-        legend(char({'ori1 +/-SEM' 'ori2 +/-SEM' 'plaid +/-SEM'}),'Location','south','box','off')
-        suptitle(subjList{subjInd})
-        
-        
-        if saveFig
-            filename = fullfile(pwd,mfilename);
-            if ~exist(filename,'dir'); mkdir(filename); end
-            filename = fullfile(filename,[subjList{subjInd}]);
-            fSubj(subjInd).Color = 'none';
-            set(findobj(fSubj(subjInd).Children,'type','Axes'),'color','none')
-            saveas(fSubj(subjInd),[filename '.svg']); disp([filename '.svg'])
-            fSubj(subjInd).Color = 'w';
-            set(findobj(fSubj(subjInd).Children,'type','Axes'),'color','w')
-            saveas(fSubj(subjInd),filename); disp([filename '.fig'])
-        end
-    end
+    xData(subjInd,:,:) = permute(cat(1,mean(dC{subjInd}.sess1.data,1),mean(dC{subjInd}.sess2.data,1)),[2 3 1]);
 end
-clear xData
+xDataInfo = 'subj x cond[or1, ori2, plaid] x sess';
+
 
 % Remove subjet effect
-try
-    sinData = load(fullfile(funPath,funLevelSin,'tmp.mat'),'xData','xDataInfo');
-catch
-    error('Need to run ''sinusoidalGroupAnalysis.m'' first.')
-end
-delete(fullfile(funPath,funLevelSin,'tmp.mat'));
-rhoGroup = abs(mean(mean(sinData.xData(:,1:3),2),1));
-thetaGroup = angle(mean(mean(sinData.xData(:,1:3),2),1));
+rhoGroup = abs(mean(xData(:)));
+thetaGroup = angle(mean(xData(:)));
 thetaShift = 0; % arbitrary delay (just removing thetaGroup gives phase=0)
+xData = mean(xData,2);
 t = 0:11;
 for subjInd = 1:length(subjList)
-    rhoSubj = abs(mean(sinData.xData(subjInd,1:3),2));
-    thetaSubj = angle(mean(sinData.xData(subjInd,1:3),2));
+    rhoSubj = abs(xData(subjInd,:,:));
+    thetaSubj = angle(xData(subjInd,:,:));
     
-    % response amplitude
-    hrP{subjInd}.sess1 = hrP{subjInd}.sess1./rhoSubj.*rhoGroup;
-    hrP{subjInd}.sess2 = hrP{subjInd}.sess2./rhoSubj.*rhoGroup;
-    
-    % response delay
     interpMethod = 'cubic'; % cubic convolution as implemented in Matlab2020b
     for sessInd = 1:2
+        sess = ['sess' num2str(sessInd)];
+        % response amplitude
+        dC{subjInd}.(sess).hr = dC{subjInd}.(sess).hr./rhoSubj(sessInd).*rhoGroup;
+        
+        % response delay
         %upsample
-        curHR = hrP{subjInd}.(['sess' num2str(sessInd)]);
+        curHR = dC{subjInd}.(sess).hr;
         curT = permute(linspace(0,11,size(curHR,4)),[1 3 4 2]);
 
         n = size(curHR,4);
@@ -151,7 +107,7 @@ for subjInd = 1:length(subjList)
         
         %rotate
         deltaPi = 2*pi/(n/delta);
-        curTheta = round((thetaGroup-thetaSubj+thetaShift)/deltaPi);
+        curTheta = round((thetaGroup-thetaSubj(sessInd)+thetaShift)/deltaPi);
         for i = 1:prod(size(curHR2,[2 3 4]))
             curHR3(:,i) = circshift(curHR3(:,i),-curTheta);
         end
@@ -164,7 +120,7 @@ for subjInd = 1:length(subjList)
         end
 %         plot(curT,curHR4(:,i),'o');
         
-        hrP{subjInd}.(['sess' num2str(sessInd)]) = permute(curHR4,[2 3 4 1]);
+        dC{subjInd}.(sess).hr = permute(curHR4,[2 3 4 1]);
     end
 end
 
@@ -172,7 +128,7 @@ end
 condList = {'ori1' 'ori2' 'plaid'};
 xData = nan(length(subjList),length(condList),2,12);
 for subjInd = 1:length(subjList)
-    xData(subjInd,:,:,:) = permute(cat(1,mean(hrP{subjInd}.sess1,1),mean(hrP{subjInd}.sess2,1)),[2 3 1 4]);
+    xData(subjInd,:,:,:) = permute(cat(1,mean(dC{subjInd}.sess1.hr,1),mean(dC{subjInd}.sess2.hr,1)),[2 3 1 4]);
 end
 xDataInfo = 'subj x cond[or1, ori2, plaid] x sess x t';
 
@@ -202,8 +158,7 @@ for condInd = [4 3]
     he(condInd).CapSize = 0;
 end
 he(4).Color = 'k';
-he(3).Color = fSubj(1).Children(end).Children(1).Color;
-cat(1,fSubj(1).Children(end).Children(:).Color)
+he(3).Color = colors(3,:);
 
 
 ht = text(0,0,'ON 6sec');
@@ -241,21 +196,19 @@ legend(char({'ori +/-SEM' 'plaid +/-SEM'}),'Location','northeast','box','off','c
 title('Group Hemodynamic Response')
 ax = gca;
 uistack(findobj(ax.Children,'type','Text'),'top')
+ax.PlotBoxAspectRatio = [1.5 1 1];
 
 if saveFig
     filename = fullfile(pwd,mfilename);
     if ~exist(filename,'dir'); mkdir(filename); end
-    filename = fullfile(filename,'group_HrFit');
+    filename = fullfile(filename,'hr');
     fGroup.Color = 'none';
     set(findobj(fGroup.Children,'type','Axes'),'color','none')
     saveas(fGroup,[filename '.svg']); disp([filename '.svg'])
     fGroup.Color = 'w';
     set(findobj(fGroup.Children,'type','Axes'),'color','w')
     saveas(fGroup,filename); disp([filename '.fig'])
+    saveas(fGroup,filename); disp([filename '.jpg'])
 end
-% rhoGroup
-% phi = thetaGroup/(2*pi)*12;
-% x = 0:0.01:18;
-% y = sin((x+phi)/12*2*pi).*(rhoGroup+0.05)-0.25;
-% plot(x,y)
+
 

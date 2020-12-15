@@ -2,9 +2,8 @@ function applyFeatSelAndClean()
 close all
 
 plotAllSubj = 1;
-saveFig = 0;
+saveFig = 1;
 
-%colors
 colors = [  0         0.4470    0.7410
             0.8500    0.3250    0.0980
             0.9290    0.6940    0.1250];
@@ -282,10 +281,12 @@ end
 
 
 %% Save cleaned data
+dCAll = dC;
 disp('Updating param and cleaned data to:')
 for subjInd = 1:length(subjList)
     tmp = fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]);
     disp(tmp)
+    dC = dCAll{subjInd};
     save(tmp,'dC','param','-append');
 end
 

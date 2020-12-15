@@ -2,8 +2,8 @@ function defineAndShowMasks(fitType,threshType,veinPerc)
 close all
 noMovement = 1;
 actuallyRun = 1;
-saveFig = 0;
-plotAllSubj = 0;
+saveFig = 1;
+plotAllSubj = 1;
 if ~exist('veinPerc','var') || isempty(veinPerc)
     doVein = 1;
     veinSource = 'reducedModelResid'; % 'reducedModelResid' (stimulus-driven signal included in std) or 'fullModelResid (stimulus-driven signal excluded in std)'
