@@ -1,16 +1,21 @@
-function maskSinAndHrFit(fitType,threshType,veinPerc)
+function defineAndShowMasks(fitType,threshType,veinPerc)
 noMovement = 1;
 actuallyRun = 1;
 saveFig = 1;
 plotAllSubj = 1;
-if ~exist('veinPerc','var') || isempty(veinPerc) || veinPerc==0
+if ~exist('veinPerc','var') || isempty(veinPerc)
+    doVein = 1;
+    veinSource = 'reducedModelResid'; % 'reducedModelResid' (stimulus-driven signal included in std) or 'fullModelResid (stimulus-driven signal excluded in std)'
+    veinPerc = 20;
+elseif veinPerc==0
     doVein = 0;
 else
     doVein = 1;
     veinSource = 'reducedModelResid'; % 'reducedModelResid' (stimulus-driven signal included in std) or 'fullModelResid (stimulus-driven signal excluded in std)'
 end
+featSelContrast1 = 'anyCondActivation';
 if ~exist('fitType','var') || isempty(fitType)
-    fitType = 'mixed'; % 'mixed' (different regressors for each run) or 'fixed' (different regressors for each session)
+    fitType = 'fixed'; % 'mixed' (different regressors for each run) or 'fixed' (different regressors for each session)
 end
 if ~exist('threshType','var') || isempty(threshType) % for plotting purpose only (does not affect data that is saved)
     threshType = 'p'; % 'none', 'p' or 'fdr'
@@ -39,7 +44,6 @@ else
     hrFitFile = 'v1resp_1perRun_move12_resp.mat';
 end
 subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'}';
-% subjList = {'02jp' '03sk' '04sp'}';
 
 %make sure everything is forward slash for mac, linux pc compatibility
 for tmpPath = {'repoPath' 'dataDir' 'anatPath' 'funPath'}
@@ -64,15 +68,43 @@ for subjInd = 1:length(subjList)
     tmp = load(fullfile(funPath,funLevel2,subjList{subjInd},hrFitFile),'results');
     resultsResp = tmp.results; clear tmp
     
-    % brain
+    %% Define all labels
+    runLabel = [results.OLS.mixed.inputs.opt.runLabel{:}];
+    sessLabel = [results.OLS.mixed.inputs.opt.sessionLabel{:}];
+    condLabel = repmat(1:3,[length(results.OLS.mixed.inputs.opt.runLabel)/3 1]); condLabel = condLabel(:)';
+    
+    % Repeat labels (tricky)
+    %sort runLabels
+    runLabelOrig = runLabel;
+    [~,b] = sort(runLabel);
+    runLabel = runLabel(b);
+    sessLabel = sessLabel(b);
+    condLabel = condLabel(b);
+%     [runLabel' sessLabel' condLabel']
+    %define repeat labels
+    repeatLabel = nan(size(sessLabel));
+    for sessInd = 1:2
+        tmp = repmat(1:sum(sessLabel==sessInd)/3,3,1); tmp = tmp(:)';
+        repeatLabel(sessLabel==sessInd) = tmp;
+    end
+%     [runLabel' sessLabel' condLabel' repeatLabel']
+    %sort back to original order (important because later resorting may depend on that order)
+    [~,b] = ismember(runLabelOrig,runLabel);
+    runLabel = runLabel(b);
+    sessLabel = sessLabel(b);
+    condLabel = condLabel(b);
+    repeatLabel = repeatLabel(b);
+%     [runLabel' sessLabel' condLabel' repeatLabel']
+        
+    %% Set masks
+	% Brain
     tmpFilename = dir(fullfile(funPath,funLevel1,subjList{subjInd},'trun101_preprocessed.nii*'));
     if all(size(tmpFilename)==[1 1]); tmpFilename = tmpFilename.name; else; error('X'); end
     a = load_nii(fullfile(funPath,funLevel1,subjList{subjInd},tmpFilename));
     brain = flip(permute(a.img,[3 1 2 4]),1); clear a
     brain = brain(:,:,:,1);
-    
-    %% Set masks
-    % maskV1
+
+    % Mask of V1
     tmpFilename = dir(fullfile(anatPath,anatLevel,subjList{subjInd},'v1.nii*'));
     if all(size(tmpFilename)==[1 1]); tmpFilename = tmpFilename.name; else; error('X'); end
 %     tmpFilename = ls(fullfile(anatPath,anatLevel,subjList{subjInd},'v1.nii*'));
@@ -81,47 +113,58 @@ for subjInd = 1:length(subjList)
     maskV1(:,:,1) = zeros(size(maskV1,1),size(maskV1,2));% Remove corrupted slices
     maskV1(:,:,end) = zeros(size(maskV1,1),size(maskV1,2));% Remove corrupted slices
     
-    % maskECC
+    % Mask of eccentricity (stimulus retinotopic representation)
     tmpFilename = dir(fullfile(anatPath,anatLevel,subjList{subjInd},'lh.ecc.nii*'));
     if all(size(tmpFilename)==[1 1]); tmpFilename = tmpFilename.name; else; error('X'); end
-%     tmpFilename = ls(fullfile(anatPath,anatLevel,subjList{subjInd},'lh.ecc.nii*'));
     a = load_nii(fullfile(anatPath,anatLevel,subjList{subjInd},tmpFilename));
     eccL = flipdim(permute(a.img,[3 1 2 4]),1); clear a
     tmpFilename = dir(fullfile(anatPath,anatLevel,subjList{subjInd},'rh.ecc.nii*'));
     if all(size(tmpFilename)==[1 1]); tmpFilename = tmpFilename.name; else; error('X'); end
-%     tmpFilename = ls(fullfile(anatPath,anatLevel,subjList{subjInd},'rh.ecc.nii*'));
     a = load_nii(fullfile(anatPath,anatLevel,subjList{subjInd},tmpFilename));
     eccR = flipdim(permute(a.img,[3 1 2 4]),1); clear a
     find((eccL~=0 & eccR~=0));
     ecc = eccL; ecc(eccR~=0) = eccR(eccR~=0); clear eccL eccR
     maskECC = ecc>1 & ecc<6;
     
-    % maskAnat
-    maskAnat = maskV1 & maskECC;
+    % Mask of ROI
+    maskROI = maskV1 & maskECC;
     
-    % maskFit area
-    maskFit = results.mask;
+    % Mask of fit area
+    maskFitArea = results.mask;
     
-    % maskVein
+    % Mask of veins (session-specific)
+    exclusion.subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'};
+    exclusion.subj = 2;
+    exclusion.sess = {1};
+    exclusion.run = {5};
+    exclusion.cond = {2};
     if doVein
-        sessLabel = [results.inputs.opt.sessionLabel{:}]';
         for sessInd = 1:2
-            vein.(['sess' num2str(sessInd)]).noiseOverMean = nan(size(maskAnat));
+            if length(exclusion.subj)>1; error('Need to code for multiple exclusions'); end
+            % deal with exclusion here
+            if strcmp(exclusion.subjList{exclusion.subj},subjList{subjInd}) && exclusion.sess{1}==sessInd
+                ind = repeatLabel==exclusion.run{1} & sessLabel==exclusion.sess{1};
+                ind = ~ind;
+            else
+                ind = true(size(runLabel));
+            end
+            vein.(['sess' num2str(sessInd)]).noiseOverMean = nan(size(maskROI));
             switch veinSource
                 case 'reducedModelResid'
-                    vein.(['sess' num2str(sessInd)]).noiseOverMean(maskFit) = mean(results.OLS.mixed.veinFull(:,:,:,sessLabel==sessInd),4);
+                    vein.(['sess' num2str(sessInd)]).noiseOverMean(maskFitArea) = mean(results.OLS.mixed.veinFull(:,:,:,ind),4);
                 case 'fullModelResid'
-                    vein.(['sess' num2str(sessInd)]).noiseOverMean(maskFit) = mean(results.OLS.mixed.veinReduced(:,:,:,sessLabel==sessInd),4);
+                    vein.(['sess' num2str(sessInd)]).noiseOverMean(maskFitArea) = mean(results.OLS.mixed.veinReduced(:,:,:,ind),4);
             end
-            vein.(['sess' num2str(sessInd)]).thresh = prctile(vein.(['sess' num2str(sessInd)]).noiseOverMean(maskAnat),100-veinPerc);
+            vein.(['sess' num2str(sessInd)]).thresh = prctile(vein.(['sess' num2str(sessInd)]).noiseOverMean(maskROI),100-veinPerc);
             vein.(['sess' num2str(sessInd)]).mask = vein.(['sess' num2str(sessInd)]).noiseOverMean>vein.(['sess' num2str(sessInd)]).thresh;
         end
     end
     
-    % feature selection
+    %% Set feature selection stats (session-specific)
     for sessInd = 1:2
         switch fitType
             case 'mixed'
+                warning(['***Exclusion not performed on the random-model (mixed-model) stats' newline 'but should have only a minor impact on voxel selection for a signle session of a single subject***'])
                 F = results.OLS.(fitType).(['Fsess' num2str(sessInd)]).val.F;
                 df = results.OLS.(fitType).(['Fsess' num2str(sessInd)]).df;
             case 'fixed'
@@ -131,15 +174,15 @@ for subjInd = 1:length(subjList)
                 error('X')
         end
         
-        tmp = nan(size(brain)); tmp(maskFit) = F;
+        tmp = nan(size(brain)); tmp(maskFitArea) = F;
         F = tmp;
         [~,P] = getPfromF(F,df);
-        [tmp,~] = getPfromF(F(maskAnat),df);
-        FDR = nan(size(F)); FDR(maskAnat) = tmp;
+        [tmp,~] = getPfromF(F(maskROI),df);
+        FDR = nan(size(F)); FDR(maskROI) = tmp;
         
-        featSel.(['sess' num2str(sessInd)]).anyCondActivation.F = F;
-        featSel.(['sess' num2str(sessInd)]).anyCondActivation.P = P;
-        featSel.(['sess' num2str(sessInd)]).anyCondActivation.FDR = FDR;
+        featSel.(['sess' num2str(sessInd)]).(featSelContrast1).F = F;
+        featSel.(['sess' num2str(sessInd)]).(featSelContrast1).P = P;
+        featSel.(['sess' num2str(sessInd)]).(featSelContrast1).FDR = FDR;
     end
     
     %% Plot masking
@@ -148,14 +191,21 @@ for subjInd = 1:length(subjList)
         slice = 11;
         
         
-        %Get some noce colormaps
+        %Get some nice colormaps
         filename = fullfile(pwd,mfilename);
         if ~exist(filename,'dir'); mkdir(filename); end
         filename = fullfile(filename,'cmap');
-%         cMap_F = brewermap(256,'reds');
-%         cMap_vein = brewermap(256,'blues');
-%         save(filename,'cMap_F','cMap_vein');
-        load(filename,'cMap_F','cMap_vein');
+        if exist(filename,'file')
+            load(filename,'cMap_F','cMap_vein');
+        else
+            try
+                cMap_F = brewermap(256,'reds');
+                cMap_vein = brewermap(256,'blues');
+            catch
+                error(['Please put this toolbox in Matlab path:' newline 'https://github.com/DrosteEffect/BrewerMap'])
+            end
+            save(filename,'cMap_F','cMap_vein');
+        end
         
         f = [];
         %Brain
@@ -166,7 +216,7 @@ for subjInd = 1:length(subjList)
         %Activation overlay
         f(end+1) = figure('WindowStyle','docked','color','w');
         axBak = plotIm(axes,brain(:,:,slice));
-        im = featSel.(sess).anyCondActivation.F(:,:,slice);
+        im = featSel.(sess).(featSelContrast1).F(:,:,slice);
         im = log(im);
         cLim = [min(im(:)) max(im(:))];
         cLim(1) = cLim(1) + diff(cLim)*0.2;
@@ -177,9 +227,9 @@ for subjInd = 1:length(subjList)
         %thresholded
         f(end+1) = figure('WindowStyle','docked','color','w');
         axBak = plotIm(axes,brain(:,:,slice));
-        maskFull = maskAnat;
+        maskFull = maskROI;
         if ~strcmp(threshType,'none')
-            maskThresh = featSel.(sess).anyCondActivation.(upper(threshType))<threshVal;
+            maskThresh = featSel.(sess).(featSelContrast1).(upper(threshType))<threshVal;
             maskFull = maskFull & maskThresh;
         end
         if doVein
@@ -193,7 +243,7 @@ for subjInd = 1:length(subjList)
         if ~strcmp(threshType,'none')
             %hist
             f(end+1) = figure('WindowStyle','docked','color','w');
-            vol = featSel.(sess).anyCondActivation.F(maskAnat);
+            vol = featSel.(sess).(featSelContrast1).F(maskROI);
             vol = log(vol);
             hHist = histogram(vol,1000); hold on
             tip = 0.001;
@@ -228,7 +278,7 @@ for subjInd = 1:length(subjList)
             hHist.FaceColor = 'k'; hHist.EdgeColor = 'none';
             ylabel('voxel count')
             xlabel('F-value')
-            tmp = featSel.(sess).anyCondActivation.(upper(threshType))(maskAnat);
+            tmp = featSel.(sess).(featSelContrast1).(upper(threshType))(maskROI);
             [~,b] = min(abs(tmp-threshVal));
             yLim = ylim;
             plot([1 1].*vol(b),yLim,'r')
@@ -242,15 +292,15 @@ for subjInd = 1:length(subjList)
             f(end+1) = figure('WindowStyle','docked','color','w');
             axBak = plotIm(axes,brain(:,:,slice));
             axOver = plotIm(axes,vein.(sess).noiseOverMean(:,:,slice));
-            alphaData = ~isnan(featSel.(sess).anyCondActivation.F(:,:,slice));
+            alphaData = ~isnan(featSel.(sess).(featSelContrast1).F(:,:,slice));
             cLim = vein.(sess).noiseOverMean(:,:,slice);
-            cLim = cLim(maskAnat(:,:,slice));
+            cLim = cLim(maskROI(:,:,slice));
             cLim = [min(cLim) max(cLim)];
             makeOverlay(axBak,axOver,alphaData,cMap_vein,'lin',cLim)
             ylabel('Veinness (signal std / signal mean)')
             %hist
             f(end+1) = figure('WindowStyle','docked','color','w');
-            vol = vein.(sess).noiseOverMean(maskAnat);
+            vol = vein.(sess).noiseOverMean(maskROI);
             hHist = histogram(vol,100); hold on
             tip = 0.001;
             [~,bHigh] = min(abs(cumsum(hHist.Values)./sum(hHist.Values)-(1-tip)));
@@ -274,11 +324,11 @@ for subjInd = 1:length(subjList)
         %V1 retinotopic representation + Vein
         f(end+1) = figure('WindowStyle','docked','color','w');
         axBak = plotIm(axes,brain(:,:,slice));
-        axV1 = plotIm(axes,double(maskAnat(:,:,slice)));
-        makeOverlay(axBak,axV1,maskAnat(:,:,slice),[0 0 0; 255 255 0]./255)
+        axV1 = plotIm(axes,double(maskROI(:,:,slice)));
+        makeOverlay(axBak,axV1,maskROI(:,:,slice),[0 0 0; 255 255 0]./255)
         if doVein
             tmp = double(vein.(sess).mask(:,:,slice));
-            tmp(~maskAnat(:,:,slice)) = 0;
+            tmp(~maskROI(:,:,slice)) = 0;
             axVein = plotIm(axes,tmp);
             makeOverlay(axBak,axVein,tmp,[0 0 0; 0 140 225]./255)
         end
@@ -308,9 +358,6 @@ for subjInd = 1:length(subjList)
     
     %% Apply masks to fun data, vectorize voxels and split sessions and conditions
     % Split sessions and conditions
-    runLabel = [results.inputs.opt.runLabel{:}];
-    sessLabel = [results.inputs.opt.sessionLabel{:}];
-    condLabel = repmat(1:3,[length(results.inputs.opt.runLabel)/3 1]); condLabel = condLabel(:)';
     [X,Y] = pol2cart(results.OLS.mixed.delay,results.OLS.mixed.amp);
     for sessInd = 1:2
         sess = ['sess' num2str(sessInd)];
@@ -339,7 +386,7 @@ for subjInd = 1:length(subjList)
         sess = ['sess' num2str(sessInd)];
         sz = size(data.(sess).data);
         ind = false(sz(1:3));
-        ind(:) = maskAnat(maskFit);
+        ind(:) = maskROI(maskFitArea);
         
         % sin responses
         d.(sess).data = permute(data.(sess).data,[4 5 1 2 3]);
@@ -356,26 +403,36 @@ for subjInd = 1:length(subjList)
         list = {'F' 'FDR' 'P'};
         for i = 1:3
             tmp = nan(sz(1:3));
-            tmp(:) = featSel.(sess).anyCondActivation.(list{i})(maskFit);
-            featSelStats.anyCondActivation.(sess).(list{i}) = tmp(ind)';
+            tmp(:) = featSel.(sess).(featSelContrast1).(list{i})(maskFitArea);
+            featSelStats.(featSelContrast1).(sess).(list{i}) = tmp(ind)';
         end
-        featSelStats.anyCondActivation.(sess).info = '1 x vox';
+        featSelStats.(featSelContrast1).(sess).info = '1 x vox';
         
         % vein
         if doVein
             list = {'noiseOverMean' 'mask'};
             for i = 1:length(list)
                 tmp = nan(sz(1:3));
-                tmp(:) = vein.(sess).(list{i})(maskFit);
+                tmp(:) = vein.(sess).(list{i})(maskFitArea);
                 vein.(sess).(list{i}) = tmp(ind)';
             end
         else
-            vein.(sess).mask = false(size(featSelStats.anyCondActivation.(sess).F));
+            vein.(sess).mask = false(size(featSelStats.(featSelContrast1).(sess).F));
         end
         vein.(sess).info = '1 x vox';
         
     end
     clear hr
+    
+    %% Export some parameters
+    param.subjList = subjList;
+    param.featSelContrast1.name = featSelContrast1;
+    param.featSelContrast1.threshType = threshType;
+    param.featSelContrast1.threshVal = threshVal;
+    if doVein
+        param.vein.veinSource = veinSource;
+        param.vein.veinPerc = veinPerc;
+    end
     
     %% Save
     if ~exist(fullfile(funPath,funLevel3),'dir')
@@ -383,11 +440,8 @@ for subjInd = 1:length(subjList)
     end
 
     tmp = fullfile(funPath,funLevel3,[subjList{subjInd} '_' mfilename]);
-    if noMovement
-        tmp = [tmp '_noMovement'];
-    end
-    save(tmp,'d','featSelStats','vein')
-    disp(['Saving to: ' tmp])
+    save(tmp,'d','featSelStats','vein','param')
+    disp(['Saving to: ' tmp '.mat'])
 end
 
 

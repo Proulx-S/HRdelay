@@ -254,7 +254,7 @@ clear respFixed
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% MIXED-EFFECT FIT
 tic
-fprintf('*** MIXED-EFFECT FIT ***\n');
+fprintf('*** MIXED(random)-EFFECT FIT ***\n');
 %% Construct design matrix
 % Polynomials and motion
 poly = cell(1,numruns);

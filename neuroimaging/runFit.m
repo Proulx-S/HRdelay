@@ -1,13 +1,14 @@
 function runFit
 
-actuallyRun = 0;
+actuallyRun = 1;
 noMovement = 1;
-saveFig = 0;
+saveFig = 1;
 exclude = 1;
-exclusion.subj = {'03sk'};
-exclusion.sess = 1;
-exclusion.run = 4;
-exclusion.cond = 2;
+exclusion.subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'};
+exclusion.subj = 2;
+exclusion.sess = {1};
+exclusion.run = {5};
+exclusion.cond = {2};
 
 
 if ismac
@@ -389,62 +390,46 @@ for smLevel = {''}
             end
             clearvars -except tstart mask subjInd smLevel subjStimList subjList subj funData_folderIN funData_folderOUT labelDir data design extraRegr sessionLabel sessModel splitDesign splitData splitIn splitExtraRegr splitSessionLabel stimdur tr maskLabel repo funDir anatDir stimDir inDir outDir noMovement runInd splitRunInd exclude exclusion
             
-            
+            %hemodynamic response extraction
+            disp('--- Response Time Course Extraction ---')
+            ana = 'resp';
+            [results] = GLMresp(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'splitedIn',splitIn),splitIn);
             if noMovement
-                disp('--- Response Time Course Extraction ---')
-                ana = 'resp';
-                [results] = GLMresp(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'splitedIn',splitIn),splitIn);
                 outName = fullfile(funData_folderOUT,[maskLabel ana '_' num2str(splitIn) 'perRun' smLevel{1}]);
-                save([outName '_resp.mat'],'results'); clear results
-                
-                disp('--- Response Sinusoidal Fit ---')
-                ana = 'SinCos';
-                outName = fullfile(funData_folderOUT,[maskLabel ana '_' num2str(splitIn) 'perRun' smLevel{1}]);
-                [resultsTmp,~] = GLMsinCos3(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'runLabel',{splitRunInd},'splitedIn',splitIn),splitIn);
-                resultsTmp.OLS.fixed = []; resultsTmp.OLS.fixed_sessReg = []; resultsTmp.OLS.mixed_sessRm = [];
-                if exclude && ismember(subjList(subjInd),exclusion.subj)
-                    exclInd = ismember(exclusion.subj,subjList(subjInd));
-                    curExclusion.sess = exclusion.sess(exclInd);
-                    curExclusion.run = exclusion.run(exclInd);
-                    curExclusion.cond = exclusion.cond(exclInd);
-                    [results,~] = GLMsinCos5(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'runLabel',{splitRunInd},'splitedIn',splitIn),splitIn,curExclusion);
-                else
-                    [results,~] = GLMsinCos5(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'runLabel',{splitRunInd},'splitedIn',splitIn),splitIn);
-                end
-                results.OLS.mixed = resultsTmp.OLS.mixed; clear resultsTmp
-                results.mask = mask;
-                save([outName '.mat'],'results','-v7.3');
             else
-                ana = 'resp';
-                [results] = GLMresp(splitDesign,splitData,stimdur,tr,ana,[],struct('extraregressors',{splitExtraRegr},'sessionLabel',{splitSessionLabel},'splitedIn',splitIn),splitIn);
                 outName = fullfile(funData_folderOUT,[maskLabel ana '_' num2str(splitIn) 'perRun_move12' smLevel{1}]);
-                save([outName '_resp.mat'],'results'); clear results
-                
-                ana = 'SinCos';
-                outName = fullfile(funData_folderOUT,[maskLabel ana '_' num2str(splitIn) 'perRun_move12' smLevel{1}]);
-                [resultsTmp,~] = GLMsinCos3(splitDesign,splitData,stimdur,tr,ana,[],struct('extraregressors',{splitExtraRegr},'sessionLabel',{splitSessionLabel},'runLabel',{splitRunInd},'splitedIn',splitIn),splitIn);
-                resultsTmp.OLS.fixed = []; resultsTmp.OLS.fixed_sessReg = []; resultsTmp.OLS.mixed_sessRm = [];
-                if exclude && ismember(subjList(subjInd),exclusion.subj)
-                    exclInd = ismember(exclusion.subj,subjList(subjInd));
-                    curExclusion.sess = exclusion.sess(exclInd);
-                    curExclusion.run = exclusion.run(exclInd);
-                    curExclusion.cond = exclusion.cond(exclInd);
-                    [results,~] = GLMsinCos5(splitDesign,splitData,stimdur,tr,ana,[],struct('extraregressors',{splitExtraRegr},'sessionLabel',{splitSessionLabel},'runLabel',{splitRunInd},'splitedIn',splitIn),splitIn,curExclusion);
-                else
-                    [results,~] = GLMsinCos5(splitDesign,splitData,stimdur,tr,ana,[],struct('extraregressors',{splitExtraRegr},'sessionLabel',{splitSessionLabel},'runLabel',{splitRunInd},'splitedIn',splitIn),splitIn);
-                end
-                results.OLS.mixed = resultsTmp.OLS.mixed; clear resultsTmp
-                results.mask = mask;
-                results.inputs.opt.runLabel = splitRunInd;
-                save([outName '.mat'],'results','-v7.3');
             end
-
-%             [results,dataDetrend] = GLMsinCos5(splitDesign,splitData,stimdur,tr,ana,[],struct('extraregressors',{splitExtraRegr},'sessionLabel',{splitSessionLabel},'splitedIn',splitIn),splitIn);
-%             save([outName '_detrend.mat'],'dataDetrend','-v7.3');
-%             clear results dataDetrend
+            save([outName '_resp.mat'],'results'); clear results
             
+            disp('--- Response Sinusoidal Fit ---')
+            %sin mixed(random)-model
+            ana = 'SinCos';
+            if noMovement
+                outName = fullfile(funData_folderOUT,[maskLabel ana '_' num2str(splitIn) 'perRun' smLevel{1}]);
+            else
+                outName = fullfile(funData_folderOUT,[maskLabel ana '_' num2str(splitIn) 'perRun_move12' smLevel{1}]);
+            end
+            [resultsTmp,~] = GLMsinCos3(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'runLabel',{splitRunInd},'splitedIn',splitIn),splitIn);
+            resultsTmp.OLS.mixed.inputs = resultsTmp.inputs; resultsTmp = rmfield(resultsTmp,'inputs');
+            %sin fixed-model
+            if exclude && ismember(subjList(subjInd),exclusion.subjList(exclusion.subj))
+                exclInd = ismember(exclusion.subjList(exclusion.subj),subjList(subjInd));
+                if length(exclInd)>1
+                    error('need adjust the code for multiple exclusion here');
+                end
+                curExclusion.sess = exclusion.sess{exclInd};
+                curExclusion.run = exclusion.run{exclInd};
+                curExclusion.cond = exclusion.cond{exclInd};
+                [results,~] = GLMsinCos5(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'runLabel',{splitRunInd},'splitedIn',splitIn),splitIn,curExclusion);
+            else
+                [results,~] = GLMsinCos5(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'runLabel',{splitRunInd},'splitedIn',splitIn),splitIn);
+            end
+            results.OLS.fixed.inputs = results.inputs; results = rmfield(results,'inputs');
+            %put mixed(random) and mixed models in the same variable
+            results.OLS.mixed = resultsTmp.OLS.mixed; clear resultsTmp
+            results.mask = mask;
+            save([outName '.mat'],'results','-v7.3');
             disp([subj '; split in ' num2str(splitIn) ': done'])
-            
             telapsed = toc;
             disp(['Whole thing took: ' num2str(telapsed) 'sec'])
     end

@@ -1,9 +1,9 @@
-function hrGroupAnalysis(threshType,exclusion)
-if ~exist('threshType','var') || isempty(threshType)
-    threshType = 'p'; % 'none', 'p' or 'fdr'
-end
+function hrGroupAnalysis
+% if ~exist('threshType','var') || isempty(threshType)
+%     threshType = 'p'; % 'none', 'p' or 'fdr'
+% end
 noMovement = 1;
-threshVal = 0.05;
+% threshVal = 0.05;
 saveFig = 1;
 plotAllSubj = 1;
 
@@ -23,17 +23,28 @@ funLevel = 'z';
 funLevelSin = 'zSin';
 subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'}';
 % subjList = {'02jp' '03sk' '04sp'}';
-if noMovement
-    fileSuffix = '_maskSinAndHrFit_noMovement.mat';
-else
-    fileSuffix = '_maskSinAndHrFit.mat';
-end
+fileSuffix = '_defineAndShowMasks.mat';
 
 %make sure everything is forward slash for mac, linux pc compatibility
 for tmpPath = {'repoPath' 'dataDir' 'funPath'}
     eval([char(tmpPath) '(strfind(' char(tmpPath) ',''\''))=''/'';']);
 end
 
+%% Preload param
+tmp = dir(fullfile(funPath,funLevel,'*.mat'));
+for i = 1:length(tmp)
+    load(fullfile(funPath,funLevel,tmp(i).name),'param')
+    if exist('param','var')
+        break
+    end
+end
+if ~exist('param','var')
+    error('Analysis parameters not found!')
+end
+featSelContrast1 = param.featSelContrast1.name;
+threshType = param.featSelContrast1.threshType;
+threshVal = param.featSelContrast1.threshVal;
+exclusion = param.exclusion;
 
 disp(['IN: BOLD hemodynamic responses (HR) from anatomical V1 ROI (' fullfile(dataDir,funLevel) ')'])
 disp('F(IN)->OUT: threshold included voxels and analyse HR averaged across the ROI')
@@ -42,36 +53,23 @@ disp(['OUT: figures'])
 
 
 %% Load data
-hrAll = cell(size(subjList,1),1);
-if ~strcmp(threshType,'none')
-    dForThreshAll = cell(size(subjList,1),1);
-end
+dAll = cell(size(subjList,1),1);
+featSelStatsAll = cell(size(subjList,1),1);
+veinAll = cell(size(subjList,1),1);
 for subjInd = 1:size(subjList,1)
-    load(fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]),'hr');
-    hrAll{subjInd} = hr;
-    switch threshType
-        case 'none'
-        case 'p'
-            load(fullfile(funPath,'zSin',[subjList{subjInd} fileSuffix]),'d');
-            dForThreshAll{subjInd}.sess1 = d.sess1.P;
-            dForThreshAll{subjInd}.sess2 = d.sess2.P;
-        case 'fdr'
-            load(fullfile(funPath,'zSin',[subjList{subjInd} fileSuffix]),'d');
-            dForThreshAll{subjInd}.sess1 = d.sess1.FDR;
-            dForThreshAll{subjInd}.sess2 = d.sess2.FDR;
-        otherwise
-            error('X')
-    end
+    load(fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]),'d','featSelStats','vein');
+    dAll{subjInd} = d;
+    featSelStatsAll{subjInd} = featSelStats;
+    veinAll{subjInd} = vein;    
 end
-
-hr = hrAll; clear dAll
-if ~strcmp(threshType,'none')
-    dForThresh = dForThreshAll; clear dForThreshAll
-end
+d = dAll; clear dAll
+featSelStats = featSelStatsAll; clear featSelStatsAll
+vein = veinAll; clear veinAll
 
 %% Exclude
 if exist('exclusion','var') && ~isempty(exclusion) && ~isempty(exclusion.subj)
     for i = 1:length(exclusion.subj)
+        d{exclusion.subj(i)}.(['sess' num2str(i)]).data
         hr{exclusion.subj(i)}.(['sess' num2str(i)])(exclusion.run,:,:,:) = [];
     end
 end

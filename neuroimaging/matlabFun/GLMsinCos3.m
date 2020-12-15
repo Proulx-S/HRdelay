@@ -111,9 +111,9 @@ end
 
 
 
-%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% MIXED-EFFECT (random) FIT
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% MIXED(random)-EFFECT FIT
 tic
-fprintf('*** MIXED-EFFECT (random) FIT ***\n');
+fprintf('*** MIXED(random)-EFFECT FIT ***\n');
 %% Construct design matrix
 poly = cell(1,numruns);
 polyNmotion = cell(1,numruns);
@@ -855,8 +855,8 @@ if opt.splitedIn==1 || ~isfield(opt,'sessModel')
 % 
 % 
 % tic
-% %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% MIXED-EFFECT (random) FIT WITH SESSION EFFECT FROM FIXED-EFFECT MODEL REMOVED FROM DATA
-% fprintf('*** MIXED-EFFECT (random) FIT WITH SESSION EFFECT FROM FIXED-EFFECT MODEL REMOVED FROM DATA ***\n');
+% %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% MIXED(random)-EFFECT FIT WITH SESSION EFFECT FROM FIXED-EFFECT MODEL REMOVED FROM DATA
+% fprintf('*** MIXED(random)-EFFECT FIT WITH SESSION EFFECT FROM FIXED-EFFECT MODEL REMOVED FROM DATA ***\n');
 % %% Construct design matrix
 % % Polynomials and motion
 % poly = cell(1,numruns);

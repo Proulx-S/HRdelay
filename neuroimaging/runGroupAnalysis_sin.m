@@ -1,9 +1,4 @@
-function exclusion = sinusoidalGroupAnalysis(threshType)
-if ~exist('threshType','var') || isempty(threshType)
-    threshType = 'p'; % 'none', 'p' or 'fdr'
-end
-noMovement = 1;
-threshVal = 0.05;
+function runGroupAnalysis_sin()
 plotAllSubj = 1;
 saveFig = 1;
 
@@ -21,19 +16,28 @@ end
 dataDir = 'C-derived\DecodingHR';
 funPath = fullfile(repoPath,dataDir,'fun');
 funLevel = 'z';
-subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'}';
-% subjList = {'02jp' '03sk' '04sp'}';
-if noMovement
-    fileSuffix = '_maskSinAndHrFit_noMovement.mat';
-else
-    fileSuffix = '_maskSinAndHrFit.mat';
-end
+fileSuffix = '_defineAndShowMasks.mat';
 
 %make sure everything is forward slash for mac, linux pc compatibility
 for tmpPath = {'repoPath' 'dataDir' 'funPath'}
     eval([char(tmpPath) '(strfind(' char(tmpPath) ',''\''))=''/'';']);
 end
-
+% 
+%% Preload param
+tmp = dir(fullfile(funPath,funLevel,'*.mat'));
+for i = 1:length(tmp)
+    load(fullfile(funPath,funLevel,tmp(i).name),'param')
+    if exist('param','var')
+        break
+    end
+end
+if ~exist('param','var')
+    error('Analysis parameters not found!')
+end
+subjList = param.subjList;
+featSelContrast1 = param.featSelContrast1.name;
+threshType = param.featSelContrast1.threshType;
+threshVal = param.featSelContrast1.threshVal;
 
 
 disp(['IN: Sinusoidal BOLD responses from anatomical V1 ROI (' fullfile(dataDir,funLevel) ')'])
@@ -44,207 +48,27 @@ disp(['OUT: figures and stats'])
 
 
 %% Load data
-dAll = cell(size(subjList,1),1);
-featSelStatsAll = cell(size(subjList,1),1);
-veinAll = cell(size(subjList,1),1);
-% if doVein
-%     veinAll = cell(size(subjList,1),1);
-% end
+dCAll = cell(size(subjList,1),1);
 for subjInd = 1:size(subjList,1)
-    load(fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]),'d','featSelStats','vein');
-    dAll{subjInd} = d;
-    featSelStatsAll{subjInd} = featSelStats;
-    veinAll{subjInd} = vein;    
-%     if doVein
-%         load(fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]),'d','featSelStats','vein');
-%         veinAll{subjInd} = vein;
-%     else
-%         load(fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]),'d','featSelStats');
-%     end
-%     dAll{subjInd} = d;
-%     featSelStatsAll{subjInd} = featSelStats;
+    load(fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]),'d');
+    dCAll{subjInd} = d;
 end
-d = dAll; clear dAll
-featSelStats = featSelStatsAll; clear featSelStatsAll
-vein = veinAll; clear veinAll
+dC = dCAll; clear dAll
 
-%% Process data
-dP = d;
-
-% Threshold and average voxels in cartesian space, using statistical tests
-% on the other session
-rLim = nan(length(dP),1);
-for subjInd = 1:length(dP)
-    % mask out veins and inactive voxels
+% Average voxels
+for subjInd = 1:length(subjList)
     for sessInd = 1:2
         sess = ['sess' num2str(sessInd)];
-        sessFeat = ['sess' num2str(~(sessInd-1)+1)];
-        indVein = vein{subjInd}.(sessFeat).mask;
-        if ~strcmp(threshType,'none')
-            indAct = featSelStats{subjInd}.anyCondActivation.(sessFeat).(upper(threshType))<threshVal;
-        else
-            indAct = true(size(featSelStats{subjInd}.anyCondActivation.(sessFeat).(upper(threshType))));
-        end
-        dP{subjInd}.(sess).data = dP{subjInd}.(sess).data(:,indAct&~indVein,:,:);
-    end
-    disp('+++')
-    if all(~indVein)
-        disp('NOT masking out veins vox')
-    else
-        disp('masking out veins vox')
-    end
-    if all(indAct)
-        disp('NOT masking out inactive vox')
-    else
-        disp('masking out inactive vox')
-    end
-    disp(['Leaving ' num2str(size(dP{subjInd}.sess1.data,2)) ' and ' num2str(size(dP{subjInd}.sess2.data,2)) ' vox in sess1 and sess2']);
-    disp('+++')
-    
-    % average within ROI's selected voxels
-    dP{subjInd}.sess1.data = mean(dP{subjInd}.sess1.data,2);
-    dP{subjInd}.sess2.data = mean(dP{subjInd}.sess2.data,2);
-    dP{subjInd}.sess1 = rmfield(dP{subjInd}.sess1,'hr');
-    dP{subjInd}.sess2 = rmfield(dP{subjInd}.sess2,'hr');
-
-    rLim(subjInd) = max(abs([dP{subjInd}.sess1.data(:); dP{subjInd}.sess2.data(:)]));
-end
-
-% Show scanner trigger problem
-clear tmp tmp1 tmp2 tmpData
-figure('WindowStyle','docked');
-sz = 0;
-for subjInd = 1:length(subjList)
-    tmp = size(dP{subjInd}.sess1.data,1);
-    if tmp>sz; sz = tmp; end
-%     tmpData(subjInd,1) = circ_mean(angle(dP{subjInd}.sess1.data(:)));
-%     tmpData(subjInd,2) = circ_mean(angle(dP{subjInd}.sess2.data(:)));
-end
-
-for subjInd = 1:length(subjList)
-    tmp1 = squeeze(dP{subjInd}.sess1.data)';
-    tmpInd = squeeze(dP{subjInd}.sess1.runLabel)';
-    [~,b] = sort(tmpInd(:));
-    tmpInd(b) = 1:numel(tmpInd);
-    tmp1 = tmp1(tmpInd);
-    tmp1 = tmp1(:);
-    tmp1 = angle(tmp1);
-    tmp1 = wrapToPi(tmp1-circ_mean(tmp1));
-    
-    tmp2 = squeeze(dP{subjInd}.sess2.data)';
-    tmpInd = squeeze(dP{subjInd}.sess2.runLabel)';
-    [~,b] = sort(tmpInd(:));
-    tmpInd(b) = 1:numel(tmpInd);
-    tmp2 = tmp2(tmpInd);
-    tmp2 = tmp2(:);
-    tmp2 = angle(tmp2);
-    tmp2 = wrapToPi(tmp2-circ_mean(tmp2));
-    
-    tmp = cat(1,tmp1,nan(sz*3-length(tmp1)+1,1),tmp2);
-%     tmp = wrapToPi(tmp-circ_mean(tmp(~isnan(tmp))));
-    
-%     tmp = wrapToPi(tmp + circ_mean(tmpData(:)));
-    
-    hp(subjInd) = plot(tmp,'-o'); hold on
-end
-TR = 1;
-stimCycleLength = 12;
-TRrad = TR/stimCycleLength*(2*pi);
-ax = gca;
-yTickRad = -pi:TRrad:pi;
-yTickSec = yTickRad/(2*pi)*stimCycleLength;
-ax.YTick = yTickRad;
-ax.YTickLabel = num2str(yTickSec');
-ylim([yTickRad(1) yTickRad(end)])
-ax.YGrid = 'on';
-xlabel({'Functional runs' 'in order of acquisition'})
-ylabel('TRs');
-legend(char(subjList))
-
-% Exclude
-subjInd = 2;
-sessInd = 1;
-dataTmp = angle(dP{subjInd}.(['sess' num2str(sessInd)]).data);
-dataTmp = wrapToPi(dataTmp - circ_mean(dataTmp));
-dataTmp = abs(dataTmp);
-a = max(dataTmp(:),[],1);
-[runInd,condInd] = find(squeeze(dataTmp)==a);
-exclusion.subj = subjInd;
-exclusion.sess = sessInd;
-exclusion.run = runInd;
-exclusion.cond = condInd;
-% exclusion.subj = subjList(subjInd)
-% exclusion.subj = {'03sk'};
-% exclusion.sess = 1;
-% exclusion.run = 4;
-% exclusion.cond = 2;
-
-if exist('exclusion','var') && ~isempty(exclusion) && ~isempty(exclusion.subj)
-    for i = 1:length(exclusion.subj)
-        dP{exclusion.subj(i)}.(['sess' num2str(i)]).data(exclusion.run,:,:) = [];
-        dP{exclusion.subj(i)}.(['sess' num2str(i)]).runLabel(exclusion.run,:,:) = [];
+        dC{subjInd}.(sess).data = mean(dC{subjInd}.(sess).data,2);
+        dC{subjInd}.(sess).hr = mean(dC{subjInd}.(sess).hr,2);
     end
 end
-
-
-% Plot single subjects
-for subjInd = 1:length(subjList)
-    if plotAllSubj || subjInd==1
-        fSubj(subjInd) = figure('WindowStyle','docked');
-        for sessInd = 1:2
-            subplot(1,2,sessInd)
-            xData = squeeze(dP{subjInd}.(['sess' num2str(sessInd)]).data);
-            for condInd = 1:size(xData,2)
-                [theta,rho] = cart2pol(real(xData(:,condInd)),imag(xData(:,condInd)));
-                h(condInd) = polarplot(theta,rho,'o'); hold on
-                h(condInd).Color = colors(condInd,:);
-                [theta,rho] = cart2pol(real(mean(xData(:,condInd),1)),imag(mean(xData(:,condInd),1)));
-                hAv(condInd) = polarplot(theta,rho,'o'); hold on
-                hAv(condInd).MarkerEdgeColor = 'w';
-                hAv(condInd).MarkerFaceColor = colors(condInd,:);
-                hAv(condInd).LineWidth = 0.25;
-            end
-            uistack(hAv,'top')
-            title(['Sess' num2str(sessInd)])
-            rlim([0 max(rLim)])
-            
-            ax = gca;
-            ax.ThetaTickLabel = 12-ax.ThetaTick(1:end)/360*12;
-            ax.ThetaTickLabel(1,:) = '0 ';
-%             ax.ThetaAxis.Label.String = {'delay' '(sec)'};
-%             ax.ThetaAxis.Label.Rotation = 0;
-%             ax.ThetaAxis.Label.HorizontalAlignment = 'left';
-%             ax.RAxis.Label.String = 'amp (%BOLD)';
-%             ax.RAxis.Label.Rotation = 80;
-        end
-        suptitle(subjList{subjInd})
-        hl = legend(char({'ori1' 'ori2' 'plaid'}),'Location','east');
-        hl.Color = 'none';
-        hl.Box = 'off';
-        
-        if saveFig
-            filename = fullfile(pwd,mfilename);
-            if ~exist(filename,'dir'); mkdir(filename); end
-            filename = fullfile(filename,subjList{subjInd});
-            fSubj(subjInd).Color = 'none';
-            set(findobj(fSubj(subjInd).Children,'type','Axes'),'color','none')
-            set(findobj(fSubj(subjInd).Children,'type','PolarAxes'),'color','none')
-            saveas(fSubj(subjInd),[filename '.svg']); disp([filename '.svg'])
-            fSubj(subjInd).Color = 'w';
-%             set(findobj(fSubj(subjInd).Children,'type','Axes'),'color','w')
-%             set(findobj(fSubj(subjInd).Children,'type','PolarAxes'),'color','w')
-            saveas(fSubj(subjInd),filename); disp([filename '.fig'])
-            saveas(fSubj(subjInd),filename); disp([filename '.jpg'])
-        end
-    end
-end
-
 
 % Average runs in cartesian space
 condList = {'ori1' 'ori2' 'plaid'};
 xData = nan(length(subjList),length(condList),2);
 for subjInd = 1:length(subjList)
-    xData(subjInd,:,:) = permute(cat(1,mean(dP{subjInd}.sess1.data,1),mean(dP{subjInd}.sess2.data,1)),[2 3 1]);
+    xData(subjInd,:,:) = permute(cat(1,mean(dC{subjInd}.sess1.data,1),mean(dC{subjInd}.sess2.data,1)),[2 3 1]);
 end
 xDataInfo = 'subj x cond[or1, ori2, plaid] x sess';
 
@@ -256,8 +80,6 @@ xDataInfo = 'subj x cond[or1, ori2, plaid, ori] x sess';
 xData = mean(xData,3);
 xDataInfo = 'subj x cond[or1, ori2, plaid, ori]';
 
-% % Save intermediary data for hrGroupAnalysis
-% save(fullfile(funPath,funLevel,'tmp.mat'),'xData','xDataInfo')
 
 %% Plot results
 % Cartesian space
@@ -298,8 +120,6 @@ if saveFig
     set(findobj(fGroup(1).Children,'type','PolarAxes'),'color','none')
     saveas(fGroup(1),[filename '.svg']); disp([filename '.svg'])
     fGroup(1).Color = 'w';
-%     set(findobj(fGroup(1).Children,'type','Axes'),'color','w')
-%     set(findobj(fGroup(1).Children,'type','PolarAxes'),'color','w')
     saveas(fGroup(1),filename); disp([filename '.fig'])
     saveas(fGroup(1),filename); disp([filename '.jpg'])
 end
@@ -353,7 +173,6 @@ if saveFig
     set(findobj(fGroup(2).Children,'type','Axes'),'color','none')
     saveas(fGroup(2),[filename '.svg']); disp([filename '.svg'])
     fGroup(2).Color = 'w';
-%     set(findobj(fGroup(2).Children,'type','Axes'),'color','w')
     saveas(fGroup(2),filename); disp([filename '.fig'])
     saveas(fGroup(2),filename); disp([filename '.jpg'])
 end
@@ -404,7 +223,6 @@ if saveFig
     set(findobj(fGroup(3).Children,'type','Axes'),'color','none')
     saveas(fGroup(3),[filename '.svg']); disp([filename '.svg'])
     fGroup(3).Color = 'w';
-%     set(findobj(fGroup(3).Children,'type','Axes'),'color','w')
     saveas(fGroup(3),filename); disp([filename '.fig'])
     saveas(fGroup(3),filename); disp([filename '.jpg'])
 end
@@ -505,7 +323,7 @@ xData = [];
 xLabel = [];
 for subjInd = 1:length(subjList)
     for sessInd = 1:2
-        tmp = squeeze(dP{subjInd}.(['sess' num2str(sessInd)]).data);
+        tmp = squeeze(dC{subjInd}.(['sess' num2str(sessInd)]).data);
         tmp = mean(tmp,1);
         xData = cat(1,xData,tmp);
         sz = size(tmp);
@@ -523,16 +341,15 @@ delay = wrapToPi(delay - angle(xDataMean));
 delay = -(delay + angle(xDataMean))/pi*6;
 
 f = figure('WindowStyle','docked');
-x = wrapToPi(delay(:,2)-delay(:,1));
+x = delay(:,2)-delay(:,1);
 y = amp(:,2) - amp(:,1);
 hScat = scatter(x,y);
-[R,P] = corr(x,y,'type','Spearman');
-xlabel('delay (plaid - ori)')
+[R,P] = corr(x,y,'type','Spearman','tail','left');
+xlabel('delay (plaid - ori) in sec')
 ylabel('amp (plaid - ori)')
 refFit = polyfit(x,y,1);
-title({'Subj*Sess' ['Spearman''s R=' num2str(R,'%0.2f') '; p=' num2str(P,'%0.3f') '; slope=' num2str(refFit(1),'%0.2f')]})
+title({'Subj*Sess' ['Spearman''s R=' num2str(R,'%0.2f') '; one-tailed p=' num2str(P,'%0.3f') '; slope=' num2str(refFit(1),'%0.2f')]})
 refline
-
 
 xLabel = xLabel(:,1);
 cMap = jet(length(subjList));
@@ -543,6 +360,21 @@ end
 hScat.CData = cData;
 hScat.MarkerFaceColor = hScat.MarkerEdgeColor;
 
+%average sessions
+f = figure('WindowStyle','docked');
+delay = mean(cat(3,delay(1:2:end,:),delay(2:2:end,:)),3);
+amp = mean(cat(3,amp(1:2:end,:),amp(2:2:end,:)),3);
+x = delay(:,2)-delay(:,1);
+y = amp(:,2) - amp(:,1);
+hScat = scatter(x,y);
+[R,P] = corr(x,y,'type','Spearman','tail','left');
+xlabel('delay (plaid - ori) in sec')
+ylabel('amp (plaid - ori)')
+refFit = polyfit(x,y,1);
+title({'Subj*Sess' ['Spearman''s R=' num2str(R,'%0.2f') '; one-tailed p=' num2str(P,'%0.3f') '; slope=' num2str(refFit(1),'%0.2f')]})
+refline
+
+
 
 % Between-run correlation
 xData = [];
@@ -551,7 +383,7 @@ i = 0;
 for subjInd = 1:length(subjList)
     for sessInd = 1:2
         i = i+1;
-        tmp = squeeze(dP{subjInd}.(['sess' num2str(sessInd)]).data);
+        tmp = squeeze(dC{subjInd}.(['sess' num2str(sessInd)]).data);
         xData = cat(1,xData,tmp);
         sz = size(tmp);
         xLabel = cat(1,xLabel,[ones(sz(1),1).*subjInd ones(sz(1),1).*sessInd ones(sz(1),1).*i]);
@@ -574,10 +406,10 @@ f = figure('WindowStyle','docked');
 x = delay(:);
 y = amp(:);
 hScat = scatter(x,y);
-[R,P] = corr(x,y);
+[R,P] = corr(x,y,'tail','left');
 xlabel('delay')
 ylabel('amp')
 refFit = polyfit(x,y,1);
-title({'Individual Runs, subj*sess*cond effect removed' ['Pearson''s R=' num2str(R,'%0.2f') '; p=' num2str(P,'%0.3f') '; slope=' num2str(refFit(1),'%0.2f')]})
+title({'Individual Runs, subj*sess*cond effect removed' ['Pearson''s R=' num2str(R,'%0.2f') '; one-tailed p=' num2str(P,'%0.3f') '; slope=' num2str(refFit(1),'%0.2f')]})
 refline;
 
