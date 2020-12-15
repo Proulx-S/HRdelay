@@ -1,8 +1,9 @@
-function applyFeatSelAndClean()
+function applyFeatSelAndClean(saveFig)
 close all
-
-plotAllSubj = 1;
-saveFig = 1;
+if ~exist('saveFig','var') || isempty(saveFig)
+    saveFig = 0;
+end
+plotAllSubj = saveFig;
 
 colors = [  0         0.4470    0.7410
             0.8500    0.3250    0.0980

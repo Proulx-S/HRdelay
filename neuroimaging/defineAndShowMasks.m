@@ -1,9 +1,11 @@
-function defineAndShowMasks(fitType,threshType,veinPerc)
+function defineAndShowMasks(fitType,threshType,veinPerc,saveFig)
 close all
 noMovement = 1;
 actuallyRun = 1;
-saveFig = 1;
-plotAllSubj = 1;
+if ~exist('saveFig','var') || isempty(saveFig)
+    saveFig = 0;
+end
+plotAllSubj = saveFig;
 if ~exist('veinPerc','var') || isempty(veinPerc)
     doVein = 1;
     veinSource = 'reducedModelResid'; % 'reducedModelResid' (stimulus-driven signal included in std) or 'fullModelResid (stimulus-driven signal excluded in std)'
@@ -195,7 +197,7 @@ for subjInd = 1:length(subjList)
         %Get some nice colormaps
         filename = fullfile(pwd,mfilename);
         if ~exist(filename,'dir'); mkdir(filename); end
-        filename = fullfile(filename,'cmap');
+        filename = fullfile(filename,'cmap.mat');
         if exist(filename,'file')
             load(filename,'cMap_F','cMap_vein');
         else

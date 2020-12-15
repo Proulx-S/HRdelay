@@ -1,6 +1,8 @@
-function runGroupAnalysis_hr()
+function runGroupAnalysis_hr(saveFig)
 close all
-saveFig = 1;
+if ~exist('saveFig','var') || isempty(saveFig)
+    saveFig = 0;
+end
 
 colors = [  0         0.4470    0.7410
             0.8500    0.3250    0.0980
@@ -34,11 +36,6 @@ if ~exist('param','var')
     error('Analysis parameters not found!')
 end
 subjList = param.subjList;
-
-disp(['IN: Sinusoidal BOLD responses from anatomical V1 ROI (' fullfile(dataDir,funLevel) ')'])
-disp(['threshVal=' num2str(param.featSelContrast1.threshVal)])
-disp('F(IN)=OUT: threshold included voxels and analyse responses averaged across the ROI')
-disp(['OUT: figures and stats'])
 
 
 

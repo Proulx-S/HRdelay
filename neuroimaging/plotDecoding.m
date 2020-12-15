@@ -1,11 +1,13 @@
-function plotDecoding(res)
+function plotDecoding(res,saveFig)
 groupStatMethod = 'binomial'; % 'binomial' or 'pseudoMedian'
-saveFig = 0;
+if ~exist('saveFig','var') || isempty(saveFig)
+    saveFig = 0;
+end
 
 plotUpperErrorBar = 0;
 lw = 1;
-yLim = [12 75]./100;
-% yLim = 'auto';
+% yLim = [12 75]./100;
+yLim = 'auto';
 
 spaceList = fields(res)';
 subjList = res.(spaceList{1}).subjList;

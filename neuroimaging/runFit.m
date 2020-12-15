@@ -1,6 +1,6 @@
 function runFit
 
-actuallyRun = 1;
+actuallyRun = 0;
 noMovement = 1;
 saveFig = 1;
 exclude = 1;

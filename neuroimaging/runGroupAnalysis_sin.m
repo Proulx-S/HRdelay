@@ -1,6 +1,8 @@
-function runGroupAnalysis_sin()
+function runGroupAnalysis_sin(saveFig)
 close all
-saveFig = 1;
+if ~exist('saveFig','var') || isempty(saveFig)
+    saveFig = 0;
+end
 
 colors = [  0         0.4470    0.7410
             0.8500    0.3250    0.0980
@@ -309,7 +311,6 @@ disp([' F=' num2str(STATS.signedrank,'%0.2f') '; p=' num2str(P/2,'%0.2f')]);
 
 %% Correlations
 % Between-subject correlation
-
 xData = [];
 xLabel = [];
 for subjInd = 1:length(subjList)
@@ -336,11 +337,11 @@ f = figure('WindowStyle','docked');
 x = delay(:,2)-delay(:,1);
 y = amp(:,2) - amp(:,1);
 hScat = scatter(x,y);
-[R,P] = corr(x,y,'type','Spearman','tail','left');
+[R,P] = corr(x,y,'type','Pearson','tail','left');
 xlabel('delay (plaid - ori) in sec')
 ylabel('amp (plaid - ori)')
 refFit = polyfit(x,y,1);
-title({'Subj*Sess' ['Spearman''s R=' num2str(R,'%0.2f') '; one-tailed p=' num2str(P,'%0.3f') '; slope=' num2str(refFit(1),'%0.2f')]})
+title({'Subj*Sess' ['Pearson''s R=' num2str(R,'%0.2f') '; one-tailed p=' num2str(P,'%0.3f') '; slope=' num2str(refFit(1),'%0.2f')]})
 refline
 set(gca,'PlotBoxAspectRatio',[1 1 1])
 
