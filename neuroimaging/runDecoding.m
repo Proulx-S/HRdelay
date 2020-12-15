@@ -1,7 +1,7 @@
 function res = runDecoding(SVMspace)
 close all
 if ~exist('SVMspace','var') || isempty(SVMspace)
-    SVMspace = 'cartNoAmp'; % 'hr' 'hrNoAmp' 'cart' 'cartNoAmp' 'cartReal', 'cartRealFixedDelay', 'cartImag', 'pol', 'polMag' or 'polDelay'
+    SVMspace = 'cartNoAmp_HT'; % 'hr' 'hrNoAmp' 'cart' 'cartNoAmp' cartNoAmp_HT 'cartReal', 'cartImag', 'pol', 'polMag' or 'polDelay'
 end
 
 if ismac
@@ -170,16 +170,15 @@ clear dC
 
 
 
+% Scale each hr to 1 accroding to sin fit
 switch SVMspace
-    case 'hrNoAmp' % scale each hr to an amplitude of one based on the sin fit
+    case 'hrNoAmp'
         for i = 1:numel(dP)
             dP{i}.hr = dP{i}.hr./abs(dP{i}.data./100);
         end
-    case 'cartNoAmp' % scale each vetor to amplitude of 1
-        for i = 1:numel(dP)
-            [X,Y] = pol2cart(angle(dP{i}.data),1);
-            dP{i}.data = complex(X,Y);
-        end
+    case {'cart' 'cart_HT' 'cartNoAmp' 'cartNoAmp_HT'}
+        % Does not apply
+    otherwise
 end
 
 % % remove global delay (because trigger might have screwed up)
@@ -204,22 +203,23 @@ res.nObs = nan(size(dP));
 res.p = nan(size(dP));
 res.subjList = subjList;
 for i = 1:numel(dP)
+    % Define x(data), y(label) and k(xValFolds)
     switch SVMspace
         case {'hr' 'hrNoAmp'}
             nSamplePaired = size(dP{i}.hr,1);
             x1 = dP{i}.hr(:,:,1,:); x1 = x1(:,:);
             x2 = dP{i}.hr(:,:,2,:); x2 = x2(:,:);
-        otherwise
+        case {'cart' 'cart_HT' 'cartNoAmp' 'cartNoAmp_HT'}
             nSamplePaired = size(dP{i}.data,1);
             x1 = dP{i}.data(:,:,1);
             x2 = dP{i}.data(:,:,2);
+        otherwise
+            error('X')
     end
     y1 = 1.*ones(nSamplePaired,1);
     k1 = (1:nSamplePaired)';
-    
     y2 = 2.*ones(nSamplePaired,1);
     k2 = (1:nSamplePaired)';
-    
     
     y = cat(1,y1,y2); clear y1 y2
     k = cat(1,k1,k2); clear k1 k2
@@ -232,35 +232,59 @@ for i = 1:numel(dP)
     yHatTe = nan(length(y),1);
     for kInd = 1:length(kList)
         x = cat(1,x1,x2);
+%         hPP = polarplot(x(:),'.')
         
         % split train and test
         te = k==kList(kInd);
         
-        % polar space normalization (mean rho=1, mean theta=0)
-        switch SVMspace
-            case {'hr' 'hrNoAmp'}
+        
                 
-            otherwise
-                switch SVMspace
-                    case 'cartRealFixedDelay'
-                        rho = abs(mean(mean(x(~te,:),1),2));
-                        theta = angle(mean(mean(x(~te,:),1),2));
-                    otherwise
-                        rho = abs(mean(x(~te,:),1));
-                        theta = angle(mean(x(~te,:),1));
+        % Within-session feature selection
+        switch SVMspace
+            case {'cart_HT' 'cartNoAmp_HT'} % further feature selection
+                featStat = nan(1,size(x,2));
+                for voxInd = 1:size(x,2)
+                    xTmp = cat(1,x(~te & y==1,voxInd),x(~te & y==2,voxInd));
+                    stats = T2Hot2d([real(xTmp) imag(xTmp)]);
+                    featStat(voxInd) = stats.T2;
                 end
-                [X,Y] = pol2cart(wrapToPi(angle(x)-theta),abs(x)./rho);
-                x = complex(X,Y); clear X Y
+                [~,b] = sort(featStat,'descend');
+                x = x(:,b(1:round(end*0.9)));
+            otherwise
+                error('X')
         end
         
+        
+        % Polar space normalization
+        switch SVMspace
+            case {'hr' 'hrNoAmp'}
+                % does not apply
+            case {'cart' 'cartNoAmp' 'cartNoAmp_HT'}
+                % set to mean rho=1 and mean theta=0 in each voxel)
+                switch SVMspace
+                    case {'cartNoAmp' 'cartNoAmp_HT'} % but set rho=1 for each vector (omit any amplitude information)
+                        rho = 1;
+                        theta = angle(x) - angle(mean(x(~te,:),1)); theta = wrapToPi(theta);
+                    case {'cart' 'cart_HT'}
+                        rho = abs(x)./abs(mean(x(~te,:),1));
+                        theta = angle(x) - angle(mean(x(~te,:),1)); theta = wrapToPi(theta);
+                    otherwise
+                        error('X')
+                end
+                [X,Y] = pol2cart(theta,rho);
+                x = complex(X,Y); clear X Y
+            otherwise
+                error('X')
+        end
+
         % cocktail bank normalization
         switch SVMspace
             case {'hr' 'hrNoAmp'}
                 x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
-            case {'cart' 'cartNoAmp'}
+            case {'cart' 'cart_HT' 'cartNoAmp' 'cartNoAmp_HT'}
                 x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
                 x = cat(2,real(x),imag(x));
-            case {'cartReal'  'cartRealFixedDelay'}
+            case 'cartReal'
                 x = real(x);
                 x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
             case 'cartImag'
@@ -287,10 +311,13 @@ for i = 1:numel(dP)
         [yTr(~te,kInd), ~, yHatTr(~te,kInd)] = svmpredict(y(~te,:),x(~te,:),model,'-q');
         [yTe(te,1), ~, yHatTe(te,1)] = svmpredict(y(te,:),x(te,:),model,'-q');
     end
-    if strcmp(SVMspace,'hr')
-        res.nVox(i) = size(x1,2)./size(dP{1,1}.hr,4);
-    else
-        res.nVox(i) = size(x1,2);
+    switch SVMspace
+        case 'hr'
+            res.nVox(i) = size(x1,2)./size(dP{1,1}.hr,4);
+        case {'cart' 'cart_HT' 'cartNoAmp' 'cartNoAmp_HT'}
+            res.nVox(i) = size(x1,2);
+        otherwise
+            error('X')
     end
     res.nDim(i) = size(x,2);
     res.nObs(i) = length(y);
