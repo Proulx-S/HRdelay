@@ -1,7 +1,7 @@
 function res = runDecoding(SVMspace)
 close all
 if ~exist('SVMspace','var') || isempty(SVMspace)
-    SVMspace = 'hrNoAmp'; % 'hr' 'hrNoAmp' 'cart', 'cartReal', 'cartRealFixedDelay', 'cartImag', 'pol', 'polMag' or 'polDelay'
+    SVMspace = 'cartNoAmp'; % 'hr' 'hrNoAmp' 'cart' 'cartNoAmp' 'cartReal', 'cartRealFixedDelay', 'cartImag', 'pol', 'polMag' or 'polDelay'
 end
 
 if ismac
@@ -171,11 +171,29 @@ clear dC
 
 
 switch SVMspace
-    case 'hrNoAmp'
+    case 'hrNoAmp' % scale each hr to an amplitude of one based on the sin fit
         for i = 1:numel(dP)
             dP{i}.hr = dP{i}.hr./abs(dP{i}.data./100);
         end
+    case 'cartNoAmp' % scale each vetor to amplitude of 1
+        for i = 1:numel(dP)
+            [X,Y] = pol2cart(angle(dP{i}.data),1);
+            dP{i}.data = complex(X,Y);
+        end
 end
+
+% % remove global delay (because trigger might have screwed up)
+% switch SVMspace
+%     case {'hr' 'hrNoAmp'}
+%     otherwise
+%         for i = 1:numel(dP)
+%             theta = wrapToPi(angle(dP{i}.data) - angle(mean(dP{i}.data,2)));
+%             rho = abs(dP{i}.data);
+%             [X,Y] = pol2cart(theta,rho);
+%             dP{i}.data = complex(X,Y); clear X Y
+%         end
+% end
+
 
 
 %% Run svm
@@ -187,11 +205,7 @@ res.p = nan(size(dP));
 res.subjList = subjList;
 for i = 1:numel(dP)
     switch SVMspace
-        case 'hr'
-            nSamplePaired = size(dP{i}.hr,1);
-            x1 = dP{i}.hr(:,:,1,:); x1 = x1(:,:);
-            x2 = dP{i}.hr(:,:,2,:); x2 = x2(:,:);
-        case 'hrNoAmp'
+        case {'hr' 'hrNoAmp'}
             nSamplePaired = size(dP{i}.hr,1);
             x1 = dP{i}.hr(:,:,1,:); x1 = x1(:,:);
             x2 = dP{i}.hr(:,:,2,:); x2 = x2(:,:);
@@ -209,18 +223,7 @@ for i = 1:numel(dP)
     
     y = cat(1,y1,y2); clear y1 y2
     k = cat(1,k1,k2); clear k1 k2
-    
-%     %add an artificial offset for validation purposes
-%     x2std = mean(abs(x2(:)))./std(abs(x2(:)));
-%     [X,Y] = pol2cart(angle(x2),abs(x2) + x2std*0.2);
-%     x2 = complex(X,Y);
-    
-%     % remove global delay (because trigger might have screwed up)
-%     theta = wrapToPi(angle(x) - angle(mean(x,2)));
-%     rho = abs(x);
-%     [X,Y] = pol2cart(theta,rho);
-%     x = complex(X,Y); clear X Y
-
+        
     % SVM
     kList = unique(k);
     yTr = nan(length(y),length(kList));
@@ -233,7 +236,7 @@ for i = 1:numel(dP)
         % split train and test
         te = k==kList(kInd);
         
-        % polar space normalization (rho=1, theta=0)
+        % polar space normalization (mean rho=1, mean theta=0)
         switch SVMspace
             case {'hr' 'hrNoAmp'}
                 
@@ -254,7 +257,7 @@ for i = 1:numel(dP)
         switch SVMspace
             case {'hr' 'hrNoAmp'}
                 x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
-            case 'cart'
+            case {'cart' 'cartNoAmp'}
                 x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
                 x = cat(2,real(x),imag(x));
             case {'cartReal'  'cartRealFixedDelay'}
