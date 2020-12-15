@@ -1,6 +1,8 @@
 function applyFeatSelAndClean()
+close all
+
 plotAllSubj = 1;
-saveFig = 1;
+saveFig = 0;
 
 %colors
 colors = [  0         0.4470    0.7410
@@ -157,11 +159,18 @@ exclusion.run = {runInd};
 exclusion.cond = {1:3};
 param.exclusion = exclusion;
 
+% exclusion.subjList
+% exclusion.subj = 2;
+% exclusion.sess = {1};
+% exclusion.run = {4};
+% exclusion.cond = {1 2 3};
+
+
 %% Apply exclusion
 if exist('exclusion','var') && ~isempty(exclusion) && ~isempty(exclusion.subj)
     if length(exclusion.subj)>1; error('Not coded for multiple exclusions'); end
     for i = 1:length(exclusion.subj)
-        subjInd = ismember(subjList,exclusion.subjList{exclusion.subj(i)});
+        subjInd = find(ismember(subjList,exclusion.subjList{exclusion.subj(i)}));
         sessInd = exclusion.sess{i};
         runInd = exclusion.run{i};
         disp(['Excluding: ' subjList{subjInd} ', sess' num2str(sessInd) ', runTriplet(repeat)=' num2str(runInd)])
@@ -175,11 +184,13 @@ end
 
 %% Plot single subjects
 rLim = nan(2,length(subjList),2);
+yLim = nan(2,length(subjList),2);
 for subjInd = 1:length(subjList)
     if plotAllSubj || subjInd==1
         fSubj(subjInd) = figure('WindowStyle','docked');
         for sessInd = 1:2
-            subplot(1,2,sessInd)
+            % Polar plot
+            subplot(2,2,sessInd)
             xData = squeeze(mean(dC{subjInd}.(['sess' num2str(sessInd)]).data,2));
             for condInd = 1:size(xData,2)
                 [theta,rho] = cart2pol(real(xData(:,condInd)),imag(xData(:,condInd)));
@@ -198,20 +209,61 @@ for subjInd = 1:length(subjList)
             ax = gca;
             ax.ThetaTickLabel = 12-ax.ThetaTick(1:end)/360*12;
             ax.ThetaTickLabel(1,:) = '0 ';
+            
+            % Full time course
+            subplot(2,2,2+sessInd)
+            xData = squeeze(mean(dC{subjInd}.(['sess' num2str(sessInd)]).hr,2));
+            hPlot = [];
+            hPlotMean = [];
+            for condInd = 1:size(xData,2)
+                y = squeeze(xData(:,condInd,:));
+                t = 0:11;
+%                 yMean = mean(y,1);
+%                 ySEM = std(y,[],1)./sqrt(size(y,1));
+%                 he = errorbar(t,yMean,ySEM); hold on
+%                 he.CapSize = 0;
+%                 he.Color = colors(condInd,:);
+                hPlot(:,condInd) = plot(t,y,':','color',colors(condInd,:)); hold on
+                hPlotMean(:,condInd) = plot(t,mean(y,1),'color',colors(condInd,:));
+            end
+            uistack(hPlotMean,'top')
+            set(hPlotMean,'linewidth',1.5)
+            box off
+            yLim(:,sessInd,subjInd) = ylim;
         end
+        
         suptitle(subjList{subjInd})
-        hl = legend(char({'ori1' 'ori2' 'plaid'}),'Location','east');
-        hl.Color = 'none';
-        hl.Box = 'off';
     end
 end
 rLim = [0 max(rLim(2,:))];
+yLim = [min(yLim(1,:)) max(yLim(2,:))];
 for subjInd = 1:length(subjList)
     if plotAllSubj || subjInd==1
         figure(fSubj(subjInd));
         for sessInd = 1:2
-            subplot(1,2,sessInd)
+            ax = subplot(2,2,sessInd);
             rlim(rLim);
+            switch sessInd
+                case 1
+                    ax.ThetaAxis.Label.String = {'delay' '(sec)'};
+                    ax.ThetaAxis.Label.FontSize = 9;
+                    ax.ThetaAxis.Label.Position(1) = sum(ax.Position([1 3]));
+                    ax.RAxis.Label.String = '%BOLD';
+                    ax.RAxis.Label.Rotation = 80;
+                    ax.RAxis.Label.FontSize = 9;
+                case 2
+                    hl = legend(char({'ori1' 'ori2' 'plaid'}),'Location','east','Color','none','Box','off');
+            end
+            ax = subplot(2,2,2+sessInd);
+            switch sessInd
+                case 1
+                    ylabel('%BOLD')
+                    xlabel('time since stim onset (sec)')
+                case 2
+                    xlabel('time since stim onset (sec)')
+            end
+            
+            ylim(yLim);
         end
         if saveFig
             filename = fullfile(pwd,mfilename);

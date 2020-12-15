@@ -1,16 +1,14 @@
-function hrGroupAnalysis
-% if ~exist('threshType','var') || isempty(threshType)
-%     threshType = 'p'; % 'none', 'p' or 'fdr'
-% end
-noMovement = 1;
-% threshVal = 0.05;
-saveFig = 1;
+function runGroupAnalysis_hr()
+close all
+
 plotAllSubj = 1;
+saveFig = 1;
 
 %colors
 colors = [  0         0.4470    0.7410
             0.8500    0.3250    0.0980
             0.9290    0.6940    0.1250];
+lw = 1.5;
 
 if ismac
     repoPath = '/Users/sebastienproulx/OneDrive - McGill University/dataBig';
@@ -20,16 +18,13 @@ end
 dataDir = 'C-derived\DecodingHR';
 funPath = fullfile(repoPath,dataDir,'fun');
 funLevel = 'z';
-funLevelSin = 'zSin';
-subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'}';
-% subjList = {'02jp' '03sk' '04sp'}';
 fileSuffix = '_defineAndShowMasks.mat';
 
 %make sure everything is forward slash for mac, linux pc compatibility
 for tmpPath = {'repoPath' 'dataDir' 'funPath'}
     eval([char(tmpPath) '(strfind(' char(tmpPath) ',''\''))=''/'';']);
 end
-
+% 
 %% Preload param
 tmp = dir(fullfile(funPath,funLevel,'*.mat'));
 for i = 1:length(tmp)
@@ -41,58 +36,33 @@ end
 if ~exist('param','var')
     error('Analysis parameters not found!')
 end
-featSelContrast1 = param.featSelContrast1.name;
-threshType = param.featSelContrast1.threshType;
-threshVal = param.featSelContrast1.threshVal;
-exclusion = param.exclusion;
+subjList = param.subjList;
 
-disp(['IN: BOLD hemodynamic responses (HR) from anatomical V1 ROI (' fullfile(dataDir,funLevel) ')'])
-disp('F(IN)->OUT: threshold included voxels and analyse HR averaged across the ROI')
-disp(['OUT: figures'])
+disp(['IN: Sinusoidal BOLD responses from anatomical V1 ROI (' fullfile(dataDir,funLevel) ')'])
+disp(['threshVal=' num2str(param.featSelContrast1.threshVal)])
+disp('F(IN)=OUT: threshold included voxels and analyse responses averaged across the ROI')
+disp(['OUT: figures and stats'])
 
 
 
 %% Load data
-dAll = cell(size(subjList,1),1);
-featSelStatsAll = cell(size(subjList,1),1);
-veinAll = cell(size(subjList,1),1);
+dCAll = cell(size(subjList,1),1);
 for subjInd = 1:size(subjList,1)
-    load(fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]),'d','featSelStats','vein');
-    dAll{subjInd} = d;
-    featSelStatsAll{subjInd} = featSelStats;
-    veinAll{subjInd} = vein;    
+    load(fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]),'d');
+    dCAll{subjInd} = d;
 end
-d = dAll; clear dAll
-featSelStats = featSelStatsAll; clear featSelStatsAll
-vein = veinAll; clear veinAll
+dC = dCAll; clear dAll
 
-%% Exclude
-if exist('exclusion','var') && ~isempty(exclusion) && ~isempty(exclusion.subj)
-    for i = 1:length(exclusion.subj)
-        d{exclusion.subj(i)}.(['sess' num2str(i)]).data
-        hr{exclusion.subj(i)}.(['sess' num2str(i)])(exclusion.run,:,:,:) = [];
-    end
-end
-
-%% Process data
 % Average voxels
-hrP = hr;
-rLim = (1:length(hr))';
-for subjInd = 1:length(hr)
-    switch threshType
-        % no voxel selection
-        case 'none' 
-            hrP{subjInd}.sess1 = mean(hrP{subjInd}.sess1,2);
-            hrP{subjInd}.sess2 = mean(hrP{subjInd}.sess2,2);
-        % voxel selection cross-validated between sessions
-        case {'p' 'fdr'}
-            hrP{subjInd}.sess1 = mean(hrP{subjInd}.sess1(:,dForThresh{subjInd}.sess2<threshVal,:,:),2);
-            hrP{subjInd}.sess2 = mean(hrP{subjInd}.sess2(:,dForThresh{subjInd}.sess1<threshVal,:,:),2);
-        otherwise
-            error('X')
+for subjInd = 1:length(subjList)
+    for sessInd = 1:2
+        sess = ['sess' num2str(sessInd)];
+        dC{subjInd}.(sess).data = mean(dC{subjInd}.(sess).data,2);
+        dC{subjInd}.(sess).hr = mean(dC{subjInd}.(sess).hr,2);
     end
-    rLim(subjInd) = max(abs([hrP{subjInd}.sess1(:); hrP{subjInd}.sess2(:)]));
 end
+
+
 
 % Plot single subjects
 for subjInd = 1:length(subjList)

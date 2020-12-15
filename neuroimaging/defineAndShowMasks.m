@@ -1,8 +1,9 @@
 function defineAndShowMasks(fitType,threshType,veinPerc)
+close all
 noMovement = 1;
 actuallyRun = 1;
-saveFig = 1;
-plotAllSubj = 1;
+saveFig = 0;
+plotAllSubj = 0;
 if ~exist('veinPerc','var') || isempty(veinPerc)
     doVein = 1;
     veinSource = 'reducedModelResid'; % 'reducedModelResid' (stimulus-driven signal included in std) or 'fullModelResid (stimulus-driven signal excluded in std)'
@@ -136,7 +137,7 @@ for subjInd = 1:length(subjList)
     exclusion.subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'};
     exclusion.subj = 2;
     exclusion.sess = {1};
-    exclusion.run = {5};
+    exclusion.run = {4};
     exclusion.cond = {2};
     if doVein
         for sessInd = 1:2

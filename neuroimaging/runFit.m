@@ -7,7 +7,7 @@ exclude = 1;
 exclusion.subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'};
 exclusion.subj = 2;
 exclusion.sess = {1};
-exclusion.run = {5};
+exclusion.run = {4};
 exclusion.cond = {2};
 
 

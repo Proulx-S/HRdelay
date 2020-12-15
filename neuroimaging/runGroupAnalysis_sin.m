@@ -1,6 +1,8 @@
 function runGroupAnalysis_sin()
-plotAllSubj = 1;
-saveFig = 1;
+close all
+
+plotAllSubj = 0;
+saveFig = 0;
 
 %colors
 colors = [  0         0.4470    0.7410
@@ -35,15 +37,6 @@ if ~exist('param','var')
     error('Analysis parameters not found!')
 end
 subjList = param.subjList;
-featSelContrast1 = param.featSelContrast1.name;
-threshType = param.featSelContrast1.threshType;
-threshVal = param.featSelContrast1.threshVal;
-
-
-disp(['IN: Sinusoidal BOLD responses from anatomical V1 ROI (' fullfile(dataDir,funLevel) ')'])
-disp(['threshVal=' num2str(threshVal)])
-disp('F(IN)=OUT: threshold included voxels and analyse responses averaged across the ROI')
-disp(['OUT: figures and stats'])
 
 
 
@@ -319,10 +312,14 @@ disp([' F=' num2str(STATS.signedrank,'%0.2f') '; p=' num2str(P/2,'%0.2f')]);
 
 %% Correlations
 % Between-subject correlation
+exclusion = param.exclusion;
+
 xData = [];
 xLabel = [];
 for subjInd = 1:length(subjList)
     for sessInd = 1:2
+        exclusion
+        
         tmp = squeeze(dC{subjInd}.(['sess' num2str(sessInd)]).data);
         tmp = mean(tmp,1);
         xData = cat(1,xData,tmp);
