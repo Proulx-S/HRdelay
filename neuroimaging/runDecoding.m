@@ -7,7 +7,7 @@ if isstruct(SVMspace)
     res = SVMspace;
     SVMspace = res.summary.SVMspace;
     if ~exist('nPerm','var') || isempty(nPerm)
-        nPerm = 50;
+        nPerm = 100;
     end
 else
     doPerm = 0;
@@ -163,7 +163,9 @@ for i = 1:numel(dP)
     else
         res.perm.acc(:,i) = sum(yTe==y,1)./res.nObs(i);
     end
-    toc
+    if doPerm
+        toc
+    end
 end
 %% Add info
 if ~doPerm
