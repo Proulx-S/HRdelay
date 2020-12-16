@@ -20,7 +20,7 @@ if doPerm
     filename = fullfile(filename,[SVMspace '_' num2str(nPerm) 'perm']);
     if exist([filename '.mat'],'file')
         load(filename)
-        disp('permutation found')
+        disp('permutation found on disk, skipping')
         disp('Group results:')
         disp(['  hit    =' num2str(res.summary.hit) '/' num2str(res.summary.nObs)])
         disp(['  acc    =' num2str(res.summary.acc*100,'%0.2f%%')])
@@ -111,7 +111,7 @@ end
 for i = 1:numel(dP)
     if doPerm
         disp(['for sess ' num2str(i) ' of ' num2str(numel(dP))])
-%         tic
+        tic
     end
     % Define x(data), y(label) and k(xValFolds)
     switch SVMspace
@@ -178,7 +178,7 @@ for i = 1:numel(dP)
         res.perm.acc(:,i) = sum(yTe==y,1)./res.nObs(i);
     end
     if doPerm
-%         toc
+        toc
     end
 end
 %% Add info
