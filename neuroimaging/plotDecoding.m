@@ -121,6 +121,7 @@ end
 barWidth = (hb(2).XEndPoints(1) - hb(1).XEndPoints(1)) * hb(1).BarWidth;
 
 ax = gca;
+ax.XAxis.TickLabelInterpreter = 'none';
 ax.XTick = 1:length(spaceList);
 ax.XTickLabel = spaceList;
 ax.TickLength = [0 0];

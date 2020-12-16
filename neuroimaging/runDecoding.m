@@ -1,8 +1,10 @@
 function res = runDecoding(SVMspace)
 close all
 if ~exist('SVMspace','var') || isempty(SVMspace)
-    SVMspace = 'cartNoAmp_HT'; % 'hr' 'hrNoAmp' 'cart' 'cartNoAmp' cartNoAmp_HT 'cartReal', 'cartImag', 'pol', 'polMag' or 'polDelay'
+    SVMspace = 'polMag_T'; % 'hr' 'hrNoAmp' 'cart' 'cartNoAmp' cartNoAmp_HT 'cartReal', 'cartImag', 'pol', 'polMag' 'polMag_T' or 'polDelay'
 end
+disp('---');
+disp(['SVM space: ' SVMspace]);
 
 if ismac
     repoPath = '/Users/sebastienproulx/OneDrive - McGill University/dataBig';
@@ -44,7 +46,6 @@ dC = dCAll; clear dAll
 
 
 %% Further feature selection
-%not now
 dP = cell(length(dC),2);
 for subjInd = 1:length(dC)
     sessList = fields(dC{subjInd});
@@ -54,6 +55,8 @@ for subjInd = 1:length(dC)
     dC{subjInd} = [];
 end
 clear dC
+% Currently managed in previous steps
+
 % %% Pipe data
 % % Threshold and average voxels in cartesian space
 % dP = d;
@@ -176,7 +179,7 @@ switch SVMspace
         for i = 1:numel(dP)
             dP{i}.hr = dP{i}.hr./abs(dP{i}.data./100);
         end
-    case {'cart' 'cart_HT' 'cartNoAmp' 'cartNoAmp_HT'}
+    case {'cart' 'cart_HT' 'cartNoAmp' 'cartNoAmp_HT' 'polMag' 'polMag_T'}
         % Does not apply
     otherwise
 end
@@ -209,7 +212,7 @@ for i = 1:numel(dP)
             nSamplePaired = size(dP{i}.hr,1);
             x1 = dP{i}.hr(:,:,1,:); x1 = x1(:,:);
             x2 = dP{i}.hr(:,:,2,:); x2 = x2(:,:);
-        case {'cart' 'cart_HT' 'cartNoAmp' 'cartNoAmp_HT'}
+        case {'cart' 'cart_HT' 'cartNoAmp' 'cartNoAmp_HT' 'polMag' 'polMag_T'}
             nSamplePaired = size(dP{i}.data,1);
             x1 = dP{i}.data(:,:,1);
             x2 = dP{i}.data(:,:,2);
@@ -240,6 +243,7 @@ for i = 1:numel(dP)
         
                 
         % Within-session feature selection
+        %get feature selection stats
         switch SVMspace
             case {'cart_HT' 'cartNoAmp_HT'} % further feature selection
                 featStat = nan(1,size(x,2));
@@ -248,24 +252,34 @@ for i = 1:numel(dP)
                     stats = T2Hot2d([real(xTmp) imag(xTmp)]);
                     featStat(voxInd) = stats.T2;
                 end
-                [~,b] = sort(featStat,'descend');
-                x = x(:,b(1:round(end*0.9)));
+            case 'polMag_T'
+                [~,~,~,STATS] = ttest(abs(x(~te & y==1,:)),abs(x(~te & y==2,:)));
+                featStat = abs(STATS.tstat);
+            case {'cart' 'cartNoAmp' 'polMag'}
             otherwise
                 error('X')
         end
-        
+        %apply feature selection
+        switch SVMspace
+            case {'cart_HT' 'cartNoAmp_HT' 'polMag_T'} % further feature selection
+                [~,b] = sort(featStat,'descend');
+                x = x(:,b(1:round(end*0.9)));
+            case {'cart' 'cartNoAmp' 'polMag'}
+            otherwise
+                error('X')
+        end
         
         % Polar space normalization
         switch SVMspace
             case {'hr' 'hrNoAmp'}
                 % does not apply
-            case {'cart' 'cartNoAmp' 'cartNoAmp_HT'}
+            case {'cart' 'cart_HT' 'cartNoAmp' 'cartNoAmp_HT' 'polMag' 'polMag_T'}
                 % set to mean rho=1 and mean theta=0 in each voxel)
                 switch SVMspace
                     case {'cartNoAmp' 'cartNoAmp_HT'} % but set rho=1 for each vector (omit any amplitude information)
                         rho = 1;
                         theta = angle(x) - angle(mean(x(~te,:),1)); theta = wrapToPi(theta);
-                    case {'cart' 'cart_HT'}
+                    case {'cart' 'cart_HT' 'polMag' 'polMag_T'}
                         rho = abs(x)./abs(mean(x(~te,:),1));
                         theta = angle(x) - angle(mean(x(~te,:),1)); theta = wrapToPi(theta);
                     otherwise
@@ -293,7 +307,7 @@ for i = 1:numel(dP)
             case 'pol'
                 x = cat(2,angle(x),abs(x));
                 x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
-            case 'polMag'
+            case {'polMag' 'polMag_T'}
                 x = abs(x);
                 x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
             case 'polDelay'
@@ -314,7 +328,7 @@ for i = 1:numel(dP)
     switch SVMspace
         case 'hr'
             res.nVox(i) = size(x1,2)./size(dP{1,1}.hr,4);
-        case {'cart' 'cart_HT' 'cartNoAmp' 'cartNoAmp_HT'}
+        case {'cart' 'cart_HT' 'cartNoAmp' 'cartNoAmp_HT' 'polMag' 'polMag_T'}
             res.nVox(i) = size(x1,2);
         otherwise
             error('X')
@@ -327,6 +341,4 @@ end
 hit = sum(res.acc(:).*res.nObs(:));
 n = sum(res.nObs(:));
 p = binocdf(sum(res.acc(:).*res.nObs(:)),sum(res.nObs(:)),0.5,'upper');
-disp('---');
-disp(['SVM space: ' SVMspace]);
 disp(['Group accuracy = ' num2str(hit) '/' num2str(n) ' (' num2str(hit/n*100,'%0.1f') '%; binomial p=' num2str(p,'%0.3f') ')'])
