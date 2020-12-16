@@ -16,7 +16,21 @@ end
 disp('---');
 disp(['SVM space: ' SVMspace]);
 if doPerm
-    disp(['running ' num2str(nPerm) ' permutations']);
+    filename = fullfile(pwd,mfilename);
+    filename = fullfile(filename,[SVMspace '_' num2str(nPerm) 'perm']);
+    if exist([filename '.mat'],'file')
+        load(filename)
+        disp('permutation found')
+        disp('Group results:')
+        disp(['  hit    =' num2str(res.summary.hit) '/' num2str(res.summary.nObs)])
+        disp(['  acc    =' num2str(res.summary.acc*100,'%0.2f%%')])
+        disp(' permutation test stats')
+        disp(['  thresh =' num2str(res.perm.summary.accThresh*100,'%0.2f%%')])
+        disp(['  p      =' num2str(res.perm.summary.p,'%0.3f') ')'])
+        return
+    else
+        disp(['running ' num2str(nPerm) ' permutations']);
+    end
 end
 
 if ismac
@@ -97,7 +111,7 @@ end
 for i = 1:numel(dP)
     if doPerm
         disp(['for sess ' num2str(i) ' of ' num2str(numel(dP))])
-        tic
+%         tic
     end
     % Define x(data), y(label) and k(xValFolds)
     switch SVMspace
@@ -164,7 +178,7 @@ for i = 1:numel(dP)
         res.perm.acc(:,i) = sum(yTe==y,1)./res.nObs(i);
     end
     if doPerm
-        toc
+%         toc
     end
 end
 %% Add info
@@ -201,6 +215,12 @@ else
     disp(' permutation test stats')
     disp(['  thresh =' num2str(res.perm.summary.accThresh*100,'%0.2f%%')])
     disp(['  p      =' num2str(res.perm.summary.p,'%0.3f') ')'])
+    
+    filename = fullfile(pwd,mfilename);
+    if ~exist(filename,'dir'); mkdir(filename); end
+    filename = fullfile(filename,[SVMspace '_' num2str(nPerm) 'perm']);
+    save(filename,'res')
+    disp([filename '.mat'])
 end
 
 
