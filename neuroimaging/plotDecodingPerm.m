@@ -12,6 +12,64 @@ spaceList = fields(res)';
 subjList = res.(spaceList{1}).subjList;
 
 for spaceInd = 1:length(spaceList)
+    res.(spaceList{spaceInd}).perm.acc = permute(res.(spaceList{spaceInd}).perm.acc,[2 3 1]);
+    
+    acc = res.(spaceList{spaceInd}).perm.acc;
+    figure('WindowStyle','docked');
+    yLim = [];
+    for subjInd = 1:size(acc,1)
+        for sessInd = 1:size(acc,2)
+            subplot(size(acc,1),size(acc,2),sessInd + (subjInd-1)*2)
+            histogram(acc(subjInd,sessInd,:).*100,'normalization','probability')
+            yLim = [yLim; ylim];
+        end
+    end
+    yLim = [min(yLim(:,1)) max(yLim(:,2))];
+    for subjInd = 1:size(acc,1)
+        for sessInd = 1:size(acc,2)
+            subplot(size(acc,1),size(acc,2),sessInd + (subjInd-1)*2)
+            ylim(yLim); xlim([0 100]);
+            switch subjInd
+                case 1
+                    title(['sess' num2str(sessInd)])
+                case size(acc,1)
+                    xlabel('Accuracy (%correct)')
+            end
+            if sessInd==1
+                ylabel([res.(spaceList{spaceInd}).subjList(subjInd) {'prob'}])
+            end
+        end
+    end
+    
+    figure('WindowStyle','docked');
+    nObs = repmat(res.(spaceList{spaceInd}).nObs,[1 1 size(acc,3)]);
+    hit = round(acc.*nObs);
+    size(hit)
+    
+    res.(spaceList{spaceInd}).perm
+    histogram(acc(:).*100,'normalization','probability')
+            yLim = [yLim; ylim];
+        end
+    end
+    yLim = [min(yLim(:,1)) max(yLim(:,2))];
+    for subjInd = 1:size(acc,1)
+        for sessInd = 1:size(acc,2)
+            subplot(size(acc,1),size(acc,2),sessInd + (subjInd-1)*2)
+            ylim(yLim); xlim([0 100]);
+            switch subjInd
+                case 1
+                    title(['sess' num2str(sessInd)])
+                case size(acc,1)
+                    xlabel('Accuracy (%correct)')
+            end
+            if sessInd==1
+                ylabel([res.(spaceList{spaceInd}).subjList(subjInd) {'prob'}])
+            end
+        end
+    end
+    
+    
+    
     acc = res.(spaceList{spaceInd}).acc;
     nObs = res.(spaceList{spaceInd}).nObs;
 %     p = res.(spaceList{spaceInd}).p;
