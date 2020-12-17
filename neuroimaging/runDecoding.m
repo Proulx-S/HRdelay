@@ -1,6 +1,6 @@
 function res = runDecoding(SVMspace,nPerm)
 if ~exist('SVMspace','var') || isempty(SVMspace)
-    SVMspace = 'polMag_T'; % 'hr' 'hrNoAmp' 'cart' 'cartNoAmp' cartNoAmp_HT 'cartReal', 'cartImag', 'pol', 'polMag' 'polMag_T' or 'polDelay'
+    SVMspace = 'cart_HT'; % 'hr' 'hrNoAmp' 'cart' 'cartNoAmp' cartNoAmp_HT 'cartReal', 'cartImag', 'pol', 'polMag' 'polMag_T' or 'polDelay'
 end
 if isstruct(SVMspace)
     doPerm = 1;
@@ -76,11 +76,41 @@ dC = dCAll; clear dAll
 % all managed in previous steps
 dP = cell(length(dC),2);
 for subjInd = 1:length(dC)
-    sessList = fields(dC{subjInd});
-    for sessInd = 1:length(sessList)
-        dP{subjInd,sessInd} = dC{subjInd}.(sessList{sessInd});
+    switch SVMspace
+        case {'cart' 'cart_HT' 'cartNoAmp' 'cartNoAmp_HT' 'polMag' 'polMag_T'}
+            % Does not apply
+            %Between-session feature selection of voxels activated in any
+            %condition 'anyCondActivation' is currently done in previous steps:
+%             featSelContrast1 = param.featSelContrast1.name;
+%             threshType = param.featSelContrast1.threshType;
+%             threshVal = param.featSelContrast1.threshVal;
+            %It should however be done here to allow other kinds of
+            %between-subject feature selection (e.g. 'cart_HTbSess' below)
+            sessList = fields(dC{subjInd});
+            for sessInd = 1:length(sessList)
+                dP{subjInd,sessInd} = dC{subjInd}.(sessList{sessInd});
+            end
+            dC{subjInd} = [];
+            
+        case 'cart_HTbSess'
+            error('code not complete')
+            x = dC{subjInd}.(sessList{sessInd}).data;
+            y = []; for condInd = 1:size(x,3); y = cat(3,y,ones(size(x,1),1).*condInd); end
+            x2 = []; y2 = [];
+            for condInd = 1:size(x,3)
+                x2 = cat(1,x2,x(:,:,condInd));
+                y2 = cat(1,y2,y(:,:,condInd));
+            end
+            x = x2; y = y2; clear x2 y2
+            featStat = nan(1,size(x,2));
+            for voxInd = 1:size(x,2)
+                xTmp = cat(1,x(y==1,voxInd),x(y==2,voxInd));
+                stats = T2Hot2d([real(xTmp) imag(xTmp)]);
+                featStat(voxInd) = stats.T2;
+            end
+        otherwise
+            error('X')
     end
-    dC{subjInd} = [];
 end
 clear dC
 
