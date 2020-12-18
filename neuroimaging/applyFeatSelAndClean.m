@@ -81,6 +81,12 @@ for subjInd = 1:length(dC)
         end
         dC{subjInd}.(sess).data = dC{subjInd}.(sess).data(:,indAct&~indVein,:,:);
         dC{subjInd}.(sess).hr = dC{subjInd}.(sess).hr(:,indAct&~indVein,:,:);
+        switch featSelContrast1
+            case 'anyCondActivation'
+                dC{subjInd}.(sess).([featSelContrast1 '__F']) = featSelStats{subjInd}.(featSelContrast1).(sessFeat).F(:,indAct&~indVein);
+            otherwise
+                error('X')
+        end
     end
     disp('+++')
     if all(~indVein)

@@ -1,4 +1,7 @@
-function res = runDecoding(SVMspace,nPerm)
+function res = runDecoding(SVMspace,nPerm,saveFig)
+if ~exist('saveFig','var') || isempty(saveFig)
+    saveFig = 1;
+end
 if ~exist('SVMspace','var') || isempty(SVMspace)
     SVMspace = 'cart_HT'; % 'hr' 'hrNoAmp' 'cart' 'cartNoAmp' cartNoAmp_HT 'cartReal', 'cartImag', 'pol', 'polMag' 'polMag_T' or 'polDelay'
 end
@@ -114,6 +117,101 @@ for subjInd = 1:length(dC)
 end
 clear dC
 
+%% Example plot of trigonometric (polar representation)
+switch param.featSelContrast1.name
+    case 'anyCondActivation'
+        [~,b] = max(dP{1}.([param.featSelContrast1.name '__F']));
+    otherwise
+        error('X')
+end
+x = dP{1}.data(:,b,1:3);
+
+switch SVMspace
+    case {'hr' 'hrNoAmp'}
+        % does not apply
+    case {'cart' 'cart_HT' 'cartNoAmp' 'cartNoAmp_HT' 'polMag' 'polMag_T'}
+        % set to mean rho=1 and mean theta=0 in each voxel)
+        switch SVMspace
+            case {'cartNoAmp' 'cartNoAmp_HT'}
+                % but set rho=1 for each vector (omit any amplitude information)
+                rho = 1;
+            case {'cart' 'cart_HT' 'polMag' 'polMag_T'}
+                rho = abs(x)./abs(mean(x,1));
+            otherwise
+                error('X')
+        end
+        switch SVMspace
+            case {'cart' 'cart_HT' 'cartNoAmp' 'cartNoAmp_HT'}
+                % but set rho=1 for each vector (omit any amplitude information)
+                theta = angle(x) - angle(mean(x,1)); theta = wrapToPi(theta);
+            case {'polMag' 'polMag_T'}
+                theta = 0;
+            otherwise
+                error('X')
+        end
+        [u,v] = pol2cart(theta,rho);
+        xAfter = complex(u,v); clear u v
+    otherwise
+        error('X')
+end
+
+f = figure('WindowStyle','docked');
+subplot(1,2,1); clear hPP
+% polarplot(angle(x(:)),abs(x(:)),'.'); hold on
+for condInd = 1:3
+    hPP(condInd) = polarplot(angle(x(:,:,condInd)),abs(x(:,:,condInd)),'o'); hold on
+    hPP(condInd).MarkerFaceColor = hPP(condInd).Color;
+    hPP(condInd).MarkerEdgeColor = 'w';
+    hPP(condInd).MarkerSize = 3.5;
+end
+
+ax1 = gca;
+subplot(1,2,2);
+% polarplot(angle(xAfter(:)),abs(xAfter(:)),'.'); hold on
+for condInd = 1:3
+    hPP(condInd) = polarplot(angle(xAfter(:,:,condInd)),abs(xAfter(:,:,condInd)),'o'); hold on
+    hPP(condInd).MarkerFaceColor = hPP(condInd).Color;
+    hPP(condInd).MarkerEdgeColor = 'w';
+    hPP(condInd).MarkerSize = 3.5;
+end
+ax2 = gca;
+
+ax = ax1;
+ax.ThetaTickLabel = 12-ax.ThetaTick(1:end)/360*12;
+ax.ThetaTickLabel(1,:) = '0 ';
+ax.ThetaAxis.Label.String = {'delay' '(sec)'};
+ax.ThetaAxis.Label.Rotation = 0;
+ax.ThetaAxis.Label.HorizontalAlignment = 'left';
+ax.RAxis.Label.String = 'amp (%BOLD)';
+ax.RAxis.Label.Rotation = 80;
+ax.Title.String = 'before';
+
+ax = ax2;
+ax.ThetaTickLabel = 12-ax.ThetaTick(1:end)/360*12;
+ax.ThetaTickLabel(1,:) = '0 ';
+% ax.ThetaAxis.Label.String = {'delay' '(sec)'};
+% ax.ThetaAxis.Label.Rotation = 0;
+% ax.ThetaAxis.Label.HorizontalAlignment = 'left';
+ax.RAxis.Label.String = 'amp (%BOLD)';
+ax.RAxis.Label.Rotation = 80;
+ax.Title.String = 'after';
+
+hSup = suptitle({'Polar space normalization' SVMspace});
+hSup.Interpreter = 'none';
+drawnow
+
+if saveFig
+    filename = fullfile(pwd,mfilename);
+    if ~exist(filename,'dir'); mkdir(filename); end
+    filename = fullfile(filename,SVMspace);
+    f.Color = 'none';
+    set(findobj(f.Children,'type','Axes'),'color','none')
+    saveas(f,[filename '.svg']); disp([filename '.svg'])
+    f.Color = 'w';
+    set(findobj(f.Children,'type','Axes'),'color','w')
+    saveas(f,filename); disp([filename '.fig'])
+    saveas(f,filename); disp([filename '.jpg'])
+end
 
 %% Some more independant-sample normalization
 switch SVMspace
@@ -302,15 +400,15 @@ for kInd = 1:length(kList)
         case {'cart' 'cart_HT' 'cartNoAmp' 'cartNoAmp_HT' 'polMag' 'polMag_T'}
             % set to mean rho=1 and mean theta=0 in each voxel)
             switch SVMspace
-                case {'cartNoAmp' 'cartNoAmp_HT'} % but set rho=1 for each vector (omit any amplitude information)
+                case {'cartNoAmp' 'cartNoAmp_HT'}
+                    % but set rho=1 for each vector (omit any amplitude information)
                     rho = 1;
-                    theta = angle(x) - angle(mean(x(~te,:),1)); theta = wrapToPi(theta);
                 case {'cart' 'cart_HT' 'polMag' 'polMag_T'}
                     rho = abs(x)./abs(mean(x(~te,:),1));
-                    theta = angle(x) - angle(mean(x(~te,:),1)); theta = wrapToPi(theta);
                 otherwise
                     error('X')
             end
+            theta = angle(x) - angle(mean(x(~te,:),1)); theta = wrapToPi(theta);
             [u,v] = pol2cart(theta,rho);
             x = complex(u,v); clear u v
         otherwise
