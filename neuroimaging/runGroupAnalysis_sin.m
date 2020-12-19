@@ -17,7 +17,7 @@ end
 dataDir = 'C-derived\DecodingHR';
 funPath = fullfile(repoPath,dataDir,'fun');
 funLevel = 'z';
-fileSuffix = '_defineAndShowMasks.mat';
+fileSuffix = '_preprocAndShowMasks.mat';
 
 %make sure everything is forward slash for mac, linux pc compatibility
 for tmpPath = {'repoPath' 'dataDir' 'funPath'}
@@ -41,18 +41,27 @@ subjList = param.subjList;
 
 %% Load data
 dCAll = cell(size(subjList,1),1);
+paramAll = cell(size(subjList,1),1);
 for subjInd = 1:size(subjList,1)
-    load(fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]),'dC');
+    load(fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]),'dC','param');
     dCAll{subjInd} = dC;
+    paramAll{subjInd} = param;
 end
 dC = dCAll; clear dAll
+param = paramAll; clear paramAll
 
 % Average voxels
 for subjInd = 1:length(subjList)
     for sessInd = 1:2
+        % Between-session feature selection
         sess = ['sess' num2str(sessInd)];
-        dC{subjInd}.(sess).data = mean(dC{subjInd}.(sess).data,2);
-        dC{subjInd}.(sess).hr = mean(dC{subjInd}.(sess).hr,2);
+        sessFeat = ['sess' num2str(~(sessInd-1)+1)];
+        ind = true(1,size(dC{subjInd}.(sess).data,2));
+        ind = ind & dC{subjInd}.(sessFeat).anyCondActivation_mask;
+        ind = ind & ~dC{subjInd}.(sessFeat).vein_mask;
+        
+        dC{subjInd}.(sess).data = mean(dC{subjInd}.(sess).data(:,ind,:),2);
+        dC{subjInd}.(sess).hr = mean(dC{subjInd}.(sess).hr(:,ind,:,:),2);
     end
 end
 
@@ -112,8 +121,8 @@ if saveFig
     set(findobj(fGroup(1).Children,'type','PolarAxes'),'color','none')
     saveas(fGroup(1),[filename '.svg']); disp([filename '.svg'])
     fGroup(1).Color = 'w';
-    saveas(fGroup(1),filename); disp([filename '.fig'])
-    saveas(fGroup(1),filename); disp([filename '.jpg'])
+    saveas(fGroup(1),[filename '.fig']); disp([filename '.fig'])
+    saveas(fGroup(1),[filename '.jpg']); disp([filename '.jpg'])
 end
 
 % Polar space
@@ -165,8 +174,8 @@ if saveFig
     set(findobj(fGroup(2).Children,'type','Axes'),'color','none')
     saveas(fGroup(2),[filename '.svg']); disp([filename '.svg'])
     fGroup(2).Color = 'w';
-    saveas(fGroup(2),filename); disp([filename '.fig'])
-    saveas(fGroup(2),filename); disp([filename '.jpg'])
+    saveas(fGroup(2),[filename '.fig']); disp([filename '.fig'])
+    saveas(fGroup(2),[filename '.jpg']); disp([filename '.jpg'])
 end
 
 fGroup(3) = figure('WindowStyle','docked');
@@ -215,8 +224,8 @@ if saveFig
     set(findobj(fGroup(3).Children,'type','Axes'),'color','none')
     saveas(fGroup(3),[filename '.svg']); disp([filename '.svg'])
     fGroup(3).Color = 'w';
-    saveas(fGroup(3),filename); disp([filename '.fig'])
-    saveas(fGroup(3),filename); disp([filename '.jpg'])
+    saveas(fGroup(3),[filename '.fig']); disp([filename '.fig'])
+    saveas(fGroup(3),[filename '.jpg']); disp([filename '.jpg'])
 end
 
 %% Stats
@@ -363,8 +372,8 @@ if saveFig
     set(findobj(fGroup(1).Children,'type','PolarAxes'),'color','none')
     saveas(fGroup(1),[filename '.svg']); disp([filename '.svg'])
     fGroup(1).Color = 'w';
-    saveas(fGroup(1),filename); disp([filename '.fig'])
-    saveas(fGroup(1),filename); disp([filename '.jpg'])
+    saveas(fGroup(1),[filename '.fig']); disp([filename '.fig'])
+    saveas(fGroup(1),[filename '.jpg']); disp([filename '.jpg'])
 end
 
 
@@ -394,8 +403,8 @@ if saveFig
     set(findobj(fGroup(1).Children,'type','PolarAxes'),'color','none')
     saveas(fGroup(1),[filename '.svg']); disp([filename '.svg'])
     fGroup(1).Color = 'w';
-    saveas(fGroup(1),filename); disp([filename '.fig'])
-    saveas(fGroup(1),filename); disp([filename '.jpg'])
+    saveas(fGroup(1),[filename '.fig']); disp([filename '.fig'])
+    saveas(fGroup(1),[filename '.jpg']); disp([filename '.jpg'])
 end
 
 % Between-run correlation
@@ -451,7 +460,7 @@ if saveFig
     set(findobj(fGroup(1).Children,'type','PolarAxes'),'color','none')
     saveas(fGroup(1),[filename '.svg']); disp([filename '.svg'])
     fGroup(1).Color = 'w';
-    saveas(fGroup(1),filename); disp([filename '.fig'])
-    saveas(fGroup(1),filename); disp([filename '.jpg'])
+    saveas(fGroup(1),[filename '.fig']); disp([filename '.fig'])
+    saveas(fGroup(1),[filename '.jpg']); disp([filename '.jpg'])
 end
 

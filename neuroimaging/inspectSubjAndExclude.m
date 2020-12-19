@@ -1,4 +1,4 @@
-function applyFeatSelAndClean(saveFig)
+function inspectSubjAndExclude(saveFig)
 close all
 if ~exist('saveFig','var') || isempty(saveFig)
     saveFig = 0;
@@ -18,7 +18,7 @@ end
 dataDir = 'C-derived\DecodingHR';
 funPath = fullfile(repoPath,dataDir,'fun');
 funLevel = 'z';
-fileSuffix = '_defineAndShowMasks.mat';
+fileSuffix = '_preprocAndShowMasks.mat';
 
 %make sure everything is forward slash for mac, linux pc compatibility
 for tmpPath = {'repoPath' 'dataDir' 'funPath'}
@@ -37,85 +37,32 @@ if ~exist('param','var')
     error('Analysis parameters not found!')
 end
 subjList = param.subjList;
-featSelContrast1 = param.featSelContrast1.name;
-threshType = param.featSelContrast1.threshType;
-threshVal = param.featSelContrast1.threshVal;
-
-
-disp(['IN: Sinusoidal BOLD responses from anatomical V1 ROI (' fullfile(dataDir,funLevel) ')'])
-disp(['threshVal=' num2str(threshVal)])
-disp('F(IN)=OUT: threshold included voxels and analyse responses averaged across the ROI')
-disp(['OUT: figures and stats'])
 
 
 
 %% Load data
 dAll = cell(size(subjList,1),1);
-featSelStatsAll = cell(size(subjList,1),1);
-veinAll = cell(size(subjList,1),1);
+paramAll = cell(size(subjList,1),1);
 for subjInd = 1:size(subjList,1)
-    load(fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]),'d','featSelStats','vein');
+    load(fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]),'d','param');
     dAll{subjInd} = d;
-    featSelStatsAll{subjInd} = featSelStats;
-    veinAll{subjInd} = vein;    
-end
-d = dAll; clear dAll
-featSelStats = featSelStatsAll; clear featSelStatsAll
-vein = veinAll; clear veinAll
-
-
-dC = d;
-%% Apply feature selection (cross-session)
-rLim = nan(length(dC),1);
-for subjInd = 1:length(dC)
-    for sessInd = 1:2
-        sess = ['sess' num2str(sessInd)];
-        sessFeat = ['sess' num2str(~(sessInd-1)+1)];
-        % remove veins
-        indVein = vein{subjInd}.(sessFeat).mask;
-        % remove inactive voxels
-        if ~strcmp(threshType,'none')
-            indAct = featSelStats{subjInd}.(featSelContrast1).(sessFeat).(upper(threshType))<threshVal;
-        else
-            indAct = true(size(featSelStats{subjInd}.(featSelContrast1).(sessFeat).(upper(threshType))));
-        end
-        dC{subjInd}.(sess).data = dC{subjInd}.(sess).data(:,indAct&~indVein,:,:);
-        dC{subjInd}.(sess).hr = dC{subjInd}.(sess).hr(:,indAct&~indVein,:,:);
-        switch featSelContrast1
-            case 'anyCondActivation'
-                dC{subjInd}.(sess).([featSelContrast1 '__F']) = featSelStats{subjInd}.(featSelContrast1).(sessFeat).F(:,indAct&~indVein);
-            otherwise
-                error('X')
-        end
-    end
-    disp('+++')
-    if all(~indVein)
-        disp('NOT masking out veins vox')
-    else
-        disp('masking out veins vox')
-    end
-    if all(indAct)
-        disp('NOT masking out inactive vox')
-    else
-        disp('masking out inactive vox')
-    end
-    disp(['Leaving ' num2str(size(dC{subjInd}.sess1.data,2)) ' and ' num2str(size(dC{subjInd}.sess2.data,2)) ' vox in sess1 and sess2']);
-    disp('+++')
+    paramAll{subjInd} = param;
 end
 
-%% Exclude the scanner trigger problem
+
+%% Visualize the scanner trigger problem
 clear tmp tmp1 tmp2 tmpData
 figure('WindowStyle','docked');
 
 sz = 0;
 for subjInd = 1:length(subjList)
-    tmp = size(dC{subjInd}.sess1.data,1);
+    tmp = size(dAll{subjInd}.sess1.data,1);
     if tmp>sz; sz = tmp; end
 end
 
 for subjInd = 1:length(subjList)
-    tmp1 = squeeze(mean(dC{subjInd}.sess1.data,2))';
-    tmpInd = squeeze(dC{subjInd}.sess1.runLabel)';
+    tmp1 = squeeze(mean(dAll{subjInd}.sess1.data,2))';
+    tmpInd = squeeze(dAll{subjInd}.sess1.runLabel)';
     [~,b] = sort(tmpInd(:));
     tmpInd(b) = 1:numel(tmpInd);
     tmp1 = tmp1(tmpInd);
@@ -123,8 +70,8 @@ for subjInd = 1:length(subjList)
     tmp1 = angle(tmp1);
     tmp1 = wrapToPi(tmp1-circ_mean(tmp1));
     
-    tmp2 = squeeze(mean(dC{subjInd}.sess2.data,2))';
-    tmpInd = squeeze(dC{subjInd}.sess2.runLabel)';
+    tmp2 = squeeze(mean(dAll{subjInd}.sess2.data,2))';
+    tmpInd = squeeze(dAll{subjInd}.sess2.runLabel)';
     [~,b] = sort(tmpInd(:));
     tmpInd(b) = 1:numel(tmpInd);
     tmp2 = tmp2(tmpInd);
@@ -153,7 +100,7 @@ legend(char(subjList))
 % Update exclude
 subjInd = 2;
 sessInd = 1;
-dataTmp = angle(mean(dC{subjInd}.(['sess' num2str(sessInd)]).data,2));
+dataTmp = angle(mean(dAll{subjInd}.(['sess' num2str(sessInd)]).data,2));
 dataTmp = wrapToPi(dataTmp - circ_mean(dataTmp));
 dataTmp = abs(dataTmp);
 a = max(dataTmp(:),[],1);
@@ -181,9 +128,13 @@ if exist('exclusion','var') && ~isempty(exclusion) && ~isempty(exclusion.subj)
         runInd = exclusion.run{i};
         disp(['Excluding: ' subjList{subjInd} ', sess' num2str(sessInd) ', runTriplet(repeat)=' num2str(runInd)])
         
-        dC{subjInd}.(['sess' num2str(sessInd)]).data(runInd,:,:) = [];
-        dC{subjInd}.(['sess' num2str(sessInd)]).hr(runInd,:,:,:) = [];
-        dC{subjInd}.(['sess' num2str(sessInd)]).runLabel(runInd,:,:) = [];
+        allFields = fields(dAll{subjInd}.(['sess' num2str(sessInd)]));
+        nRepeat = size(dAll{subjInd}.(['sess' num2str(sessInd)]).data,1);
+        for ii = 1:length(allFields)
+            if size(dAll{subjInd}.(['sess' num2str(sessInd)]).(allFields{ii}),1)==nRepeat && isnumeric(dAll{subjInd}.(['sess' num2str(sessInd)]).(allFields{ii}))
+                dAll{subjInd}.(['sess' num2str(sessInd)]).(allFields{ii})(runInd,:,:,:) = [];
+            end
+        end
     end
 end
 
@@ -195,9 +146,15 @@ for subjInd = 1:length(subjList)
     if plotAllSubj || subjInd==1
         fSubj(subjInd) = figure('WindowStyle','docked');
         for sessInd = 1:2
+            % Between-session feature selection
+            sess = ['sess' num2str(sessInd)];
+            sessFeat = ['sess' num2str(~(sessInd-1)+1)];
+            ind = true(1,size(dAll{subjInd}.(sess).data,2));
+            ind = ind & dAll{subjInd}.(sessFeat).anyCondActivation_mask;
+            ind = ind & ~dAll{subjInd}.(sessFeat).vein_mask;
             % Polar plot
             subplot(2,2,sessInd)
-            xData = squeeze(mean(dC{subjInd}.(['sess' num2str(sessInd)]).data,2));
+            xData = squeeze(mean(dAll{subjInd}.(sess).data(:,ind,:),2));
             for condInd = 1:size(xData,2)
                 [theta,rho] = cart2pol(real(xData(:,condInd)),imag(xData(:,condInd)));
                 h(condInd) = polarplot(theta,rho,'o'); hold on
@@ -218,7 +175,7 @@ for subjInd = 1:length(subjList)
             
             % Full time course
             subplot(2,2,2+sessInd)
-            xData = squeeze(mean(dC{subjInd}.(['sess' num2str(sessInd)]).hr,2));
+            xData = squeeze(mean(dAll{subjInd}.(sess).hr(:,ind,:,:),2));
             hPlot = [];
             hPlotMean = [];
             for condInd = 1:size(xData,2)
@@ -280,20 +237,19 @@ for subjInd = 1:length(subjList)
             set(findobj(fSubj(subjInd).Children,'type','PolarAxes'),'color','none')
             saveas(fSubj(subjInd),[filename '.svg']); disp([filename '.svg'])
             fSubj(subjInd).Color = 'w';
-            saveas(fSubj(subjInd),filename); disp([filename '.fig'])
-            saveas(fSubj(subjInd),filename); disp([filename '.jpg'])
+            saveas(fSubj(subjInd),[filename '.fig']); disp([filename '.fig'])
+            saveas(fSubj(subjInd),[filename '.jpg']); disp([filename '.jpg'])
         end
     end
 end
 
 
 %% Save cleaned data
-dCAll = dC;
 disp('Updating param and cleaned data to:')
 for subjInd = 1:length(subjList)
     tmp = fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]);
     disp(tmp)
-    dC = dCAll{subjInd};
+    dC = dAll{subjInd};
     save(tmp,'dC','param','-append');
 end
 

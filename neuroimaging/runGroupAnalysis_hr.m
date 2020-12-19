@@ -17,7 +17,7 @@ end
 dataDir = 'C-derived\DecodingHR';
 funPath = fullfile(repoPath,dataDir,'fun');
 funLevel = 'z';
-fileSuffix = '_defineAndShowMasks.mat';
+fileSuffix = '_preprocAndShowMasks.mat';
 
 %make sure everything is forward slash for mac, linux pc compatibility
 for tmpPath = {'repoPath' 'dataDir' 'funPath'}
@@ -50,9 +50,15 @@ dC = dCAll; clear dAll
 % Average voxels
 for subjInd = 1:length(subjList)
     for sessInd = 1:2
+        % Between-session feature selection
         sess = ['sess' num2str(sessInd)];
-        dC{subjInd}.(sess).data = mean(dC{subjInd}.(sess).data,2);
-        dC{subjInd}.(sess).hr = mean(dC{subjInd}.(sess).hr,2);
+        sessFeat = ['sess' num2str(~(sessInd-1)+1)];
+        ind = true(1,size(dC{subjInd}.(sess).data,2));
+        ind = ind & dC{subjInd}.(sessFeat).anyCondActivation_mask;
+        ind = ind & ~dC{subjInd}.(sessFeat).vein_mask;
+        
+        dC{subjInd}.(sess).data = mean(dC{subjInd}.(sess).data(:,ind,:),2);
+        dC{subjInd}.(sess).hr = mean(dC{subjInd}.(sess).hr(:,ind,:,:),2);
     end
 end
 
@@ -204,8 +210,8 @@ if saveFig
     saveas(fGroup,[filename '.svg']); disp([filename '.svg'])
     fGroup.Color = 'w';
     set(findobj(fGroup.Children,'type','Axes'),'color','w')
-    saveas(fGroup,filename); disp([filename '.fig'])
-    saveas(fGroup,filename); disp([filename '.jpg'])
+    saveas(fGroup,[filename '.fig']); disp([filename '.fig'])
+    saveas(fGroup,[filename '.jpg']); disp([filename '.jpg'])
 end
 
 
