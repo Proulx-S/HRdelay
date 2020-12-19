@@ -367,51 +367,69 @@ for kInd = 1:length(kList)
     % Split train and test
     te = k==kList(kInd);
     
+    % Polar space normalization
+    switch SVMspace
+        case {'hr' 'hrNoAmp'}
+            % does not apply
+        case {'cart' 'cart_HT' 'cartNoAmp' 'cartNoAmp_HT' 'polMag' 'polMag_T'}
+            % set to mean rho=1 and mean theta=0 in each voxel (normalize)
+            switch SVMspace
+                case {'cartNoAmp' 'cartNoAmp_HT'}
+                    % but set rho=1 for each vector (omit any amplitude information)
+                    rho = 1;
+                case {'cart' 'cart_HT'...
+                        'cartNoDelay' 'cartNoDelay_HT'...
+                        'polMag' 'polMag_T'}
+                    rho = abs(x)./abs(mean(x(~te,:),1));
+                otherwise
+                    error('X')
+            end
+            switch SVMspace
+                case {'cartNoDelay' 'cartNoDelay_HT'...
+                        'polMag' 'polMag_T'}
+                    % but set theta=0 for each vector (omit any delay information)
+                    theta = 0;
+                case {'cart' 'cart_HT'...
+                        'cartNoAmp' 'cartNoAmp_HT'}
+                    theta = angle(x) - angle(mean(x(~te,:),1)); theta = wrapToPi(theta);
+                otherwise
+                    error('X')
+            end
+            [u,v] = pol2cart(theta,rho);
+            x = complex(u,v); clear u v
+        otherwise
+            error('X')
+    end
+    
     % Within-session feature selection
     % get feature selection stats
     switch SVMspace
-        case {'cart_HT' 'cartNoAmp_HT'} % further feature selection
+        case 'cart_HT'
             featStat = nan(1,size(x,2));
             for voxInd = 1:size(x,2)
                 xTmp = cat(1,x(~te & y==1,voxInd),x(~te & y==2,voxInd));
+%                 stats = T2Hot2d([zscore(real(xTmp)) zscore(imag(xTmp))]);
                 stats = T2Hot2d([real(xTmp) imag(xTmp)]);
                 featStat(voxInd) = stats.T2;
+            end            
+        case 'cartNoAmp_HT'
+            featStat = nan(1,size(x,2));
+            for voxInd = 1:size(x,2)
+                [~, F] = circ_htest(angle(x(~te & y==1,voxInd)), angle(x(~te & y==2,voxInd)));
+                featStat(voxInd) = F;
             end
-        case 'polMag_T'
+        case {'cartNoDelay_HT' 'polMag_T'}
             [~,~,~,STATS] = ttest(abs(x(~te & y==1,:)),abs(x(~te & y==2,:)));
             featStat = abs(STATS.tstat);
-        case {'cart' 'cartNoAmp' 'polMag'}
+        case {'cart' 'cartNoAmp' 'cartNoDelay' 'polMag'}
         otherwise
             error('X')
     end
     % apply feature selection
     switch SVMspace
         case {'cart_HT' 'cartNoAmp_HT' 'polMag_T'} % further feature selection
-            [~,b] = sort(featStat,'descend');
-            x = x(:,b(1:round(end*0.9)));
+            x = x(:,featStat>prctile(featStat,10));
         case {'cart' 'cartNoAmp' 'polMag'}
-        otherwise
-            error('X')
-    end
-    
-    % Polar space normalization
-    switch SVMspace
-        case {'hr' 'hrNoAmp'}
-            % does not apply
-        case {'cart' 'cart_HT' 'cartNoAmp' 'cartNoAmp_HT' 'polMag' 'polMag_T'}
-            % set to mean rho=1 and mean theta=0 in each voxel)
-            switch SVMspace
-                case {'cartNoAmp' 'cartNoAmp_HT'}
-                    % but set rho=1 for each vector (omit any amplitude information)
-                    rho = 1;
-                case {'cart' 'cart_HT' 'polMag' 'polMag_T'}
-                    rho = abs(x)./abs(mean(x(~te,:),1));
-                otherwise
-                    error('X')
-            end
-            theta = angle(x) - angle(mean(x(~te,:),1)); theta = wrapToPi(theta);
-            [u,v] = pol2cart(theta,rho);
-            x = complex(u,v); clear u v
         otherwise
             error('X')
     end
