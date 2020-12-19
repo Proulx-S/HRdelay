@@ -1,9 +1,9 @@
-function applyFeatSelAndClean(saveFig)
+function applyFeatSelAndClean(figOption)
 close all
-if ~exist('saveFig','var') || isempty(saveFig)
-    saveFig = 0;
+if ~exist('figOption','var') || isempty(figOption)
+    figOption.save = 1;
+    figOption.subj = 1; % 'all' or subjInd
 end
-plotAllSubj = saveFig;
 
 colors = [  0         0.4470    0.7410
             0.8500    0.3250    0.0980
@@ -105,7 +105,7 @@ end
 
 %% Exclude the scanner trigger problem
 clear tmp tmp1 tmp2 tmpData
-figure('WindowStyle','docked');
+f = figure('WindowStyle','docked','visible','off');
 
 sz = 0;
 for subjInd = 1:length(subjList)
@@ -192,7 +192,7 @@ end
 rLim = nan(2,length(subjList),2);
 yLim = nan(2,length(subjList),2);
 for subjInd = 1:length(subjList)
-    if plotAllSubj || subjInd==1
+    if subjInd==figOption.subj || figOption.subj==inf
         fSubj(subjInd) = figure('WindowStyle','docked');
         for sessInd = 1:2
             % Polar plot
@@ -239,12 +239,13 @@ for subjInd = 1:length(subjList)
         end
         
         suptitle(subjList{subjInd})
+    else
     end
 end
 rLim = [0 max(rLim(2,:))];
 yLim = [min(yLim(1,:)) max(yLim(2,:))];
 for subjInd = 1:length(subjList)
-    if plotAllSubj || subjInd==1
+    if subjInd==figOption.subj || figOption.subj==inf
         figure(fSubj(subjInd));
         for sessInd = 1:2
             ax = subplot(2,2,sessInd);
@@ -271,17 +272,34 @@ for subjInd = 1:length(subjList)
             
             ylim(yLim);
         end
-        if saveFig
+        if figOption.save
             filename = fullfile(pwd,mfilename);
             if ~exist(filename,'dir'); mkdir(filename); end
             filename = fullfile(filename,subjList{subjInd});
+            curFile = filename;
             fSubj(subjInd).Color = 'none';
             set(findobj(fSubj(subjInd).Children,'type','Axes'),'color','none')
             set(findobj(fSubj(subjInd).Children,'type','PolarAxes'),'color','none')
-            saveas(fSubj(subjInd),[filename '.svg']); disp([filename '.svg'])
+            curExt = 'svg';
+            saveas(fSubj(subjInd),[curFile '.' curExt]); disp([curFile '.' curExt])
             fSubj(subjInd).Color = 'w';
-            saveas(fSubj(subjInd),filename); disp([filename '.fig'])
-            saveas(fSubj(subjInd),filename); disp([filename '.jpg'])
+            curExt = 'fig';
+            saveas(fSubj(subjInd),[curFile '.' curExt]); disp([curFile '.' curExt])
+            curExt = 'jpg';
+            saveas(fSubj(subjInd),[curFile '.' curExt]); disp([curFile '.' curExt])
+        end
+    else
+        if figOption.save
+            filename = fullfile(pwd,mfilename);
+            if ~exist(filename,'dir'); mkdir(filename); end
+            filename = fullfile(filename,subjList{subjInd});
+            curFile = filename;
+            curExt = 'svg';
+            delete([curFile '.' curExt]); disp(['del old: ' curFile '.' curExt])
+            curExt = 'fig';
+            delete([curFile '.' curExt]); disp(['del old: ' curFile '.' curExt])
+            curExt = 'jpg';
+            delete([curFile '.' curExt]); disp(['del old: ' curFile '.' curExt])
         end
     end
 end

@@ -1,7 +1,8 @@
-function runGroupAnalysis_hr(saveFig)
+function runGroupAnalysis_hr(figOption)
 close all
-if ~exist('saveFig','var') || isempty(saveFig)
-    saveFig = 0;
+if ~exist('figOption','var') || isempty(figOption)
+    figOption.save = 1;
+    figOption.subj = 1; % 'all' or subjInd
 end
 
 colors = [  0         0.4470    0.7410
@@ -195,17 +196,21 @@ ax = gca;
 uistack(findobj(ax.Children,'type','Text'),'top')
 ax.PlotBoxAspectRatio = [1.5 1 1];
 
-if saveFig
+if figOption.save
     filename = fullfile(pwd,mfilename);
     if ~exist(filename,'dir'); mkdir(filename); end
     filename = fullfile(filename,'hr');
     fGroup.Color = 'none';
     set(findobj(fGroup.Children,'type','Axes'),'color','none')
-    saveas(fGroup,[filename '.svg']); disp([filename '.svg'])
+    
+    curFile = filename;
+    curExt = 'svg';
+    saveas(fGroup,[curFile '.' curExt]); disp([curFile '.' curExt])
     fGroup.Color = 'w';
-    set(findobj(fGroup.Children,'type','Axes'),'color','w')
-    saveas(fGroup,filename); disp([filename '.fig'])
-    saveas(fGroup,filename); disp([filename '.jpg'])
+    curExt = 'fig';
+    saveas(fGroup,[curFile '.' curExt]); disp([curFile '.' curExt])
+    curExt = 'jpg';
+    saveas(fGroup,[curFile '.' curExt]); disp([curFile '.' curExt])
 end
 
 

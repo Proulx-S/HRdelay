@@ -1,7 +1,8 @@
-function plotDecoding(res,saveFig)
+function plotDecoding(res,figOption)
 groupStatMethod = 'binomial'; % 'binomial' or 'pseudoMedian'
-if ~exist('saveFig','var') || isempty(saveFig)
-    saveFig = 0;
+if ~exist('figOption','var') || isempty(figOption)
+    figOption.save = 1;
+    figOption.subj = 1; % 'all' or subjInd
 end
 
 plotUpperErrorBar = 0;
@@ -162,7 +163,7 @@ ylim(yLim)
 ax.YGrid = 'on';
 ax.Box = 'off';
 
-if saveFig
+if figOption.save
     filename = fullfile(pwd,mfilename);
     if ~exist(filename,'dir'); mkdir(filename); end
     filename = fullfile(filename,'acc');

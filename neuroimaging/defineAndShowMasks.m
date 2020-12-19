@@ -1,11 +1,11 @@
-function defineAndShowMasks(fitType,threshType,veinPerc,saveFig)
+function defineAndShowMasks(fitType,threshType,veinPerc,figOption)
 close all
 noMovement = 1;
 actuallyRun = 1;
-if ~exist('saveFig','var') || isempty(saveFig)
-    saveFig = 0;
+if ~exist('figOption','var') || isempty(figOption)
+    figOption.save = 1;
+    figOption.subj = 1; % 'all' or subjInd
 end
-plotAllSubj = saveFig;
 if ~exist('veinPerc','var') || isempty(veinPerc)
     doVein = 1;
     veinSource = 'reducedModelResid'; % 'reducedModelResid' (stimulus-driven signal included in std) or 'fullModelResid (stimulus-driven signal excluded in std)'
@@ -189,7 +189,7 @@ for subjInd = 1:length(subjList)
     end
     
     %% Plot masking
-    if plotAllSubj || subjInd==1
+    if subjInd==figOption.subj || figOption.subj==inf
         sess = 'sess1';
         slice = 11;
         
@@ -337,7 +337,7 @@ for subjInd = 1:length(subjList)
         end
         
         % Save
-        if saveFig
+        if figOption.save
             filename = fullfile(pwd,mfilename);
             if ~exist(filename,'dir'); mkdir(filename); end
             filename = fullfile(filename,[subjList{subjInd}]);
@@ -345,11 +345,37 @@ for subjInd = 1:length(subjList)
                 curF = figure(f(i));
                 curF.Color = 'none';
                 set(findobj(curF.Children,'type','Axes'),'color','none')
-                saveas(curF,[filename '_' num2str(i) '.svg']); disp([filename '_' num2str(i) '.svg'])
+                curFile = [filename '_' num2str(i)];
+                curExt = 'svg';
+                saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt])
                 curF.Color = 'w';
 %                 set(findobj(curF.Children,'type','Axes'),'color','w')
-                saveas(curF,[filename '_' num2str(i)]); disp([filename '_' num2str(i) '.fig'])
-                saveas(curF,[filename '_' num2str(i) '.jpg']); disp([filename '_' num2str(i) '.jpg'])
+                curExt = 'fig';
+                saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt])
+                curExt = 'jpg';
+                saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt])
+            end
+        end
+    else
+        % clean non-renewed fig
+        if figOption.save
+            filename = fullfile(pwd,mfilename);
+            if ~exist(filename,'dir'); mkdir(filename); end
+            filename = fullfile(filename,[subjList{subjInd}]);
+            for i = 1:length(f)
+                curFile = [filename '_' num2str(i)];
+                curExt = 'svg';
+                if exist([curFile '.' curExt],'file')
+                    disp(['del old:' curFile '.' curExt]);
+                    delete([curFile '.' curExt]); end
+                curExt = 'fig';
+                if exist([curFile '.' curExt],'file')
+                    disp(['del old:' curFile '.' curExt]);
+                    delete([curFile '.' curExt]); end
+                curExt = 'jpg';
+                if exist([curFile '.' curExt],'file')
+                    disp(['del old:' curFile '.' curExt]);
+                    delete([curFile '.' curExt]); end
             end
         end
     end

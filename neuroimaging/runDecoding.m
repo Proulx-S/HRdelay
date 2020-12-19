@@ -1,6 +1,7 @@
-function res = runDecoding(SVMspace,nPerm,saveFig)
-if ~exist('saveFig','var') || isempty(saveFig)
-    saveFig = 1;
+function res = runDecoding(SVMspace,nPerm,figOption)
+if ~exist('figOption','var') || isempty(figOption)
+    figOption.save = 1;
+    figOption.subj = 1; % 'all' or subjInd
 end
 if ~exist('SVMspace','var') || isempty(SVMspace)
     SVMspace = 'cart_HT'; % 'hr' 'hrNoAmp' 'cart' 'cartNoAmp' cartNoAmp_HT 'cartReal', 'cartImag', 'pol', 'polMag' 'polMag_T' or 'polDelay'
@@ -200,7 +201,7 @@ hSup = suptitle({'Polar space normalization' SVMspace});
 hSup.Interpreter = 'none';
 drawnow
 
-if saveFig
+if figOption.save
     filename = fullfile(pwd,mfilename);
     if ~exist(filename,'dir'); mkdir(filename); end
     filename = fullfile(filename,SVMspace);
