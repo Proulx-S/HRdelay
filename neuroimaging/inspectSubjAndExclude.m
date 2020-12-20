@@ -141,6 +141,9 @@ if exist('exclusion','var') && ~isempty(exclusion) && ~isempty(exclusion.subj)
     end
 end
 
+save('C:\Users\sebas\Desktop\branch','dAll')
+return
+
 
 %% Plot single subjects
 rLim = nan(2,length(subjList),2);
