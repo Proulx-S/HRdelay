@@ -1,7 +1,8 @@
-function runGroupAnalysis_hr(saveFig)
+function runGroupAnalysis_hr(figOption)
 close all
-if ~exist('saveFig','var') || isempty(saveFig)
-    saveFig = 0;
+if ~exist('figOption','var') || isempty(figOption)
+    figOption.save = 1;
+    figOption.subj = 1; % 'all' or subjInd
 end
 
 colors = [  0         0.4470    0.7410
@@ -23,7 +24,7 @@ fileSuffix = '_preprocAndShowMasks.mat';
 for tmpPath = {'repoPath' 'dataDir' 'funPath'}
     eval([char(tmpPath) '(strfind(' char(tmpPath) ',''\''))=''/'';']);
 end
-% 
+%
 %% Preload param
 tmp = dir(fullfile(funPath,funLevel,'*.mat'));
 for i = 1:length(tmp)
@@ -56,7 +57,7 @@ for subjInd = 1:length(subjList)
         ind = true(1,size(dC{subjInd}.(sess).data,2));
         ind = ind & dC{subjInd}.(sessFeat).anyCondActivation_mask;
         ind = ind & ~dC{subjInd}.(sessFeat).vein_mask;
-        
+
         dC{subjInd}.(sess).data = mean(dC{subjInd}.(sess).data(:,ind,:),2);
         dC{subjInd}.(sess).hr = mean(dC{subjInd}.(sess).hr(:,ind,:,:),2);
     end
@@ -80,13 +81,13 @@ t = 0:11;
 for subjInd = 1:length(subjList)
     rhoSubj = abs(xData(subjInd,:,:));
     thetaSubj = angle(xData(subjInd,:,:));
-    
+
     interpMethod = 'cubic'; % cubic convolution as implemented in Matlab2020b
     for sessInd = 1:2
         sess = ['sess' num2str(sessInd)];
         % response amplitude
         dC{subjInd}.(sess).hr = dC{subjInd}.(sess).hr./rhoSubj(sessInd).*rhoGroup;
-        
+
         % response delay
         %upsample
         curHR = dC{subjInd}.(sess).hr;
@@ -97,7 +98,7 @@ for subjInd = 1:length(subjList)
         curT = permute(curT,[4 1 2 3]);
         curHR2 = cat(1,curHR              ,curHR              ,curHR              ,curHR              ,curHR);
         curT2 =  cat(1,curT-2*n,curT-1*n,curT-0*n,curT+1*n,curT+2*n);
-        
+
         delta = 0.001;
         curT3 = (min(curT2):delta:(max(curT2)+1-delta))';
         curHR3 = nan([length(curT3) size(curHR2,[2 3 4])]);
@@ -107,7 +108,7 @@ for subjInd = 1:length(subjList)
 %         figure('WindowStyle','docked');
 %         plot(curT2,curHR2(:,i),'o'); hold on
 %         plot(curT3,curHR3(:,i),'-');
-        
+
         %rotate
         deltaPi = 2*pi/(n/delta);
         curTheta = round((thetaGroup-thetaSubj(sessInd)+thetaShift)/deltaPi);
@@ -115,14 +116,14 @@ for subjInd = 1:length(subjList)
             curHR3(:,i) = circshift(curHR3(:,i),-curTheta);
         end
 %         plot(curT3,curHR3(:,i),'-');
-        
+
         %downsample
         curHR4 = nan(size(curHR));
         for i = 1:prod(size(curHR,[2 3 4]))
             curHR4(:,i) = interp1(curT3,curHR3(:,i),t,interpMethod);
         end
 %         plot(curT,curHR4(:,i),'o');
-        
+
         dC{subjInd}.(sess).hr = permute(curHR4,[2 3 4 1]);
     end
 end
@@ -201,17 +202,19 @@ ax = gca;
 uistack(findobj(ax.Children,'type','Text'),'top')
 ax.PlotBoxAspectRatio = [1.5 1 1];
 
-if saveFig
+if figOption.save
     filename = fullfile(pwd,mfilename);
     if ~exist(filename,'dir'); mkdir(filename); end
     filename = fullfile(filename,'hr');
     fGroup.Color = 'none';
     set(findobj(fGroup.Children,'type','Axes'),'color','none')
-    saveas(fGroup,[filename '.svg']); disp([filename '.svg'])
+
+    curFile = filename;
+    curExt = 'svg';
+    saveas(fGroup,[curFile '.' curExt]); disp([curFile '.' curExt])
     fGroup.Color = 'w';
-    set(findobj(fGroup.Children,'type','Axes'),'color','w')
-    saveas(fGroup,[filename '.fig']); disp([filename '.fig'])
-    saveas(fGroup,[filename '.jpg']); disp([filename '.jpg'])
+    curExt = 'fig';
+    saveas(fGroup,[curFile '.' curExt]); disp([curFile '.' curExt])
+    curExt = 'jpg';
+    saveas(fGroup,[curFile '.' curExt]); disp([curFile '.' curExt])
 end
-
-

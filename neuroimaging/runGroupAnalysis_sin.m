@@ -1,7 +1,8 @@
-function runGroupAnalysis_sin(saveFig)
+function runGroupAnalysis_sin(figOption)
 close all
-if ~exist('saveFig','var') || isempty(saveFig)
-    saveFig = 0;
+if ~exist('figOption','var') || isempty(figOption)
+    figOption.save = 1;
+    figOption.subj = 1; % 'all' or subjInd
 end
 
 colors = [  0         0.4470    0.7410
@@ -23,7 +24,7 @@ fileSuffix = '_preprocAndShowMasks.mat';
 for tmpPath = {'repoPath' 'dataDir' 'funPath'}
     eval([char(tmpPath) '(strfind(' char(tmpPath) ',''\''))=''/'';']);
 end
-% 
+%
 %% Preload param
 tmp = dir(fullfile(funPath,funLevel,'*.mat'));
 for i = 1:length(tmp)
@@ -59,7 +60,7 @@ for subjInd = 1:length(subjList)
         ind = true(1,size(dC{subjInd}.(sess).data,2));
         ind = ind & dC{subjInd}.(sessFeat).anyCondActivation_mask;
         ind = ind & ~dC{subjInd}.(sessFeat).vein_mask;
-        
+
         dC{subjInd}.(sess).data = mean(dC{subjInd}.(sess).data(:,ind,:),2);
         dC{subjInd}.(sess).hr = mean(dC{subjInd}.(sess).hr(:,ind,:,:),2);
     end
@@ -112,17 +113,21 @@ ax.ThetaAxis.Label.HorizontalAlignment = 'left';
 ax.RAxis.Label.String = 'amp (%BOLD)';
 ax.RAxis.Label.Rotation = 80;
 
-if saveFig
+if figOption.save
     filename = fullfile(pwd,mfilename);
     if ~exist(filename,'dir'); mkdir(filename); end
     filename = fullfile(filename,'cartesian');
     fGroup(1).Color = 'none';
     set(findobj(fGroup(1).Children,'type','Axes'),'color','none')
     set(findobj(fGroup(1).Children,'type','PolarAxes'),'color','none')
-    saveas(fGroup(1),[filename '.svg']); disp([filename '.svg'])
+    curFile = filename;
+    curExt = 'svg';
+    saveas(fGroup(1),[curFile '.' curExt]); disp([curFile '.' curExt])
     fGroup(1).Color = 'w';
-    saveas(fGroup(1),[filename '.fig']); disp([filename '.fig'])
-    saveas(fGroup(1),[filename '.jpg']); disp([filename '.jpg'])
+    curExt = 'fig';
+    saveas(fGroup(1),[curFile '.' curExt]); disp([curFile '.' curExt])
+    curExt = 'jpg';
+    saveas(fGroup(1),[curFile '.' curExt]); disp([curFile '.' curExt])
 end
 
 % Polar space
@@ -166,16 +171,20 @@ ylim([0 max(xData_rho(:)).*1.1])
 ax(spInd).PlotBoxAspectRatio = [0.2 1 1];
 box off
 
-if saveFig
+if figOption.save
     filename = fullfile(pwd,mfilename);
     if ~exist(filename,'dir'); mkdir(filename); end
     filename = fullfile(filename,'amp');
     fGroup(2).Color = 'none';
     set(findobj(fGroup(2).Children,'type','Axes'),'color','none')
-    saveas(fGroup(2),[filename '.svg']); disp([filename '.svg'])
+    curFile = filename;
+    curExt = 'svg';
+    saveas(fGroup(2),[curFile '.' curExt]); disp([curFile '.' curExt])
     fGroup(2).Color = 'w';
-    saveas(fGroup(2),[filename '.fig']); disp([filename '.fig'])
-    saveas(fGroup(2),[filename '.jpg']); disp([filename '.jpg'])
+    curExt = 'fig';
+    saveas(fGroup(2),[curFile '.' curExt]); disp([curFile '.' curExt])
+    curExt = 'jpg';
+    saveas(fGroup(2),[curFile '.' curExt]); disp([curFile '.' curExt])
 end
 
 fGroup(3) = figure('WindowStyle','docked');
@@ -216,16 +225,20 @@ disp(['amp (plaid-ori) = ' num2str(diff(xData_rhoMean(:,[4 3])),'%0.3f%%BOLD')])
 disp(['amp (ori2-ori1) = ' num2str(diff(xData_rhoMean(:,[1 2])),'%0.3f%%BOLD')])
 disp('***')
 
-if saveFig
+if figOption.save
     filename = fullfile(pwd,mfilename);
     if ~exist(filename,'dir'); mkdir(filename); end
     filename = fullfile(filename,'delay');
     fGroup(3).Color = 'none';
     set(findobj(fGroup(3).Children,'type','Axes'),'color','none')
-    saveas(fGroup(3),[filename '.svg']); disp([filename '.svg'])
+    curFile = filename;
+    curExt = 'svg';
+    saveas(fGroup(3),[curFile '.' curExt]); disp([curFile '.' curExt])
     fGroup(3).Color = 'w';
-    saveas(fGroup(3),[filename '.fig']); disp([filename '.fig'])
-    saveas(fGroup(3),[filename '.jpg']); disp([filename '.jpg'])
+    curExt = 'fig';
+    saveas(fGroup(3),[curFile '.' curExt]); disp([curFile '.' curExt])
+    curExt = 'jpg';
+    saveas(fGroup(3),[curFile '.' curExt]); disp([curFile '.' curExt])
 end
 
 %% Stats
@@ -324,7 +337,7 @@ xData = [];
 xLabel = [];
 for subjInd = 1:length(subjList)
     for sessInd = 1:2
-        
+
         tmp = squeeze(dC{subjInd}.(['sess' num2str(sessInd)]).data);
         tmp = mean(tmp,1);
         xData = cat(1,xData,tmp);
@@ -363,17 +376,21 @@ end
 hScat.CData = cData;
 hScat.MarkerFaceColor = hScat.MarkerEdgeColor;
 
-if saveFig
+if figOption.save
     filename = fullfile(pwd,mfilename);
     if ~exist(filename,'dir'); mkdir(filename); end
     filename = fullfile(filename,'diffCorr_subjAndSess');
     fGroup(1).Color = 'none';
     set(findobj(fGroup(1).Children,'type','Axes'),'color','none')
     set(findobj(fGroup(1).Children,'type','PolarAxes'),'color','none')
-    saveas(fGroup(1),[filename '.svg']); disp([filename '.svg'])
+    curFile = filename;
+    curExt = 'svg';
+    saveas(fGroup(1),[curFile '.' curExt]); disp([curFile '.' curExt])
     fGroup(1).Color = 'w';
-    saveas(fGroup(1),[filename '.fig']); disp([filename '.fig'])
-    saveas(fGroup(1),[filename '.jpg']); disp([filename '.jpg'])
+    curExt = 'fig';
+    saveas(fGroup(1),[curFile '.' curExt]); disp([curFile '.' curExt])
+    curExt = 'jpg';
+    saveas(fGroup(1),[curFile '.' curExt]); disp([curFile '.' curExt])
 end
 
 
@@ -394,17 +411,21 @@ set(gca,'PlotBoxAspectRatio',[1 1 1])
 hScat.MarkerFaceColor = 'k';
 hScat.MarkerEdgeColor = 'w';
 
-if saveFig
+if figOption.save
     filename = fullfile(pwd,mfilename);
     if ~exist(filename,'dir'); mkdir(filename); end
     filename = fullfile(filename,'diffCorr_subj');
     fGroup(1).Color = 'none';
     set(findobj(fGroup(1).Children,'type','Axes'),'color','none')
     set(findobj(fGroup(1).Children,'type','PolarAxes'),'color','none')
-    saveas(fGroup(1),[filename '.svg']); disp([filename '.svg'])
+    curFile = filename;
+    curExt = 'svg';
+    saveas(fGroup(1),[curFile '.' curExt]); disp([curFile '.' curExt])
     fGroup(1).Color = 'w';
-    saveas(fGroup(1),[filename '.fig']); disp([filename '.fig'])
-    saveas(fGroup(1),[filename '.jpg']); disp([filename '.jpg'])
+    curExt = 'fig';
+    saveas(fGroup(1),[curFile '.' curExt]); disp([curFile '.' curExt])
+    curExt = 'jpg';
+    saveas(fGroup(1),[curFile '.' curExt]); disp([curFile '.' curExt])
 end
 
 % Between-run correlation
@@ -451,16 +472,19 @@ hScat.MarkerFaceColor = 'k';
 hScat.MarkerEdgeColor = 'w';
 set(gca,'PlotBoxAspectRatio',[1 1 1])
 
-if saveFig
+if figOption.save
     filename = fullfile(pwd,mfilename);
     if ~exist(filename,'dir'); mkdir(filename); end
     filename = fullfile(filename,'run2runCorr');
     fGroup(1).Color = 'none';
     set(findobj(fGroup(1).Children,'type','Axes'),'color','none')
     set(findobj(fGroup(1).Children,'type','PolarAxes'),'color','none')
-    saveas(fGroup(1),[filename '.svg']); disp([filename '.svg'])
+    curFile = filename;
+    curExt = 'svg';
+    saveas(fGroup(1),[curFile '.' curExt]); disp([curFile '.' curExt])
     fGroup(1).Color = 'w';
-    saveas(fGroup(1),[filename '.fig']); disp([filename '.fig'])
-    saveas(fGroup(1),[filename '.jpg']); disp([filename '.jpg'])
+    curExt = 'fig';
+    saveas(fGroup(1),[curFile '.' curExt]); disp([curFile '.' curExt])
+    curExt = 'jpg';
+    saveas(fGroup(1),[curFile '.' curExt]); disp([curFile '.' curExt])
 end
-

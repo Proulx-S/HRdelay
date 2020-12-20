@@ -1,9 +1,9 @@
-function inspectSubjAndExclude(saveFig)
+function inspectSubjAndExclude(figOption)
 close all
-if ~exist('saveFig','var') || isempty(saveFig)
-    saveFig = 0;
+if ~exist('figOption','var') || isempty(figOption)
+    figOption.save = 1;
+    figOption.subj = 1; % 'all' or subjInd
 end
-plotAllSubj = saveFig;
 
 colors = [  0         0.4470    0.7410
             0.8500    0.3250    0.0980
@@ -52,7 +52,7 @@ end
 
 %% Visualize the scanner trigger problem
 clear tmp tmp1 tmp2 tmpData
-figure('WindowStyle','docked');
+f = figure('WindowStyle','docked','visible','off');
 
 sz = 0;
 for subjInd = 1:length(subjList)
@@ -69,7 +69,7 @@ for subjInd = 1:length(subjList)
     tmp1 = tmp1(:);
     tmp1 = angle(tmp1);
     tmp1 = wrapToPi(tmp1-circ_mean(tmp1));
-    
+
     tmp2 = squeeze(mean(dAll{subjInd}.sess2.data,2))';
     tmpInd = squeeze(dAll{subjInd}.sess2.runLabel)';
     [~,b] = sort(tmpInd(:));
@@ -78,9 +78,9 @@ for subjInd = 1:length(subjList)
     tmp2 = tmp2(:);
     tmp2 = angle(tmp2);
     tmp2 = wrapToPi(tmp2-circ_mean(tmp2));
-    
+
     tmp = cat(1,tmp1,nan(sz*3-length(tmp1)+1,1),tmp2);
-    
+
     hp(subjInd) = plot(tmp,'-o'); hold on
 end
 TR = 1;
@@ -127,7 +127,7 @@ if exist('exclusion','var') && ~isempty(exclusion) && ~isempty(exclusion.subj)
         sessInd = exclusion.sess{i};
         runInd = exclusion.run{i};
         disp(['Excluding: ' subjList{subjInd} ', sess' num2str(sessInd) ', runTriplet(repeat)=' num2str(runInd)])
-        
+
         allFields = fields(dAll{subjInd}.(['sess' num2str(sessInd)]));
         nRepeat = size(dAll{subjInd}.(['sess' num2str(sessInd)]).data,1);
         for ii = 1:length(allFields)
@@ -143,7 +143,7 @@ end
 rLim = nan(2,length(subjList),2);
 yLim = nan(2,length(subjList),2);
 for subjInd = 1:length(subjList)
-    if plotAllSubj || subjInd==1
+    if subjInd==figOption.subj || figOption.subj==inf
         fSubj(subjInd) = figure('WindowStyle','docked');
         for sessInd = 1:2
             % Between-session feature selection
@@ -168,11 +168,11 @@ for subjInd = 1:length(subjList)
             uistack(hAv,'top')
             title(['Sess' num2str(sessInd)])
             rLim(:,subjInd,sessInd) = rlim;
-            
+
             ax = gca;
             ax.ThetaTickLabel = 12-ax.ThetaTick(1:end)/360*12;
             ax.ThetaTickLabel(1,:) = '0 ';
-            
+
             % Full time course
             subplot(2,2,2+sessInd)
             xData = squeeze(mean(dAll{subjInd}.(sess).hr(:,ind,:,:),2));
@@ -194,14 +194,15 @@ for subjInd = 1:length(subjList)
             box off
             yLim(:,sessInd,subjInd) = ylim;
         end
-        
+
         suptitle(subjList{subjInd})
+    else
     end
 end
 rLim = [0 max(rLim(2,:))];
 yLim = [min(yLim(1,:)) max(yLim(2,:))];
 for subjInd = 1:length(subjList)
-    if plotAllSubj || subjInd==1
+    if subjInd==figOption.subj || figOption.subj==inf
         figure(fSubj(subjInd));
         for sessInd = 1:2
             ax = subplot(2,2,sessInd);
@@ -225,20 +226,37 @@ for subjInd = 1:length(subjList)
                 case 2
                     xlabel('time since stim onset (sec)')
             end
-            
+
             ylim(yLim);
         end
-        if saveFig
+        if figOption.save
             filename = fullfile(pwd,mfilename);
             if ~exist(filename,'dir'); mkdir(filename); end
             filename = fullfile(filename,subjList{subjInd});
+            curFile = filename;
             fSubj(subjInd).Color = 'none';
             set(findobj(fSubj(subjInd).Children,'type','Axes'),'color','none')
             set(findobj(fSubj(subjInd).Children,'type','PolarAxes'),'color','none')
-            saveas(fSubj(subjInd),[filename '.svg']); disp([filename '.svg'])
+            curExt = 'svg';
+            saveas(fSubj(subjInd),[curFile '.' curExt]); disp([curFile '.' curExt])
             fSubj(subjInd).Color = 'w';
-            saveas(fSubj(subjInd),[filename '.fig']); disp([filename '.fig'])
-            saveas(fSubj(subjInd),[filename '.jpg']); disp([filename '.jpg'])
+            curExt = 'fig';
+            saveas(fSubj(subjInd),[curFile '.' curExt]); disp([curFile '.' curExt])
+            curExt = 'jpg';
+            saveas(fSubj(subjInd),[curFile '.' curExt]); disp([curFile '.' curExt])
+        end
+    else
+        if figOption.save
+            filename = fullfile(pwd,mfilename);
+            if ~exist(filename,'dir'); mkdir(filename); end
+            filename = fullfile(filename,subjList{subjInd});
+            curFile = filename;
+            curExt = 'svg';
+            delete([curFile '.' curExt]); disp(['del old: ' curFile '.' curExt])
+            curExt = 'fig';
+            delete([curFile '.' curExt]); disp(['del old: ' curFile '.' curExt])
+            curExt = 'jpg';
+            delete([curFile '.' curExt]); disp(['del old: ' curFile '.' curExt])
         end
     end
 end
@@ -252,4 +270,3 @@ for subjInd = 1:length(subjList)
     dC = dAll{subjInd};
     save(tmp,'dC','param','-append');
 end
-

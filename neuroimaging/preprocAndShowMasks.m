@@ -1,11 +1,11 @@
-function preprocAndShowMasks(fitType,threshType,veinPerc,saveFig)
+function preprocAndShowMasks(fitType,threshType,veinPerc,figOption)
 close all
 noMovement = 1;
 actuallyRun = 1;
-if ~exist('saveFig','var') || isempty(saveFig)
-    saveFig = 0;
+if ~exist('figOption','var') || isempty(figOption)
+    figOption.save = 1;
+    figOption.subj = 1; % 'all' or subjInd
 end
-plotAllSubj = saveFig;
 if ~exist('veinPerc','var') || isempty(veinPerc)
     doVein = 1;
     veinSource = 'reducedModelResid'; % 'reducedModelResid' (stimulus-driven signal included in std) or 'fullModelResid (stimulus-driven signal excluded in std)'
@@ -63,12 +63,12 @@ for subjInd = 1:length(subjList)
     load(fullfile(funPath,funLevel2,subjList{subjInd},sinFitFile),'results')
     tmp = load(fullfile(funPath,funLevel2,subjList{subjInd},hrFitFile),'results');
     resultsResp = tmp.results; clear tmp
-    
+
     %% Define all labels
     runLabel = [results.OLS.mixed.inputs.opt.runLabel{:}];
     sessLabel = [results.OLS.mixed.inputs.opt.sessionLabel{:}];
     condLabel = repmat(1:3,[length(results.OLS.mixed.inputs.opt.runLabel)/3 1]); condLabel = condLabel(:)';
-    
+
     % Repeat labels (tricky)
     %sort runLabels
     runLabelOrig = runLabel;
@@ -91,7 +91,7 @@ for subjInd = 1:length(subjList)
     condLabel = condLabel(b);
     repeatLabel = repeatLabel(b);
     %     [runLabel' sessLabel' condLabel' repeatLabel']
-    
+
     %% Set masks
     % Brain
     tmpFilename = dir(fullfile(funPath,funLevel1,subjList{subjInd},'trun101_preprocessed.nii*'));
@@ -99,7 +99,7 @@ for subjInd = 1:length(subjList)
     a = load_nii(fullfile(funPath,funLevel1,subjList{subjInd},tmpFilename));
     brain = flip(permute(a.img,[3 1 2 4]),1); clear a
     brain = brain(:,:,:,1);
-    
+
     % Mask of V1
     tmpFilename = dir(fullfile(anatPath,anatLevel,subjList{subjInd},'v1.nii*'));
     if all(size(tmpFilename)==[1 1]); tmpFilename = tmpFilename.name; else; error('X'); end
@@ -108,7 +108,7 @@ for subjInd = 1:length(subjList)
     maskV1 = flipdim(permute(a.img,[3 1 2 4]),1); clear a
     maskV1(:,:,1) = zeros(size(maskV1,1),size(maskV1,2));% Remove corrupted slices
     maskV1(:,:,end) = zeros(size(maskV1,1),size(maskV1,2));% Remove corrupted slices
-    
+
     % Mask of eccentricity (stimulus retinotopic representation)
     tmpFilename = dir(fullfile(anatPath,anatLevel,subjList{subjInd},'lh.ecc.nii*'));
     if all(size(tmpFilename)==[1 1]); tmpFilename = tmpFilename.name; else; error('X'); end
@@ -121,14 +121,14 @@ for subjInd = 1:length(subjList)
     find((eccL~=0 & eccR~=0));
     ecc = eccL; ecc(eccR~=0) = eccR(eccR~=0); clear eccL eccR
     maskECC = ecc>1 & ecc<6;
-    
+
     % Mask of ROI
     maskROI = maskV1 & maskECC;
-    
+
     % Mask of fit area
     maskFitArea = results.mask;
-    
-    
+
+
     %% Stats for later between-session feature selection
     exclusion.subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'};
     exclusion.subj = 2;
@@ -140,13 +140,13 @@ for subjInd = 1:length(subjList)
         % First deal with exclusion
         if length(exclusion.subj)>1; error('Need to code for multiple exclusions'); end
         if strcmp(exclusion.subjList{exclusion.subj},subjList{subjInd}) && exclusion.sess{1}==sessInd
-            
+
             ind = repeatLabel==exclusion.run{1} & sessLabel==exclusion.sess{1};
             ind = ~ind;
         else
             ind = true(size(runLabel));
         end
-        
+
         % Vein map (session-specific)
         featSel.(sess).vein_doIt = doVein;
         featSel.(sess).vein_source = veinSource;
@@ -154,7 +154,7 @@ for subjInd = 1:length(subjList)
         featSel.(sess).vein_perc = veinPerc;
         featSel.(sess).vein_thresh = nan;
         featSel.(sess).vein_mask = false(size(brain));
-        
+
         if doVein
             switch veinSource
                 case 'reducedModelResid'
@@ -166,7 +166,7 @@ for subjInd = 1:length(subjList)
             % vein mask
             featSel.(sess).vein_mask = featSel.(sess).vein_score>featSel.(sess).vein_thresh;
         end
-        
+
         % Activation map
         featSel.(sess).anyCondActivation_doIt = ~strcmp(fitType,'none');
         featSel.(sess).anyCondActivation_fitType = fitType;
@@ -197,14 +197,14 @@ for subjInd = 1:length(subjList)
         else
             featSel.(sess).anyCondActivation_mask = featSel.(sess).(['anyCondActivation_' upper(featSel.(sess).anyCondActivation_threshType)])<featSel.(sess).anyCondActivation_threshVal;
         end
-        
+
     end
-    
+
     %% Plot masking
-    if plotAllSubj || subjInd==1
+    if subjInd==figOption.subj || figOption.subj==inf
         sess = 'sess1';
         slice = 11;
-        
+
         % Get some nice colormaps
         filename = fullfile(pwd,mfilename);
         if ~exist(filename,'dir'); mkdir(filename); end
@@ -220,13 +220,13 @@ for subjInd = 1:length(subjList)
             end
             save(filename,'cMap_F','cMap_vein');
         end
-        
+
         f = [];
         % Brain
         f(end+1) = figure('WindowStyle','docked','color','w');
         axBak = plotIm(axes,brain(:,:,slice));
         title('BOLD image (1 TR)')
-        
+
         % Activation overlay
         f(end+1) = figure('WindowStyle','docked','color','w');
         axBak = plotIm(axes,brain(:,:,slice));
@@ -298,7 +298,7 @@ for subjInd = 1:length(subjList)
             hTex.Position(1) = hTex.Position(1) + hTex.Extent(3).*0.02;
             drawnow
         end
-        
+
         % Vein overlay
         f(end+1) = figure('WindowStyle','docked','color','w');
         axBak = plotIm(axes,brain(:,:,slice));
@@ -333,7 +333,7 @@ for subjInd = 1:length(subjList)
             hTex.VerticalAlignment = 'top';
             hTex.Position(1) = hTex.Position(1) + hTex.Extent(3).*0.02;
         end
-        
+
         %V1 retinotopic representation + Vein
         f(end+1) = figure('WindowStyle','docked','color','w');
         axBak = plotIm(axes,brain(:,:,slice));
@@ -345,9 +345,9 @@ for subjInd = 1:length(subjList)
             axVein = plotIm(axes,tmp);
             makeOverlay(axBak,axVein,tmp,[0 0 0; 0 140 225]./255)
         end
-        
+
         % Save
-        if saveFig
+        if figOption.save
             filename = fullfile(pwd,mfilename);
             if ~exist(filename,'dir'); mkdir(filename); end
             filename = fullfile(filename,[subjList{subjInd}]);
@@ -355,20 +355,46 @@ for subjInd = 1:length(subjList)
                 curF = figure(f(i));
                 curF.Color = 'none';
                 set(findobj(curF.Children,'type','Axes'),'color','none')
-                saveas(curF,[filename '_' num2str(i) '.svg']); disp([filename '_' num2str(i) '.svg'])
+                curFile = [filename '_' num2str(i)];
+                curExt = 'svg';
+                saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt])
                 curF.Color = 'w';
-                %                 set(findobj(curF.Children,'type','Axes'),'color','w')
-                saveas(curF,[filename '_' num2str(i) '.fig']); disp([filename '_' num2str(i) '.fig'])
-                saveas(curF,[filename '_' num2str(i) '.jpg']); disp([filename '_' num2str(i) '.jpg'])
+%                 set(findobj(curF.Children,'type','Axes'),'color','w')
+                curExt = 'fig';
+                saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt])
+                curExt = 'jpg';
+                saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt])
+            end
+        end
+    else
+        % clean non-renewed fig
+        if figOption.save
+            filename = fullfile(pwd,mfilename);
+            if ~exist(filename,'dir'); mkdir(filename); end
+            filename = fullfile(filename,[subjList{subjInd}]);
+            for i = 1:length(f)
+                curFile = [filename '_' num2str(i)];
+                curExt = 'svg';
+                if exist([curFile '.' curExt],'file')
+                    disp(['del old:' curFile '.' curExt]);
+                    delete([curFile '.' curExt]); end
+                curExt = 'fig';
+                if exist([curFile '.' curExt],'file')
+                    disp(['del old:' curFile '.' curExt]);
+                    delete([curFile '.' curExt]); end
+                curExt = 'jpg';
+                if exist([curFile '.' curExt],'file')
+                    disp(['del old:' curFile '.' curExt]);
+                    delete([curFile '.' curExt]); end
             end
         end
     end
-    
+
     %% Stop here if not actually runing
     if ~actuallyRun
         return
     end
-    
+
     %% Sort sessions and conditions
     [X,Y] = pol2cart(results.OLS.mixed.delay,results.OLS.mixed.amp);
     for sessInd = 1:2
@@ -377,29 +403,29 @@ for subjInd = 1:length(subjList)
         data.(sess).data = complex(X(:,:,:,ind),Y(:,:,:,ind));
         data.(sess).condLabel = permute(condLabel(ind),[1 3 4 2]);
         data.(sess).runLabel = permute(runLabel(ind),[1 3 4 2]);
-        
+
         cond1 = data.(sess).condLabel==1;
         cond2 = data.(sess).condLabel==2;
         cond3 = data.(sess).condLabel==3;
         data.(sess).data = cat(5,data.(sess).data(:,:,:,cond1),data.(sess).data(:,:,:,cond2),data.(sess).data(:,:,:,cond3));
         data.(sess).runLabel = cat(5,data.(sess).runLabel(:,:,:,cond1),data.(sess).runLabel(:,:,:,cond2),data.(sess).runLabel(:,:,:,cond3));
         data.(sess).info = 'x X y X z X run X cond[ori1,ori2,plaid]';
-        
+
         data.(sess) = rmfield(data.(sess),'condLabel');
     end
     clear X Y
-    
+
     hr.sess1 = resultsResp.OLS.mixed.sess1.resp;
     hr.sess2 = resultsResp.OLS.mixed.sess2.resp;
     hr.info = 'x X y X z X TR X run X cond[ori1,ori2,plaid]';
-    
+
     %% Apply ROI mask and vectorize
     for sessInd = 1:2
         sess = ['sess' num2str(sessInd)];
         sz = size(data.(sess).data);
         ind = false(sz(1:3));
         ind(:) = maskROI(maskFitArea);
-        
+
         % sin responses
         d.(sess).data = permute(data.(sess).data,[4 5 1 2 3]);
         d.(sess).data = d.(sess).data(:,:,ind);
@@ -410,7 +436,7 @@ for subjInd = 1:length(subjList)
         d.(sess).runLabel = permute(data.(sess).runLabel,[4 5 1 2 3]);
         d.(sess).runLabel = permute(d.(sess).runLabel,[1 3 2]);
         d.(sess).info = '%BOLD: run x vox x cond[ori1, ori2, plaid] X TR';
-        
+
         % feature slection stats
         fieldList = fields(featSel.(sess));
         for i = 1:length(fieldList)
@@ -423,7 +449,7 @@ for subjInd = 1:length(subjList)
         featSel.(sess).info = '1 x vox';
     end
     clear hr
-    
+
     %% Simplify stuff
     for sessInd = 1:2
         sess = ['sess' num2str(sessInd)];
@@ -433,7 +459,7 @@ for subjInd = 1:length(subjList)
         end
     end
     clear featSel
-    
+
     %% Export some parameters
     param.subjList = subjList;
     param.brain = brain;
@@ -444,15 +470,13 @@ for subjInd = 1:length(subjList)
     param.vein.doIt = d.(sess).vein_doIt;
     param.vein.source = d.(sess).vein_source;
     param.vein.perc = d.(sess).vein_perc;
-    
+
     %% Save
     if ~exist(fullfile(funPath,funLevel3),'dir')
         mkdir(fullfile(funPath,funLevel3));
     end
-    
+
     tmp = fullfile(funPath,funLevel3,[subjList{subjInd} '_' mfilename]);
     disp(['Saving to: ' tmp '.mat'])
     save(tmp,'d','param')
 end
-
-

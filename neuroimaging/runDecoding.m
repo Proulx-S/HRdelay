@@ -1,11 +1,12 @@
-function res = runDecoding(SVMspace,nPerm,saveFig)
-if ~exist('saveFig','var') || isempty(saveFig)
-    saveFig = 0;
+function res = runDecoding(SVMspace,nPerm,figOption)
+if ~exist('figOption','var') || isempty(figOption)
+    figOption.save = 1;
+    figOption.subj = 1; % 'all' or subjInd
 end
 if ~exist('SVMspace','var') || isempty(SVMspace)
     SVMspace = 'cartNoAmp_HTbSess'; % 'cart_HTbSess' 'cartNoAmp_HTbSess' 'cartNoDelay_HTbSess'
     % 'hr' 'hrNoAmp' 'cart' 'cartNoAmp' cartNoAmp_HT 'cartReal', 'cartImag', 'pol', 'polMag' 'polMag_T' or 'polDelay'
-    
+
     % cartNoDelay_HT WIERD!!!
 end
 if isstruct(SVMspace)
@@ -89,11 +90,11 @@ for subjInd = 1:length(dC)
         ind.(sess) = ind.(sess) & dC{subjInd}.(sess).anyCondActivation_mask;
         % Select active voxels
         ind.(sess) = ind.(sess) & ~dC{subjInd}.(sess).vein_mask;
-        
+
         switch SVMspace
             case {'cart' 'cart_HT' 'cartNoAmp' 'cartNoAmp_HT' 'cartNoDelay' 'cartNoDelay_HT' 'polMag' 'polMag_T'}
                 % No further voxel selection
-            
+
             case {'cart_HTbSess' 'cartNoAmp_HTbSess' 'cartNoDelay_HTbSess'}
                 % Select most discrimant voxels
                 x = dC{subjInd}.(sess).data(:,:,1:2);
@@ -141,7 +142,7 @@ for subjInd = 1:length(dC)
     for sessInd = 1:length(sessList)
         sessFeat = ['sess' num2str(~(sessInd-1)+1)]; % the session on which voxel is defined
         sess = ['sess' num2str(sessInd)]; % the session on which voxel is applied
-        
+
         allFields = fields(dC{subjInd}.(sess));
         nVox = size(dC{subjInd}.(sess).data,2);
         for i = 1:length(allFields)
@@ -241,7 +242,7 @@ hSup = suptitle({'Polar space normalization' SVMspace});
 hSup.Interpreter = 'none';
 drawnow
 
-if saveFig
+if figOption.save
     filename = fullfile(pwd,mfilename);
     if ~exist(filename,'dir'); mkdir(filename); end
     filename = fullfile(filename,SVMspace);
@@ -306,11 +307,11 @@ for i = 1:numel(dP)
     k1 = (1:nSamplePaired)';
     y2 = 2.*ones(nSamplePaired,1);
     k2 = (1:nSamplePaired)';
-    
+
     x = cat(1,x1,x2); clear x1 x2
     y = cat(1,y1,y2); clear y1 y2
     k = cat(1,k1,k2); clear k1 k2
-    
+
     % SVM
     if ~doPerm
         %cross-validated SVM
@@ -330,7 +331,7 @@ for i = 1:numel(dP)
         end
         y = cat(1,y1,y2); clear y1 y2
     end
-    
+
     % Evaluate SVM
     if ~doPerm
         res.nObs(i) = length(y);
@@ -377,23 +378,23 @@ if ~doPerm
     disp(['  p      =' num2str(res.summary.p,'%0.3f') ')'])
 else
     res.perm.info = 'subj x sess x perm';
-    
+
     nObs = permute(repmat(res.nObs,[1 1 nPerm]),[3 1 2]);
     res.perm.summary.hit = sum(res.perm.acc(:,:).*nObs(:,:),2);
     res.perm.summary.nObs = sum(nObs(:,:),2);
     res.perm.summary.acc = res.perm.summary.hit./res.perm.summary.nObs;
     res.perm.summary.accThresh = prctile(res.perm.summary.acc,95);
     res.perm.summary.p = sum(res.perm.summary.acc>res.summary.acc)./nPerm;
-    
+
     res.perm.acc = permute(res.perm.acc,[2 3 1]);
-    
+
     disp('Group results:')
     disp(['  hit    =' num2str(res.summary.hit) '/' num2str(res.summary.nObs)])
     disp(['  acc    =' num2str(res.summary.acc*100,'%0.2f%%')])
     disp(' permutation test stats')
     disp(['  thresh =' num2str(res.perm.summary.accThresh*100,'%0.2f%%')])
     disp(['  p      =' num2str(res.perm.summary.p,'%0.3f') ')'])
-    
+
     filename = fullfile(pwd,mfilename);
     if ~exist(filename,'dir'); mkdir(filename); end
     filename = fullfile(filename,[SVMspace '_' num2str(nPerm) 'perm']);
@@ -412,10 +413,10 @@ yHatTe = nan(length(y),1);
 d = nan(length(kList),1);
 for kInd = 1:length(kList)
     x = X;
-    
+
     % Split train and test
     te = k==kList(kInd);
-    
+
     % Polar space normalization
     switch SVMspace
         case {'hr' 'hrNoAmp'}
@@ -452,16 +453,23 @@ for kInd = 1:length(kList)
         otherwise
             error('X')
     end
-    
+
     % Within-session feature selection
     % get feature selection stats
     switch SVMspace
-        case {'cart_HT' 'cartNoAmp_HT'} % further feature selection
+        case 'cart_HT'
             featStat = nan(1,size(x,2));
             for voxInd = 1:size(x,2)
                 xTmp = cat(1,x(~te & y==1,voxInd),x(~te & y==2,voxInd));
+%                 stats = T2Hot2d([zscore(real(xTmp)) zscore(imag(xTmp))]);
                 stats = T2Hot2d([real(xTmp) imag(xTmp)]);
                 featStat(voxInd) = stats.T2;
+            end
+        case 'cartNoAmp_HT'
+            featStat = nan(1,size(x,2));
+            for voxInd = 1:size(x,2)
+                [~, F] = circ_htest(angle(x(~te & y==1,voxInd)), angle(x(~te & y==2,voxInd)));
+                featStat(voxInd) = F;
             end
         case {'polMag_T' 'cartNoDelay_HT'}
             [~,~,~,STATS] = ttest(abs(x(~te & y==1,:)),abs(x(~te & y==2,:)));
@@ -481,8 +489,8 @@ for kInd = 1:length(kList)
                 'polMag'}
         otherwise
             error('X')
-    end    
-    
+    end
+
     % Cocktail bank normalization
     switch SVMspace
         case {'hr' 'hrNoAmp'}
@@ -509,7 +517,7 @@ for kInd = 1:length(kList)
         otherwise
             error('x')
     end
-    
+
     % RunSVM
     model = svmtrain(y(~te,:),x(~te,:),'-t 0 -q');
 %     w = model.sv_coef'*model.SVs;
