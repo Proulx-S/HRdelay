@@ -385,8 +385,7 @@ for subjInd = 1:length(subjList)
         return
     end
     
-    %% Apply masks to fun data, vectorize voxels and split sessions and conditions
-    % Split sessions and conditions
+    %% Split sessions and conditions
     [X,Y] = pol2cart(results.OLS.mixed.delay,results.OLS.mixed.amp);
     for sessInd = 1:2
         sess = ['sess' num2str(sessInd)];
@@ -410,7 +409,7 @@ for subjInd = 1:length(subjList)
     hr.sess2 = resultsResp.OLS.mixed.sess2.resp;
     hr.info = 'x X y X z X TR X run X cond[ori1,ori2,plaid]';
     
-    % Mask anat and vectorize
+    %% Apply ROI mask and vectorize
     for sessInd = 1:2
         sess = ['sess' num2str(sessInd)];
         sz = size(data.(sess).data);

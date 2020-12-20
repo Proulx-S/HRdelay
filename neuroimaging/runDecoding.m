@@ -75,6 +75,8 @@ for subjInd = 1:size(subjList,1)
 end
 dC = dCAll; clear dAll
 
+% save('C:\Users\sebas\Desktop\main','dC')
+
 
 %% Further between-session feature selection
 % all managed in previous steps
