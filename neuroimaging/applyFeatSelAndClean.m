@@ -64,10 +64,6 @@ featSelStats = featSelStatsAll; clear featSelStatsAll
 vein = veinAll; clear veinAll
 
 
-save('C:\Users\sebas\Desktop\main','d','featSelStats','vein')
-return
-
-
 dC = d;
 %% Apply feature selection (cross-session)
 rLim = nan(length(dC),1);
