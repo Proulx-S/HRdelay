@@ -1,6 +1,6 @@
 function res = runDecoding(SVMspace,nPerm,figOption)
 if ~exist('figOption','var') || isempty(figOption)
-    figOption.save = 1;
+    figOption.save = 0;
     figOption.subj = 1; % 'all' or subjInd
 end
 if ~exist('SVMspace','var') || isempty(SVMspace)

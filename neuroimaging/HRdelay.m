@@ -6,7 +6,7 @@ runFit
 fitType = 'fixed';
 threshType = 'p';
 veinPerc = 20;
-figOption.save = 1;
+figOption.save = 0;
 figOption.subj = 1; % subjInd, +inf for all subj
 % loadOption;
 defineAndShowMasks(fitType,threshType,veinPerc,figOption)

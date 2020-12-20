@@ -1,7 +1,7 @@
 function runGroupAnalysis_sin(figOption)
 close all
 if ~exist('figOption','var') || isempty(figOption)
-    figOption.save = 1;
+    figOption.save = 0;
     figOption.subj = 1; % 'all' or subjInd
 end
 
