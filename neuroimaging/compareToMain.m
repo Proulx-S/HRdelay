@@ -60,9 +60,10 @@ all(ans)
 clear all
 close all
 
-% main = load('C:\Users\sebas\Desktop\main.mat');
 load('C:\Users\sebas\Desktop\branchVein.mat');
+sum(runInd & sessLabel==sessInd)
 featSel.(sess).vein_score(maskFitArea) = mean(results.OLS.mixed.veinFull(:,:,:,runInd & sessLabel==sessInd),4);
 imagesc(featSel.(sess).vein_score(:,:,10))
 
-
+load('C:\Users\sebas\Desktop\mainVein.mat');
+vein.(['sess' num2str(sessInd)]).noiseOverMean(maskFitArea) = mean(results.OLS.mixed.veinFull(:,:,:,ind),4);
