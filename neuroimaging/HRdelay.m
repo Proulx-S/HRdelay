@@ -6,8 +6,8 @@ runFit
 fitType = 'fixed';
 threshType = 'p';
 veinPerc = 20;
-figOption.save = 0;
-figOption.subj = 1; % subjInd, +inf for all subj
+figOption.save = 1;
+figOption.subj = inf; % subjInd, +inf for all subj
 % loadOption;
 preprocAndShowMasks(fitType,threshType,veinPerc,figOption)
 
@@ -27,14 +27,14 @@ svmSpace = 'cartNoAmp_HT';
 resTmp = runDecoding(svmSpace);
 res.(svmSpace) = resTmp;
 
-svmSpace = 'polMag_T';
+svmSpace = 'cartNoDelay_HT';
 resTmp = runDecoding(svmSpace);
 res.(svmSpace) = resTmp;
 
 plotDecoding(res,figOption)
-return
 
-nPerm = 6;
+
+nPerm = 2^13;
 
 svmSpace = 'cart_HT';
 res.(svmSpace) = runDecoding(res.(svmSpace),nPerm);
@@ -42,13 +42,8 @@ res.(svmSpace) = runDecoding(res.(svmSpace),nPerm);
 svmSpace = 'cartNoAmp_HT';
 res.(svmSpace) = runDecoding(res.(svmSpace),nPerm);
 
-svmSpace = 'polMag_T';
+svmSpace = 'cartNoDelay_HT';
 res.(svmSpace) = runDecoding(res.(svmSpace),nPerm);
 
 plotDecodingPerm(res,figOption)
 
-% %%javascript
-% IPython.notebook.save_notebook()
-% 
-% %%shell
-% jupyter nbconvert --to html HRdelay.ipynb

@@ -285,6 +285,8 @@ if ~doPerm
     res.subjList = subjList;
 else
     res.perm.acc = nan([nPerm size(res.acc)]);
+    res.perm.auc = nan([nPerm size(res.auc)]);
+    res.perm.distT = nan([nPerm size(res.distT)]);
 end
 for i = 1:numel(dP)
     if doPerm
@@ -323,6 +325,7 @@ for i = 1:numel(dP)
     else
         % with permutations
         yTe = nan(length(y),nPerm);
+        yHatTe = nan(length(y),nPerm);
         y1 = y(y==1);
         y2 = y(y==2);
         parfor permInd = 1:nPerm
@@ -331,7 +334,7 @@ for i = 1:numel(dP)
             for sInd = 1:size(y,1); y(sInd,:) = y(sInd,randperm(2)); end
             y = cat(1,y(:,1),y(:,2));
             %cross-validated SVM
-            yTe(:,permInd) = xValSVM(x,y,k,SVMspace);
+            [yTe(:,permInd),~,yHatTe(:,permInd)] = xValSVM(x,y,k,SVMspace);
         end
         y = cat(1,y1,y2); clear y1 y2
     end
@@ -349,7 +352,6 @@ for i = 1:numel(dP)
 %         ax = gca; ax.PlotBoxAspectRatio = [1 1 1];
         [~,~,~,STATS] = ttest(yHatTe(y==1),yHatTe(y==2));
         res.distT(i) = STATS.tstat;
-        res.acc(i) = sum(yTe==y)./res.nObs(i);
         res.p(i) = binocdf(res.acc(i).*res.nObs(i),res.nObs(i),0.5,'upper');
         res.nDim(i) = mean(d);
         switch SVMspace
@@ -369,8 +371,11 @@ for i = 1:numel(dP)
         end
     else
         res.perm.acc(:,i) = sum(yTe==y,1)./res.nObs(i);
-        [FP,TP,T,AUC] = perfcurve(y,yHatTe,1);
-        res.auc(:,i) = AUC;
+        for permInd = 1:nPerm
+            [~,~,~,res.auc(permInd,i)] = perfcurve(y,yHatTe(:,permInd),1);
+            [~,~,~,STATS] = ttest(yHatTe(y==1,permInd),yHatTe(y==2,permInd));
+            res.distT(permInd,i) = STATS.tstat;
+        end
     end
     if doPerm
         toc
@@ -403,15 +408,12 @@ if ~doPerm
     disp(['  hit    =' num2str(res.summary.hit) '/' num2str(res.summary.nObs)])
     disp(['  acc    =' num2str(res.summary.acc*100,'%0.2f%%')])
     disp(['  auc    =' num2str(res.summary.auc*100,'%0.2f')])
-    disp(['  distT  =' num2str(res.summary.distT,'%0.2f%%')])
+    disp(['  distT  =' num2str(res.summary.distT,'%0.2f')])
     disp(' binomial stats')
     disp(['  thresh =' num2str(res.summary.accThresh*100,'%0.2f')])
     disp(['  p      =' num2str(res.summary.p,'%0.3f') ')'])
 else
     res.perm.info = 'subj x sess x perm';
-    warning('look here')
-    keyboard
-
     nObs = permute(repmat(res.nObs,[1 1 nPerm]),[3 1 2]);
     res.perm.summary.hit = sum(res.perm.acc(:,:).*nObs(:,:),2);
     res.perm.summary.nObs = sum(nObs(:,:),2);
@@ -420,6 +422,8 @@ else
     res.perm.summary.p = sum(res.perm.summary.acc>res.summary.acc)./nPerm;
 
     res.perm.acc = permute(res.perm.acc,[2 3 1]);
+    res.perm.auc = permute(res.perm.auc,[2 3 1]);
+    res.perm.distT = permute(res.perm.distT,[2 3 1]);
 
     disp('Group results:')
     disp(['  hit    =' num2str(res.summary.hit) '/' num2str(res.summary.nObs)])

@@ -8,13 +8,13 @@ if ~exist('figOption','var') || isempty(figOption)
 end
 if ~exist('veinPerc','var') || isempty(veinPerc)
     doVein = 1;
-    veinSource = 'reducedModelResid'; % 'reducedModelResid' (stimulus-driven signal included in std) or 'fullModelResid (stimulus-driven signal excluded in std)'
+    veinSource = 'fullModelResid'; % 'reducedModelResid' (stimulus-driven signal included in std) or 'fullModelResid (stimulus-driven signal excluded in std)'
     veinPerc = 20;
 elseif veinPerc==0
     doVein = 0;
 else
     doVein = 1;
-    veinSource = 'reducedModelResid'; % 'reducedModelResid' (stimulus-driven signal included in std) or 'fullModelResid (stimulus-driven signal excluded in std)'
+    veinSource = 'fullModelResid'; % 'reducedModelResid' (stimulus-driven signal included in std) or 'fullModelResid (stimulus-driven signal excluded in std)'
 end
 if ~exist('fitType','var') || isempty(fitType)
     fitType = 'fixed'; % 'mixed' (different regressors for each run) or 'fixed' (different regressors for each session)
@@ -169,10 +169,10 @@ for subjInd = 1:length(subjList)
 
         if doVein
             switch veinSource
-                case 'reducedModelResid'
-                    vein.(['sess' num2str(sessInd)]).noiseOverMean(maskFitArea) = mean(results.OLS.mixed.veinFull(:,:,:,ind & sessLabel==sessInd),4);
                 case 'fullModelResid'
-                    vein.(['sess' num2str(sessInd)]).noiseOverMean(maskFitArea) = mean(results.OLS.mixed.veinReduced(:,:,:,ind & sessLabel==sessInd),4);
+                    featSel.(sess).vein_score(maskFitArea) = mean(results.OLS.mixed.veinFull(:,:,:,runInd & sessLabel==sessInd),4);
+                case 'reducedModelResid'
+                    featSel.(sess).vein_score(maskFitArea) = mean(results.OLS.mixed.veinReduced(:,:,:,runInd & sessLabel==sessInd),4);
             end
 %             figure('WindowStyle','docked')
 %             imagesc(featSel.(sess).vein_score(:,:,10));

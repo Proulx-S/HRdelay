@@ -1,8 +1,9 @@
-function plotDecodingPerm(res,saveFig)
-if ~exist('saveFig','var') || isempty(saveFig)
-    saveFig = 0;
+function plotDecodingPerm(res,figOption)
+if ~exist('figOption','var') || isempty(figOption)
+    figOption.save = 0;
+    figOption.subj = 1; % 'all' or subjInd
 end
-plotAllSubj = saveFig;
+figOption.subj = 1; % 'all' or subjInd
 
 spaceList = fields(res)';
 for spaceInd = 1:length(spaceList)
@@ -25,7 +26,7 @@ for spaceInd = 1:length(spaceList)
     ax.XAxis.TickDirection = 'out';
     ax.Box = 'off';
     
-    if saveFig
+    if figOption.save
         filename = fullfile(pwd,mfilename);
         if ~exist(filename,'dir'); mkdir(filename); end
         filename = fullfile(filename,[spaceList{spaceInd} '__group']);
@@ -39,7 +40,7 @@ for spaceInd = 1:length(spaceList)
 
     
     % Individual subjects
-    if plotAllSubj
+    if figOption.subj
         accAll = res.(spaceList{spaceInd}).perm.acc;
         nObsAll = res.(spaceList{spaceInd}).nObs;
         hitAll = round(accAll.*nObsAll);
@@ -91,7 +92,7 @@ for spaceInd = 1:length(spaceList)
         h = suptitle(spaceList{spaceInd});
         h.Interpreter = 'none';
         
-        if saveFig
+        if figOption.save
             filename = fullfile(pwd,mfilename);
             if ~exist(filename,'dir'); mkdir(filename); end
             filename = fullfile(filename,[spaceList{spaceInd} '__subj']);
@@ -129,6 +130,7 @@ XGrid = floor(XLim(1)):XIncr:ceil(XLim(2));
 % Fit this distribution to get parameter values
 % To use parameter estimates from the original fit:
 %     pd1 = ProbDistUnivParam('binomial',[ 142, 0.5])
-pd1 = fitdist(hit, 'binomial', 'n', n);
-YPlot = pdf(pd1,XGrid);
+YPlot = binopdf(XGrid,n,0.5);
+% pd1 = fitdist(hit, 'binomial', 'n', n);
+% YPlot = pdf(pd1,XGrid);
 plot(XGrid,YPlot,'Color','r');
