@@ -84,6 +84,7 @@ dC = dCAll; clear dAll
 sessList = fields(dC{1});
 
 save('C:\Users\sebas\Desktop\branch','dC')
+return
 
 %% Between-session feature selection
 dP = cell(length(dC),2);
@@ -159,7 +160,6 @@ for subjInd = 1:length(dC)
 end
 clear dC
 
-save('C:\Users\sebas\Desktop\branch','dP','-append')
 
 %% Example plot of trigonometric (polar representation)
 [~,b] = max(dP{1}.anyCondActivation_F);

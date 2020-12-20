@@ -5,22 +5,43 @@ main = load('C:\Users\sebas\Desktop\main.mat');
 branch = load('C:\Users\sebas\Desktop\branch.mat');
 
 ans = [];
-for subjInd = 1:length(main.dAll)
-    disp(subjInd)
+for subjInd = 1:length(main.d)
     for sessInd = 1:2
-        disp(subjInd)
+        disp(['subj' num2str(subjInd) ' sess' num2str(sessInd)])
         sess = ['sess' num2str(sessInd)];
         
-%         x = main.dAll{subjInd}.(sess).data;
-%         y = branch.dAll{subjInd}.(sess).data;
+%         x = main.d{subjInd}.(sess).data;
+%         y = branch.dC{subjInd}.(sess).data;
         
-%         x = main.dAll{subjInd}.(sess).hr;
-%         y = branch.dAll{subjInd}.(sess).hr;
-
-        x = main.dAll{subjInd}.(sess).hr;
-        y = branch.dAll{subjInd}.(sess).hr;
-
+%         x = main.d{subjInd}.(sess).hr;
+%         y = branch.dC{subjInd}.(sess).hr;
         
+%         x = main.d{subjInd}.(sess).runLabel;
+%         y = branch.dC{subjInd}.(sess).runLabel;
+        
+%         x = main.featSelStats{subjInd}.anyCondActivation.(sess).F;
+%         y = branch.dC{subjInd}.(sess).anyCondActivation_F;
+        
+%         x = main.featSelStats{subjInd}.anyCondActivation.(sess).FDR;
+%         y = branch.dC{subjInd}.(sess).anyCondActivation_FDR;
+        
+%         x = main.featSelStats{subjInd}.anyCondActivation.(sess).P;
+%         y = branch.dC{subjInd}.(sess).anyCondActivation_P;
+        
+        x = main.vein{subjInd}.(sess).noiseOverMean;
+        y = branch.dC{subjInd}.(sess).vein_score;
+        
+%         x = main.vein{subjInd}.(sess).thresh;
+%         y = branch.dC{subjInd}.(sess).vein_thresh;
+
+        scatter(x,y)
+        xlabel('main branch vein score')
+        ylabel('move-all... branch vein score')
+        
+        
+%         if subjInd==2 && sessInd==1
+%             x(4,:,:,:) = [];
+%         end
         ansTmp = ndims(x)==ndims(y)&&...
             all( size(x)==size(y) )&&...
             all( x(:)==y(:) );
