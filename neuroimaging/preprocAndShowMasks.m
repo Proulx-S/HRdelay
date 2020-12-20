@@ -170,9 +170,9 @@ for subjInd = 1:length(subjList)
         if doVein
             switch veinSource
                 case 'reducedModelResid'
-                    featSel.(sess).vein_score(maskFitArea) = mean(results.OLS.mixed.veinFull(:,:,:,runInd & sessLabel==sessInd),4);
+                    vein.(['sess' num2str(sessInd)]).noiseOverMean(maskFitArea) = mean(results.OLS.mixed.veinFull(:,:,:,ind & sessLabel==sessInd),4);
                 case 'fullModelResid'
-                    featSel.(sess).vein_score(maskFitArea) = mean(results.OLS.mixed.veinReduced(:,:,:,runInd & sessLabel==sessInd),4);
+                    vein.(['sess' num2str(sessInd)]).noiseOverMean(maskFitArea) = mean(results.OLS.mixed.veinReduced(:,:,:,ind & sessLabel==sessInd),4);
             end
 %             figure('WindowStyle','docked')
 %             imagesc(featSel.(sess).vein_score(:,:,10));
@@ -414,8 +414,7 @@ for subjInd = 1:length(subjList)
     if ~actuallyRun
         return
     end
-
-    %% Sort sessions and conditions
+    %% Split sessions and conditions
     [X,Y] = pol2cart(results.OLS.mixed.delay,results.OLS.mixed.amp);
     for sessInd = 1:2
         sess = ['sess' num2str(sessInd)];
@@ -442,8 +441,8 @@ for subjInd = 1:length(subjList)
 
 %     figure('WindowStyle','docked')
 %     imagesc(abs(data.(sess).data(:,:,10,1,1)))
-    
-    
+
+
     %% Apply ROI mask and vectorize
     for sessInd = 1:2
         sess = ['sess' num2str(sessInd)];

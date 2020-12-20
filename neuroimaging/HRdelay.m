@@ -9,9 +9,9 @@ veinPerc = 20;
 figOption.save = 0;
 figOption.subj = 1; % subjInd, +inf for all subj
 % loadOption;
-defineAndShowMasks(fitType,threshType,veinPerc,figOption)
+preprocAndShowMasks(fitType,threshType,veinPerc,figOption)
 
-applyFeatSelAndClean(figOption)
+inspectSubjAndExclude(figOption)
 
 runGroupAnalysis_sin(figOption)
 

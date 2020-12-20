@@ -133,7 +133,8 @@ if exist('exclusion','var') && ~isempty(exclusion) && ~isempty(exclusion.subj)
         allFields = fields(dAll{subjInd}.(sess));
         nRepeat = size(dAll{subjInd}.(sess).data,1);
         for ii = 1:length(allFields)
-            isDataField = ( isnumeric(dAll{subjInd}.(sess).(allFields{i})) || islogical(dAll{subjInd}.(sess).(allFields{i})) ) && length(size(dAll{subjInd}.(sess).(allFields{i})))==3 && size(dAll{subjInd}.(sess).(allFields{i}),1)==nRepeat;
+            curField = dAll{subjInd}.(sess).(allFields{ii});
+            isDataField = ( isnumeric(curField) || islogical(curField) ) && size(curField,1)==nRepeat;
             if isDataField
                 dAll{subjInd}.(sess).(allFields{ii})(runInd,:,:,:) = [];
             end

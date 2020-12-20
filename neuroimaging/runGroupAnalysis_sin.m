@@ -18,13 +18,13 @@ end
 dataDir = 'C-derived\DecodingHR';
 funPath = fullfile(repoPath,dataDir,'fun');
 funLevel = 'z';
-fileSuffix = '_defineAndShowMasks.mat';
+fileSuffix = '_preprocAndShowMasks.mat';
 
 %make sure everything is forward slash for mac, linux pc compatibility
 for tmpPath = {'repoPath' 'dataDir' 'funPath'}
     eval([char(tmpPath) '(strfind(' char(tmpPath) ',''\''))=''/'';']);
 end
-% 
+%
 %% Preload param
 tmp = dir(fullfile(funPath,funLevel,'*.mat'));
 for i = 1:length(tmp)
@@ -42,18 +42,29 @@ subjList = param.subjList;
 
 %% Load data
 dCAll = cell(size(subjList,1),1);
+paramAll = cell(size(subjList,1),1);
 for subjInd = 1:size(subjList,1)
-    load(fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]),'dC');
+    curFile = fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]);
+    disp(['loading: ' curFile])
+    load(curFile,'dC','param');
     dCAll{subjInd} = dC;
+    paramAll{subjInd} = param;
 end
 dC = dCAll; clear dAll
+param = paramAll; clear paramAll
 
 % Average voxels
 for subjInd = 1:length(subjList)
     for sessInd = 1:2
+        % Between-session feature selection
         sess = ['sess' num2str(sessInd)];
-        dC{subjInd}.(sess).data = mean(dC{subjInd}.(sess).data,2);
-        dC{subjInd}.(sess).hr = mean(dC{subjInd}.(sess).hr,2);
+        sessFeat = ['sess' num2str(~(sessInd-1)+1)];
+        ind = true(1,size(dC{subjInd}.(sess).data,2));
+        ind = ind & dC{subjInd}.(sessFeat).anyCondActivation_mask;
+        ind = ind & ~dC{subjInd}.(sessFeat).vein_mask;
+
+        dC{subjInd}.(sess).data = mean(dC{subjInd}.(sess).data(:,ind,:),2);
+        dC{subjInd}.(sess).hr = mean(dC{subjInd}.(sess).hr(:,ind,:,:),2);
     end
 end
 
@@ -328,7 +339,7 @@ xData = [];
 xLabel = [];
 for subjInd = 1:length(subjList)
     for sessInd = 1:2
-        
+
         tmp = squeeze(dC{subjInd}.(['sess' num2str(sessInd)]).data);
         tmp = mean(tmp,1);
         xData = cat(1,xData,tmp);
@@ -479,4 +490,3 @@ if figOption.save
     curExt = 'jpg';
     saveas(fGroup(1),[curFile '.' curExt]); disp([curFile '.' curExt])
 end
-
