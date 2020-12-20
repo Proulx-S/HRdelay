@@ -99,6 +99,8 @@ for subjInd = 1:length(subjList)
     a = load_nii(fullfile(funPath,funLevel1,subjList{subjInd},tmpFilename));
     brain = flip(permute(a.img,[3 1 2 4]),1); clear a
     brain = brain(:,:,:,1);
+%     figure('WindowStyle','docked')
+%     imagesc(brain(:,:,10)); colormap gray
 
     % Mask of V1
     tmpFilename = dir(fullfile(anatPath,anatLevel,subjList{subjInd},'v1.nii*'));
@@ -108,6 +110,9 @@ for subjInd = 1:length(subjList)
     maskV1 = flipdim(permute(a.img,[3 1 2 4]),1); clear a
     maskV1(:,:,1) = zeros(size(maskV1,1),size(maskV1,2));% Remove corrupted slices
     maskV1(:,:,end) = zeros(size(maskV1,1),size(maskV1,2));% Remove corrupted slices
+%     figure('WindowStyle','docked')
+%     imagesc(maskV1(:,:,10)); colormap gray
+
 
     % Mask of eccentricity (stimulus retinotopic representation)
     tmpFilename = dir(fullfile(anatPath,anatLevel,subjList{subjInd},'lh.ecc.nii*'));
@@ -121,12 +126,19 @@ for subjInd = 1:length(subjList)
     find((eccL~=0 & eccR~=0));
     ecc = eccL; ecc(eccR~=0) = eccR(eccR~=0); clear eccL eccR
     maskECC = ecc>1 & ecc<6;
+%     figure('WindowStyle','docked')
+%     imagesc(maskECC(:,:,10)); colormap gray
+
 
     % Mask of ROI
     maskROI = maskV1 & maskECC;
+%     figure('WindowStyle','docked')
+%     imagesc(maskROI(:,:,10)); colormap gray
 
     % Mask of fit area
     maskFitArea = results.mask;
+%     figure('WindowStyle','docked')
+%     imagesc(maskFitArea(:,:,10)); colormap gray
 
 
     %% Stats for later between-session feature selection
@@ -141,10 +153,10 @@ for subjInd = 1:length(subjList)
         if length(exclusion.subj)>1; error('Need to code for multiple exclusions'); end
         if strcmp(exclusion.subjList{exclusion.subj},subjList{subjInd}) && exclusion.sess{1}==sessInd
 
-            ind = repeatLabel==exclusion.run{1} & sessLabel==exclusion.sess{1};
-            ind = ~ind;
+            runInd = repeatLabel==exclusion.run{1} & sessLabel==exclusion.sess{1};
+            runInd = ~runInd;
         else
-            ind = true(size(runLabel));
+            runInd = true(size(runLabel));
         end
 
         % Vein map (session-specific)
@@ -158,17 +170,21 @@ for subjInd = 1:length(subjList)
         if doVein
             switch veinSource
                 case 'reducedModelResid'
-                    featSel.(sess).vein_score(maskFitArea) = mean(results.OLS.mixed.veinFull(:,:,:,ind & sessLabel==sessInd),4);
+                    featSel.(sess).vein_score(maskFitArea) = mean(results.OLS.mixed.veinFull(:,:,:,runInd & sessLabel==sessInd),4);
                 case 'fullModelResid'
-                    featSel.(sess).vein_score(maskFitArea) = mean(results.OLS.mixed.veinReduced(:,:,:,ind & sessLabel==sessInd),4);
+                    featSel.(sess).vein_score(maskFitArea) = mean(results.OLS.mixed.veinReduced(:,:,:,runInd & sessLabel==sessInd),4);
             end
+%             figure('WindowStyle','docked')
+%             imagesc(featSel.(sess).vein_score(:,:,10));
             featSel.(sess).vein_thresh = prctile(featSel.(sess).vein_score(maskROI),100-featSel.(sess).vein_perc);
             % vein mask
             featSel.(sess).vein_mask = featSel.(sess).vein_score>featSel.(sess).vein_thresh;
+%             figure('WindowStyle','docked')
+%             imagesc(featSel.(sess).vein_mask(:,:,10));
         end
 
         % Activation map
-        featSel.(sess).anyCondActivation_doIt = ~strcmp(fitType,'none');
+        featSel.(sess).anyCondActivation_doIt = ~strcmp(threshType,'none');
         featSel.(sess).anyCondActivation_fitType = fitType;
         switch fitType
             case 'mixed'
@@ -181,6 +197,8 @@ for subjInd = 1:length(subjList)
             otherwise
                 error('X')
         end
+%         figure('WindowStyle','docked')
+%         imagesc(F(:,:,10))
         tmp = nan(size(brain)); tmp(maskFitArea) = F;
         F = tmp;
         [~,P] = getPfromF(F,df);
@@ -192,13 +210,20 @@ for subjInd = 1:length(subjList)
         featSel.(sess).anyCondActivation_threshType = threshType;
         featSel.(sess).anyCondActivation_threshVal = threshVal;
         % activation mask
-        if strcmp(featSel.(sess).anyCondActivation_threshType,'none')
-            featSel.(sess).anyCondActivation_mask = true(size(featSel.(sess).anyCondActivation_F));
-        else
+        if featSel.(sess).anyCondActivation_doIt
             featSel.(sess).anyCondActivation_mask = featSel.(sess).(['anyCondActivation_' upper(featSel.(sess).anyCondActivation_threshType)])<featSel.(sess).anyCondActivation_threshVal;
+        else
+            featSel.(sess).anyCondActivation_mask = true(size(featSel.(sess).anyCondActivation_F));
         end
-
     end
+%     figure('WindowStyle','docked')
+%     imagesc(featSel.(sess).anyCondActivation_F(:,:,10))
+%     figure('WindowStyle','docked')
+%     imagesc(featSel.(sess).anyCondActivation_P(:,:,10))
+%     figure('WindowStyle','docked')
+%     imagesc(featSel.(sess).anyCondActivation_FDR(:,:,10))
+%     figure('WindowStyle','docked')
+%     imagesc(featSel.(sess).anyCondActivation_mask(:,:,10))
 
     %% Plot masking
     if subjInd==figOption.subj || figOption.subj==inf
@@ -394,10 +419,11 @@ for subjInd = 1:length(subjList)
     [X,Y] = pol2cart(results.OLS.mixed.delay,results.OLS.mixed.amp);
     for sessInd = 1:2
         sess = ['sess' num2str(sessInd)];
-        ind = sessLabel==sessInd;
-        data.(sess).data = complex(X(:,:,:,ind),Y(:,:,:,ind));
-        data.(sess).condLabel = permute(condLabel(ind),[1 3 4 2]);
-        data.(sess).runLabel = permute(runLabel(ind),[1 3 4 2]);
+        runInd = sessLabel==sessInd;
+        data.(sess).data = complex(X(:,:,:,runInd),Y(:,:,:,runInd));
+        data.(sess).condLabel = permute(condLabel(runInd),[1 3 4 2]);
+        data.(sess).runLabel = permute(runLabel(runInd),[1 3 4 2]);
+%         [squeeze(data.(sess).condLabel) squeeze(data.(sess).runLabel)]
 
         cond1 = data.(sess).condLabel==1;
         cond2 = data.(sess).condLabel==2;
@@ -412,33 +438,40 @@ for subjInd = 1:length(subjList)
 
     hr.sess1 = resultsResp.OLS.mixed.sess1.resp;
     hr.sess2 = resultsResp.OLS.mixed.sess2.resp;
-    hr.info = 'x X y X z X TR X run X cond[ori1,ori2,plaid]';
+    hr.info = 'x X y X z X TR X repeat X cond[ori1,ori2,plaid]';
 
+%     figure('WindowStyle','docked')
+%     imagesc(abs(data.(sess).data(:,:,10,1,1)))
+    
+    
     %% Apply ROI mask and vectorize
     for sessInd = 1:2
         sess = ['sess' num2str(sessInd)];
         sz = size(data.(sess).data);
-        ind = false(sz(1:3));
-        ind(:) = maskROI(maskFitArea);
+        voxInd = false(sz(1:3));
+        voxInd(:) = maskROI(maskFitArea);
+%         figure('WindowStyle','docked')
+%         imagesc(voxInd(:,:,10))
 
         % sin responses
         d.(sess).data = permute(data.(sess).data,[4 5 1 2 3]);
-        d.(sess).data = d.(sess).data(:,:,ind);
+        d.(sess).data = d.(sess).data(:,:,voxInd);
         d.(sess).data = permute(d.(sess).data,[1 3 2]);
         d.(sess).hr = permute(hr.(sess),[4 5 6 1 2 3]);
-        d.(sess).hr = d.(sess).hr(:,:,:,ind);
+        d.(sess).hr = d.(sess).hr(:,:,:,voxInd);
         d.(sess).hr = permute(d.(sess).hr,[2 4 3 1]);
         d.(sess).runLabel = permute(data.(sess).runLabel,[4 5 1 2 3]);
         d.(sess).runLabel = permute(d.(sess).runLabel,[1 3 2]);
-        d.(sess).info = '%BOLD: run x vox x cond[ori1, ori2, plaid] X TR';
+        d.(sess).info = 'run x vox x cond[ori1, ori2, plaid] X TR';
 
         % feature slection stats
         fieldList = fields(featSel.(sess));
         for i = 1:length(fieldList)
-            if (isnumeric(featSel.(sess).(fieldList{i})) || islogical(featSel.(sess).(fieldList{i})) ) && length(size(featSel.(sess).(fieldList{i})))==3 && all(size(featSel.(sess).(fieldList{i}))==size(brain))
+            isDataField = (isnumeric(featSel.(sess).(fieldList{i})) || islogical(featSel.(sess).(fieldList{i})) ) && length(size(featSel.(sess).(fieldList{i})))==3 && all(size(featSel.(sess).(fieldList{i}))==size(brain));
+            if isDataField
                 tmp = nan(sz(1:3));
                 tmp(:) = featSel.(sess).(fieldList{i})(maskFitArea);
-                featSel.(sess).(fieldList{i}) = tmp(ind)';
+                featSel.(sess).(fieldList{i}) = tmp(voxInd)';
             end
         end
         featSel.(sess).info = '1 x vox';

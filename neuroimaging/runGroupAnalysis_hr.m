@@ -43,7 +43,9 @@ subjList = param.subjList;
 %% Load data
 dCAll = cell(size(subjList,1),1);
 for subjInd = 1:size(subjList,1)
-    load(fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]),'dC');
+    curFile = fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]);
+    disp(['loading ' curFile])
+    load(curFile,'dC');
     dCAll{subjInd} = dC;
 end
 dC = dCAll; clear dAll

@@ -44,7 +44,9 @@ subjList = param.subjList;
 dCAll = cell(size(subjList,1),1);
 paramAll = cell(size(subjList,1),1);
 for subjInd = 1:size(subjList,1)
-    load(fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]),'dC','param');
+    curFile = fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]);
+    disp(['loading: ' curFile])
+    load(curFile,'dC','param');
     dCAll{subjInd} = dC;
     paramAll{subjInd} = param;
 end

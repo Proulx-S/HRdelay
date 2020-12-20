@@ -44,7 +44,9 @@ subjList = param.subjList;
 dAll = cell(size(subjList,1),1);
 paramAll = cell(size(subjList,1),1);
 for subjInd = 1:size(subjList,1)
-    load(fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]),'d','param');
+    curFile = fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]);
+    disp(['loading: ' curFile])
+    load(curFile,'d','param');
     dAll{subjInd} = d;
     paramAll{subjInd} = param;
 end
@@ -52,7 +54,7 @@ end
 
 %% Visualize the scanner trigger problem
 clear tmp tmp1 tmp2 tmpData
-f = figure('WindowStyle','docked','visible','off');
+f = figure('WindowStyle','docked');
 
 sz = 0;
 for subjInd = 1:length(subjList)
@@ -124,15 +126,16 @@ if exist('exclusion','var') && ~isempty(exclusion) && ~isempty(exclusion.subj)
     if length(exclusion.subj)>1; error('Not coded for multiple exclusions'); end
     for i = 1:length(exclusion.subj)
         subjInd = find(ismember(subjList,exclusion.subjList{exclusion.subj(i)}));
-        sessInd = exclusion.sess{i};
+        sessInd = exclusion.sess{i}; sess = ['sess' num2str(sessInd)];
         runInd = exclusion.run{i};
         disp(['Excluding: ' subjList{subjInd} ', sess' num2str(sessInd) ', runTriplet(repeat)=' num2str(runInd)])
 
-        allFields = fields(dAll{subjInd}.(['sess' num2str(sessInd)]));
-        nRepeat = size(dAll{subjInd}.(['sess' num2str(sessInd)]).data,1);
+        allFields = fields(dAll{subjInd}.(sess));
+        nRepeat = size(dAll{subjInd}.(sess).data,1);
         for ii = 1:length(allFields)
-            if size(dAll{subjInd}.(['sess' num2str(sessInd)]).(allFields{ii}),1)==nRepeat && isnumeric(dAll{subjInd}.(['sess' num2str(sessInd)]).(allFields{ii}))
-                dAll{subjInd}.(['sess' num2str(sessInd)]).(allFields{ii})(runInd,:,:,:) = [];
+            isDataField = ( isnumeric(dAll{subjInd}.(sess).(allFields{i})) || islogical(dAll{subjInd}.(sess).(allFields{i})) ) && length(size(dAll{subjInd}.(sess).(allFields{i})))==3 && size(dAll{subjInd}.(sess).(allFields{i}),1)==nRepeat;
+            if isDataField
+                dAll{subjInd}.(sess).(allFields{ii})(runInd,:,:,:) = [];
             end
         end
     end
