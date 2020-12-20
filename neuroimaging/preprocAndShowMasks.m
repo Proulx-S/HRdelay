@@ -170,6 +170,7 @@ for subjInd = 1:length(subjList)
         if doVein
             switch veinSource
                 case 'reducedModelResid'
+%                     save('C:\Users\sebas\Desktop\branchVein')
                     featSel.(sess).vein_score(maskFitArea) = mean(results.OLS.mixed.veinFull(:,:,:,runInd & sessLabel==sessInd),4);
                 case 'fullModelResid'
                     featSel.(sess).vein_score(maskFitArea) = mean(results.OLS.mixed.veinReduced(:,:,:,runInd & sessLabel==sessInd),4);

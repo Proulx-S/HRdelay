@@ -31,6 +31,10 @@ for subjInd = 1:length(main.d)
         x = main.vein{subjInd}.(sess).noiseOverMean;
         y = branch.dC{subjInd}.(sess).vein_score;
         
+        x = main.vein{subjInd}.sess1.noiseOverMean;
+        y = branch.dC{subjInd}.sess2.vein_score;
+        
+        
 %         x = main.vein{subjInd}.(sess).thresh;
 %         y = branch.dC{subjInd}.(sess).vein_thresh;
 
@@ -50,4 +54,15 @@ for subjInd = 1:length(main.d)
     end
 end
 all(ans)
+
+
+
+clear all
+close all
+
+% main = load('C:\Users\sebas\Desktop\main.mat');
+load('C:\Users\sebas\Desktop\branchVein.mat');
+featSel.(sess).vein_score(maskFitArea) = mean(results.OLS.mixed.veinFull(:,:,:,runInd & sessLabel==sessInd),4);
+imagesc(featSel.(sess).vein_score(:,:,10))
+
 
