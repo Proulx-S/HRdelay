@@ -154,6 +154,7 @@ for subjInd = 1:length(subjList)
             vein.(['sess' num2str(sessInd)]).noiseOverMean = nan(size(maskROI));
             switch veinSource
                 case 'reducedModelResid'
+                    save('C:\Users\sebas\Desktop\mainVein')
                     vein.(['sess' num2str(sessInd)]).noiseOverMean(maskFitArea) = mean(results.OLS.mixed.veinFull(:,:,:,ind),4);
                 case 'fullModelResid'
                     vein.(['sess' num2str(sessInd)]).noiseOverMean(maskFitArea) = mean(results.OLS.mixed.veinReduced(:,:,:,ind),4);
