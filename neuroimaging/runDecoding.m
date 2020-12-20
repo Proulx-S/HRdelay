@@ -83,8 +83,6 @@ end
 dC = dCAll; clear dAll
 sessList = fields(dC{1});
 
-save('C:\Users\sebas\Desktop\branch','dC')
-return
 
 %% Between-session feature selection
 dP = cell(length(dC),2);
