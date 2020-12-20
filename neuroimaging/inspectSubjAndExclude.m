@@ -250,13 +250,14 @@ for subjInd = 1:length(subjList)
             filename = fullfile(pwd,mfilename);
             if ~exist(filename,'dir'); mkdir(filename); end
             filename = fullfile(filename,subjList{subjInd});
-            curFile = filename;
-            curExt = 'svg';
-            delete([curFile '.' curExt]); disp(['del old: ' curFile '.' curExt])
-            curExt = 'fig';
-            delete([curFile '.' curExt]); disp(['del old: ' curFile '.' curExt])
-            curExt = 'jpg';
-            delete([curFile '.' curExt]); disp(['del old: ' curFile '.' curExt])
+            curFile = dir([filename '.*']);
+            if ~isempty(curFile)
+                for ii = 1:length(curFile)
+                    delFile = fullfile(curFile(ii).folder,curFile(ii).name);
+                    disp(['delete old: ' delFile]);
+                    delete(delFile)
+                end
+            end
         end
     end
 end

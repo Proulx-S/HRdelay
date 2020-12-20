@@ -373,19 +373,14 @@ for subjInd = 1:length(subjList)
             if ~exist(filename,'dir'); mkdir(filename); end
             filename = fullfile(filename,[subjList{subjInd}]);
             for i = 1:length(f)
-                curFile = [filename '_' num2str(i)];
-                curExt = 'svg';
-                if exist([curFile '.' curExt],'file')
-                    disp(['del old:' curFile '.' curExt]);
-                    delete([curFile '.' curExt]); end
-                curExt = 'fig';
-                if exist([curFile '.' curExt],'file')
-                    disp(['del old:' curFile '.' curExt]);
-                    delete([curFile '.' curExt]); end
-                curExt = 'jpg';
-                if exist([curFile '.' curExt],'file')
-                    disp(['del old:' curFile '.' curExt]);
-                    delete([curFile '.' curExt]); end
+                curFile = dir([filename '_' num2str(i) '.*']);
+                if ~isempty(curFile)
+                    for ii = 1:length(curFile)
+                        delFile = fullfile(curFile(ii).folder,curFile(ii).name);
+                        disp(['delete old: ' delFile]);
+                        delete(delFile)
+                    end
+                end
             end
         end
     end
