@@ -31,6 +31,10 @@ svmSpace = 'cartNoDelay_HT';
 resTmp = runDecoding(svmSpace);
 res.(svmSpace) = resTmp;
 
+svmSpace = 'cartReal_T';
+resTmp = runDecoding(svmSpace);
+res.(svmSpace) = resTmp;
+
 plotDecoding(res,figOption)
 return
 
