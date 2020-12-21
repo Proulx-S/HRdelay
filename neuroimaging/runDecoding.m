@@ -96,7 +96,7 @@ for subjInd = 1:length(dC)
         ind.(sess) = ind.(sess) & dC{subjInd}.(sess).anyCondActivation_mask;
         % Select most discrimant voxels
         switch SVMspace
-            case {'cart' 'cart_HT' 'cartNoAmp' 'cartNoAmp_HT' 'cartNoDelay' 'cartNoDelay_HT' 'cartReal_T' 'polMag' 'polMag_T'}
+            case {'cart' 'cart_HT' 'cartNoAmp' 'cartNoAmp_HT' 'cartNoDelay' 'cartNoDelay_HT' 'polMag' 'polMag_T'}
             case {'cart_HTbSess' 'cartNoAmp_HTbSess' 'cartNoDelay_HTbSess'}
                 x = dC{subjInd}.(sess).data(:,:,1:2);
                 switch SVMspace
@@ -159,9 +159,91 @@ end
 clear dC
 
 
-%% Example plot of trigonometric (polar) representation
+%% Example plot of trigonometric (polar representation)
 [~,b] = max(dP{1}.anyCondActivation_F);
-f = plotPolNormExample(dP{1}.data(:,b,1:3),SVMspace);
+x = dP{1}.data(:,b,1:3);
+
+switch SVMspace
+    case {'hr' 'hrNoAmp'}
+        % does not apply
+    case {'cart' 'cart_HT' 'cart_HTbSess'...
+            'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'...
+            'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'...
+            'polMag' 'polMag_T'}
+        % set to mean rho=1 and mean theta=0 in each voxel)
+        switch SVMspace
+            case {'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'}
+                % but set rho=1 for each vector (omit any amplitude information)
+                rho = 1;
+            case {'cart' 'cart_HT' 'cart_HTbSess'...
+                    'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'...
+                    'polMag' 'polMag_T'}
+                rho = abs(x)./abs(mean(x(:),1));
+            otherwise
+                error('X')
+        end
+        switch SVMspace
+            case {'cart' 'cart_HT' 'cart_HTbSess'...
+                    'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'}
+                theta = angle(x) - angle(mean(x(:),1)); theta = wrapToPi(theta);
+            case {'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'...
+                    'polMag' 'polMag_T'}
+                % but set theta=0 for each vector (omit any delay information)
+                theta = 0;
+            otherwise
+                error('X')
+        end
+        [u,v] = pol2cart(theta,rho);
+        xAfter = complex(u,v); clear u v
+    otherwise
+        error('X')
+end
+
+f = figure('WindowStyle','docked');
+subplot(1,2,1); clear hPP
+% polarplot(angle(x(:)),abs(x(:)),'.'); hold on
+for condInd = 1:3
+    hPP(condInd) = polarplot(angle(x(:,:,condInd)),abs(x(:,:,condInd)),'o'); hold on
+    hPP(condInd).MarkerFaceColor = hPP(condInd).Color;
+    hPP(condInd).MarkerEdgeColor = 'w';
+    hPP(condInd).MarkerSize = 3.5;
+end
+drawnow
+ax1 = gca;
+
+subplot(1,2,2);
+% polarplot(angle(xAfter(:)),abs(xAfter(:)),'.'); hold on
+for condInd = 1:3
+    hPP(condInd) = polarplot(angle(xAfter(:,:,condInd)),abs(xAfter(:,:,condInd)),'o'); hold on
+    hPP(condInd).MarkerFaceColor = hPP(condInd).Color;
+    hPP(condInd).MarkerEdgeColor = 'w';
+    hPP(condInd).MarkerSize = 3.5;
+end
+drawnow
+ax2 = gca;
+
+ax = ax1;
+ax.ThetaTickLabel = 12-ax.ThetaTick(1:end)/360*12;
+ax.ThetaTickLabel(1,:) = '0 ';
+ax.ThetaAxis.Label.String = {'delay' '(sec)'};
+ax.ThetaAxis.Label.Rotation = 0;
+ax.ThetaAxis.Label.HorizontalAlignment = 'left';
+ax.RAxis.Label.String = 'amp (%BOLD)';
+ax.RAxis.Label.Rotation = 80;
+ax.Title.String = 'before';
+
+ax = ax2;
+ax.ThetaTickLabel = (-wrapTo180(ax.ThetaTick(1:end))/360*12);
+ax.ThetaTickLabel(1,:) = '0 ';
+% ax.ThetaAxis.Label.String = {'delay' '(sec)'};
+% ax.ThetaAxis.Label.Rotation = 0;
+% ax.ThetaAxis.Label.HorizontalAlignment = 'left';
+ax.Title.String = 'after';
+
+hSup = suptitle({'Polar space normalization' SVMspace});
+hSup.Interpreter = 'none';
+drawnow
+
 if figOption.save
     filename = fullfile(pwd,mfilename);
     if ~exist(filename,'dir'); mkdir(filename); end
@@ -184,7 +266,6 @@ switch SVMspace
     case {'cart' 'cart_HT' 'cart_HTbSess'...
             'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'...
             'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'...
-            'cartReal_T'...
             'polMag' 'polMag_T'}
         % Does not apply
     otherwise
@@ -221,7 +302,6 @@ for i = 1:numel(dP)
         case {'cart' 'cart_HT' 'cart_HTbSess'...
                 'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'...
                 'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'...
-                'cartReal_T'...
                 'polMag' 'polMag_T'}
             nSamplePaire = size(dP{i}.data,1);
             x1 = dP{i}.data(:,:,1);
@@ -276,16 +356,16 @@ for i = 1:numel(dP)
         res.nDim(i) = mean(d);
         switch SVMspace
             case 'hr'
-                res.nVox1(i) = size(dP{i}.hr,2); % before within-session feature selection
-                res.nVox2(i) = mean(d)./size(dP{i}.hr,4); % before within-session feature selection
+                res.nVox1(i) = size(dP{i}.hr,2);
+                res.nVox2(i) = mean(d)./size(dP{i}.hr,4);
             case {'cart' 'cart_HT' 'cart_HTbSess'...
                     'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'...
                     'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'}
-                res.nVox1(i) = size(dP{i}.data,2); % before within-session feature selection
-                res.nVox2(i) = mean(d)./2; % before within-session feature selection
-            case {'polMag' 'polMag_T' 'cartReal_T'}
-                res.nVox1(i) = size(dP{i}.data,2); % before within-session feature selection
-                res.nVox2(i) = mean(d); % before within-session feature selection
+                res.nVox1(i) = size(dP{i}.data,2);
+                res.nVox2(i) = mean(d)./2;
+            case {'polMag' 'polMag_T'}
+                res.nVox1(i) = size(dP{i}.data,2);
+                res.nVox2(i) = mean(d);
             otherwise
                 error('X')
         end
@@ -369,21 +449,77 @@ yTe = nan(length(y),1);
 yHatTe = nan(length(y),1);
 d = nan(length(kList),1);
 for kInd = 1:length(kList)
+    x = X;
+
     % Split train and test
     te = k==kList(kInd);
 
     % Polar space normalization
-    x = polarSpaceNormalization(X,te,SVMspace);
+    switch SVMspace
+        case {'hr' 'hrNoAmp'}
+            % does not apply
+        case {'cart' 'cart_HT' 'cart_HTbSess'...
+                'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'...
+                'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'...
+                'polMag' 'polMag_T'}
+            % set to mean rho=1 and mean theta=0 in each voxel)
+            switch SVMspace
+                case {'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'}
+                    % but set rho=1 for each vector (omit any amplitude information)
+                    rho = 1;
+                case {'cart' 'cart_HT' 'cart_HTbSess'...
+                        'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'...
+                        'polMag' 'polMag_T'}
+                    rho = abs(x)./abs(mean(x(~te,:),1));
+                otherwise
+                    error('X')
+            end
+            switch SVMspace
+                case {'cart' 'cart_HT' 'cart_HTbSess'...
+                        'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'}
+                    theta = angle(x) - angle(mean(x(~te,:),1)); theta = wrapToPi(theta);
+                case {'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'...
+                        'polMag' 'polMag_T'}
+                    % but set theta=0 for each vector (omit any delay information)
+                    theta = 0;
+                otherwise
+                    error('X')
+            end
+            [u,v] = pol2cart(theta,rho);
+            x = complex(u,v); clear u v
+        otherwise
+            error('X')
+    end
 
     % Within-session feature selection
     % get feature selection stats
-    featStat = getFeatStat_ws(x,y,te,SVMspace);
-    
+    switch SVMspace
+        case 'cart_HT'
+            featStat = nan(1,size(x,2));
+            for voxInd = 1:size(x,2)
+                xTmp = cat(1,x(~te & y==1,voxInd),x(~te & y==2,voxInd));
+%                 stats = T2Hot2d([zscore(real(xTmp)) zscore(imag(xTmp))]);
+                stats = T2Hot2d([real(xTmp) imag(xTmp)]);
+                featStat(voxInd) = stats.T2;
+            end
+        case 'cartNoAmp_HT'
+            featStat = nan(1,size(x,2));
+            for voxInd = 1:size(x,2)
+                [~, F] = circ_htest(angle(x(~te & y==1,voxInd)), angle(x(~te & y==2,voxInd)));
+                featStat(voxInd) = F;
+            end
+        case {'polMag_T' 'cartNoDelay_HT'}
+            [~,~,~,STATS] = ttest(abs(x(~te & y==1,:)),abs(x(~te & y==2,:)));
+            featStat = STATS.tstat;
+        case {'cart' 'cartNoAmp' 'cartNoDelay'...
+                'cart_HTbSess' 'cartNoAmp_HTbSess' 'cartNoDelay_HTbSess'...
+                'polMag'}
+        otherwise
+            error('X')
+    end
     % apply feature selection
     switch SVMspace
-        case {'cart_HT' 'cartNoAmp_HT' 'cartNoDelay_HT'...
-                'cartReal_T'...
-                'polMag_T'}
+        case {'cart_HT' 'cartNoAmp_HT' 'cartNoDelay_HT' 'polMag_T'}
             featStat = abs(featStat);
             x = x(:,featStat>prctile(featStat,10));
         case {'cart' 'cartNoAmp' 'cartNoDelay'...
@@ -401,7 +537,7 @@ for kInd = 1:length(kList)
                 'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'}
             x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
             x = cat(2,real(x),imag(x));
-        case {'cartReal' 'cartReal_T'}
+        case 'cartReal'
             x = real(x);
             x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
         case 'cartImag'
@@ -431,163 +567,3 @@ for kInd = 1:length(kList)
     [yTe(te,1), ~, yHatTe(te,1)] = svmpredict(y(te,:),x(te,:),model,'-q');
     d(kInd) = size(x,2);
 end
-
-function x = polarSpaceNormalization(x,te,SVMspace)
-sz = size(x);
-nDim = ndims(x);
-switch nDim
-    case 2
-    case 3
-        % Redim
-        xTmp = nan(prod(sz([1 3])),sz(2));
-        teTmp = nan(prod(sz([1 3])),1);
-        for i = 1:sz(3)
-            xTmp( (1:sz(1)) + sz(1)*(i-1) , : ) = x(:,:,i);
-            teTmp( (1:sz(1)) + sz(1)*(i-1) , 1 ) = false(sz(1),1);
-        end
-        x = xTmp;
-        te = teTmp;
-    otherwise
-        error('dim1 must be samples and dim2 voxels, that''s it')
-end
-
-switch SVMspace
-    case {'hr' 'hrNoAmp'}
-        % does not apply
-    case {'cart' 'cart_HT' 'cart_HTbSess'...
-            'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'...
-            'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'...
-            'cartReal_T'...
-            'polMag' 'polMag_T'}
-        % set to mean rho=1 and mean theta=0 in each voxel)
-        switch SVMspace
-            case {'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'}
-                % but set rho=1 for each vector (omit any amplitude information)
-                rho = 1;
-            case {'cart' 'cart_HT' 'cart_HTbSess'...
-                    'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'...
-                    'cartReal_T'...
-                    'polMag' 'polMag_T'}
-                rho = abs(x)./abs(mean(x(~te,:),1));
-            otherwise
-                error('X')
-        end
-        switch SVMspace
-            case {'cart' 'cart_HT' 'cart_HTbSess'...
-                    'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'...
-                    'cartReal_T'}
-                theta = angle(x) - angle(mean(x(~te,:),1)); theta = wrapToPi(theta);
-            case {'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'...
-                    'polMag' 'polMag_T'}
-                % but set theta=0 for each vector (omit any delay information)
-                theta = 0;
-            otherwise
-                error('X')
-        end
-        [u,v] = pol2cart(theta,rho);
-        x = complex(u,v); clear u v
-    otherwise
-        error('X')
-end
-
-if nDim==3
-    % Redim
-    xTmp = nan(sz);
-    for i = 1:sz(3)
-        xTmp(:,:,i) = x( (1:sz(1)) + sz(1)*(i-1) , : );
-    end
-    x = xTmp;
-end
-
-
-function featStat = getFeatStat_ws(x,y,te,SVMspace)
-switch SVMspace
-    case 'cart_HT'
-        x = [real(x) imag(x)];
-        
-        nVox = size(x,2);
-        featStat = nan(1,nVox);
-        x = cat(1,x(~te & y==1,:),x(~te & y==2,:));
-        for voxInd = 1:nVox
-            stats = T2Hot2d(x(:,[0 nVox]+voxInd));
-            featStat(voxInd) = stats.T2;
-        end
-    case 'cartNoAmp_HT'
-        x = angle(x);
-        
-        featStat = nan(1,size(x,2));
-        for voxInd = 1:size(x,2)
-            [~, F] = circ_htest(x(~te & y==1,voxInd), x(~te & y==2,voxInd));
-            featStat(voxInd) = F;
-        end
-    case {'polMag_T' 'cartNoDelay_HT'}
-        x = abs(x);
-        
-        [~,~,~,STATS] = ttest(x(~te & y==1,:),x(~te & y==2,:));
-        featStat = STATS.tstat;
-    case 'cartReal_T'
-        x = real(x);
-        
-        [~,~,~,STATS] = ttest(x(~te & y==1,:),x(~te & y==2,:));
-        featStat = STATS.tstat;
-    case {'cart' 'cartNoAmp' 'cartNoDelay'...
-            'cart_HTbSess' 'cartNoAmp_HTbSess' 'cartNoDelay_HTbSess'...
-            'polMag'}
-    otherwise
-        error('X')
-end
-
-function f = plotPolNormExample(x,SVMspace)
-
-
-f = figure('WindowStyle','docked');
-subplot(1,2,1); clear hPP
-% polarplot(angle(x(:)),abs(x(:)),'.'); hold on
-for condInd = 1:3
-    hPP(condInd) = polarplot(angle(x(:,:,condInd)),abs(x(:,:,condInd)),'o'); hold on
-    hPP(condInd).MarkerFaceColor = hPP(condInd).Color;
-    hPP(condInd).MarkerEdgeColor = 'w';
-    hPP(condInd).MarkerSize = 3.5;
-end
-drawnow
-hPP1 = hPP; clear hPP
-ax1 = gca;
-
-% Normalize
-te = false(size(x,1),1);
-x = polarSpaceNormalization(x,te,SVMspace);
-
-% Plot after
-subplot(1,2,2);
-% polarplot(angle(xAfter(:)),abs(xAfter(:)),'.'); hold on
-for condInd = 1:3
-    hPP(condInd) = polarplot(angle(x(:,:,condInd)),abs(x(:,:,condInd)),'o'); hold on
-    hPP(condInd).MarkerFaceColor = hPP(condInd).Color;
-    hPP(condInd).MarkerEdgeColor = 'w';
-    hPP(condInd).MarkerSize = 3.5;
-end
-drawnow
-hPP2 = hPP; clear hPP
-ax2 = gca;
-
-ax = ax1;
-ax.ThetaTickLabel = 12-ax.ThetaTick(1:end)/360*12;
-ax.ThetaTickLabel(1,:) = '0 ';
-ax.ThetaAxis.Label.String = {'delay' '(sec)'};
-ax.ThetaAxis.Label.Rotation = 0;
-ax.ThetaAxis.Label.HorizontalAlignment = 'left';
-ax.RAxis.Label.String = 'amp (%BOLD)';
-ax.RAxis.Label.Rotation = 80;
-ax.Title.String = 'before';
-
-ax = ax2;
-ax.ThetaTickLabel = (-wrapTo180(ax.ThetaTick(1:end))/360*12);
-ax.ThetaTickLabel(1,:) = '0 ';
-% ax.ThetaAxis.Label.String = {'delay' '(sec)'};
-% ax.ThetaAxis.Label.Rotation = 0;
-% ax.ThetaAxis.Label.HorizontalAlignment = 'left';
-ax.Title.String = 'after';
-
-hSup = suptitle({'Polar space normalization' SVMspace});
-hSup.Interpreter = 'none';
-drawnow
