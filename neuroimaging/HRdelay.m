@@ -4,8 +4,8 @@ addpath(genpath(fullfile(pwd,'matlabFun')));
 runFit
 
 fitType = 'fixed';
-threshType = 'fdr';
-veinPerc = 20;
+threshType = 'p';
+veinPerc = 40;
 figOption.save = 1;
 figOption.subj = 1; % subjInd, +inf for all subj
 % loadOption;
