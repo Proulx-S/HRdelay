@@ -538,8 +538,6 @@ switch SVMspace
 end
 
 function f = plotPolNormExample(x,SVMspace)
-
-
 f = figure('WindowStyle','docked');
 subplot(1,2,1); clear hPP
 % polarplot(angle(x(:)),abs(x(:)),'.'); hold on
