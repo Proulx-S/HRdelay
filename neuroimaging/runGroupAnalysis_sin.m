@@ -205,6 +205,8 @@ ax(spInd).YTickLabel = {'ori' 'plaid'};
 xlim([0 max(xData_theta(:)).*1.1])
 ax(spInd).PlotBoxAspectRatio = [1 0.2 1];
 box off
+hTxt = text(0,hb2.XData+hb2.BarWidth/2,['diff=' num2str(diff(xData_thetaMean(:,[4 3])),'%0.3fsec')],'VerticalAlignment','bottom');
+
 spInd = 2;
 axes(ax(spInd));
 hb = barh(xData_thetaMean(:,[1 2])); hold on
@@ -219,6 +221,8 @@ ax(spInd).YTickLabel = {'ori1' 'ori2'};
 xlim([0 max(xData_theta(:)).*1.1])
 ax(spInd).PlotBoxAspectRatio = [1 0.2 1];
 box off
+hTxt = text(0,hb2.XData+hb2.BarWidth/2,['diff=' num2str(diff(xData_thetaMean(:,[1 2])),'%0.3fsec')],'VerticalAlignment','bottom');
+
 
 disp('***')
 disp(['delay (plaid-ori) = ' num2str(diff(xData_thetaMean(:,[4 3])),'%0.3fs')])

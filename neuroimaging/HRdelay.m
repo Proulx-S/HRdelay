@@ -3,7 +3,7 @@ addpath(genpath(fullfile(pwd,'matlabFun')));
 
 runFit
 
-fitType = 'mixed';
+fitType = 'fixed';
 threshType = 'fdr';
 veinPerc = 20;
 figOption.save = 1;
