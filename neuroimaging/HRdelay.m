@@ -7,7 +7,7 @@ fitType = 'fixed';
 threshType = 'p';
 veinPerc = 20;
 figOption.save = 1;
-figOption.subj = inf; % subjInd, +inf for all subj
+figOption.subj = 1; % subjInd, +inf for all subj
 % loadOption;
 preprocAndShowMasks(fitType,threshType,veinPerc,figOption)
 
@@ -32,7 +32,7 @@ resTmp = runDecoding(svmSpace);
 res.(svmSpace) = resTmp;
 
 plotDecoding(res,figOption)
-
+return
 
 nPerm = 2^13;
 

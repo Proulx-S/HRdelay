@@ -170,6 +170,7 @@ if figOption.save
     f.Color = 'none';
     set(findobj(f.Children,'type','Axes'),'color','none')
     saveas(f,[filename '.svg']); disp([filename '.svg'])
+    saveas(f,[filename '.jpg']); disp([filename '.jpg'])
     f.Color = 'w';
     set(findobj(f.Children,'type','Axes'),'color','w')
     saveas(f,filename); disp([filename '.fig'])
