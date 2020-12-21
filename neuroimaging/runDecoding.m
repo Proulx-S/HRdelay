@@ -501,11 +501,11 @@ end
 
 
 function featStat = getFeatStat_ws(x,y,te,SVMspace)
+nVox = size(x,2);
 switch SVMspace
     case 'cart_HT'
         x = [real(x) imag(x)];
         
-        nVox = size(x,2);
         featStat = nan(1,nVox);
         x = cat(1,x(~te & y==1,:),x(~te & y==2,:));
         for voxInd = 1:nVox

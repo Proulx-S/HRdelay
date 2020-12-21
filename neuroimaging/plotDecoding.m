@@ -17,7 +17,7 @@ for spaceInd = 1:length(spaceList)
     acc = res.(spaceList{spaceInd}).acc;
     nObs = res.(spaceList{spaceInd}).nObs;
 %     p = res.(spaceList{spaceInd}).p;
-    
+
     acc = sum(acc.*nObs,2)./sum(nObs,2);
     nObs = sum(nObs,2);
     acc(end+1) = sum(acc.*nObs,1)./sum(nObs,1);
@@ -26,7 +26,7 @@ for spaceInd = 1:length(spaceList)
     [P,~,STATS] = signrank(acc(1:end-1),0.5,'tail','right');
     [~,pci] = binofit(round(acc.*nObs),nObs,0.1);
 %     [~,pci] = binofit(acc.*nObs,nObs,0.05);
-    
+
     accGroup(:,spaceInd) = acc(end);
     accSubj(:,spaceInd) = acc(1:end-1); clear acc
     nObsSubj(:,spaceInd) = nObs(1:end-1);
@@ -37,7 +37,7 @@ for spaceInd = 1:length(spaceList)
     accSubj95(:,spaceInd) = pci(1:end-1,2);
     accGroup5(1,spaceInd) = pci(end,1);
     accGroup95(1,spaceInd) = pci(end,2); clear pci
-    
+
     signedrank(1,spaceInd) = STATS.signedrank; clear STATS
     signedrankP(1,spaceInd) = P; clear P
 end
@@ -57,19 +57,19 @@ switch groupStatMethod
         done = 0; i = 0;
         while ~done
             i = i+1;
-            
+
             M = accPseudoMedian-i*delta;
             for spaceInd = 1:length(spaceList)
                 [P5(spaceInd),~,~] = signrank(accSubj(:,spaceInd),M(spaceInd),'tail','right');
             end
             accPseudoMedian5(P5>=0.05) = M(P5>=0.05);
-            
+
             M = accPseudoMedian+i*delta;
             for spaceInd = 1:length(spaceList)
                 [P95(spaceInd),~,~] = signrank(accSubj(:,spaceInd),M(spaceInd),'tail','left');
             end
             accPseudoMedian95(P95>=0.05) = M(P95>=0.05);
-            
+
             if all([P95 P5]<0.05); done=1; end
             groupE = accPseudoMedian;
             groupCI5 = accPseudoMedian5;
@@ -83,7 +83,7 @@ switch groupStatMethod
         error('X')
 end
 
-%% Pseudomedian 
+%% Pseudomedian
 
 f = figure('WindowStyle','docked');
 y = cat(1,accSubj,groupE)';
@@ -164,16 +164,5 @@ ax.YGrid = 'on';
 ax.Box = 'off';
 
 if figOption.save
-    filename = fullfile(pwd,mfilename);
-    if ~exist(filename,'dir'); mkdir(filename); end
-    filename = fullfile(filename,'acc');
-    f.Color = 'none';
-    set(findobj(f.Children,'type','Axes'),'color','none')
-    saveas(f,[filename '.svg']); disp([filename '.svg'])
-    saveas(f,[filename '.jpg']); disp([filename '.jpg'])
-    f.Color = 'w';
-    set(findobj(f.Children,'type','Axes'),'color','w')
-    saveas(f,filename); disp([filename '.fig'])
+    writeFig(f,mfilename,'acc')
 end
-
-
