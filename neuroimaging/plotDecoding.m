@@ -164,15 +164,7 @@ ax.YGrid = 'on';
 ax.Box = 'off';
 
 if figOption.save
-    filename = fullfile(pwd,mfilename);
-    if ~exist(filename,'dir'); mkdir(filename); end
-    filename = fullfile(filename,'acc');
-    f.Color = 'none';
-    set(findobj(f.Children,'type','Axes'),'color','none')
-    saveas(f,[filename '.svg']); disp([filename '.svg'])
-    f.Color = 'w';
-    set(findobj(f.Children,'type','Axes'),'color','w')
-    saveas(f,filename); disp([filename '.fig'])
+    writeFig(f,mfilename,'acc')
 end
 
 
