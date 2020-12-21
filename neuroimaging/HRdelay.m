@@ -5,7 +5,7 @@ runFit
 
 fitType = 'fixed';
 threshType = 'p';
-veinPerc = 40;
+veinPerc = 20;
 figOption.save = 1;
 figOption.subj = 1; % subjInd, +inf for all subj
 % loadOption;

@@ -92,8 +92,7 @@ for subjInd = 1:length(subjList)
     repeatLabel = repeatLabel(b);
     %     [runLabel' sessLabel' condLabel' repeatLabel']
 
-    %% Set masks
-    % Brain
+    %% Brain image
     tmpFilename = dir(fullfile(funPath,funLevel1,subjList{subjInd},'trun101_preprocessed.nii*'));
     if all(size(tmpFilename)==[1 1]); tmpFilename = tmpFilename.name; else; error('X'); end
     a = load_nii(fullfile(funPath,funLevel1,subjList{subjInd},tmpFilename));
@@ -101,8 +100,8 @@ for subjInd = 1:length(subjList)
     brain = brain(:,:,:,1);
 %     figure('WindowStyle','docked')
 %     imagesc(brain(:,:,10)); colormap gray
-
-    % Mask of V1
+    %% ROI mask
+    % Get mask of V1
     tmpFilename = dir(fullfile(anatPath,anatLevel,subjList{subjInd},'v1.nii*'));
     if all(size(tmpFilename)==[1 1]); tmpFilename = tmpFilename.name; else; error('X'); end
     %     tmpFilename = ls(fullfile(anatPath,anatLevel,subjList{subjInd},'v1.nii*'));
@@ -113,8 +112,7 @@ for subjInd = 1:length(subjList)
 %     figure('WindowStyle','docked')
 %     imagesc(maskV1(:,:,10)); colormap gray
 
-
-    % Mask of eccentricity (stimulus retinotopic representation)
+    % Get mask of eccentricity (stimulus retinotopic representation)
     tmpFilename = dir(fullfile(anatPath,anatLevel,subjList{subjInd},'lh.ecc.nii*'));
     if all(size(tmpFilename)==[1 1]); tmpFilename = tmpFilename.name; else; error('X'); end
     a = load_nii(fullfile(anatPath,anatLevel,subjList{subjInd},tmpFilename));
@@ -129,17 +127,15 @@ for subjInd = 1:length(subjList)
 %     figure('WindowStyle','docked')
 %     imagesc(maskECC(:,:,10)); colormap gray
 
-
-    % Mask of ROI
+    % Combine the two
     maskROI = maskV1 & maskECC;
 %     figure('WindowStyle','docked')
 %     imagesc(maskROI(:,:,10)); colormap gray
 
-    % Mask of fit area
+    % Also get th mask of fit area (because not all voxels were fitted)
     maskFitArea = results.mask;
 %     figure('WindowStyle','docked')
 %     imagesc(maskFitArea(:,:,10)); colormap gray
-
 
     %% Stats for later between-session feature selection
     exclusion.subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'};
@@ -158,31 +154,7 @@ for subjInd = 1:length(subjList)
         else
             runInd = true(size(runLabel));
         end
-
-        % Vein map (session-specific)
-        featSel.(sess).vein_doIt = doVein;
-        featSel.(sess).vein_source = veinSource;
-        featSel.(sess).vein_score = nan(size(brain));
-        featSel.(sess).vein_perc = veinPerc;
-        featSel.(sess).vein_thresh = nan;
-        featSel.(sess).vein_mask = false(size(brain));
-
-        if doVein
-            switch veinSource
-                case 'fullModelResid'
-                    featSel.(sess).vein_score(maskFitArea) = mean(results.OLS.mixed.veinFull(:,:,:,runInd & sessLabel==sessInd),4);
-                case 'reducedModelResid'
-                    featSel.(sess).vein_score(maskFitArea) = mean(results.OLS.mixed.veinReduced(:,:,:,runInd & sessLabel==sessInd),4);
-            end
-%             figure('WindowStyle','docked')
-%             imagesc(featSel.(sess).vein_score(:,:,10));
-            featSel.(sess).vein_thresh = prctile(featSel.(sess).vein_score(maskROI),100-featSel.(sess).vein_perc);
-            % vein mask
-            featSel.(sess).vein_mask = featSel.(sess).vein_score>featSel.(sess).vein_thresh;
-%             figure('WindowStyle','docked')
-%             imagesc(featSel.(sess).vein_mask(:,:,10));
-        end
-
+        
         % Activation map
         featSel.(sess).anyCondActivation_doIt = ~strcmp(threshType,'none');
         featSel.(sess).anyCondActivation_fitType = fitType;
@@ -197,8 +169,6 @@ for subjInd = 1:length(subjList)
             otherwise
                 error('X')
         end
-%         figure('WindowStyle','docked')
-%         imagesc(F(:,:,10))
         tmp = nan(size(brain)); tmp(maskFitArea) = F;
         F = tmp;
         [~,P] = getPfromF(F,df);
@@ -214,6 +184,45 @@ for subjInd = 1:length(subjList)
             featSel.(sess).anyCondActivation_mask = featSel.(sess).(['anyCondActivation_' upper(featSel.(sess).anyCondActivation_threshType)])<featSel.(sess).anyCondActivation_threshVal;
         else
             featSel.(sess).anyCondActivation_mask = true(size(featSel.(sess).anyCondActivation_F));
+        end
+%         figure('WindowStyle','docked')
+%         imagesc(featSel.(sess).anyCondActivation_F(:,:,10))
+%         imagesc(featSel.(sess).anyCondActivation_mask(:,:,10))
+%         imagesc(maskROI(:,:,10))
+%         imagesc(featSel.(sess).anyCondActivation_mask(:,:,10)&maskROI(:,:,10))
+        
+        % Vein map (session-specific)
+        featSel.(sess).vein_doIt = doVein;
+        featSel.(sess).vein_source = veinSource;
+        featSel.(sess).vein_score = nan(size(brain));
+        featSel.(sess).vein_perc = veinPerc;
+        featSel.(sess).vein_thresh = nan;
+        featSel.(sess).vein_mask = false(size(brain));
+
+        if doVein
+            switch veinSource
+                case 'fullModelResid'
+                    featSel.(sess).vein_score(maskFitArea) = mean(results.OLS.mixed.veinFull(:,:,:,runInd & sessLabel==sessInd),4);
+                case 'reducedModelResid'
+                    featSel.(sess).vein_score(maskFitArea) = mean(results.OLS.mixed.veinReduced(:,:,:,runInd & sessLabel==sessInd),4);
+            end
+            % get threshold as the percentile of ACTIVE (see Activation map above) voxels in ROI
+            maskTmp = featSel.(sess).anyCondActivation_mask & maskROI;
+%             % get threshold as percentile of voxels in ROI
+%             maskTmp = maskROI;
+            featSel.(sess).vein_thresh = prctile(featSel.(sess).vein_score(maskTmp),100-featSel.(sess).vein_perc);
+            % get mask
+            featSel.(sess).vein_mask = featSel.(sess).vein_score>featSel.(sess).vein_thresh;
+            figure('WindowStyle','docked')
+            im = featSel.(sess).vein_score;
+            imagesc(im(:,:,10))
+            maskTmp = ~featSel.(sess).vein_mask;
+            imagesc(maskTmp(:,:,10));
+            maskTmp = ~featSel.(sess).vein_mask & maskROI;
+            imagesc(maskTmp(:,:,10));
+            maskTmp = ~featSel.(sess).vein_mask & maskROI & featSel.(sess).anyCondActivation_mask;
+            imagesc(maskTmp(:,:,10));
+            sum(maskTmp(:))
         end
     end
 %     figure('WindowStyle','docked')
@@ -266,10 +275,10 @@ for subjInd = 1:length(subjList)
         % thresholded
         f(end+1) = figure('WindowStyle','docked','color','w');
         axBak = plotIm(axes,brain(:,:,slice));
-        mask = maskROI;
-        mask = mask & featSel.(sess).anyCondActivation_mask;
-        mask = mask & ~featSel.(sess).vein_mask;
-        im(~mask(:,:,slice)) = nan;
+        maskTmp = maskROI;
+        maskTmp = maskTmp & featSel.(sess).anyCondActivation_mask;
+        maskTmp = maskTmp & ~featSel.(sess).vein_mask;
+        im(~maskTmp(:,:,slice)) = nan;
         axOver = plotIm(axes,im,cLim);
         alphaData = ~isnan(im);
         makeOverlay(axBak,axOver,alphaData,cMap_F,'log',cLim)
