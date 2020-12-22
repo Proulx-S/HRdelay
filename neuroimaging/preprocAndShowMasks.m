@@ -278,7 +278,7 @@ for subjInd = 1:length(subjList)
         featSel.(sess).discrim_P(maskROI) = featP;
         % get thresh based on percentile of ACTIVE NON-VEIN ROI voxels
         mask = ~featSel.(sess).vein_mask & featSel.(sess).anyCondActivation_mask;
-        featSel.(sess).discrim_T2thresh = prctile(featStat(mask(maskROI)),10);
+        featSel.(sess).discrim_T2thresh = prctile(featStat(mask(maskROI)),20);
         featSel.(sess).discrim_mask = featSel.(sess).discrim_T2>featSel.(sess).discrim_T2thresh;
     end
 %     figure('WindowStyle','docked')

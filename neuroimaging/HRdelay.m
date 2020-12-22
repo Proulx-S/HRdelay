@@ -35,7 +35,9 @@ svmSpace = 'cartReal';
 resTmp = runDecoding(svmSpace);
 res.(svmSpace) = resTmp;
 
-plotDecoding(res,figOption)
+plotDecoding_acc(res,figOption)
+plotDecoding_auc(res,figOption)
+plotDecoding_distT(res,figOption)
 return
 
 nPerm = 2^13;
