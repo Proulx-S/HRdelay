@@ -38,17 +38,21 @@ res.(svmSpace) = resTmp;
 plotDecoding_acc(res,figOption)
 plotDecoding_auc(res,figOption)
 plotDecoding_distT(res,figOption)
-return
 
-nPerm = 2^13;
 
-svmSpace = 'cart_HT';
+
+nPerm = 2^14;
+
+svmSpace = 'cart';
 res.(svmSpace) = runDecoding(res.(svmSpace),nPerm);
 
-svmSpace = 'cartNoAmp_HT';
+svmSpace = 'cartNoAmp';
 res.(svmSpace) = runDecoding(res.(svmSpace),nPerm);
 
-svmSpace = 'cartNoDelay_HT';
+svmSpace = 'cartNoDelay';
+res.(svmSpace) = runDecoding(res.(svmSpace),nPerm);
+
+svmSpace = 'cartReal';
 res.(svmSpace) = runDecoding(res.(svmSpace),nPerm);
 
 plotDecodingPerm(res,figOption)
