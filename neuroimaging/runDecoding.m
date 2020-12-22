@@ -20,8 +20,6 @@ else
     doPerm = 0;
 end
 
-disp('---');
-disp(['SVM space: ' SVMspace]);
 if doPerm
     filename = fullfile(pwd,mfilename);
     filename = fullfile(filename,[SVMspace '_' num2str(nPerm) 'perm']);
@@ -83,6 +81,8 @@ end
 dC = dCAll; clear dAll
 sessList = fields(dC{1});
 
+disp('---');
+disp(['SVM space: ' SVMspace]);
 
 %% Between-session feature selection
 dP = cell(length(dC),2);
@@ -95,49 +95,50 @@ for subjInd = 1:length(dC)
         % Select active voxels
         ind.(sess) = ind.(sess) & dC{subjInd}.(sess).anyCondActivation_mask;
         % Select most discrimant voxels
-        switch SVMspace
-            case {'cart' 'cart_HT' 'cartNoAmp' 'cartNoAmp_HT' 'cartNoDelay' 'cartNoDelay_HT' 'cartReal_T' 'polMag' 'polMag_T'}
-            case {'cart_HTbSess' 'cartNoAmp_HTbSess' 'cartNoDelay_HTbSess'}
-                x = dC{subjInd}.(sess).data(:,:,1:2);
-                switch SVMspace
-                    case 'cart_HTbSess'
-                    case 'cartNoAmp_HTbSess'
-                        [u,v] = pol2cart(angle(x),1);
-                        x = complex(u,v);
-                    case 'cartNoDelay_HTbSess'
-                        [u,v] = pol2cart(0,abs(x));
-                        x = complex(u,v);
-                    otherwise
-                        error('X')
-                end
-                y = []; for condInd = 1:size(x,3); y = cat(3,y,ones(size(x,1),1).*condInd); end
-                x2 = []; y2 = [];
-                for condInd = 1:size(x,3)
-                    x2 = cat(1,x2,x(:,:,condInd));
-                    y2 = cat(1,y2,y(:,:,condInd));
-                end
-                x = x2; y = y2; clear x2 y2
-                switch SVMspace
-                    case {'cart_HTbSess' 'cartNoAmp_HTbSess'}
-                        % hotelling's Tsquared for cond1 vs cond2 on [sin cos]
-                        featStat = nan(1,size(x,2));
-                        for voxInd = 1:size(x,2)
-                            xTmp = cat(1,x(y==1,voxInd),x(y==2,voxInd));
-                            stats = T2Hot2d([real(xTmp) imag(xTmp)]);
-                            featStat(voxInd) = stats.T2;
-                        end
-                    case 'cartNoDelay_HTbSess'
-                        % ttest for cond1 vs cond2 on sin (real)
-                        [~,~,~,STATS] = ttest(real(x(y==1,:)),real(x(y==2,:)));
-                        featStat = STATS.tstat;
-                    otherwise
-                        error('X')
-                end
-                % select top 90% most discriminant (active and non-vein) voxels
-                ind.(sess) = ind.(sess) & featStat>prctile(featStat(ind.(sess)),10);
-            otherwise
-                error('X')
-        end
+        ind.(sess) = ind.(sess) & dC{subjInd}.(sess).discrim_mask;
+%         switch SVMspace
+%             case {'cart' 'cart_HT' 'cartNoAmp' 'cartNoAmp_HT' 'cartNoDelay' 'cartNoDelay_HT' 'cartReal_T' 'polMag' 'polMag_T'}
+%             case {'cart_HTbSess' 'cartNoAmp_HTbSess' 'cartNoDelay_HTbSess'}
+%                 x = dC{subjInd}.(sess).data(:,:,1:2);
+%                 switch SVMspace
+%                     case 'cart_HTbSess'
+%                     case 'cartNoAmp_HTbSess'
+%                         [u,v] = pol2cart(angle(x),1);
+%                         x = complex(u,v);
+%                     case 'cartNoDelay_HTbSess'
+%                         [u,v] = pol2cart(0,abs(x));
+%                         x = complex(u,v);
+%                     otherwise
+%                         error('X')
+%                 end
+%                 y = []; for condInd = 1:size(x,3); y = cat(3,y,ones(size(x,1),1).*condInd); end
+%                 x2 = []; y2 = [];
+%                 for condInd = 1:size(x,3)
+%                     x2 = cat(1,x2,x(:,:,condInd));
+%                     y2 = cat(1,y2,y(:,:,condInd));
+%                 end
+%                 x = x2; y = y2; clear x2 y2
+%                 switch SVMspace
+%                     case {'cart_HTbSess' 'cartNoAmp_HTbSess'}
+%                         % hotelling's Tsquared for cond1 vs cond2 on [sin cos]
+%                         featStat = nan(1,size(x,2));
+%                         for voxInd = 1:size(x,2)
+%                             xTmp = cat(1,x(y==1,voxInd),x(y==2,voxInd));
+%                             stats = T2Hot2d([real(xTmp) imag(xTmp)]);
+%                             featStat(voxInd) = stats.T2;
+%                         end
+%                     case 'cartNoDelay_HTbSess'
+%                         % ttest for cond1 vs cond2 on sin (real)
+%                         [~,~,~,STATS] = ttest(real(x(y==1,:)),real(x(y==2,:)));
+%                         featStat = STATS.tstat;
+%                     otherwise
+%                         error('X')
+%                 end
+%                 % select top 90% most discriminant (active and non-vein) voxels
+%                 ind.(sess) = ind.(sess) & featStat>prctile(featStat(ind.(sess)),10);
+%             otherwise
+%                 error('X')
+%         end
     end
     % Apply voxel selection
     for sessInd = 1:length(sessList)
@@ -184,7 +185,7 @@ switch SVMspace
     case {'cart' 'cart_HT' 'cart_HTbSess'...
             'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'...
             'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'...
-            'cartReal_T'...
+            'cartReal' 'cartReal_T'...
             'polMag' 'polMag_T'}
         % Does not apply
     otherwise
@@ -221,7 +222,7 @@ for i = 1:numel(dP)
         case {'cart' 'cart_HT' 'cart_HTbSess'...
                 'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'...
                 'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'...
-                'cartReal_T'...
+                'cartReal' 'cartReal_T'...
                 'polMag' 'polMag_T'}
             nSamplePaire = size(dP{i}.data,1);
             x1 = dP{i}.data(:,:,1);
@@ -283,7 +284,8 @@ for i = 1:numel(dP)
                     'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'}
                 res.nVox1(i) = size(dP{i}.data,2); % before within-session feature selection
                 res.nVox2(i) = mean(d)./2; % before within-session feature selection
-            case {'polMag' 'polMag_T' 'cartReal_T'}
+            case {'polMag' 'polMag_T'...
+                    'cartReal' 'cartReal_T'}
                 res.nVox1(i) = size(dP{i}.data,2); % before within-session feature selection
                 res.nVox2(i) = mean(d); % before within-session feature selection
             otherwise
@@ -375,23 +377,23 @@ for kInd = 1:length(kList)
     % Polar space normalization
     x = polarSpaceNormalization(X,te,SVMspace);
 
-    % Within-session feature selection
-    % get feature selection stats
-    featStat = getFeatStat_ws(x,y,te,SVMspace);
-    
-    % apply feature selection
-    switch SVMspace
-        case {'cart_HT' 'cartNoAmp_HT' 'cartNoDelay_HT'...
-                'cartReal_T'...
-                'polMag_T'}
-            featStat = abs(featStat);
-            x = x(:,featStat>prctile(featStat,10));
-        case {'cart' 'cartNoAmp' 'cartNoDelay'...
-                'cart_HTbSess' 'cartNoAmp_HTbSess' 'cartNoDelay_HTbSess'...
-                'polMag'}
-        otherwise
-            error('X')
-    end
+%     % Within-session feature selection
+%     % get feature selection stats
+%     featStat = getFeatStat_ws(x,y,te,SVMspace);
+%     
+%     % apply feature selection
+%     switch SVMspace
+%         case {'cart_HT' 'cartNoAmp_HT' 'cartNoDelay_HT'...
+%                 'cartReal_T'...
+%                 'polMag_T'}
+%             featStat = abs(featStat);
+%             x = x(:,featStat>prctile(featStat,10));
+%         case {'cart' 'cartNoAmp' 'cartNoDelay'...
+%                 'cart_HTbSess' 'cartNoAmp_HTbSess' 'cartNoDelay_HTbSess'...
+%                 'polMag'}
+%         otherwise
+%             error('X')
+%     end
 
     % Cocktail bank normalization
     switch SVMspace
@@ -457,7 +459,7 @@ switch SVMspace
     case {'cart' 'cart_HT' 'cart_HTbSess'...
             'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'...
             'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'...
-            'cartReal_T'...
+            'cartReal' 'cartReal_T'...
             'polMag' 'polMag_T'}
         % set to mean rho=1 and mean theta=0 in each voxel)
         switch SVMspace
@@ -466,7 +468,7 @@ switch SVMspace
                 rho = 1;
             case {'cart' 'cart_HT' 'cart_HTbSess'...
                     'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'...
-                    'cartReal_T'...
+                    'cartReal' 'cartReal_T'...
                     'polMag' 'polMag_T'}
                 rho = abs(x)./abs(mean(x(~te,:),1));
             otherwise
@@ -475,7 +477,7 @@ switch SVMspace
         switch SVMspace
             case {'cart' 'cart_HT' 'cart_HTbSess'...
                     'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'...
-                    'cartReal_T'}
+                    'cartReal' 'cartReal_T'}
                 theta = angle(x) - angle(mean(x(~te,:),1)); theta = wrapToPi(theta);
             case {'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'...
                     'polMag' 'polMag_T'}

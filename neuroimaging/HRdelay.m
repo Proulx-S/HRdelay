@@ -7,7 +7,7 @@ fitType = 'fixed';
 threshType = 'p';
 veinPerc = 20;
 figOption.save = 1;
-figOption.subj = 1; % subjInd, +inf for all subj
+figOption.subj = inf; % subjInd, +inf for all subj
 % loadOption;
 preprocAndShowMasks(fitType,threshType,veinPerc,figOption)
 
@@ -19,19 +19,19 @@ runGroupAnalysis_hr(figOption)
 
 clear res
 
-svmSpace = 'cart_HT';
+svmSpace = 'cart';
 resTmp = runDecoding(svmSpace);
 res.(svmSpace) = resTmp;
 
-svmSpace = 'cartNoAmp_HT';
+svmSpace = 'cartNoAmp';
 resTmp = runDecoding(svmSpace);
 res.(svmSpace) = resTmp;
 
-svmSpace = 'cartNoDelay_HT';
+svmSpace = 'cartNoDelay';
 resTmp = runDecoding(svmSpace);
 res.(svmSpace) = resTmp;
 
-svmSpace = 'cartReal_T';
+svmSpace = 'cartReal';
 resTmp = runDecoding(svmSpace);
 res.(svmSpace) = resTmp;
 

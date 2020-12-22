@@ -1,7 +1,6 @@
 function preprocAndShowMasks(fitType,threshType,veinPerc,figOption)
 close all
 noMovement = 1;
-actuallyRun = 1;
 if ~exist('figOption','var') || isempty(figOption)
     figOption.save = 0;
     figOption.subj = 1; % 'all' or subjInd
@@ -50,11 +49,6 @@ subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'}';
 %make sure everything is forward slash for mac, linux pc compatibility
 for tmpPath = {'repoPath' 'dataDir' 'anatPath' 'funPath'}
     eval([char(tmpPath) '(strfind(' char(tmpPath) ',''\''))=''/'';']);
-end
-
-
-if ~actuallyRun
-    disp('Not actually running to save some time')
 end
 
 
@@ -136,7 +130,37 @@ for subjInd = 1:length(subjList)
     maskFitArea = results.mask;
 %     figure('WindowStyle','docked')
 %     imagesc(maskFitArea(:,:,10)); colormap gray
+    
 
+    %% Split sessions and conditions
+    [X,Y] = pol2cart(results.OLS.mixed.delay,results.OLS.mixed.amp);
+    for sessInd = 1:2
+        sess = ['sess' num2str(sessInd)];
+        runInd = sessLabel==sessInd;
+        data.(sess).data = complex(X(:,:,:,runInd),Y(:,:,:,runInd));
+        data.(sess).condLabel = permute(condLabel(runInd),[1 3 4 2]);
+        data.(sess).runLabel = permute(runLabel(runInd),[1 3 4 2]);
+        %         [squeeze(data.(sess).condLabel) squeeze(data.(sess).runLabel)]
+        
+        cond1 = data.(sess).condLabel==1;
+        cond2 = data.(sess).condLabel==2;
+        cond3 = data.(sess).condLabel==3;
+        data.(sess).data = cat(5,data.(sess).data(:,:,:,cond1),data.(sess).data(:,:,:,cond2),data.(sess).data(:,:,:,cond3));
+        data.(sess).runLabel = cat(5,data.(sess).runLabel(:,:,:,cond1),data.(sess).runLabel(:,:,:,cond2),data.(sess).runLabel(:,:,:,cond3));
+        data.(sess).info = 'x X y X z X run X cond[ori1,ori2,plaid]';
+        
+        data.(sess) = rmfield(data.(sess),'condLabel');
+    end
+    clear X Y
+    
+    hr.sess1 = resultsResp.OLS.mixed.sess1.resp;
+    hr.sess2 = resultsResp.OLS.mixed.sess2.resp;
+    hr.info = 'x X y X z X TR X repeat X cond[ori1,ori2,plaid]';
+    
+    %     figure('WindowStyle','docked')
+    %     imagesc(abs(data.(sess).data(:,:,10,1,1)))
+    
+    
     %% Stats for later between-session feature selection
     exclusion.subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'};
     exclusion.subj = 2;
@@ -155,7 +179,9 @@ for subjInd = 1:length(subjList)
             runInd = true(size(runLabel));
         end
         
-        % Activation map
+        
+        % Activated voxels
+        % get activation map
         featSel.(sess).anyCondActivation_doIt = ~strcmp(threshType,'none');
         featSel.(sess).anyCondActivation_fitType = fitType;
         switch fitType
@@ -179,7 +205,7 @@ for subjInd = 1:length(subjList)
         featSel.(sess).anyCondActivation_FDR = FDR;
         featSel.(sess).anyCondActivation_threshType = threshType;
         featSel.(sess).anyCondActivation_threshVal = threshVal;
-        % activation mask
+        % get activation mask
         if featSel.(sess).anyCondActivation_doIt
             featSel.(sess).anyCondActivation_mask = featSel.(sess).(['anyCondActivation_' upper(featSel.(sess).anyCondActivation_threshType)])<featSel.(sess).anyCondActivation_threshVal;
         else
@@ -191,14 +217,15 @@ for subjInd = 1:length(subjList)
 %         imagesc(maskROI(:,:,10))
 %         imagesc(featSel.(sess).anyCondActivation_mask(:,:,10)&maskROI(:,:,10))
         
-        % Vein map (session-specific)
+        
+        % Vein voxels
+        % get vein score
         featSel.(sess).vein_doIt = doVein;
         featSel.(sess).vein_source = veinSource;
         featSel.(sess).vein_score = nan(size(brain));
         featSel.(sess).vein_perc = veinPerc;
         featSel.(sess).vein_thresh = nan;
         featSel.(sess).vein_mask = false(size(brain));
-
         if doVein
             switch veinSource
                 case 'fullModelResid'
@@ -206,12 +233,12 @@ for subjInd = 1:length(subjList)
                 case 'reducedModelResid'
                     featSel.(sess).vein_score(maskFitArea) = mean(results.OLS.mixed.veinReduced(:,:,:,runInd & sessLabel==sessInd),4);
             end
-            % get threshold as the percentile of ACTIVE (see Activation map above) voxels in ROI
+            % get vein threshold as the percentile of ACTIVE (see Activation map above) voxels in ROI
             maskTmp = featSel.(sess).anyCondActivation_mask & maskROI;
-%             % get threshold as percentile of voxels in ROI
+%             % get vein threshold as percentile of voxels in ROI
 %             maskTmp = maskROI;
             featSel.(sess).vein_thresh = prctile(featSel.(sess).vein_score(maskTmp),100-featSel.(sess).vein_perc);
-            % get mask
+            % get vein mask
             featSel.(sess).vein_mask = featSel.(sess).vein_score>featSel.(sess).vein_thresh;
             figure('WindowStyle','docked')
             im = featSel.(sess).vein_score;
@@ -224,6 +251,35 @@ for subjInd = 1:length(subjList)
             imagesc(maskTmp(:,:,10));
             sum(maskTmp(:))
         end
+        
+        % Discriminant voxels
+        % get discriminant voxels (in vector format within ROI)
+        x = data.(sess).data;
+        ind = false(size(x,[1 2 3]));
+        ind(:) = maskROI(maskFitArea);
+        x = permute(x,[4 5 1 2 3]);
+        x = permute(x(:,:,ind),[1 3 2]); % rep X vox X cond
+        y = ones(size(x,1),1);
+        x = cat(1,x(:,:,1),x(:,:,2));
+        y = cat(1,y.*1,y.*2);
+        nVox = size(x,2);
+        x = [real(x) imag(x)];
+        featStat = nan(1,nVox);
+        featP = nan(1,nVox);
+        for voxInd = 1:nVox
+            stats = T2Hot2d(x(:,[0 nVox]+voxInd));
+            featStat(voxInd) = stats.T2;
+            featP(voxInd) = stats.P;
+        end
+        % convert to map
+        featSel.(sess).discrim_T2 = nan(size(brain));
+        featSel.(sess).discrim_T2(maskROI) = featStat;
+        featSel.(sess).discrim_P = nan(size(brain));
+        featSel.(sess).discrim_P(maskROI) = featP;
+        % get thresh based on percentile of ACTIVE NON-VEIN ROI voxels
+        mask = ~featSel.(sess).vein_mask & featSel.(sess).anyCondActivation_mask;
+        featSel.(sess).discrim_T2thresh = prctile(featStat(mask(maskROI)),10);
+        featSel.(sess).discrim_mask = featSel.(sess).discrim_T2>featSel.(sess).discrim_T2thresh;
     end
 %     figure('WindowStyle','docked')
 %     imagesc(featSel.(sess).anyCondActivation_F(:,:,10))
@@ -234,6 +290,7 @@ for subjInd = 1:length(subjList)
 %     figure('WindowStyle','docked')
 %     imagesc(featSel.(sess).anyCondActivation_mask(:,:,10))
 
+    
     %% Plot masking
     if subjInd==figOption.subj || figOption.subj==inf
         sess = 'sess1';
@@ -418,40 +475,8 @@ for subjInd = 1:length(subjList)
             end
         end
     end
-
-    %% Stop here if not actually runing
-    if ~actuallyRun
-        return
-    end
-    %% Split sessions and conditions
-    [X,Y] = pol2cart(results.OLS.mixed.delay,results.OLS.mixed.amp);
-    for sessInd = 1:2
-        sess = ['sess' num2str(sessInd)];
-        runInd = sessLabel==sessInd;
-        data.(sess).data = complex(X(:,:,:,runInd),Y(:,:,:,runInd));
-        data.(sess).condLabel = permute(condLabel(runInd),[1 3 4 2]);
-        data.(sess).runLabel = permute(runLabel(runInd),[1 3 4 2]);
-%         [squeeze(data.(sess).condLabel) squeeze(data.(sess).runLabel)]
-
-        cond1 = data.(sess).condLabel==1;
-        cond2 = data.(sess).condLabel==2;
-        cond3 = data.(sess).condLabel==3;
-        data.(sess).data = cat(5,data.(sess).data(:,:,:,cond1),data.(sess).data(:,:,:,cond2),data.(sess).data(:,:,:,cond3));
-        data.(sess).runLabel = cat(5,data.(sess).runLabel(:,:,:,cond1),data.(sess).runLabel(:,:,:,cond2),data.(sess).runLabel(:,:,:,cond3));
-        data.(sess).info = 'x X y X z X run X cond[ori1,ori2,plaid]';
-
-        data.(sess) = rmfield(data.(sess),'condLabel');
-    end
-    clear X Y
-
-    hr.sess1 = resultsResp.OLS.mixed.sess1.resp;
-    hr.sess2 = resultsResp.OLS.mixed.sess2.resp;
-    hr.info = 'x X y X z X TR X repeat X cond[ori1,ori2,plaid]';
-
-%     figure('WindowStyle','docked')
-%     imagesc(abs(data.(sess).data(:,:,10,1,1)))
-
-
+    
+    
     %% Apply ROI mask and vectorize
     for sessInd = 1:2
         sess = ['sess' num2str(sessInd)];
