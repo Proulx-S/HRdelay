@@ -55,5 +55,8 @@ res.(svmSpace) = runDecoding(res.(svmSpace),nPerm);
 svmSpace = 'cartReal';
 res.(svmSpace) = runDecoding(res.(svmSpace),nPerm);
 
-plotDecodingPerm(res,figOption)
+accPerm = plotDecodingPerm_acc(res,figOption);
+plotDecoding_acc(res,figOption,accPerm)
+
+plotDecodingPerm_auc(res,figOption)
 

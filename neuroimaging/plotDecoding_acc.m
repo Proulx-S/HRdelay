@@ -1,4 +1,4 @@
-function plotDecoding(res,figOption)
+function plotDecoding_acc(res,figOption,accPerm)
 groupStatMethod = 'binomial'; % 'binomial' or 'pseudoMedian'
 if ~exist('figOption','var') || isempty(figOption)
     figOption.save = 1;
@@ -119,8 +119,8 @@ for subjInd = 1:length(hb)-1
     heb(subjInd).CapSize = 0;
     heb(subjInd).Color = 'k';
 end
-barWidth = (hb(2).XEndPoints(1) - hb(1).XEndPoints(1)) * hb(1).BarWidth;
-
+barWidthAx = (hb(2).XEndPoints(1) - hb(1).XEndPoints(1)) * hb(1).BarWidth;
+ylim(yLim)
 ax = gca;
 ax.XAxis.TickLabelInterpreter = 'none';
 ax.XTick = 1:length(spaceList);
@@ -130,15 +130,15 @@ ax.TickLength = [0 0];
 y = 0.01;
 for subjInd = 1:length(subjList)
     x = hb(subjInd).XEndPoints;
-    ht(subjInd,:) = text(x-barWidth*0.05,ones(size(spaceList)).*y,subjList{subjInd},'Rotation',90,'VerticalAlignment','middle','HorizontalAlignment','left','FontSize',8);
+    ht(subjInd,:) = text(x-barWidthAx*0.05,ones(size(spaceList)).*y,subjList{subjInd},'Rotation',90,'VerticalAlignment','middle','HorizontalAlignment','left','FontSize',8);
 end
 subjInd = length(subjList)+1;
 x = hb(subjInd).XEndPoints;
 switch groupStatMethod
     case 'pseudoMedian'
-        ht(subjInd,:) = text(x-barWidth*0.05,ones(size(spaceList)).*y,'median','Rotation',90,'VerticalAlignment','middle','HorizontalAlignment','left','FontSize',8,'Color','w');
+        ht(subjInd,:) = text(x-barWidthAx*0.05,ones(size(spaceList)).*y,'median','Rotation',90,'VerticalAlignment','middle','HorizontalAlignment','left','FontSize',8,'Color','w');
     case 'binomial'
-        ht(subjInd,:) = text(x-barWidth*0.05,ones(size(spaceList)).*y,'all participants','Rotation',90,'VerticalAlignment','middle','HorizontalAlignment','left','FontSize',8,'Color','w');
+        ht(subjInd,:) = text(x-barWidthAx*0.05,ones(size(spaceList)).*y,'all participants','Rotation',90,'VerticalAlignment','middle','HorizontalAlignment','left','FontSize',8,'Color','w');
     otherwise
         error('x')
 end
@@ -159,9 +159,80 @@ end
 for i = 1:length(tmp)
     tmp(i).Position(2) = tmp(i).Position(2)+yPos_label-0.005;
 end
-ylim(yLim)
+
 ax.YGrid = 'on';
 ax.Box = 'off';
+drawnow
+
+if exist('accPerm','var')
+    pos = cell2mat(get(hb,'XEndPoints'));
+    deltaGroup = diff(sort([pos(1,:) pos(end,:)])); deltaGroup = mode(deltaGroup(2:2:end));
+    ax.XLim = [ax.XLim(1) pos(end)+deltaGroup];
+    drawnow
+    
+    barWidth = mode(diff(pos,[],1)) .* mode(cell2mat(get(hb,'BarWidth')));
+    barWidthPos = barWidth/diff(ax.XLim)*ax.Position(3);
+    deltaGroupPos = deltaGroup/diff(ax.XLim)*ax.Position(3);
+    
+    pPerm = nan(size(spaceList));
+    for spaceInd = 1:length(spaceList)
+        nPerm = size(accPerm.(spaceList{spaceInd}),1);
+        nObs = sum(res.(spaceList{spaceInd}).nObs(:));
+        threshPerm = quantile(accPerm.(spaceList{spaceInd}),[0.05 1-0.05]).*nObs;
+        threshBino = binoinv([0.05 1-0.05],nObs,0.5);
+%         plot(x,thresh,'r_')
+        pPerm(spaceInd) = sum(accPerm.(spaceList{spaceInd})>accGroup(spaceInd))/nPerm;
+        
+        hit = round(accPerm.(spaceList{spaceInd}).*nObs);
+        xRatio = ( hb(7).XEndPoints(spaceInd) + barWidth(spaceInd)/2 - ax.XLim(1) ) / diff(ax.XLim);
+        xRatio = xRatio*ax.Position(3);
+        axHist(spaceInd) = axes; drawnow
+        axHist(spaceInd).XTick = []; drawnow
+        height = deltaGroupPos-barWidthPos(spaceInd);
+        axHist(spaceInd).Position([1 3]) = [ax.Position(1)+xRatio height] + [0 -0.25].*height;
+        axHist(spaceInd).Position([2 4]) = ax.Position([2 4]);
+        plotHitsAndBino(hit,nObs); drawnow
+        ylim([0 max([axHist(spaceInd).Children(1).YData(:); axHist(spaceInd).Children(2).YData(:)])]); drawnow
+        axHist(spaceInd).XDir = 'reverse';
+        view(axHist(spaceInd),[90 90]);
+        axHist(spaceInd).XLim = ax.YLim.*nObs; drawnow
+        axHist(spaceInd).Box = 'off';
+        axHist(spaceInd).Color = 'none';
+        hLine = findobj(axHist(spaceInd).Children,'type','line');
+        hBar = findobj(axHist(spaceInd).Children,'type','Patch');
+        ind = hLine.XData > threshBino(2);
+        hLine.YData(ind) = [];
+        hLine.XData(ind) = [];
+        ind = hLine.XData < threshBino(1);
+        hLine.YData(ind) = [];
+        hLine.XData(ind) = [];
+        ind = mean(hBar.XData,1) > threshPerm(2);
+        hBar.YData(:,ind) = [];
+        hBar.XData(:,ind) = [];
+        ind = mean(hBar.XData,1) < threshPerm(1);
+        hBar.YData(:,ind) = [];
+        hBar.XData(:,ind) = [];
+        hLine.YData(end+1) = 0;
+        hLine.XData(end+1) = hLine.XData(end);
+        hLine.YData(end+1) = 0;
+        hLine.XData(end+1) = hLine.XData(1);
+        hLine.YData(end+1) = hLine.YData(1);
+        hLine.XData(end+1) = hLine.XData(1);
+        hBar.XData(1:2,1) = mean(hBar.XData(:,1));
+        hBar.XData(3:4,end) = mean(hBar.XData(:,end));
+        axHist(spaceInd).XAxis.Visible = 'off';
+        axHist(spaceInd).YAxis.Visible = 'off';
+%         plot([0 threshBino],[0 0],'-r')
+%         plot(axHist(spaceInd).XLim,[0 0],'w')
+        drawnow
+    end
+    for spaceInd = 1:length(spaceList)
+        xRatio = ( hb(7).XEndPoints(spaceInd) + barWidth(spaceInd)/2 - ax.XLim(1) ) / diff(ax.XLim);
+        xRatio = xRatio*ax.Position(3);
+        height = deltaGroupPos-barWidthPos(spaceInd);
+        axHist(spaceInd).Position(1) = ax.Position(1)+xRatio + 0.03*height;
+    end
+end
 
 if figOption.save
     writeFig(f,mfilename,'acc')
