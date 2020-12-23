@@ -234,6 +234,19 @@ if exist('accPerm','var')
     end
 end
 
+switch groupStatMethod
+    case 'pseudoMedian'
+        tmpStr1 = 'Pseudo-median';
+        tmpStr2 = 'CI (5% lower bound)';
+    case 'binomial'
+        tmpStr1 = 'Mean';
+        tmpStr2 = 'Binomial CI (5% lower bound)';
+    otherwise
+        error('X')
+end
+legend(ax.Children([end-1 end-7 end-8]),char({'Participants' tmpStr1 tmpStr2}),'Box','off');
+
+
 if figOption.save
     writeFig(f,mfilename,'acc')
 end

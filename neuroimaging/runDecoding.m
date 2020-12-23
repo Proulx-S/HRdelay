@@ -275,6 +275,7 @@ for i = 1:numel(dP)
         res.distT(i) = STATS.tstat;
         res.p(i) = binocdf(res.acc(i).*res.nObs(i),res.nObs(i),0.5,'upper');
         res.nDim(i) = mean(d);
+        
         switch SVMspace
             case 'hr'
                 res.nVox1(i) = size(dP{i}.hr,2); % before within-session feature selection

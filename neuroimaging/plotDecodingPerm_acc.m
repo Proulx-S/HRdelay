@@ -107,5 +107,11 @@ for spaceInd = 1:length(spaceList)
     accPerm.(spaceList{spaceInd}) = acc;
 end
 
-
+if all(ismember({'cart' 'cartReal'},fields(res)))
+    hitDiff = res.cart.acc.*res.cart.nObs - res.cartReal.acc.*res.cartReal.nObs;
+    hitPermDiff = res.cart.perm.acc.*res.cart.nObs - res.cartReal.perm.acc.*res.cartReal.nObs;
+    permP = sum( sum(sum(hitPermDiff,1),2)>sum(sum(hitDiff,1),2) ) ./ nPerm;
+    disp('cart VS cartReal:')
+    disp(['permP (one-sided) = ' num2str(permP)])
+end
 

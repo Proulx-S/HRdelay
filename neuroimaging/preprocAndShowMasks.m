@@ -1,27 +1,56 @@
-function preprocAndShowMasks(fitType,threshType,veinPerc,figOption)
+function preprocAndShowMasks(featSel_bSess,fitType,threshType,veinPerc,figOption)
 close all
 noMovement = 1;
 if ~exist('figOption','var') || isempty(figOption)
     figOption.save = 0;
     figOption.subj = 1; % 'all' or subjInd
 end
-if ~exist('veinPerc','var') || isempty(veinPerc)
-    doVein = 1;
-    veinSource = 'fullModelResid'; % 'reducedModelResid' (stimulus-driven signal included in std) or 'fullModelResid (stimulus-driven signal excluded in std)'
-    veinPerc = 20;
-elseif veinPerc==0
-    doVein = 0;
-else
-    doVein = 1;
-    veinSource = 'fullModelResid'; % 'reducedModelResid' (stimulus-driven signal included in std) or 'fullModelResid (stimulus-driven signal excluded in std)'
+% Between-session feature selection
+if ~exist('featSel_bSess','var') || isempty(featSel_bSess)
+    featSel_bSess = struct('activation',[],'vein',[],'discrim',[]);
 end
-if ~exist('fitType','var') || isempty(fitType)
-    fitType = 'fixed'; % 'mixed' (different regressors for each run) or 'fixed' (different regressors for each session)
+% activation
+if ~isfield(featSel_bSess,'activation') || isempty(featSel_bSess.activation)
+    featSel_bSess.activation.doIt = 0;
 end
-if ~exist('threshType','var') || isempty(threshType) % for plotting purpose only (does not affect data that is saved)
-    threshType = 'p'; % 'none', 'p' or 'fdr'
+if featSel_bSess.activation.doIt
+    if ~isfield(featSel_bSess.activation,'fitType') || isempty(featSel_bSess.activation.fitType)
+        featSel_bSess.activation.fitType = 'fixed';
+    end
+    if ~isfield(featSel_bSess.activation,'threshType') || isempty(featSel_bSess.activation.threshType)
+        featSel_bSess.activation.threshType = 'p';
+    end
 end
-threshVal = 0.05;
+% vein
+if ~isfield(featSel_bSess,'vein') || isempty(featSel_bSess.vein)
+    featSel_bSess.vein.doIt = 0;
+end
+if featSel_bSess.vein.doIt
+    if ~isfield(featSel_bSess.vein,'percentile') || isempty(featSel_bSess.vein.percentile)
+        featSel_bSess.vein.percentile = 20;
+    end
+    if ~isfield(featSel_bSess.vein,'fullModelResid') || isempty(featSel_bSess.vein.fullModelResid)
+        featSel_bSess.vein.fullModelResid = 20;
+    end
+end
+% discrim
+if ~isfield(featSel_bSess,'discrim') || isempty(featSel_bSess.discrim)
+    featSel_bSess.discrim.doIt = 0;
+end
+if featSel_bSess.discrim.doIt
+    if ~isfield(featSel_bSess.discrim,'percentile') || isempty(featSel_bSess.discrim.percentile)
+        featSel_bSess.vein.percentile = 20;
+    end
+end
+
+
+doVein = featSel_bSess.vein.doIt;
+veinSource = featSel_bSess.vein.source; % 'reducedModelResid' (stimulus-driven signal included in std) or 'fullModelResid (stimulus-driven signal excluded in std)'
+veinPerc = featSel_bSess.vein.percentile;
+
+fitType = featSel_bSess.activation.fitType; % 'mixed' (different regressors for each run) or 'fixed' (different regressors for each session)
+threshType = featSel_bSess.activation.threshType; % 'none', 'p' or 'fdr'
+threshVal = featSel_bSess.activation.threshVal;
 warning('off','images:imshow:magnificationMustBeFitForDockedFigure');
 
 %% Define paths
@@ -181,52 +210,57 @@ for subjInd = 1:length(subjList)
         
         
         % Activated voxels
-        % get activation map
-        featSel.(sess).anyCondActivation_doIt = ~strcmp(threshType,'none');
-        featSel.(sess).anyCondActivation_fitType = fitType;
-        switch fitType
-            case 'mixed'
-                warning(['***Exclusion not performed on the random-model (mixed-model) stats' newline 'but should have only a minor impact on voxel selection for a signle session of a single subject***'])
-                F = results.OLS.(fitType).(['Fsess' num2str(sessInd)]).val.F;
-                df = results.OLS.(fitType).(['Fsess' num2str(sessInd)]).df;
-            case 'fixed'
-                F = results.OLS.(fitType).(sess).F.val.F;
-                df = results.OLS.(fitType).(sess).F.df;
-            otherwise
-                error('X')
-        end
-        tmp = nan(size(brain)); tmp(maskFitArea) = F;
-        F = tmp;
-        [~,P] = getPfromF(F,df);
-        [tmp,~] = getPfromF(F(maskROI),df);
-        FDR = nan(size(F)); FDR(maskROI) = tmp;
-        featSel.(sess).anyCondActivation_F = F;
-        featSel.(sess).anyCondActivation_P = P;
-        featSel.(sess).anyCondActivation_FDR = FDR;
-        featSel.(sess).anyCondActivation_threshType = threshType;
-        featSel.(sess).anyCondActivation_threshVal = threshVal;
-        % get activation mask
-        if featSel.(sess).anyCondActivation_doIt
-            featSel.(sess).anyCondActivation_mask = featSel.(sess).(['anyCondActivation_' upper(featSel.(sess).anyCondActivation_threshType)])<featSel.(sess).anyCondActivation_threshVal;
+        if ~featSel_bSess.activation.doIt
+            error('code that')
         else
-            featSel.(sess).anyCondActivation_mask = true(size(featSel.(sess).anyCondActivation_F));
+            % get activation map
+            featSel.(sess).anyCondActivation_doIt = ~strcmp(threshType,'none');
+            featSel.(sess).anyCondActivation_fitType = fitType;
+            switch fitType
+                case 'mixed'
+                    warning(['***Exclusion not performed on the random-model (mixed-model) stats' newline 'but should have only a minor impact on voxel selection for a signle session of a single subject***'])
+                    F = results.OLS.(fitType).(['Fsess' num2str(sessInd)]).val.F;
+                    df = results.OLS.(fitType).(['Fsess' num2str(sessInd)]).df;
+                case 'fixed'
+                    F = results.OLS.(fitType).(sess).F.val.F;
+                    df = results.OLS.(fitType).(sess).F.df;
+                otherwise
+                    error('X')
+            end
+            tmp = nan(size(brain)); tmp(maskFitArea) = F;
+            F = tmp;
+            [~,P] = getPfromF(F,df);
+            [tmp,~] = getPfromF(F(maskROI),df);
+            FDR = nan(size(F)); FDR(maskROI) = tmp;
+            featSel.(sess).anyCondActivation_F = F;
+            featSel.(sess).anyCondActivation_P = P;
+            featSel.(sess).anyCondActivation_FDR = FDR;
+            featSel.(sess).anyCondActivation_threshType = threshType;
+            featSel.(sess).anyCondActivation_threshVal = threshVal;
+            % get activation mask
+            if featSel.(sess).anyCondActivation_doIt
+                featSel.(sess).anyCondActivation_mask = featSel.(sess).(['anyCondActivation_' upper(featSel.(sess).anyCondActivation_threshType)])<featSel.(sess).anyCondActivation_threshVal;
+            else
+                featSel.(sess).anyCondActivation_mask = true(size(featSel.(sess).anyCondActivation_F));
+            end
+%             figure('WindowStyle','docked')
+%             imagesc(featSel.(sess).anyCondActivation_F(:,:,10))
+%             imagesc(featSel.(sess).anyCondActivation_mask(:,:,10))
+%             imagesc(maskROI(:,:,10))
+%             imagesc(featSel.(sess).anyCondActivation_mask(:,:,10)&maskROI(:,:,10))
         end
-%         figure('WindowStyle','docked')
-%         imagesc(featSel.(sess).anyCondActivation_F(:,:,10))
-%         imagesc(featSel.(sess).anyCondActivation_mask(:,:,10))
-%         imagesc(maskROI(:,:,10))
-%         imagesc(featSel.(sess).anyCondActivation_mask(:,:,10)&maskROI(:,:,10))
-        
         
         % Vein voxels
-        % get vein score
         featSel.(sess).vein_doIt = doVein;
         featSel.(sess).vein_source = veinSource;
         featSel.(sess).vein_score = nan(size(brain));
         featSel.(sess).vein_perc = veinPerc;
         featSel.(sess).vein_thresh = nan;
         featSel.(sess).vein_mask = false(size(brain));
-        if doVein
+        if ~featSel_bSess.vein.doIt
+            error('code that')
+        else
+            % get vein score
             switch veinSource
                 case 'fullModelResid'
                     featSel.(sess).vein_score(maskFitArea) = mean(results.OLS.mixed.veinFull(:,:,:,runInd & sessLabel==sessInd),4);
@@ -235,51 +269,60 @@ for subjInd = 1:length(subjList)
             end
             % get vein threshold as the percentile of ACTIVE (see Activation map above) voxels in ROI
             maskTmp = featSel.(sess).anyCondActivation_mask & maskROI;
-%             % get vein threshold as percentile of voxels in ROI
-%             maskTmp = maskROI;
+            %             % get vein threshold as percentile of voxels in ROI
+            %             maskTmp = maskROI;
             featSel.(sess).vein_thresh = prctile(featSel.(sess).vein_score(maskTmp),100-featSel.(sess).vein_perc);
             % get vein mask
             featSel.(sess).vein_mask = featSel.(sess).vein_score>featSel.(sess).vein_thresh;
-            figure('WindowStyle','docked')
-            im = featSel.(sess).vein_score;
-            imagesc(im(:,:,10))
-            maskTmp = ~featSel.(sess).vein_mask;
-            imagesc(maskTmp(:,:,10));
-            maskTmp = ~featSel.(sess).vein_mask & maskROI;
-            imagesc(maskTmp(:,:,10));
-            maskTmp = ~featSel.(sess).vein_mask & maskROI & featSel.(sess).anyCondActivation_mask;
-            imagesc(maskTmp(:,:,10));
-            sum(maskTmp(:))
+%             figure('WindowStyle','docked')
+%             im = featSel.(sess).vein_score;
+%             imagesc(im(:,:,10))
+%             maskTmp = ~featSel.(sess).vein_mask;
+%             imagesc(maskTmp(:,:,10));
+%             maskTmp = ~featSel.(sess).vein_mask & maskROI;
+%             imagesc(maskTmp(:,:,10));
+%             maskTmp = ~featSel.(sess).vein_mask & maskROI & featSel.(sess).anyCondActivation_mask;
+%             imagesc(maskTmp(:,:,10));
+%             sum(maskTmp(:))
         end
         
         % Discriminant voxels
-        % get discriminant voxels (in vector format within ROI)
-        x = data.(sess).data;
-        ind = false(size(x,[1 2 3]));
-        ind(:) = maskROI(maskFitArea);
-        x = permute(x,[4 5 1 2 3]);
-        x = permute(x(:,:,ind),[1 3 2]); % rep X vox X cond
-        y = ones(size(x,1),1);
-        x = cat(1,x(:,:,1),x(:,:,2));
-        y = cat(1,y.*1,y.*2);
-        nVox = size(x,2);
-        x = [real(x) imag(x)];
-        featStat = nan(1,nVox);
-        featP = nan(1,nVox);
-        for voxInd = 1:nVox
-            stats = T2Hot2d(x(:,[0 nVox]+voxInd));
-            featStat(voxInd) = stats.T2;
-            featP(voxInd) = stats.P;
-        end
-        % convert to map
         featSel.(sess).discrim_T2 = nan(size(brain));
-        featSel.(sess).discrim_T2(maskROI) = featStat;
         featSel.(sess).discrim_P = nan(size(brain));
-        featSel.(sess).discrim_P(maskROI) = featP;
-        % get thresh based on percentile of ACTIVE NON-VEIN ROI voxels
-        mask = ~featSel.(sess).vein_mask & featSel.(sess).anyCondActivation_mask;
-        featSel.(sess).discrim_T2thresh = prctile(featStat(mask(maskROI)),20);
-        featSel.(sess).discrim_mask = featSel.(sess).discrim_T2>featSel.(sess).discrim_T2thresh;
+        featSel.(sess).discrim_mask = true(size(brain));
+        if ~featSel_bSess.vein.doIt
+            error('code that')
+        else
+            % get discriminant voxels (in vector format within ROI)
+            x = data.(sess).data;
+            ind = false(size(x,[1 2 3]));
+            ind(:) = maskROI(maskFitArea);
+            x = permute(x,[4 5 1 2 3]);
+            x = permute(x(:,:,ind),[1 3 2]); % rep X vox X cond
+            y = ones(size(x,1),1);
+            x = cat(1,x(:,:,1),x(:,:,2));
+            y = cat(1,y.*1,y.*2);
+%             spaceList = featSel_bSess.discrim.spaceList;
+%             for spaceInd = 1:length(spaceList)
+%             switch featSel_bSess.discrim.space
+%                 case 'cart'
+            nVox = size(x,2);
+            x = [real(x) imag(x)];
+            featStat = nan(1,nVox);
+            featP = nan(1,nVox);
+            for voxInd = 1:nVox
+                stats = T2Hot2d(x(:,[0 nVox]+voxInd));
+                featStat(voxInd) = stats.T2;
+                featP(voxInd) = stats.P;
+            end
+            % convert to map
+            featSel.(sess).discrim_T2(maskROI) = featStat;
+            featSel.(sess).discrim_P(maskROI) = featP;
+            % get thresh based on percentile of ACTIVE NON-VEIN ROI voxels
+            mask = ~featSel.(sess).vein_mask & featSel.(sess).anyCondActivation_mask;
+            featSel.(sess).discrim_T2thresh = prctile(featStat(mask(maskROI)),20);
+            featSel.(sess).discrim_mask = featSel.(sess).discrim_T2>featSel.(sess).discrim_T2thresh;
+        end
     end
 %     figure('WindowStyle','docked')
 %     imagesc(featSel.(sess).anyCondActivation_F(:,:,10))

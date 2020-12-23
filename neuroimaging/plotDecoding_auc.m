@@ -1,4 +1,4 @@
-function plotDecoding2(res,figOption)
+function plotDecoding_auc(res,figOption)
 groupStatMethod = 'pseudoMedian'; % 'binomial' or 'pseudoMedian'
 if ~exist('figOption','var') || isempty(figOption)
     figOption.save = 1;
@@ -135,7 +135,7 @@ end
 
 % ax.YTick = 0:0.05:1;
 % ax.YTickLabel = cellstr(num2str(ax.YTick','%0.1f'));
-ax.YLabel.String = {'Decoding Area Under the ROC'};
+ax.YLabel.String = {'Area Under the ROC'};
 ax.XLabel.String = {'Decoded Response Features'};
 ax.Title.String = 'Decoding Brain Response for Stimulus Orientation';
 
@@ -151,6 +151,18 @@ ax.Title.String = 'Decoding Brain Response for Stimulus Orientation';
 ylim(yLim)
 ax.YGrid = 'on';
 ax.Box = 'off';
+
+switch groupStatMethod
+    case 'pseudoMedian'
+        tmpStr1 = 'Pseudo-median';
+        tmpStr2 = 'CI (5% lower bound)';
+    case 'binomial'
+        tmpStr1 = 'Mean';
+        tmpStr2 = 'Binomial CI (5% lower bound)';
+    otherwise
+        error('X')
+end
+legend(ax.Children([end-1 end-7 end-8]),char({'Participants' tmpStr1 tmpStr2}),'Box','off');
 
 if figOption.save
     writeFig(f,mfilename,'auc')

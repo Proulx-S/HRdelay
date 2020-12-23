@@ -132,7 +132,7 @@ ax.TickLength = [0 0];
 
 % ax.YTick = 0:0.05:1;
 % ax.YTickLabel = cellstr(num2str(ax.YTick','%0.1f'));
-ax.YLabel.String = {'Decoding Accuracy' '(5% lower bound of binomial distribution)'};
+ax.YLabel.String = {'Distance T'};
 ax.XLabel.String = {'Decoded Response Features'};
 ax.Title.String = 'Decoding Brain Response for Stimulus Orientation';
 
@@ -148,6 +148,21 @@ end
 ylim(yLim)
 ax.YGrid = 'on';
 ax.Box = 'off';
+
+
+
+switch groupStatMethod
+    case 'pseudoMedian'
+        tmpStr1 = 'Pseudo-median';
+        tmpStr2 = 'CI (5% lower bound)';
+    case 'binomial'
+        tmpStr1 = 'Mean';
+        tmpStr2 = 'Binomial CI (5% lower bound)';
+    otherwise
+        error('X')
+end
+legend(ax.Children([end-0 end-6 end-7]),char({'Participants' tmpStr1 tmpStr2}),'Box','off');
+
 
 if figOption.save
     writeFig(f,mfilename,'distT')
