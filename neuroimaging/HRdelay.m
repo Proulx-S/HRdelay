@@ -6,7 +6,7 @@ verbose = 0; % prints more info
 %% Between-session feature selection parameters
 % Activated voxels
 featSel_bSess.activation.doIt = 1;
-featSel_bSess.activation.fitType = 'fixed';
+featSel_bSess.activation.fitType = 'mixed';
 featSel_bSess.activation.threshType = 'p';
 featSel_bSess.activation.threshVal = 0.05;
 % Vein voxels

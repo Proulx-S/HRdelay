@@ -29,7 +29,8 @@ disp('cart VS cartReal:')
 disp(['signed rank = ' num2str(STATS.signedrank)])
 disp(['one-sided p = ' num2str(P)])
 
-% plotDecoding_acc(res,figOption,verbose)
+plotDecoding_acc(res,figOption,verbose)
+return
 
 %% Permutation tests
 nPerm = 2^14; % will not run if already run, and instead just load previous results
