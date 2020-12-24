@@ -296,7 +296,7 @@ disp([' t=' num2str(STATS.tstat,'%0.2f') '; p=' num2str(P,'%0.2f')]);
 disp(' Wilcoxon signed rank test')
 disp([' signed rank=' num2str(STATS.signedrank,'%0.2f') '; p=' num2str(P,'%0.2f')]);
 
-disp('Ori1 vs Ori2 vs Plais (Friedman''s test for K-related-samples):')
+disp('Ori1 vs Ori2 vs Plaid (Friedman''s test for K-related-samples):')
 [P,TABLE,~] = friedman(amp(:,1:3),1,'off');
 disp(['Chi^2(df=3' num2str(TABLE{2,3}) ') = ' num2str(TABLE{2,5},'%0.1f')]);
 disp(['p            = ' num2str(P,'%0.3f')]);
@@ -405,20 +405,7 @@ hScat.CData = cData;
 hScat.MarkerFaceColor = hScat.MarkerEdgeColor;
 
 if figOption.save
-    filename = fullfile(pwd,mfilename);
-    if ~exist(filename,'dir'); mkdir(filename); end
-    filename = fullfile(filename,'diffCorr_subjAndSess');
-    fGroup(1).Color = 'none';
-    set(findobj(fGroup(1).Children,'type','Axes'),'color','none')
-    set(findobj(fGroup(1).Children,'type','PolarAxes'),'color','none')
-    curFile = filename;
-    curExt = 'svg';
-    saveas(fGroup(1),[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
-    fGroup(1).Color = 'w';
-    curExt = 'fig';
-    saveas(fGroup(1),[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
-    curExt = 'jpg';
-    saveas(fGroup(1),[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
+    writeFig(f,mfilename,'diffCorr_subjAndSess',verbose)
 end
 
 
@@ -440,20 +427,7 @@ hScat.MarkerFaceColor = 'k';
 hScat.MarkerEdgeColor = 'w';
 
 if figOption.save
-    filename = fullfile(pwd,mfilename);
-    if ~exist(filename,'dir'); mkdir(filename); end
-    filename = fullfile(filename,'diffCorr_subj');
-    fGroup(1).Color = 'none';
-    set(findobj(fGroup(1).Children,'type','Axes'),'color','none')
-    set(findobj(fGroup(1).Children,'type','PolarAxes'),'color','none')
-    curFile = filename;
-    curExt = 'svg';
-    saveas(fGroup(1),[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
-    fGroup(1).Color = 'w';
-    curExt = 'fig';
-    saveas(fGroup(1),[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
-    curExt = 'jpg';
-    saveas(fGroup(1),[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
+    writeFig(f,mfilename,'diffCorr_subj',verbose)
 end
 
 % Between-run correlation
@@ -501,18 +475,6 @@ hScat.MarkerEdgeColor = 'w';
 set(gca,'PlotBoxAspectRatio',[1 1 1])
 
 if figOption.save
-    filename = fullfile(pwd,mfilename);
-    if ~exist(filename,'dir'); mkdir(filename); end
-    filename = fullfile(filename,'run2runCorr');
-    fGroup(1).Color = 'none';
-    set(findobj(fGroup(1).Children,'type','Axes'),'color','none')
-    set(findobj(fGroup(1).Children,'type','PolarAxes'),'color','none')
-    curFile = filename;
-    curExt = 'svg';
-    saveas(fGroup(1),[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
-    fGroup(1).Color = 'w';
-    curExt = 'fig';
-    saveas(fGroup(1),[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
-    curExt = 'jpg';
-    saveas(fGroup(1),[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
+    writeFig(f,mfilename,'run2runCorr',verbose)
 end
+

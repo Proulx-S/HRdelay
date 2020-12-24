@@ -101,49 +101,6 @@ for subjInd = 1:length(dC)
         ind.(sess) = ind.(sess) & dC{subjInd}.(sess).anyCondActivation_mask;
         % Select most discrimant voxels
         ind.(sess) = ind.(sess) & dC{subjInd}.(sess).discrim_mask;
-%         switch SVMspace
-%             case {'cart' 'cart_HT' 'cartNoAmp' 'cartNoAmp_HT' 'cartNoDelay' 'cartNoDelay_HT' 'cartReal_T' 'polMag' 'polMag_T'}
-%             case {'cart_HTbSess' 'cartNoAmp_HTbSess' 'cartNoDelay_HTbSess'}
-%                 x = dC{subjInd}.(sess).data(:,:,1:2);
-%                 switch SVMspace
-%                     case 'cart_HTbSess'
-%                     case 'cartNoAmp_HTbSess'
-%                         [u,v] = pol2cart(angle(x),1);
-%                         x = complex(u,v);
-%                     case 'cartNoDelay_HTbSess'
-%                         [u,v] = pol2cart(0,abs(x));
-%                         x = complex(u,v);
-%                     otherwise
-%                         error('X')
-%                 end
-%                 y = []; for condInd = 1:size(x,3); y = cat(3,y,ones(size(x,1),1).*condInd); end
-%                 x2 = []; y2 = [];
-%                 for condInd = 1:size(x,3)
-%                     x2 = cat(1,x2,x(:,:,condInd));
-%                     y2 = cat(1,y2,y(:,:,condInd));
-%                 end
-%                 x = x2; y = y2; clear x2 y2
-%                 switch SVMspace
-%                     case {'cart_HTbSess' 'cartNoAmp_HTbSess'}
-%                         % hotelling's Tsquared for cond1 vs cond2 on [sin cos]
-%                         featStat = nan(1,size(x,2));
-%                         for voxInd = 1:size(x,2)
-%                             xTmp = cat(1,x(y==1,voxInd),x(y==2,voxInd));
-%                             stats = T2Hot2d([real(xTmp) imag(xTmp)]);
-%                             featStat(voxInd) = stats.T2;
-%                         end
-%                     case 'cartNoDelay_HTbSess'
-%                         % ttest for cond1 vs cond2 on sin (real)
-%                         [~,~,~,STATS] = ttest(real(x(y==1,:)),real(x(y==2,:)));
-%                         featStat = STATS.tstat;
-%                     otherwise
-%                         error('X')
-%                 end
-%                 % select top 90% most discriminant (active and non-vein) voxels
-%                 ind.(sess) = ind.(sess) & featStat>prctile(featStat(ind.(sess)),10);
-%             otherwise
-%                 error('X')
-%         end
     end
     % Apply voxel selection
     for sessInd = 1:length(sessList)

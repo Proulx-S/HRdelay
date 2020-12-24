@@ -32,8 +32,8 @@ if featSel_bSess.vein.doIt
     if ~isfield(featSel_bSess.vein,'percentile') || isempty(featSel_bSess.vein.percentile)
         featSel_bSess.vein.percentile = 20;
     end
-    if ~isfield(featSel_bSess.vein,'fullModelResid') || isempty(featSel_bSess.vein.fullModelResid)
-        featSel_bSess.vein.fullModelResid = 20;
+    if ~isfield(featSel_bSess.vein,'source') || isempty(featSel_bSess.vein.source)
+        featSel_bSess.vein.source = 'fullModelResid';
     end
 end
 % discrim
