@@ -1,5 +1,8 @@
-function inspectSubjAndExclude(figOption)
+function inspectSubjAndExclude(figOption,verbose)
 close all
+if ~exist('verbose','var')
+    verbose = 1;
+end
 if ~exist('figOption','var') || isempty(figOption)
     figOption.save = 0;
     figOption.subj = 1; % 'all' or subjInd
@@ -45,7 +48,7 @@ dAll = cell(size(subjList,1),1);
 paramAll = cell(size(subjList,1),1);
 for subjInd = 1:size(subjList,1)
     curFile = fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]);
-    disp(['loading: ' curFile])
+    if verbose; disp(['loading: ' curFile]); end
     load(curFile,'d','param');
     dAll{subjInd} = d;
     paramAll{subjInd} = param;
@@ -128,7 +131,7 @@ if exist('exclusion','var') && ~isempty(exclusion) && ~isempty(exclusion.subj)
         subjInd = find(ismember(subjList,exclusion.subjList{exclusion.subj(i)}));
         sessInd = exclusion.sess{i}; sess = ['sess' num2str(sessInd)];
         runInd = exclusion.run{i};
-        disp(['Excluding: ' subjList{subjInd} ', sess' num2str(sessInd) ', runTriplet(repeat)=' num2str(runInd)])
+        if verbose; disp(['Excluding: ' subjList{subjInd} ', sess' num2str(sessInd) ', runTriplet(repeat)=' num2str(runInd)]); end
 
         allFields = fields(dAll{subjInd}.(sess));
         nRepeat = size(dAll{subjInd}.(sess).data,1);
@@ -242,12 +245,12 @@ for subjInd = 1:length(subjList)
             set(findobj(fSubj(subjInd).Children,'type','Axes'),'color','none')
             set(findobj(fSubj(subjInd).Children,'type','PolarAxes'),'color','none')
             curExt = 'svg';
-            saveas(fSubj(subjInd),[curFile '.' curExt]); disp([curFile '.' curExt])
+            saveas(fSubj(subjInd),[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
             fSubj(subjInd).Color = 'w';
             curExt = 'fig';
-            saveas(fSubj(subjInd),[curFile '.' curExt]); disp([curFile '.' curExt])
+            saveas(fSubj(subjInd),[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
             curExt = 'jpg';
-            saveas(fSubj(subjInd),[curFile '.' curExt]); disp([curFile '.' curExt])
+            saveas(fSubj(subjInd),[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
         end
     else
         if figOption.save
@@ -258,7 +261,7 @@ for subjInd = 1:length(subjList)
             if ~isempty(curFile)
                 for ii = 1:length(curFile)
                     delFile = fullfile(curFile(ii).folder,curFile(ii).name);
-                    disp(['delete old: ' delFile]);
+                    if verbose; disp(['delete old: ' delFile]); end
                     delete(delFile)
                 end
             end
@@ -268,10 +271,10 @@ end
 
 
 %% Save cleaned data
-disp('Updating param and cleaned data to:')
+if verbose; disp('Updating param and cleaned data to:'); end
 for subjInd = 1:length(subjList)
     tmp = fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]);
-    disp(tmp)
+    if verbose; disp(tmp); end
     dC = dAll{subjInd};
     save(tmp,'dC','param','-append');
 end

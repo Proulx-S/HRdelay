@@ -1,7 +1,7 @@
 clear all
 addpath(genpath(fullfile(pwd,'matlabFun')));
 
-runFit
+runFit(0)
 
 
 featSel_bSess.activation.doIt = 1;
@@ -19,11 +19,11 @@ figOption.subj = 1; % subjInd, +inf for all subj
 % loadOption;
 
 
-preprocAndShowMasks(featSel_bSess,figOption)
+preprocAndShowMasks(featSel_bSess,figOption,0)
 
-inspectSubjAndExclude(figOption)
+inspectSubjAndExclude(figOption,0)
 
-runGroupAnalysis_sin(figOption)
+runGroupAnalysis_sin(figOption,0)
 
 runGroupAnalysis_hr(figOption)
 
@@ -51,9 +51,6 @@ disp(['signed rank = ' num2str(STATS.signedrank)])
 disp(['one-sided p = ' num2str(P)])
 
 plotDecoding_acc(res,figOption)
-plotDecoding_auc(res,figOption)
-plotDecoding_distT(res,figOption)
-
 
 
 nPerm = 2^14; % will not run if already run, and instead just load previous results
@@ -71,8 +68,5 @@ svmSpace = 'cartReal';
 res.(svmSpace) = runDecoding(res.(svmSpace),nPerm);
 
 accPerm = plotDecodingPerm_acc(res,figOption);
-plotDecoding_acc(res,figOption,accPerm)
-
-aucPerm = plotDecodingPerm_auc(res,figOption);
 plotDecoding_acc(res,figOption,accPerm)
 

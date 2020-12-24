@@ -1,4 +1,7 @@
-function runFit
+function runFit(verbose)
+if ~exist('verbose','var')
+    verbose = 1;
+end
 
 actuallyRun = 0;
 noMovement = 1;
@@ -36,16 +39,10 @@ subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'};
 subjStimList = {'jp' 'sk' 'sp' 'bm' 'sb' 'bj'};
 
 
-disp('Please get the data from the repo if not done already')
-disp(['data repo: ' repo])
-disp(['IN: anatomical V1 roi (' fullfile(anatDir) ')'])
-disp(['IN: preprocessed functionals (' fullfile(funDir,inDir) ')'])
-disp(['IN: stimulus timing (' fullfile(stimDir) ')'])
-disp('F(IN)=OUT: 2-df sinusoidal fit to single voxel time series')
-disp(['OUT: fit params and stats + HRF estimates (' fullfile(funDir,outDir) ')'])
-
 if ~actuallyRun
-    disp('Not actually running because way too long')
+    if verbose
+        disp('Not actually running because way too long')
+    end
     
     subjInd = 1;
     
@@ -125,7 +122,9 @@ if ~actuallyRun
     end
     if saveFig
         saveas(f,fullfile(repo,funDir,outDir,'designMatrices_randomEffect'))
-        disp(fullfile(repo,funDir,outDir,'designMatrices_randomEffect.fig'))
+        if verbose
+            disp(fullfile(repo,funDir,outDir,'designMatrices_randomEffect.fig'))
+        end
     end
     
     
@@ -189,7 +188,9 @@ if ~actuallyRun
     
     if saveFig
         saveas(f,fullfile(repo,funDir,outDir,'designMatrices_fixedEffect'))
-        disp(fullfile(repo,funDir,outDir,'designMatrices_fixedEffect.fig'))
+        if verbose
+            disp(fullfile(repo,funDir,outDir,'designMatrices_fixedEffect.fig'))
+        end
     end
     return
 end

@@ -1,5 +1,8 @@
-function runGroupAnalysis_sin(figOption)
+function runGroupAnalysis_sin(figOption,verbose)
 close all
+if ~exist('verbose','var')
+    verbose = 1;
+end
 if ~exist('figOption','var') || isempty(figOption)
     figOption.save = 0;
     figOption.subj = 1; % 'all' or subjInd
@@ -45,7 +48,7 @@ dCAll = cell(size(subjList,1),1);
 paramAll = cell(size(subjList,1),1);
 for subjInd = 1:size(subjList,1)
     curFile = fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]);
-    disp(['loading: ' curFile])
+    if verbose; disp(['loading: ' curFile]); end
     load(curFile,'dC','param');
     dCAll{subjInd} = dC;
     paramAll{subjInd} = param;
@@ -124,12 +127,12 @@ if figOption.save
     set(findobj(fGroup(1).Children,'type','PolarAxes'),'color','none')
     curFile = filename;
     curExt = 'svg';
-    saveas(fGroup(1),[curFile '.' curExt]); disp([curFile '.' curExt])
+    saveas(fGroup(1),[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
     fGroup(1).Color = 'w';
     curExt = 'fig';
-    saveas(fGroup(1),[curFile '.' curExt]); disp([curFile '.' curExt])
+    saveas(fGroup(1),[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
     curExt = 'jpg';
-    saveas(fGroup(1),[curFile '.' curExt]); disp([curFile '.' curExt])
+    saveas(fGroup(1),[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
 end
 
 % Polar space
@@ -181,12 +184,12 @@ if figOption.save
     set(findobj(fGroup(2).Children,'type','Axes'),'color','none')
     curFile = filename;
     curExt = 'svg';
-    saveas(fGroup(2),[curFile '.' curExt]); disp([curFile '.' curExt])
+    saveas(fGroup(2),[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
     fGroup(2).Color = 'w';
     curExt = 'fig';
-    saveas(fGroup(2),[curFile '.' curExt]); disp([curFile '.' curExt])
+    saveas(fGroup(2),[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
     curExt = 'jpg';
-    saveas(fGroup(2),[curFile '.' curExt]); disp([curFile '.' curExt])
+    saveas(fGroup(2),[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
 end
 
 fGroup(3) = figure('WindowStyle','docked');
@@ -239,12 +242,12 @@ if figOption.save
     set(findobj(fGroup(3).Children,'type','Axes'),'color','none')
     curFile = filename;
     curExt = 'svg';
-    saveas(fGroup(3),[curFile '.' curExt]); disp([curFile '.' curExt])
+    saveas(fGroup(3),[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
     fGroup(3).Color = 'w';
     curExt = 'fig';
-    saveas(fGroup(3),[curFile '.' curExt]); disp([curFile '.' curExt])
+    saveas(fGroup(3),[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
     curExt = 'jpg';
-    saveas(fGroup(3),[curFile '.' curExt]); disp([curFile '.' curExt])
+    saveas(fGroup(3),[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
 end
 
 %% Stats
@@ -391,12 +394,12 @@ if figOption.save
     set(findobj(fGroup(1).Children,'type','PolarAxes'),'color','none')
     curFile = filename;
     curExt = 'svg';
-    saveas(fGroup(1),[curFile '.' curExt]); disp([curFile '.' curExt])
+    saveas(fGroup(1),[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
     fGroup(1).Color = 'w';
     curExt = 'fig';
-    saveas(fGroup(1),[curFile '.' curExt]); disp([curFile '.' curExt])
+    saveas(fGroup(1),[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
     curExt = 'jpg';
-    saveas(fGroup(1),[curFile '.' curExt]); disp([curFile '.' curExt])
+    saveas(fGroup(1),[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
 end
 
 
@@ -426,12 +429,12 @@ if figOption.save
     set(findobj(fGroup(1).Children,'type','PolarAxes'),'color','none')
     curFile = filename;
     curExt = 'svg';
-    saveas(fGroup(1),[curFile '.' curExt]); disp([curFile '.' curExt])
+    saveas(fGroup(1),[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
     fGroup(1).Color = 'w';
     curExt = 'fig';
-    saveas(fGroup(1),[curFile '.' curExt]); disp([curFile '.' curExt])
+    saveas(fGroup(1),[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
     curExt = 'jpg';
-    saveas(fGroup(1),[curFile '.' curExt]); disp([curFile '.' curExt])
+    saveas(fGroup(1),[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
 end
 
 % Between-run correlation
@@ -487,10 +490,10 @@ if figOption.save
     set(findobj(fGroup(1).Children,'type','PolarAxes'),'color','none')
     curFile = filename;
     curExt = 'svg';
-    saveas(fGroup(1),[curFile '.' curExt]); disp([curFile '.' curExt])
+    saveas(fGroup(1),[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
     fGroup(1).Color = 'w';
     curExt = 'fig';
-    saveas(fGroup(1),[curFile '.' curExt]); disp([curFile '.' curExt])
+    saveas(fGroup(1),[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
     curExt = 'jpg';
-    saveas(fGroup(1),[curFile '.' curExt]); disp([curFile '.' curExt])
+    saveas(fGroup(1),[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
 end

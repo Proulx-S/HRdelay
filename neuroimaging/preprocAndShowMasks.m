@@ -1,5 +1,8 @@
-function preprocAndShowMasks(featSel_bSess,fitType,threshType,veinPerc,figOption)
+function preprocAndShowMasks(featSel_bSess,figOption,verbose)
 close all
+if ~exist('verbose','var')
+    verbose = 1;
+end
 noMovement = 1;
 if ~exist('figOption','var') || isempty(figOption)
     figOption.save = 0;
@@ -491,13 +494,13 @@ for subjInd = 1:length(subjList)
                 set(findobj(curF.Children,'type','Axes'),'color','none')
                 curFile = [filename '_' num2str(i)];
                 curExt = 'svg';
-                saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt])
+                saveas(curF,[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
                 curF.Color = 'w';
 %                 set(findobj(curF.Children,'type','Axes'),'color','w')
                 curExt = 'fig';
-                saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt])
+                saveas(curF,[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
                 curExt = 'jpg';
-                saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt])
+                saveas(curF,[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
             end
         end
     else
@@ -511,7 +514,7 @@ for subjInd = 1:length(subjList)
                 if ~isempty(curFile)
                     for ii = 1:length(curFile)
                         delFile = fullfile(curFile(ii).folder,curFile(ii).name);
-                        disp(['delete old: ' delFile]);
+                        if verbose; disp(['delete old: ' delFile]); end
                         delete(delFile)
                     end
                 end
@@ -581,6 +584,6 @@ for subjInd = 1:length(subjList)
     end
 
     tmp = fullfile(funPath,funLevel3,[subjList{subjInd} '_' mfilename]);
-    disp(['Saving to: ' tmp '.mat'])
+    if verbose; disp(['Saving to: ' tmp '.mat']); end
     save(tmp,'d','param')
 end
