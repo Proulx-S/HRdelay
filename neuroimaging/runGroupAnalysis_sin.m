@@ -383,7 +383,7 @@ delay = angle(xData);
 delay = wrapToPi(delay - angle(xDataMean));
 delay = -(delay + angle(xDataMean))/pi*6;
 
-f = figure('WindowStyle','docked');
+fCorr1 = figure('WindowStyle','docked');
 x = delay(:,2)-delay(:,1);
 y = amp(:,2) - amp(:,1);
 hScat = scatter(x,y);
@@ -405,12 +405,12 @@ hScat.CData = cData;
 hScat.MarkerFaceColor = hScat.MarkerEdgeColor;
 
 if figOption.save
-    writeFig(f,mfilename,'diffCorr_subjAndSess',verbose)
+    writeFig(fCorr1,mfilename,'diffCorr_subjAndSess',verbose)
 end
 
 
 %average sessions
-f = figure('WindowStyle','docked');
+fCorr2 = figure('WindowStyle','docked');
 delay = mean(cat(3,delay(1:2:end,:),delay(2:2:end,:)),3);
 amp = mean(cat(3,amp(1:2:end,:),amp(2:2:end,:)),3);
 x = delay(:,2)-delay(:,1);
@@ -427,7 +427,7 @@ hScat.MarkerFaceColor = 'k';
 hScat.MarkerEdgeColor = 'w';
 
 if figOption.save
-    writeFig(f,mfilename,'diffCorr_subj',verbose)
+    writeFig(fCorr2,mfilename,'diffCorr_subj',verbose)
 end
 
 % Between-run correlation
@@ -459,7 +459,7 @@ delay = -delay/pi*6;
 delay = delay + (-angle(xDataMean)/pi*6);
 
 
-f = figure('WindowStyle','docked');
+fCorr3 = figure('WindowStyle','docked');
 x = delay;
 y = amp;
 hScat = scatter(x,y);
@@ -475,6 +475,17 @@ hScat.MarkerEdgeColor = 'w';
 set(gca,'PlotBoxAspectRatio',[1 1 1])
 
 if figOption.save
-    writeFig(f,mfilename,'run2runCorr',verbose)
+    writeFig(fCorr3,mfilename,'run2runCorr',verbose)
 end
+
+%% Reorder for notebook
+fList = [fGroup([1 3 2]) fCorr1 fCorr2 fCorr3]';
+delete(fList(4))
+if ~verbose
+    fList(4) = [];
+end
+set(0,'Children',flipud(fList))
+
+
+
 

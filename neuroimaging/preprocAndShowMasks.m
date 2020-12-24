@@ -593,4 +593,12 @@ for subjInd = 1:length(subjList)
     tmp = fullfile(funPath,funLevel3,[subjList{subjInd} '_' mfilename]);
     if verbose; disp(['Saving to: ' tmp '.mat']); end
     save(tmp,'d','param')
+    
+    %% Reorder for notebook
+    if subjInd==figOption.subj
+        fList = [f{:}]';
+        fList = fList([1 7 2 5 4 6 3]);
+        delete(fList(1)); fList(1) = [];
+        set(0,'Children',flipud(fList))
+    end
 end

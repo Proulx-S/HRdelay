@@ -274,7 +274,6 @@ for subjInd = 1:length(subjList)
     end
 end
 
-
 %% Save cleaned data
 if verbose; disp('Updating param and cleaned data to:'); end
 for subjInd = 1:length(subjList)
@@ -283,3 +282,8 @@ for subjInd = 1:length(subjList)
     dC = dAll{subjInd};
     save(tmp,'dC','param','-append');
 end
+
+%% Reorder for notebook
+fList = [fSubj{:} f]';
+set(0,'Children',flipud(fList))
+
