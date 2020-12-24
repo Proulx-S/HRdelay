@@ -251,6 +251,14 @@ if figOption.save
 end
 
 %% Stats
+xDataMean = mean(xData(:));
+
+amp = abs(xData);
+delay = angle(xData);
+delay = wrapToPi(delay - angle(xDataMean));
+% delay = -(delay + angle(Xmean))/pi*6;
+
+
 % On cartesian space (conservative)
 disp('---------------')
 disp('Cartesian Space')
@@ -272,7 +280,7 @@ disp('---------------')
 disp('Polar Amplitude')
 disp('---------------')
 disp('Ori vs Plaid (one-tailed):')
-x = abs(xData(:,4)); y = abs(xData(:,3));
+x = amp(:,4); y = amp(:,3);
 [H,P,CI,STATS] = ttest(x,y,'tail','right');
 disp(' Student''s t-test')
 disp([' t=' num2str(STATS.tstat,'%0.2f') '; p=' num2str(P,'%0.2f')]);
@@ -280,7 +288,7 @@ disp([' t=' num2str(STATS.tstat,'%0.2f') '; p=' num2str(P,'%0.2f')]);
 disp(' Wilcoxon signed rank test')
 disp([' signed rank=' num2str(STATS.signedrank,'%0.2f') '; p=' num2str(P,'%0.2f')]);
 disp('Ori1 vs Ori2:')
-x = abs(xData(:,1)); y = abs(xData(:,2));
+x = amp(:,1); y = amp(:,2);
 [H,P,CI,STATS] = ttest(x,y);
 disp(' Student''s t-test')
 disp([' t=' num2str(STATS.tstat,'%0.2f') '; p=' num2str(P,'%0.2f')]);
@@ -288,12 +296,18 @@ disp([' t=' num2str(STATS.tstat,'%0.2f') '; p=' num2str(P,'%0.2f')]);
 disp(' Wilcoxon signed rank test')
 disp([' signed rank=' num2str(STATS.signedrank,'%0.2f') '; p=' num2str(P,'%0.2f')]);
 
+disp('Ori1 vs Ori2 vs Plais (Friedman''s test for K-related-samples):')
+[P,TABLE,~] = friedman(amp(:,1:3),1,'off');
+disp(['Chi^2(df=3' num2str(TABLE{2,3}) ') = ' num2str(TABLE{2,5},'%0.1f')]);
+disp(['p            = ' num2str(P,'%0.3f')]);
+
+
 % Compare delays
 disp('-----------')
 disp('Polar Delay')
 disp('-----------')
 disp('Ori vs Plaid (one-tail):')
-x = angle(xData(:,4)); y = angle(xData(:,3));
+x = delay(:,4); y = delay(:,3);
 [H,P,CI,STATS] = ttest(x,y,'tail','right');
 disp(' Student''s t-test')
 disp([' t=' num2str(STATS.tstat,'%0.2f') '; p=' num2str(P,'%0.2f')]);
@@ -304,7 +318,7 @@ disp([' signed rank=' num2str(STATS.signedrank,'%0.2f') '; p=' num2str(P,'%0.2f'
 disp(' Hotelling''s test for angular means')
 disp([' F=' num2str(STATS.signedrank,'%0.2f') '; p=' num2str(P/2,'%0.2f')]);
 disp('Ori1 vs Ori2:')
-x = angle(xData(:,1)); y = angle(xData(:,2));
+x = delay(:,1); y = delay(:,2);
 [H,P,CI,STATS] = ttest(x,y);
 disp(' Student''s t-test')
 disp([' t=' num2str(STATS.tstat,'%0.2f') '; p=' num2str(P,'%0.2f')]);
@@ -316,7 +330,7 @@ disp(' Hotelling''s test for angular means')
 disp([' F=' num2str(STATS.signedrank,'%0.2f') '; p=' num2str(P,'%0.2f')]);
 
 disp('Ori1 vs Plaid (one-tail):')
-x = angle(xData(:,1)); y = angle(xData(:,3));
+x = delay(:,1); y = delay(:,3);
 [H,P,CI,STATS] = ttest(x,y,'tail','right');
 disp(' Student''s t-test')
 disp([' t=' num2str(STATS.tstat,'%0.2f') '; p=' num2str(P,'%0.2f')]);
@@ -328,7 +342,7 @@ disp(' Hotelling''s test for angular means')
 disp([' F=' num2str(STATS.signedrank,'%0.2f') '; p=' num2str(P/2,'%0.2f')]);
 
 disp('Ori2 vs Plaid (one-tail):')
-x = angle(xData(:,2)); y = angle(xData(:,3));
+x = delay(:,2); y = delay(:,3);
 [H,P,CI,STATS] = ttest(x,y,'tail','right');
 disp(' Student''s t-test')
 disp([' t=' num2str(STATS.tstat,'%0.2f') '; p=' num2str(P,'%0.2f')]);
@@ -338,6 +352,11 @@ disp([' signed rank=' num2str(STATS.signedrank,'%0.2f') '; p=' num2str(P,'%0.2f'
 [P,F] = circ_htest(x,y);
 disp(' Hotelling''s test for angular means')
 disp([' F=' num2str(STATS.signedrank,'%0.2f') '; p=' num2str(P/2,'%0.2f')]);
+
+disp('Ori1 vs Ori2 vs Plais (Friedman''s test for K-related-samples):')
+[P,TABLE,~] = friedman(delay(:,1:3),1,'off');
+disp(['Chi^2(df=3' num2str(TABLE{2,3}) ') = ' num2str(TABLE{2,5},'%0.1f')]);
+disp(['p            = ' num2str(P,'%0.3f')]);
 
 
 %% Correlations
