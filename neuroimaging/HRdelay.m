@@ -6,12 +6,12 @@ verbose = 0; % prints more info
 %% Between-session feature selection parameters
 % Activated voxels
 featSel_bSess.activation.doIt = 1;
-featSel_bSess.activation.fitType = 'mixed';
+featSel_bSess.activation.fitType = 'fixed';
 featSel_bSess.activation.threshType = 'p';
 featSel_bSess.activation.threshVal = 0.05;
 % Vein voxels
 featSel_bSess.vein.doIt = 1;
-featSel_bSess.vein.source = 'reducedModelResid';% 'reducedModelResid' (stimulus-driven signal included in std) or 'fullModelResid (stimulus-driven signal excluded in std)'
+featSel_bSess.vein.source = 'fullModelResid';% 'reducedModelResid' (stimulus-driven signal included in std) or 'fullModelResid (stimulus-driven signal excluded in std)'
 featSel_bSess.vein.percentile = 20;
 % Discriminant voxels
 featSel_bSess.discrim.doIt = 1;
