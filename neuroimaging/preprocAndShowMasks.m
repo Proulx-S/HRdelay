@@ -338,10 +338,17 @@ for subjInd = 1:length(subjList)
 
     
     %% Plot masking
+    if subjInd==1
+        visibility = 'on';
+    elseif figOption.subj==inf && ~verbose
+        visibility = 'off';
+    else
+        visibility = 'on';
+    end
     if subjInd==figOption.subj || figOption.subj==inf
         sess = 'sess1';
         slice = 11;
-
+        
         % Get some nice colormaps
         filename = fullfile(pwd,mfilename);
         if ~exist(filename,'dir'); mkdir(filename); end
@@ -358,14 +365,14 @@ for subjInd = 1:length(subjList)
             save(filename,'cMap_F','cMap_vein');
         end
 
-        f = [];
+        f = {};
         % Brain
-        f(end+1) = figure('WindowStyle','docked','color','w');
+        f{end+1} = figure('WindowStyle','docked','color','w','visible',visibility);
         axBak = plotIm(axes,brain(:,:,slice));
         title('BOLD image (1 TR)')
 
         % Activation overlay
-        f(end+1) = figure('WindowStyle','docked','color','w');
+        f{end+1} = figure('WindowStyle','docked','color','w','visible',visibility);
         axBak = plotIm(axes,brain(:,:,slice));
         im = featSel.(sess).anyCondActivation_F(:,:,slice);
         im = log(im);
@@ -376,7 +383,7 @@ for subjInd = 1:length(subjList)
         makeOverlay(axBak,axOver,alphaData,cMap_F,'log',cLim)
         ylabel('Activation Level (F value)');
         % thresholded
-        f(end+1) = figure('WindowStyle','docked','color','w');
+        f{end+1} = figure('WindowStyle','docked','color','w','visible',visibility);
         axBak = plotIm(axes,brain(:,:,slice));
         maskTmp = maskROI;
         maskTmp = maskTmp & featSel.(sess).anyCondActivation_mask;
@@ -387,7 +394,7 @@ for subjInd = 1:length(subjList)
         makeOverlay(axBak,axOver,alphaData,cMap_F,'log',cLim)
         ylabel({'Activation Level (F value)' ['\fontsize{8}Thresholded (' featSel.(sess).anyCondActivation_threshType '<' num2str(featSel.(sess).anyCondActivation_threshVal,'%0.2f') ') within ROI']});
         % hist
-        f(end+1) = figure('WindowStyle','docked','color','w');
+        f{end+1} = figure('WindowStyle','docked','color','w','visible',visibility);
         vol = featSel.(sess).anyCondActivation_F(maskROI);
         vol = log(vol);
         hHist = histogram(vol,'BinWidth',0.1); hold on
@@ -437,7 +444,7 @@ for subjInd = 1:length(subjList)
         end
 
         % Vein overlay
-        f(end+1) = figure('WindowStyle','docked','color','w');
+        f{end+1} = figure('WindowStyle','docked','color','w','visible',visibility);
         axBak = plotIm(axes,brain(:,:,slice));
         axOver = plotIm(axes,featSel.(sess).vein_score(:,:,slice));
         alphaData = ~isnan(featSel.(sess).vein_score(:,:,slice));
@@ -447,7 +454,7 @@ for subjInd = 1:length(subjList)
         makeOverlay(axBak,axOver,alphaData,cMap_vein,'lin',cLim)
         ylabel('Veinness (signal std / signal mean)')
         %hist
-        f(end+1) = figure('WindowStyle','docked','color','w');
+        f{end+1} = figure('WindowStyle','docked','color','w','visible',visibility);
         vol = featSel.(sess).vein_score(maskROI);
         hHist = histogram(vol,'BinWidth',0.002); hold on
         tip = 0.001;
@@ -472,7 +479,7 @@ for subjInd = 1:length(subjList)
         end
 
         %V1 retinotopic representation + Vein
-        f(end+1) = figure('WindowStyle','docked','color','w');
+        f{end+1} = figure('WindowStyle','docked','color','w','visible',visibility);
         axBak = plotIm(axes,brain(:,:,slice));
         axV1 = plotIm(axes,double(maskROI(:,:,slice)));
         makeOverlay(axBak,axV1,maskROI(:,:,slice),[0 0 0; 255 255 0]./255)
@@ -489,7 +496,7 @@ for subjInd = 1:length(subjList)
             if ~exist(filename,'dir'); mkdir(filename); end
             filename = fullfile(filename,[subjList{subjInd}]);
             for i = 1:length(f)
-                curF = figure(f(i));
+                curF = f{i};
                 curF.Color = 'none';
                 set(findobj(curF.Children,'type','Axes'),'color','none')
                 curFile = [filename '_' num2str(i)];

@@ -149,9 +149,17 @@ end
 %% Plot single subjects
 rLim = nan(2,length(subjList),2);
 yLim = nan(2,length(subjList),2);
+fSubj = cell(length(subjList),1);
 for subjInd = 1:length(subjList)
+    if subjInd==1
+        visibility = 'on';
+    elseif figOption.subj==inf && ~verbose
+        visibility = 'off';
+    else
+        visibility = 'on';
+    end
     if subjInd==figOption.subj || figOption.subj==inf
-        fSubj(subjInd) = figure('WindowStyle','docked');
+        fSubj{subjInd} = figure('WindowStyle','docked','visible',visibility);
         for sessInd = 1:2
             % Between-session feature selection
             sess = ['sess' num2str(sessInd)];
@@ -173,7 +181,7 @@ for subjInd = 1:length(subjList)
                 hAv(condInd).LineWidth = 0.25;
             end
             uistack(hAv,'top')
-            title(['Sess' num2str(sessInd)])
+            title([subjList{subjInd} '; sess' num2str(sessInd)])
             rLim(:,subjInd,sessInd) = rlim;
 
             ax = gca;
@@ -201,16 +209,13 @@ for subjInd = 1:length(subjList)
             box off
             yLim(:,sessInd,subjInd) = ylim;
         end
-
-        suptitle(subjList{subjInd})
-    else
     end
 end
 rLim = [0 max(rLim(2,:))];
 yLim = [min(yLim(1,:)) max(yLim(2,:))];
 for subjInd = 1:length(subjList)
     if subjInd==figOption.subj || figOption.subj==inf
-        figure(fSubj(subjInd));
+        set(0, 'CurrentFigure', fSubj{subjInd})
         for sessInd = 1:2
             ax = subplot(2,2,sessInd);
             rlim(rLim);
@@ -241,16 +246,16 @@ for subjInd = 1:length(subjList)
             if ~exist(filename,'dir'); mkdir(filename); end
             filename = fullfile(filename,subjList{subjInd});
             curFile = filename;
-            fSubj(subjInd).Color = 'none';
-            set(findobj(fSubj(subjInd).Children,'type','Axes'),'color','none')
-            set(findobj(fSubj(subjInd).Children,'type','PolarAxes'),'color','none')
+            fSubj{subjInd}.Color = 'none';
+            set(findobj(fSubj{subjInd}.Children,'type','Axes'),'color','none')
+            set(findobj(fSubj{subjInd}.Children,'type','PolarAxes'),'color','none')
             curExt = 'svg';
-            saveas(fSubj(subjInd),[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
-            fSubj(subjInd).Color = 'w';
+            saveas(fSubj{subjInd},[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
+            fSubj{subjInd}.Color = 'w';
             curExt = 'fig';
-            saveas(fSubj(subjInd),[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
+            saveas(fSubj{subjInd},[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
             curExt = 'jpg';
-            saveas(fSubj(subjInd),[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
+            saveas(fSubj{subjInd},[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
         end
     else
         if figOption.save

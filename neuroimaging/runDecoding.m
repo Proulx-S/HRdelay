@@ -1,13 +1,14 @@
-function res = runDecoding(SVMspace,nPerm,figOption)
+function res = runDecoding(SVMspace,verbose,nPerm,figOption)
+if ~exist('verbose','var')
+    verbose = 1;
+end
 if ~exist('figOption','var') || isempty(figOption)
     figOption.save = 0;
     figOption.subj = 1; % 'all' or subjInd
 end
 if ~exist('SVMspace','var') || isempty(SVMspace)
-    SVMspace = 'cartNoAmp_HTbSess'; % 'cart_HTbSess' 'cartNoAmp_HTbSess' 'cartNoDelay_HTbSess'
+    SVMspace = 'cart'; % 'cart_HTbSess' 'cartNoAmp_HTbSess' 'cartNoDelay_HTbSess'
     % 'hr' 'hrNoAmp' 'cart' 'cartNoAmp' cartNoAmp_HT 'cartReal', 'cartImag', 'pol', 'polMag' 'polMag_T' or 'polDelay'
-
-    % cartNoDelay_HT WIERD!!!
 end
 if isstruct(SVMspace)
     doPerm = 1;
@@ -25,13 +26,15 @@ if doPerm
     filename = fullfile(filename,[SVMspace '_' num2str(nPerm) 'perm']);
     if exist([filename '.mat'],'file')
         load(filename)
-        disp('permutation found on disk, skipping')
-        disp('Group results:')
-        disp(['  hit    =' num2str(res.summary.hit) '/' num2str(res.summary.nObs)])
-        disp(['  acc    =' num2str(res.summary.acc*100,'%0.2f%%')])
-        disp(' permutation test stats')
-        disp(['  thresh =' num2str(res.perm.summary.accThresh*100,'%0.2f%%')])
-        disp(['  p      =' num2str(res.perm.summary.p,'%0.3f') ')'])
+        if verbose
+            disp('permutation found on disk, skipping')
+            disp('Group results:')
+            disp(['  hit    =' num2str(res.summary.hit) '/' num2str(res.summary.nObs)])
+            disp(['  acc    =' num2str(res.summary.acc*100,'%0.2f%%')])
+            disp(' permutation test stats')
+            disp(['  thresh =' num2str(res.perm.summary.accThresh*100,'%0.2f%%')])
+            disp(['  p      =' num2str(res.perm.summary.p,'%0.3f')])
+        end
         return
     else
         disp(['running ' num2str(nPerm) ' permutations']);
@@ -73,7 +76,7 @@ subjList = param.subjList;
 dCAll = cell(size(subjList,1),1);
 for subjInd = 1:size(subjList,1)
     curFile = fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]);
-    disp(['loading: ' curFile]);
+    if verbose; disp(['loading: ' curFile]); end
     
     load(curFile,'dC');
     dCAll{subjInd} = dC;
@@ -81,8 +84,10 @@ end
 dC = dCAll; clear dAll
 sessList = fields(dC{1});
 
-disp('---');
-disp(['SVM space: ' SVMspace]);
+if verbose
+    disp('---');
+    disp(['SVM space: ' SVMspace]);
+end
 
 %% Between-session feature selection
 dP = cell(length(dC),2);
@@ -169,11 +174,11 @@ if figOption.save
     filename = fullfile(filename,SVMspace);
     f.Color = 'none';
     set(findobj(f.Children,'type','Axes'),'color','none')
-    saveas(f,[filename '.svg']); disp([filename '.svg'])
+    saveas(f,[filename '.svg']); if verbose; disp([filename '.svg']); end
     f.Color = 'w';
     set(findobj(f.Children,'type','Axes'),'color','w')
-    saveas(f,[filename '.fig']); disp([filename '.fig'])
-    saveas(f,[filename '.jpg']); disp([filename '.jpg'])
+    saveas(f,[filename '.fig']); if verbose; disp([filename '.fig']); end
+    saveas(f,[filename '.jpg']); if verbose; disp([filename '.jpg']); end
 end
 
 %% Some more independant-sample normalization
@@ -327,14 +332,16 @@ if ~doPerm
     [~,pci] = binofit(res.summary.nObs/2,res.summary.nObs,0.1);
     res.summary.accThresh = pci(2);
     res.summary.p = binocdf(res.summary.hit,res.summary.nObs,0.5,'upper');
-    disp('Group results:')
-    disp(['  hit    =' num2str(res.summary.hit) '/' num2str(res.summary.nObs)])
-    disp(['  acc    =' num2str(res.summary.acc*100,'%0.2f%%')])
-    disp(['  auc    =' num2str(res.summary.auc*100,'%0.2f')])
-    disp(['  distT  =' num2str(res.summary.distT,'%0.2f')])
-    disp(' binomial stats')
-    disp(['  thresh =' num2str(res.summary.accThresh*100,'%0.2f')])
-    disp(['  p      =' num2str(res.summary.p,'%0.3f') ')'])
+    if verbose
+        disp('Group results:')
+        disp(['  hit    =' num2str(res.summary.hit) '/' num2str(res.summary.nObs)])
+        disp(['  acc    =' num2str(res.summary.acc*100,'%0.2f%%')])
+        disp(['  auc    =' num2str(res.summary.auc*100,'%0.2f')])
+        disp(['  distT  =' num2str(res.summary.distT,'%0.2f')])
+        disp(' binomial stats')
+        disp(['  thresh =' num2str(res.summary.accThresh*100,'%0.2f')])
+        disp(['  p      =' num2str(res.summary.p,'%0.3f')])
+    end
 else
     res.perm.info = 'subj x sess x perm';
     nObs = permute(repmat(res.nObs,[1 1 nPerm]),[3 1 2]);
@@ -348,18 +355,20 @@ else
     res.perm.auc = permute(res.perm.auc,[2 3 1]);
     res.perm.distT = permute(res.perm.distT,[2 3 1]);
 
-    disp('Group results:')
-    disp(['  hit    =' num2str(res.summary.hit) '/' num2str(res.summary.nObs)])
-    disp(['  acc    =' num2str(res.summary.acc*100,'%0.2f%%')])
-    disp(' permutation test stats')
-    disp(['  thresh =' num2str(res.perm.summary.accThresh*100,'%0.2f%%')])
-    disp(['  p      =' num2str(res.perm.summary.p,'%0.3f') ')'])
+    if verbose
+        disp('Group results:')
+        disp(['  hit    =' num2str(res.summary.hit) '/' num2str(res.summary.nObs)])
+        disp(['  acc    =' num2str(res.summary.acc*100,'%0.2f%%')])
+        disp(' permutation test stats')
+        disp(['  thresh =' num2str(res.perm.summary.accThresh*100,'%0.2f%%')])
+        disp(['  p      =' num2str(res.perm.summary.p,'%0.3f')])
+    end
 
     filename = fullfile(pwd,mfilename);
     if ~exist(filename,'dir'); mkdir(filename); end
     filename = fullfile(filename,[SVMspace '_' num2str(nPerm) 'perm']);
     save(filename,'res')
-    disp([filename '.mat'])
+    if verbose; disp([filename '.mat']); end
 end
 
 

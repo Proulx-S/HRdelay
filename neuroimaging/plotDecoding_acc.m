@@ -1,7 +1,10 @@
-function plotDecoding_acc(res,figOption,accPerm)
+function plotDecoding_acc(res,figOption,verbose,accPerm)
 groupStatMethod = 'binomial'; % 'binomial' or 'pseudoMedian'
+if ~exist('verbose','var')
+    verbose = 1;
+end
 if ~exist('figOption','var') || isempty(figOption)
-    figOption.save = 1;
+    figOption.save = 0;
     figOption.subj = 1; % 'all' or subjInd
 end
 
@@ -41,11 +44,14 @@ for spaceInd = 1:length(spaceList)
     signedrank(1,spaceInd) = STATS.signedrank; clear STATS
     signedrankP(1,spaceInd) = P; clear P
 end
-disp(spaceList)
-disp(['signedrank   = ' num2str(signedrank,'%0.2f  ')])
-disp(['signedrank p = ' num2str(signedrankP,'%0.4f  ')])
-disp(['group accuracy  = ' num2str(accGroup*100,'%0.2f%%  ')])
-disp(['binomial   p    = ' num2str(pGroup,'%0.4f   ')])
+t = table(...
+    num2str(signedrank','%0.2f'),...
+    num2str(signedrankP','%0.4f'),...
+    num2str(accGroup'*100,'%0.2f%%'),...
+    num2str(pGroup','%0.4f'));
+t.Properties.VariableNames = {['signed rank'] 'signed rank one-tailed p' 'acc' 'bino p'};
+t.Properties.RowNames = spaceList;
+disp(t)
 
 %% Group stats
 switch groupStatMethod
@@ -248,5 +254,5 @@ legend(ax.Children([end-1 end-7 end-8]),char({'Participants' tmpStr1 tmpStr2}),'
 
 
 if figOption.save
-    writeFig(f,mfilename,'acc')
+    writeFig(f,mfilename,'acc',verbose)
 end

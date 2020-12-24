@@ -1,72 +1,35 @@
 clear all
+% Dependencies
 addpath(genpath(fullfile(pwd,'matlabFun')));
+verbose = 0;
 
-runFit(0)
-
-
+% Between-session feature selection parameters
+% activated voxels
 featSel_bSess.activation.doIt = 1;
 featSel_bSess.activation.fitType = 'fixed';
 featSel_bSess.activation.threshType = 'p';
 featSel_bSess.activation.threshVal = 0.05;
+% vein voxels
 featSel_bSess.vein.doIt = 1;
 featSel_bSess.vein.source = 'fullModelResid';% 'reducedModelResid' (stimulus-driven signal included in std) or 'fullModelResid (stimulus-driven signal excluded in std)'
 featSel_bSess.vein.percentile = 20;
+% discriminant voxels
 featSel_bSess.discrim.doIt = 1;
-% featSel_bSess.discrim.spaceList = {'cart'};
-
-figOption.save = 0;
-figOption.subj = 1; % subjInd, +inf for all subj
-% loadOption;
+% Display parameters
+figOption.save = 1;
+figOption.subj = inf; % subjInd, +inf for all subj
 
 
-preprocAndShowMasks(featSel_bSess,figOption,0)
 
-inspectSubjAndExclude(figOption,0)
+runFit(verbose)
 
-runGroupAnalysis_sin(figOption,0)
+preprocAndShowMasks(featSel_bSess,figOption,verbose)
 
-runGroupAnalysis_hr(figOption)
+inspectSubjAndExclude(figOption,verbose)
 
-clear res
+runGroupAnalysis_sin(figOption,verbose)
 
-svmSpace = 'cart';
-resTmp = runDecoding(svmSpace);
-res.(svmSpace) = resTmp;
+runGroupAnalysis_hr(figOption,verbose)
 
-svmSpace = 'cartNoAmp';
-resTmp = runDecoding(svmSpace);
-res.(svmSpace) = resTmp;
-
-svmSpace = 'cartNoDelay';
-resTmp = runDecoding(svmSpace);
-res.(svmSpace) = resTmp;
-
-svmSpace = 'cartReal';
-resTmp = runDecoding(svmSpace);
-res.(svmSpace) = resTmp;
-
-[P,H,STATS] = signrank(mean(res.cart.acc,2),mean(res.cartReal.acc,2),'tail','right'); P
-disp('cart VS cartReal:')
-disp(['signed rank = ' num2str(STATS.signedrank)])
-disp(['one-sided p = ' num2str(P)])
-
-plotDecoding_acc(res,figOption)
-
-
-nPerm = 2^14; % will not run if already run, and instead just load previous results
-
-svmSpace = 'cart';
-res.(svmSpace) = runDecoding(res.(svmSpace),nPerm);
-
-svmSpace = 'cartNoAmp';
-res.(svmSpace) = runDecoding(res.(svmSpace),nPerm);
-
-svmSpace = 'cartNoDelay';
-res.(svmSpace) = runDecoding(res.(svmSpace),nPerm);
-
-svmSpace = 'cartReal';
-res.(svmSpace) = runDecoding(res.(svmSpace),nPerm);
-
-accPerm = plotDecodingPerm_acc(res,figOption);
-plotDecoding_acc(res,figOption,accPerm)
+runAllDecoding(figOption,verbose)
 

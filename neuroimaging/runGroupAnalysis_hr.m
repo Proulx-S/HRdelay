@@ -1,5 +1,8 @@
-function runGroupAnalysis_hr(figOption)
+function runGroupAnalysis_hr(figOption,verbose)
 close all
+if ~exist('verbose','var')
+    verbose = 1;
+end
 if ~exist('figOption','var') || isempty(figOption)
     figOption.save = 0;
     figOption.subj = 1; % 'all' or subjInd
@@ -44,7 +47,7 @@ subjList = param.subjList;
 dCAll = cell(size(subjList,1),1);
 for subjInd = 1:size(subjList,1)
     curFile = fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]);
-    disp(['loading ' curFile])
+    if verbose; disp(['loading ' curFile]); end
     load(curFile,'dC');
     dCAll{subjInd} = dC;
 end
@@ -213,10 +216,10 @@ if figOption.save
 
     curFile = filename;
     curExt = 'svg';
-    saveas(fGroup,[curFile '.' curExt]); disp([curFile '.' curExt])
+    saveas(fGroup,[curFile '.' curExt]); if verbose; ([curFile '.' curExt]); end
     fGroup.Color = 'w';
     curExt = 'fig';
-    saveas(fGroup,[curFile '.' curExt]); disp([curFile '.' curExt])
+    saveas(fGroup,[curFile '.' curExt]); if verbose; ([curFile '.' curExt]); end
     curExt = 'jpg';
-    saveas(fGroup,[curFile '.' curExt]); disp([curFile '.' curExt])
+    saveas(fGroup,[curFile '.' curExt]); if verbose; ([curFile '.' curExt]); end
 end
