@@ -29,4 +29,6 @@ runGroupAnalysis_sin(figOption,verbose)
 
 runGroupAnalysis_hr(figOption,verbose)
 
-runAllDecoding(figOption,verbose)
+res = runAllDecoding(figOption,verbose);
+return
+runAllDecodingPerm(res,figOption,verbose);
