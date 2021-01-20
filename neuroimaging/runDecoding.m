@@ -154,6 +154,11 @@ switch SVMspace
         error('X')
 end
 
+%% Match data and hr
+% save tmp tmpData tmpHr
+% /Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/HrVsDataScale.m
+% hr is in percent BOLD from 0 to 1
+% data is in percent BOLD from 0 to 100
 
 %% Run svm
 if ~doPerm
