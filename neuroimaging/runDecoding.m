@@ -165,6 +165,7 @@ if ~doPerm
     res.nObs = nan(size(dP));
     res.p = nan(size(dP));
     res.subjList = subjList;
+    res.model = cell(size(dP));
 else
     res.perm.acc = nan([nPerm size(res.acc)]);
     res.perm.auc = nan([nPerm size(res.auc)]);
@@ -204,7 +205,7 @@ for i = 1:numel(dP)
     % SVM
     if ~doPerm
         %cross-validated SVM
-        [yTe,d,yHatTe,model] = xValSVM(x,y,k,SVMspace);
+        [yTe,d,yHatTe,res.model{i}] = xValSVM(x,y,k,SVMspace);
     else
         % with permutations
         yTe = nan(length(y),nPerm);
@@ -217,7 +218,7 @@ for i = 1:numel(dP)
             for sInd = 1:size(y,1); y(sInd,:) = y(sInd,randperm(2)); end
             y = cat(1,y(:,1),y(:,2));
             %cross-validated SVM
-            [yTe(:,permInd),~,yHatTe(:,permInd),model] = xValSVM(x,y,k,SVMspace);
+            [yTe(:,permInd),~,yHatTe(:,permInd)] = xValSVM(x,y,k,SVMspace);
         end
         y = cat(1,y1,y2); clear y1 y2
     end
