@@ -33,8 +33,12 @@ res = runAllDecoding(figOption,verbose);
 return
 runAllDecodingPerm(res,figOption,verbose);
 
+plotDecoding(res,0)
+
 return
 svmSpace = 'cartReal';
 resTmp = runDecoding(svmSpace,verbose);
 res.(svmSpace) = resTmp;
+
+out = filterHr(res.(svmSpace))
 

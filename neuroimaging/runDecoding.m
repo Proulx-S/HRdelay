@@ -269,6 +269,37 @@ for i = 1:numel(dP)
             res.distT(permInd,i) = STATS.tstat;
         end
     end
+    
+    hr = dP{i}.hr*100;
+    sz = size(hr); sz(2) = 1;
+    hrF = nan(sz);
+    for kInd = 1:length(res.model{i})
+        w = res.model{i}(kInd).svm.w;
+        b = res.model{i}(kInd).svm.b;
+        for ii = 1:size(hr(kInd,:,:),3)
+            % apply norm
+            hr(kInd,:,ii) = hr(kInd,:,ii)./res.model{i}(kInd).polNorm.rhoScale;
+            hr(kInd,:,ii) = hr(kInd,:,ii)./res.model{i}(kInd).svmNorm.xScale - res.model{i}(kInd).svmNorm.xShift;
+            % apply svm filter
+            hrF(kInd,1,ii) = hr(kInd,:,ii)*w'-b;
+            
+%             % rescale
+%             hrF(kInd,1,ii) = hrF(kInd,1,ii) + b;
+%             hrF(kInd,1,ii) = hrF(kInd,1,ii)/norm(w);
+%             
+%             hrF(kInd,1,ii) = hrF(kInd,1,ii) + (res.model{i}(kInd).svmNorm.xShift*(w/norm(w))');
+%             hrF(kInd,1,ii) = hrF(kInd,1,ii) * (res.model{i}(kInd).svmNorm.xScale*(w/norm(w))');
+%             
+%             hrF(kInd,1,ii) = hrF(kInd,1,ii) * (res.model{i}(kInd).polNorm.rhoScale*(w/norm(w))');
+        end
+    end
+    dP{i}.hrF = hrF;
+%     figure('WindowStyle','docked');
+%     tmp = squeeze(hrF(:,:,1,:))';
+%     plot(tmp);
+%     tmp = squeeze(mean(hrF,1))';
+%     plot(tmp(:,1:2));
+    
     if doPerm
         toc
     end
@@ -282,6 +313,57 @@ end
 % grid on
 % xlim([0 1]); ylim([0 1]);
 % uistack(plot([0 1],[0 1],'k'),'bottom')
+
+figure('WindowStyle','docked');
+colors = {'b' 'r' 'y'};
+for subjInd = 1:6
+    for sessInd = 1:2
+        subplot(6,2,(subjInd-1)*2+sessInd)
+        for condInd = 1:3
+            plot(squeeze(dP{subjInd,sessInd}.hrF(:,:,condInd,:)),colors{condInd}); hold on
+        end
+    end
+end
+figure('WindowStyle','docked');
+colors = {'b' 'r' 'y'};
+for subjInd = 1:6
+    for sessInd = 1:2
+        subplot(6,2,(subjInd-1)*2+sessInd)
+        plot(squeeze(mean(dP{subjInd,sessInd}.hrF,1))');
+    end
+end
+figure('WindowStyle','docked');
+for subjInd = 1:6
+    for sessInd = 1:2
+        subplot(6,2,(subjInd-1)*2+sessInd)
+        tmp = squeeze(dP{subjInd,sessInd}.hrF(:,:,2,:)-dP{subjInd,sessInd}.hrF(:,:,1,:));
+        plot(tmp','k');
+    end
+end
+figure('WindowStyle','docked');
+clear tmp
+for subjInd = 1:6
+    for sessInd = 1:2
+        tmp(:,subjInd,sessInd) = mean(squeeze(dP{subjInd,sessInd}.hrF(:,:,2,:)-dP{subjInd,sessInd}.hrF(:,:,1,:)),1);
+    end
+end
+for subjInd = 1:6
+    subplot(6,1,subjInd)
+    plot(squeeze(tmp(:,subjInd,:))); hold on
+    plot(xlim,[0 0],':k')
+end
+figure('WindowStyle','docked');
+clear tmp
+for subjInd = 1:6
+    for sessInd = 1:2
+        tmp(:,subjInd,sessInd) = mean(squeeze(dP{subjInd,sessInd}.hrF(:,:,2,:)-dP{subjInd,sessInd}.hrF(:,:,1,:)),1);
+    end
+end
+tmp = mean(tmp,3);
+plot(tmp); hold on
+hLine = plot(mean(tmp,2),'k');
+hLine.LineWidth = 3;
+
 
 
 %% Add info
