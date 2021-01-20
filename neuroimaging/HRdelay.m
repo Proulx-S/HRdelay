@@ -32,3 +32,9 @@ runGroupAnalysis_hr(figOption,verbose)
 res = runAllDecoding(figOption,verbose);
 return
 runAllDecodingPerm(res,figOption,verbose);
+
+return
+svmSpace = 'cartReal';
+resTmp = runDecoding(svmSpace,verbose);
+res.(svmSpace) = resTmp;
+
