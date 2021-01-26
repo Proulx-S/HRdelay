@@ -8,7 +8,7 @@ if ~exist('figOption','var') || isempty(figOption)
     figOption.subj = 1; % 'all' or subjInd
 end
 
-plotUpperErrorBar = 0;
+plotUpperErrorBar = 1;
 lw = 1;
 yLim = [0 100]./100;
 % yLim = 'auto';

@@ -577,31 +577,33 @@ end
 switch SVMspace
     case {'hr' 'hrNoAmp'}
         error('code that')
-        x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
+        x = (x-mean(x(~te,:),1)) ./ std(x(~te,:),[],1);
     case {'cart' 'cart_HT' 'cart_HTbSess'...
             'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'}
         svmNorm.scale = std(x(~te,:),[],1);
         svmNorm.shift = mean(x(~te,:),1);
-        x = x./svmNorm.scale - svmNorm.shift;
+        x = (x-svmNorm.shift) ./ svmNorm.scale;
         x = cat(2,real(x),imag(x));
     case {'cartReal' 'cartReal_T'}
         x = real(x);
         svmNorm.scale = std(x(~te,:),[],1);
         svmNorm.shift = mean(x(~te,:),1);
-        x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
+        x = (x-svmNorm.shift) ./ svmNorm.scale;
     case 'cartImag'
         error('code that')
         x = imag(x);
-        x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
+        svmNorm.scale = std(x(~te,:),[],1);
+        svmNorm.shift = mean(x(~te,:),1);
+        x = (x-svmNorm.shift) ./ svmNorm.scale;
     case 'pol'
         error('code that')
         x = cat(2,angle(x),abs(x));
-        x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
+        x = (x-mean(x(~te,:),1)) ./ std(x(~te,:),[],1);
     case {'polMag' 'polMag_T' 'cartNoDelay' 'cartNoDelay_HT'  'cartNoDelay_HTbSess'}
         x = abs(x);
         svmNorm.scale = std(x(~te,:),[],1);
         svmNorm.shift = mean(x(~te,:),1);
-        x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
+        x = (x-svmNorm.shift) ./ svmNorm.scale;
     case 'polDelay'
         error('code that')
         x = angle(x);
