@@ -1,4 +1,5 @@
 function res = runDecoding(SVMspace,verbose,nPerm,figOption)
+doChannel = 0;
 if ~exist('verbose','var')
     verbose = 1;
 end
@@ -182,30 +183,7 @@ for i = 1:numel(dP)
         tic
     end
     % Define x(data), y(label) and k(xValFolds)
-    switch SVMspace
-        case {'hr' 'hrNoAmp'}
-            nSamplePaire = size(dP{i}.hr,1);
-            x1 = dP{i}.hr(:,:,1,:); x1 = x1(:,:);
-            x2 = dP{i}.hr(:,:,2,:); x2 = x2(:,:);
-        case {'cart' 'cart_HT' 'cart_HTbSess'...
-                'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'...
-                'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'...
-                'cartReal' 'cartReal_T'...
-                'polMag' 'polMag_T'}
-            nSamplePaire = size(dP{i}.data,1);
-            x1 = dP{i}.data(:,:,1);
-            x2 = dP{i}.data(:,:,2);
-        otherwise
-            error('X')
-    end
-    y1 = 1.*ones(nSamplePaire,1);
-    k1 = (1:nSamplePaire)';
-    y2 = 2.*ones(nSamplePaire,1);
-    k2 = (1:nSamplePaire)';
-
-    x = cat(1,x1,x2); clear x1 x2
-    y = cat(1,y1,y2); clear y1 y2
-    k = cat(1,k1,k2); clear k1 k2
+    [x,y,k] = getXYK(dP{i},SVMspace);
 
     % SVM
     if ~doPerm
@@ -270,41 +248,43 @@ for i = 1:numel(dP)
         end
     end
     
-    hr = dP{i}.hr*100;
-    sz = size(hr); sz(2) = 1;
-    hrF = nan(sz);
-    % normalize (norm 3 conditions based on cond 1 and 2)
-    tmp = cat(1,hr(:,:,1,:),hr(:,:,1,:));
-    hrNorm.scale = std(tmp,[],1);
-    hrNorm.shift = mean(tmp,1);
-    hr = hr./hrNorm.scale - hrNorm.shift;
-    for kInd = 1:length(res.model{i})
-        w = res.model{i}(kInd).svm.w;
-        b = res.model{i}(kInd).svm.b;
-%         % apply norm from training set
-%         hr(kInd,:,:,:) = hr(kInd,:,:,:)./res.model{i}(kInd).polNorm.rhoScale;
-%         hr(kInd,:,:,:) = hr(kInd,:,:,:)./res.model{i}(kInd).svmNorm.xScale - res.model{i}(kInd).svmNorm.xShift;
-        
-        for tInd = 1:size(hr,4)
-            for condInd = 1:size(hr,3)
-                % apply svm filter
-                hrF(kInd,1,condInd,tInd) = hr(kInd,:,condInd,tInd)*w'-b;
-                
-                % rescale svm filter
-                hrF(kInd,1,condInd,tInd) = hrF(kInd,1,condInd,tInd) + b;
-                hrF(kInd,1,condInd,tInd) = hrF(kInd,1,condInd,tInd)/norm(w);
+    if doChannel
+        hr = dP{i}.hr*100;
+        sz = size(hr); sz(2) = 1;
+        hrF = nan(sz);
+        % normalize (norm 3 conditions based on cond 1 and 2)
+        tmp = cat(1,hr(:,:,1,:),hr(:,:,1,:));
+        hrNorm.scale = std(tmp,[],1);
+        hrNorm.shift = mean(tmp,1);
+        hr = hr./hrNorm.scale - hrNorm.shift;
+        for kInd = 1:length(res.model{i})
+            w = res.model{i}(kInd).svm.w;
+            b = res.model{i}(kInd).svm.b;
+            %         % apply norm from training set
+            %         hr(kInd,:,:,:) = hr(kInd,:,:,:)./res.model{i}(kInd).polNorm.rhoScale;
+            %         hr(kInd,:,:,:) = hr(kInd,:,:,:)./res.model{i}(kInd).svmNorm.xScale - res.model{i}(kInd).svmNorm.xShift;
+            
+            for tInd = 1:size(hr,4)
+                for condInd = 1:size(hr,3)
+                    % apply svm filter
+                    hrF(kInd,1,condInd,tInd) = hr(kInd,:,condInd,tInd)*w'-b;
+                    
+                    % rescale svm filter
+                    hrF(kInd,1,condInd,tInd) = hrF(kInd,1,condInd,tInd) + b;
+                    hrF(kInd,1,condInd,tInd) = hrF(kInd,1,condInd,tInd)/norm(w);
+                end
+                % rescale normalization
+                hrF(kInd,1,:,tInd) = ( hrF(kInd,1,:,tInd) + hrNorm.shift(:,:,:,tInd)*abs(w)' ) .* ( hrNorm.scale(:,:,:,tInd)*abs(w)' );
             end
-            % rescale normalization
-            hrF(kInd,1,:,tInd) = ( hrF(kInd,1,:,tInd) + hrNorm.shift(:,:,:,tInd)*abs(w)' ) .* ( hrNorm.scale(:,:,:,tInd)*abs(w)' );
         end
+        
+        dP{i}.hrF = hrF;
+        %     figure('WindowStyle','docked');
+        %     tmp = squeeze(hrF(:,:,1,:))';
+        %     plot(tmp);
+        %     tmp = squeeze(mean(hrF,1))';
+        %     plot(tmp(:,1:2));
     end
-    
-    dP{i}.hrF = hrF;
-%     figure('WindowStyle','docked');
-%     tmp = squeeze(hrF(:,:,1,:))';
-%     plot(tmp);
-%     tmp = squeeze(mean(hrF,1))';
-%     plot(tmp(:,1:2));
     
     if doPerm
         toc
@@ -320,56 +300,57 @@ end
 % xlim([0 1]); ylim([0 1]);
 % uistack(plot([0 1],[0 1],'k'),'bottom')
 
-figure('WindowStyle','docked');
-colors = {'b' 'r' 'y'};
-for subjInd = 1:6
-    for sessInd = 1:2
-        subplot(6,2,(subjInd-1)*2+sessInd)
-        for condInd = 1:3
-            plot(squeeze(dP{subjInd,sessInd}.hrF(:,:,condInd,:)),colors{condInd}); hold on
+if doChannel
+    figure('WindowStyle','docked');
+    colors = {'b' 'r' 'y'};
+    for subjInd = 1:6
+        for sessInd = 1:2
+            subplot(6,2,(subjInd-1)*2+sessInd)
+            for condInd = 1:3
+                plot(squeeze(dP{subjInd,sessInd}.hrF(:,:,condInd,:)),colors{condInd}); hold on
+            end
         end
     end
-end
-figure('WindowStyle','docked');
-colors = {'b' 'r' 'y'};
-for subjInd = 1:6
-    for sessInd = 1:2
-        subplot(6,2,(subjInd-1)*2+sessInd)
-        plot(squeeze(mean(dP{subjInd,sessInd}.hrF,1))');
+    figure('WindowStyle','docked');
+    colors = {'b' 'r' 'y'};
+    for subjInd = 1:6
+        for sessInd = 1:2
+            subplot(6,2,(subjInd-1)*2+sessInd)
+            plot(squeeze(mean(dP{subjInd,sessInd}.hrF,1))');
+        end
     end
-end
-figure('WindowStyle','docked');
-for subjInd = 1:6
-    for sessInd = 1:2
-        subplot(6,2,(subjInd-1)*2+sessInd)
-        tmp = squeeze(dP{subjInd,sessInd}.hrF(:,:,2,:)-dP{subjInd,sessInd}.hrF(:,:,1,:));
-        plot(tmp','k');
+    figure('WindowStyle','docked');
+    for subjInd = 1:6
+        for sessInd = 1:2
+            subplot(6,2,(subjInd-1)*2+sessInd)
+            tmp = squeeze(dP{subjInd,sessInd}.hrF(:,:,2,:)-dP{subjInd,sessInd}.hrF(:,:,1,:));
+            plot(tmp','k');
+        end
     end
-end
-figure('WindowStyle','docked');
-clear tmp
-for subjInd = 1:6
-    for sessInd = 1:2
-        tmp(:,subjInd,sessInd) = mean(squeeze(dP{subjInd,sessInd}.hrF(:,:,2,:)-dP{subjInd,sessInd}.hrF(:,:,1,:)),1);
+    figure('WindowStyle','docked');
+    clear tmp
+    for subjInd = 1:6
+        for sessInd = 1:2
+            tmp(:,subjInd,sessInd) = mean(squeeze(dP{subjInd,sessInd}.hrF(:,:,2,:)-dP{subjInd,sessInd}.hrF(:,:,1,:)),1);
+        end
     end
-end
-for subjInd = 1:6
-    subplot(6,1,subjInd)
-    plot(squeeze(tmp(:,subjInd,:))); hold on
-    plot(xlim,[0 0],':k')
-end
-figure('WindowStyle','docked');
-clear tmp
-for subjInd = 1:6
-    for sessInd = 1:2
-        tmp(:,subjInd,sessInd) = mean(squeeze(dP{subjInd,sessInd}.hrF(:,:,2,:)-dP{subjInd,sessInd}.hrF(:,:,1,:)),1);
+    for subjInd = 1:6
+        subplot(6,1,subjInd)
+        plot(squeeze(tmp(:,subjInd,:))); hold on
+        plot(xlim,[0 0],':k')
     end
+    figure('WindowStyle','docked');
+    clear tmp
+    for subjInd = 1:6
+        for sessInd = 1:2
+            tmp(:,subjInd,sessInd) = mean(squeeze(dP{subjInd,sessInd}.hrF(:,:,2,:)-dP{subjInd,sessInd}.hrF(:,:,1,:)),1);
+        end
+    end
+    tmp = mean(tmp,3);
+    plot(tmp); hold on
+    hLine = plot(mean(tmp,2),'k');
+    hLine.LineWidth = 3;
 end
-tmp = mean(tmp,3);
-plot(tmp); hold on
-hLine = plot(mean(tmp,2),'k');
-hLine.LineWidth = 3;
-
 
 
 %% Add info
@@ -423,6 +404,33 @@ else
     if verbose; disp([filename '.mat']); end
 end
 
+function [x,y,k] = getXYK(dP,SVMspace)
+% Define x(data), y(label) and k(xValFolds)
+switch SVMspace
+    case {'hr' 'hrNoAmp'}
+        error('double-check that')
+        nSamplePaire = size(dP.hr,1);
+        x1 = dP.hr(:,:,1,:); x1 = x1(:,:);
+        x2 = dP.hr(:,:,2,:); x2 = x2(:,:);
+    case {'cart' 'cart_HT' 'cart_HTbSess'...
+            'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'...
+            'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'...
+            'cartReal' 'cartReal_T'...
+            'polMag' 'polMag_T'}
+        nSamplePaire = size(dP.data,1);
+        x1 = dP.data(:,:,1);
+        x2 = dP.data(:,:,2);
+    otherwise
+        error('X')
+end
+y1 = 1.*ones(nSamplePaire,1);
+k1 = (1:nSamplePaire)';
+y2 = 2.*ones(nSamplePaire,1);
+k2 = (1:nSamplePaire)';
+
+x = cat(1,x1,x2); clear x1 x2
+y = cat(1,y1,y2); clear y1 y2
+k = cat(1,k1,k2); clear k1 k2
 
 function [yTe,d,yHatTe,model] = xValSVM(x,y,k,SVMspace)
 X = x;
@@ -437,48 +445,14 @@ d = nan(length(kList),1);
 clear model
 model = repmat(struct,1,length(kList));
 for kInd = 1:length(kList)
+    x = X;
     % Split train and test
     te = k==kList(kInd);
 
-    % Polar space normalization
-    [x,model(kInd).polNorm] = polarSpaceNormalization(X,te,SVMspace);
-
-    % Cocktail bank normalization
-    switch SVMspace
-        case {'hr' 'hrNoAmp'}
-            error('code that')
-            x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
-        case {'cart' 'cart_HT' 'cart_HTbSess'...
-                'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'}
-            svmNorm.xScale = std(x(~te,:),[],1);
-            svmNorm.xShift = mean(x(~te,:),1);
-            x = x./svmNorm.xScale - svmNorm.xShift;
-            x = cat(2,real(x),imag(x));
-        case {'cartReal' 'cartReal_T'}
-            x = real(x);
-            svmNorm.xScale = std(x(~te,:),[],1);
-            svmNorm.xShift = mean(x(~te,:),1);
-            x = x./svmNorm.xScale - svmNorm.xShift;
-        case 'cartImag'
-            error('code that')
-            x = imag(x);
-            x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
-        case 'pol'
-            error('code that')
-            x = cat(2,angle(x),abs(x));
-            x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
-        case {'polMag' 'polMag_T' 'cartNoDelay' 'cartNoDelay_HT'  'cartNoDelay_HTbSess'}
-            error('code that')
-            x = abs(x);
-            x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
-        case 'polDelay'
-            error('code that')
-            x = angle(x);
-            x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
-        otherwise
-            error('x')
-    end
-    model(kInd).svmNorm = svmNorm;
+    % Normalization
+    [x,model(kInd).polNorm] = polarSpaceNormalization(x,SVMspace,te);
+    [x,model(kInd).svmNorm] = svmSpaceNormalization(x,SVMspace,te);
+    
     
     % Train SVM
     svm = svmtrain(y(~te,:),x(~te,:),'-t 0 -q');
@@ -498,9 +472,47 @@ for kInd = 1:length(kList)
     d(kInd) = size(x,2);    
 end
 
+function featStat = getFeatStat_ws(x,y,te,SVMspace)
+nVox = size(x,2);
+switch SVMspace
+    case 'cart_HT'
+        x = [real(x) imag(x)];
+        
+        featStat = nan(1,nVox);
+        x = cat(1,x(~te & y==1,:),x(~te & y==2,:));
+        for voxInd = 1:nVox
+            stats = T2Hot2d(x(:,[0 nVox]+voxInd));
+            featStat(voxInd) = stats.T2;
+        end
+    case 'cartNoAmp_HT'
+        x = angle(x);
+        
+        featStat = nan(1,size(x,2));
+        for voxInd = 1:size(x,2)
+            [~, F] = circ_htest(x(~te & y==1,voxInd), x(~te & y==2,voxInd));
+            featStat(voxInd) = F;
+        end
+    case {'polMag_T' 'cartNoDelay_HT'}
+        x = abs(x);
+        
+        [~,~,~,STATS] = ttest(x(~te & y==1,:),x(~te & y==2,:));
+        featStat = STATS.tstat;
+    case 'cartReal_T'
+        x = real(x);
+        
+        [~,~,~,STATS] = ttest(x(~te & y==1,:),x(~te & y==2,:));
+        featStat = STATS.tstat;
+    case {'cart' 'cartNoAmp' 'cartNoDelay'...
+            'cart_HTbSess' 'cartNoAmp_HTbSess' 'cartNoDelay_HTbSess'...
+            'polMag'}
+    otherwise
+        error('X')
+end
 
-
-function [x,polNorm] = polarSpaceNormalization(x,te,SVMspace)
+function [x,polNorm] = polarSpaceNormalization(x,SVMspace,te)
+if ~exist('te','var') || isempty(te)
+    te = false(size(x,1),1);
+end
 sz = size(x);
 nDim = ndims(x);
 switch nDim
@@ -569,42 +581,48 @@ if nDim==3
     x = xTmp;
 end
 
+function [x,svmNorm] = svmSpaceNormalization(x,SVMspace,te)
+if ~exist('te','var') || isempty(te)
+    te = false(size(x,1),1);
+end
 
-function featStat = getFeatStat_ws(x,y,te,SVMspace)
-nVox = size(x,2);
+% Cocktail bank normalization
 switch SVMspace
-    case 'cart_HT'
-        x = [real(x) imag(x)];
-        
-        featStat = nan(1,nVox);
-        x = cat(1,x(~te & y==1,:),x(~te & y==2,:));
-        for voxInd = 1:nVox
-            stats = T2Hot2d(x(:,[0 nVox]+voxInd));
-            featStat(voxInd) = stats.T2;
-        end
-    case 'cartNoAmp_HT'
-        x = angle(x);
-        
-        featStat = nan(1,size(x,2));
-        for voxInd = 1:size(x,2)
-            [~, F] = circ_htest(x(~te & y==1,voxInd), x(~te & y==2,voxInd));
-            featStat(voxInd) = F;
-        end
-    case {'polMag_T' 'cartNoDelay_HT'}
-        x = abs(x);
-        
-        [~,~,~,STATS] = ttest(x(~te & y==1,:),x(~te & y==2,:));
-        featStat = STATS.tstat;
-    case 'cartReal_T'
+    case {'hr' 'hrNoAmp'}
+        error('code that')
+        x = (x-mean(x(~te,:),1)) ./ std(x(~te,:),[],1);
+    case {'cart' 'cart_HT' 'cart_HTbSess'...
+            'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'}
+        svmNorm.scale = std(x(~te,:),[],1);
+        svmNorm.shift = mean(x(~te,:),1);
+        x = (x-svmNorm.shift) ./ svmNorm.scale;
+        x = cat(2,real(x),imag(x));
+    case {'cartReal' 'cartReal_T'}
         x = real(x);
-        
-        [~,~,~,STATS] = ttest(x(~te & y==1,:),x(~te & y==2,:));
-        featStat = STATS.tstat;
-    case {'cart' 'cartNoAmp' 'cartNoDelay'...
-            'cart_HTbSess' 'cartNoAmp_HTbSess' 'cartNoDelay_HTbSess'...
-            'polMag'}
+        svmNorm.scale = std(x(~te,:),[],1);
+        svmNorm.shift = mean(x(~te,:),1);
+        x = (x-svmNorm.shift) ./ svmNorm.scale;
+    case 'cartImag'
+        error('code that')
+        x = imag(x);
+        svmNorm.scale = std(x(~te,:),[],1);
+        svmNorm.shift = mean(x(~te,:),1);
+        x = (x-svmNorm.shift) ./ svmNorm.scale;
+    case 'pol'
+        error('code that')
+        x = cat(2,angle(x),abs(x));
+        x = (x-mean(x(~te,:),1)) ./ std(x(~te,:),[],1);
+    case {'polMag' 'polMag_T' 'cartNoDelay' 'cartNoDelay_HT'  'cartNoDelay_HTbSess'}
+        x = abs(x);
+        svmNorm.scale = std(x(~te,:),[],1);
+        svmNorm.shift = mean(x(~te,:),1);
+        x = (x-svmNorm.shift) ./ svmNorm.scale;
+    case 'polDelay'
+        error('code that')
+        x = angle(x);
+        x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
     otherwise
-        error('X')
+        error('x')
 end
 
 function f = plotPolNormExample(x,SVMspace)
@@ -623,7 +641,7 @@ ax1 = gca;
 
 % Normalize
 te = false(size(x,1),1);
-x = polarSpaceNormalization(x,te,SVMspace);
+x = polarSpaceNormalization(x,SVMspace,te);
 
 % Plot after
 subplot(1,2,2);
