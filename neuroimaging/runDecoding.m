@@ -273,26 +273,32 @@ for i = 1:numel(dP)
     hr = dP{i}.hr*100;
     sz = size(hr); sz(2) = 1;
     hrF = nan(sz);
+    % normalize (norm 3 conditions based on cond 1 and 2)
+    tmp = cat(1,hr(:,:,1,:),hr(:,:,1,:));
+    hrNorm.scale = std(tmp,[],1);
+    hrNorm.shift = mean(tmp,1);
+    hr = hr./hrNorm.scale - hrNorm.shift;
     for kInd = 1:length(res.model{i})
         w = res.model{i}(kInd).svm.w;
         b = res.model{i}(kInd).svm.b;
-        for ii = 1:size(hr(kInd,:,:),3)
-            % apply norm
-            hr(kInd,:,ii) = hr(kInd,:,ii)./res.model{i}(kInd).polNorm.rhoScale;
-            hr(kInd,:,ii) = hr(kInd,:,ii)./res.model{i}(kInd).svmNorm.xScale - res.model{i}(kInd).svmNorm.xShift;
-            % apply svm filter
-            hrF(kInd,1,ii) = hr(kInd,:,ii)*w'-b;
-            
-%             % rescale
-%             hrF(kInd,1,ii) = hrF(kInd,1,ii) + b;
-%             hrF(kInd,1,ii) = hrF(kInd,1,ii)/norm(w);
-%             
-%             hrF(kInd,1,ii) = hrF(kInd,1,ii) + (res.model{i}(kInd).svmNorm.xShift*(w/norm(w))');
-%             hrF(kInd,1,ii) = hrF(kInd,1,ii) * (res.model{i}(kInd).svmNorm.xScale*(w/norm(w))');
-%             
-%             hrF(kInd,1,ii) = hrF(kInd,1,ii) * (res.model{i}(kInd).polNorm.rhoScale*(w/norm(w))');
+%         % apply norm from training set
+%         hr(kInd,:,:,:) = hr(kInd,:,:,:)./res.model{i}(kInd).polNorm.rhoScale;
+%         hr(kInd,:,:,:) = hr(kInd,:,:,:)./res.model{i}(kInd).svmNorm.xScale - res.model{i}(kInd).svmNorm.xShift;
+        
+        for tInd = 1:size(hr,4)
+            for condInd = 1:size(hr,3)
+                % apply svm filter
+                hrF(kInd,1,condInd,tInd) = hr(kInd,:,condInd,tInd)*w'-b;
+                
+                % rescale svm filter
+                hrF(kInd,1,condInd,tInd) = hrF(kInd,1,condInd,tInd) + b;
+                hrF(kInd,1,condInd,tInd) = hrF(kInd,1,condInd,tInd)/norm(w);
+            end
+            % rescale normalization
+            hrF(kInd,1,:,tInd) = ( hrF(kInd,1,:,tInd) + hrNorm.shift(:,:,:,tInd)*abs(w)' ) .* ( hrNorm.scale(:,:,:,tInd)*abs(w)' );
         end
     end
+    
     dP{i}.hrF = hrF;
 %     figure('WindowStyle','docked');
 %     tmp = squeeze(hrF(:,:,1,:))';
