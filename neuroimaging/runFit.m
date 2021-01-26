@@ -38,6 +38,8 @@ maskLabel = 'v1';
 subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'};
 subjStimList = {'jp' 'sk' 'sp' 'bm' 'sb' 'bj'};
 
+ls(fullfile(repo,funDir,inDir,subjList{1}));
+
 
 if ~actuallyRun
     if verbose

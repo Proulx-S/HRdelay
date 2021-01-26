@@ -440,10 +440,13 @@ for kInd = 1:length(kList)
     % Cocktail bank normalization
     switch SVMspace
         case {'hr' 'hrNoAmp'}
+            error('code that')
             x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
         case {'cart' 'cart_HT' 'cart_HTbSess'...
                 'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'}
-            x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
+            svmNorm.xScale = std(x(~te,:),[],1);
+            svmNorm.xShift = mean(x(~te,:),1);
+            x = x./svmNorm.xScale - svmNorm.xShift;
             x = cat(2,real(x),imag(x));
         case {'cartReal' 'cartReal_T'}
             x = real(x);
@@ -451,15 +454,19 @@ for kInd = 1:length(kList)
             svmNorm.xShift = mean(x(~te,:),1);
             x = x./svmNorm.xScale - svmNorm.xShift;
         case 'cartImag'
+            error('code that')
             x = imag(x);
             x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
         case 'pol'
+            error('code that')
             x = cat(2,angle(x),abs(x));
             x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
         case {'polMag' 'polMag_T' 'cartNoDelay' 'cartNoDelay_HT'  'cartNoDelay_HTbSess'}
+            error('code that')
             x = abs(x);
             x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
         case 'polDelay'
+            error('code that')
             x = angle(x);
             x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
         otherwise
