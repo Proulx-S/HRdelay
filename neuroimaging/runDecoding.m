@@ -188,8 +188,9 @@ for i = 1:numel(dP)
     % SVM
     if ~doPerm
         %cross-validated SVM
-        [yTe,d,yHatTe,res.model{i}] = xValSVM(x,y,k,SVMspace);
+        [yHatTe,~,res.model{i},d] = xValSVM(x,y,k,SVMspace);
     else
+        error('code that')
         % with permutations
         yTe = nan(length(y),nPerm);
         yHatTe = nan(length(y),nPerm);
@@ -210,7 +211,7 @@ for i = 1:numel(dP)
     % Evaluate SVM
     if ~doPerm
         res.nObs(i) = length(y);
-        res.acc(i) = sum(yTe==y)./res.nObs(i);
+        res.acc(i) = sum((yHatTe<0)+1==y)./res.nObs(i);
         [FP,TP,T,AUC] = perfcurve(y,yHatTe,1);
         res.auc(i) = AUC;
 %         figure('WindowStyle','docked')
@@ -240,6 +241,7 @@ for i = 1:numel(dP)
                 error('X')
         end
     else
+        error('code that')
         res.perm.acc(:,i) = sum(yTe==y,1)./res.nObs(i);
         for permInd = 1:nPerm
             [~,~,~,res.auc(permInd,i)] = perfcurve(y,yHatTe(:,permInd),1);
@@ -432,7 +434,7 @@ x = cat(1,x1,x2); clear x1 x2
 y = cat(1,y1,y2); clear y1 y2
 k = cat(1,k1,k2); clear k1 k2
 
-function [yTe,d,yHatTe,model] = xValSVM(x,y,k,SVMspace)
+function [yHatTe,yHatTr,model,d] = xValSVM(x,y,k,SVMspace)
 X = x;
 kList = unique(k);
 yTr = nan(length(y),length(kList));
