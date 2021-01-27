@@ -1,4 +1,5 @@
 function res = runDecoding(SVMspace,verbose,nPerm,figOption)
+doAntiAntiLearning = 1;
 if ~exist('verbose','var')
     verbose = 1;
 end
@@ -326,6 +327,9 @@ for i = 1:numel(dP)
         toc
     end
 end
+res.FDR = nan(size(res.p));
+res.FDR(:) = mafdr(res.p(:),'BHFDR',true);
+
 % figure('WindowStyle','docked')
 % x = res.distT(:);
 % y = res.acc(:);

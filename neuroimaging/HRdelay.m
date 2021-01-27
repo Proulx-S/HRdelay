@@ -30,5 +30,10 @@ runGroupAnalysis_sin(figOption,verbose)
 runGroupAnalysis_hr(figOption,verbose)
 
 res = runAllDecoding(figOption,verbose);
+
+% svmSpace = 'cartReal'
+% res.(svmSpace).acc<0.5
+% 1-res.(svmSpace).FDR
+
 return
 runAllDecodingPerm(res,figOption,verbose);
