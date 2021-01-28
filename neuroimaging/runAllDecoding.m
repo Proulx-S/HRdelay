@@ -16,6 +16,10 @@ svmSpace = 'cartNoAmp';
 resTmp = runDecoding(svmSpace,verbose);
 res.(svmSpace) = resTmp;
 
+svmSpace = 'polDelay';
+resTmp = runDecoding(svmSpace,verbose);
+res.(svmSpace) = resTmp;
+
 svmSpace = 'cartNoDelay';
 resTmp = runDecoding(svmSpace,verbose);
 res.(svmSpace) = resTmp;

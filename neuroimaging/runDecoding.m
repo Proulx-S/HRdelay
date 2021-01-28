@@ -641,7 +641,7 @@ switch SVMspace
                     'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'...
                     'cartReal' 'cartReal_T'...
                     'polMag' 'polMag_T'}
-                polNorm.rhoScale = abs(mean(x(~te,:),1));
+                polNorm.rhoScale = abs(mean(mean(x(~te,:),1),2));
                 rho = abs(x)./polNorm.rhoScale;
             otherwise
                 error('X')
