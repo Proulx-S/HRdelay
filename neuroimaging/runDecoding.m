@@ -308,7 +308,8 @@ for i = 1:numel(dP)
         if doAntiAntiLearning
             [predicted_label1, accuracy1, decision_values1] = svmpredict(y,x,modelOneClass1{subjInd,trainInd},'-q');
             [predicted_label2, accuracy2, decision_values2] = svmpredict(y,x,modelOneClass2{subjInd,trainInd},'-q');
-            decision_valuesDiff = decision_values1-decision_values2;
+            decision_valuesDiff = decision_values1;
+%             decision_valuesDiff = decision_values1-decision_values2;
 %             decision_valuesMean = mean([decision_values2 decision_values1],2);
 
             %                 figure('WindowStyle','docked');
