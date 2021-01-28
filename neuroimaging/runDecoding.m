@@ -190,7 +190,8 @@ switch SVMspace
             'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'...
             'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'...
             'cartReal' 'cartReal_T'...
-            'polMag' 'polMag_T'}
+            'polMag' 'polMag_T'...
+            'polDelay'}
         % Does not apply
     otherwise
         error('X')
@@ -411,7 +412,8 @@ for i = 1:numel(dP)
                 res.nVox(i) = res.nDim(i)./2; % after within-session feature selection
                 res.nVoxOrig(i) = size(dP{i}.data,2); % before within-session feature selection
             case {'polMag' 'polMag_T'...
-                    'cartReal' 'cartReal_T'}
+                    'cartReal' 'cartReal_T'...
+                    'polDelay'}
                 res.nVox(i) = res.nDim(i); % after within-session feature selection
                 res.nVoxOrig(i) = size(dP{i}.data,2); % before within-session feature selection
             otherwise
@@ -513,7 +515,8 @@ switch SVMspace
             'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'...
             'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'...
             'cartReal' 'cartReal_T'...
-            'polMag' 'polMag_T'}
+            'polMag' 'polMag_T'...
+            'polDelay'}
         nSamplePaire = size(dP.data,1);
         x1 = dP.data(:,:,1);
         x2 = dP.data(:,:,2);
@@ -630,10 +633,12 @@ switch SVMspace
             'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'...
             'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'...
             'cartReal' 'cartReal_T'...
-            'polMag' 'polMag_T'}
+            'polMag' 'polMag_T'...
+            'polDelay'}
         % set to mean rho=1 and mean theta=0 in each voxel)
         switch SVMspace
-            case {'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'}
+            case {'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'...
+                    'polDelay'}
                 % but set rho=1 for each vector (omit any amplitude information)
                 polNorm.rhoScale = [];
                 rho = 1;
@@ -649,8 +654,9 @@ switch SVMspace
         switch SVMspace
             case {'cart' 'cart_HT' 'cart_HTbSess'...
                     'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'...
-                    'cartReal' 'cartReal_T'}
-                polNorm.thetaShift = angle(mean(x(~te,:),1));
+                    'cartReal' 'cartReal_T'...
+                    'polDelay'}
+                polNorm.thetaShift = angle(mean(mean(x(~te,:),1),2));
                 theta = angle(x) - polNorm.thetaShift; theta = wrapToPi(theta);
             case {'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'...
                     'polMag' 'polMag_T'}
@@ -687,19 +693,19 @@ switch SVMspace
         x = x-mean(x(~te,:),1);
     case {'cart' 'cart_HT' 'cart_HTbSess'...
             'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'}
-        svmNorm.scale = mean(mean(x(~te,:),1),2);
+        svmNorm.scale = ones(1,size(x,2));
         svmNorm.shift = mean(x(~te,:),1);
         x = (x-svmNorm.shift) ./ svmNorm.scale;
         x = cat(2,real(x),imag(x));
     case {'cartReal' 'cartReal_T'}
         x = real(x);
-        svmNorm.scale = mean(mean(x(~te,:),1),2);
+        svmNorm.scale = ones(1,size(x,2));
         svmNorm.shift = mean(x(~te,:),1);
         x = (x-svmNorm.shift) ./ svmNorm.scale;
     case 'cartImag'
         error('code that')
         x = imag(x);
-        svmNorm.scale = mean(mean(x(~te,:),1),2);
+        svmNorm.scale = ones(1,size(x,2));
         svmNorm.shift = mean(x(~te,:),1);
         x = (x-svmNorm.shift) ./ svmNorm.scale;
     case 'pol'
@@ -708,13 +714,14 @@ switch SVMspace
         x = x-mean(x(~te,:),1);
     case {'polMag' 'polMag_T' 'cartNoDelay' 'cartNoDelay_HT'  'cartNoDelay_HTbSess'}
         x = abs(x);
-        svmNorm.scale = mean(mean(x(~te,:),1),2);
+        svmNorm.scale = ones(1,size(x,2));
         svmNorm.shift = mean(x(~te,:),1);
         x = (x-svmNorm.shift) ./ svmNorm.scale;
     case 'polDelay'
-        error('code that')
+        svmNorm.scale = ones(1,size(x,2));
+        svmNorm.shift = zeros(1,size(x,2));
         x = angle(x);
-        x = x - mean(x(~te,:),1);
+        x = (x - svmNorm.shift) ./ svmNorm.scale;
     otherwise
         error('x')
 end
