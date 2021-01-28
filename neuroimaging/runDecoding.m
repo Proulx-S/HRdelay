@@ -201,6 +201,10 @@ end
 polNorm = repmat(struct('rhoScale',[],'thetaShift',[]),size(dP));
 svmNorm = repmat(struct('scale',[],'shift',[]),size(dP));
 svmModel = repmat(struct('w',[],'b',[],'Paramters',[],'info',[]),size(dP));
+if doAntiAntiLearning
+    modelOneClass1 = cell(size(dP));
+    modelOneClass2 = cell(size(dP));
+end
 for i = 1:numel(dP)
     if doPerm
         error('code that')
@@ -215,10 +219,15 @@ for i = 1:numel(dP)
     if ~doPerm
         [x,polNorm(i)] = polarSpaceNormalization(x,SVMspace);
         [x,svmNorm(i)] = svmSpaceNormalization(x,SVMspace);
-        model = svmtrain(y,x,'-t 0 -q');
+        model = svmtrain(y,x,'-t 0 -q -c 2');
         w = model.sv_coef'*model.SVs;
         b = model.rho;
         svmModel(i).w = w; svmModel(i).b = b; svmModel(i).Paramters = model.Parameters; svmModel(i).info = '   yHat = x*w''-b   ';
+        
+        if doAntiAntiLearning
+            modelOneClass1{i} = svmtrain(y(y==1),x(y==1,:),'-s 2 -t 0 -q');
+            modelOneClass2{i} = svmtrain(y(y==2),x(y==2,:),'-s 2 -t 0 -q');
+        end
     else
         error('code that')
         % with permutations
@@ -278,9 +287,86 @@ for i = 1:numel(dP)
         w = svmModel(subjInd,trainInd).w;
         b = svmModel(subjInd,trainInd).b;
         yHat = x*w'-b;
-        if yHat==0
+        if any(yHat==0)
             error('yHat==0')
         end
+        
+        % Detect and correct anti-learning using one-class svm
+        if doAntiAntiLearning
+            [predicted_label1, accuracy1, decision_values1] = svmpredict(y,x,modelOneClass1{subjInd,trainInd},'-q');
+            [predicted_label2, accuracy2, decision_values2] = svmpredict(y,x,modelOneClass2{subjInd,trainInd},'-q');
+            decision_valuesDiff = decision_values1-decision_values2;
+            decision_valuesMean = mean([decision_values2 decision_values1],2);
+
+            %                 figure('WindowStyle','docked');
+            %                 scatter(decision_values1(y==1),decision_values2(y==1)); hold on
+            %                 scatter(decision_values1(y==2),decision_values2(y==2)); hold on
+            %                 ax = gca;
+            %                 ax.DataAspectRatio = [1 1 1];
+            %                 ax.PlotBoxAspectRatio = [1 1 1];
+            %                 grid on
+            %                 legend({'1' '2'})
+            %                 if (subjInd==5 && testInd==2)
+            %                     title('anti-learned session')
+            %                 elseif (subjInd==1 && testInd==1)
+            %                     title('learned session')
+            %                 end
+            
+%             figure('WindowStyle','docked');
+%             subplot(1,2,1)
+%             hScat1 = scatter(decision_valuesMean(y==1),decision_valuesDiff(y==1)); hold on
+%             hScat2 = scatter(decision_valuesMean(y==2),decision_valuesDiff(y==2)); hold on
+%             ax = gca; drawnow
+%             tmp = ax.PlotBoxAspectRatio;
+%             ax.DataAspectRatio = [1 1 1];
+%             ax.PlotBoxAspectRatio = tmp;
+%             grid on
+%             errorbar(mean(decision_valuesMean(y==1))-diff(ax.XLim)*0.05,mean(decision_valuesDiff(y==1)),std(decision_valuesDiff(y==1))./sqrt(sum(y==1)),'o','color',hScat1.CData,'markerFaceColor',hScat1.CData);
+%             errorbar(mean(decision_valuesMean(y==2))+diff(ax.XLim)*0.05,mean(decision_valuesDiff(y==2)),std(decision_valuesDiff(y==2))./sqrt(sum(y==2)),'o','color',hScat2.CData,'markerFaceColor',hScat2.CData);
+%             hLeg = legend([hScat1 hScat2],{'data1' 'data2'});
+%             hLeg.Box = 'off'; hLeg.Location = 'northwest';
+%             title('one-class SVM')
+%             ylabel('yHat from model1   -   yHat from model2')
+%             xlim((xlim-mean(xlim))*1.05+mean(xlim))
+%             
+%             subplot(1,2,2)
+%             hScat1b = scatter(ones(size(yHat(y==1))).*mean(decision_valuesMean),yHat(y==1)); hold on
+%             hScat2b = scatter(ones(size(yHat(y==1))).*mean(decision_valuesMean),yHat(y==2)); hold on
+%             axb = gca; drawnow
+%             tmp = axb.PlotBoxAspectRatio;
+%             axb.DataAspectRatio = [1 1 1];
+%             axb.PlotBoxAspectRatio = tmp;
+%             grid on
+%             errorbar(mean(decision_valuesMean)-diff(axb.XLim)*0.05,mean(yHat(y==1)),std(yHat(y==1))./sqrt(sum(y==1)),'o','color',hScat1b.CData,'markerFaceColor',hScat1b.CData);
+%             errorbar(mean(decision_valuesMean)+diff(axb.XLim)*0.05,mean(yHat(y==2)),std(yHat(y==2))./sqrt(sum(y==2)),'o','color',hScat2b.CData,'markerFaceColor',hScat2b.CData);
+%             hLeg = legend([hScat1b hScat2b],{'data1' 'data2'});
+%             hLeg.Box = 'off'; hLeg.Location = 'northwest';
+%             title('C-SVM')
+%             xlim((xlim-mean(xlim))*1.05+mean(xlim))
+%             ylabel('yHat')
+%             
+%             suptitle(['subj' num2str(subjInd) ' sess' num2str(testInd)])
+            
+            figure('WindowStyle','docked');
+            hScat1 = scatter(yHat(y==1),decision_valuesDiff(y==1)); hold on
+            hScat2 = scatter(yHat(y==2),decision_valuesDiff(y==2)); hold on
+            yErr = std(decision_valuesDiff(y==1))./sqrt(sum(y==1));
+            xErr = std(yHat(y==1))./sqrt(sum(y==1));
+            errorbar(mean(yHat(y==1)),mean(decision_valuesDiff(y==1)),yErr./2,yErr./2,xErr./2,xErr./2,'o','color',hScat1.CData,'markerFaceColor',hScat1.CData)
+            yErr = std(decision_valuesDiff(y==2))./sqrt(sum(y==2));
+            xErr = std(yHat(y==2))./sqrt(sum(y==2));
+            errorbar(mean(yHat(y==2)),mean(decision_valuesDiff(y==2)),yErr./2,yErr./2,xErr./2,xErr./2,'o','color',hScat2.CData,'markerFaceColor',hScat2.CData)
+            ax = gca;
+            ax.PlotBoxAspectRatio = [1 1 1];
+            grid on
+            xlabel('yHat')
+            ylabel('yHat from model1   -   yHat from model2')
+            title(['subj' num2str(subjInd) ' sess' num2str(testInd)])
+            xlim((xlim-mean(xlim))*1.05+mean(xlim))
+            plot(xlim,[0 0],'k')
+            plot([0 0],ylim,'k')
+        end
+        
         res.y{i} = y;
         res.yHat{i} = yHat;
         res.nObs(i) = length(y);
