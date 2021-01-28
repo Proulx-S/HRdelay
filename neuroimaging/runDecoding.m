@@ -201,6 +201,11 @@ end
 polNorm = repmat(struct('rhoScale',[],'thetaShift',[]),size(dP));
 svmNorm = repmat(struct('scale',[],'shift',[]),size(dP));
 svmModel = repmat(struct('w',[],'b',[],'Paramters',[],'info',[]),size(dP));
+resTr.y  = cell(size(dP));
+resTr.yHat  = cell(size(dP));
+resTr.nObs = nan(size(dP));
+resTr.acc  = nan(size(dP));
+decision_valuesDiff__Tr = cell(size(dP));
 if doAntiAntiLearning
     modelOneClass1 = cell(size(dP));
     modelOneClass2 = cell(size(dP));
@@ -223,10 +228,18 @@ for i = 1:numel(dP)
         w = model.sv_coef'*model.SVs;
         b = model.rho;
         svmModel(i).w = w; svmModel(i).b = b; svmModel(i).Paramters = model.Parameters; svmModel(i).info = '   yHat = x*w''-b   ';
+        resTr.y{i} = y;
+        yHat = x*w'-b;
+        resTr.yHat{i} = yHat;
+        resTr.nObs(i) = length(y);
+        resTr.acc(i) = sum((yHat<0)+1==y)./resTr.nObs(i);
         
         if doAntiAntiLearning
             modelOneClass1{i} = svmtrain(y(y==1),x(y==1,:),'-s 2 -t 0 -q');
             modelOneClass2{i} = svmtrain(y(y==2),x(y==2,:),'-s 2 -t 0 -q');
+            [~, ~, decision_values1] = svmpredict(y,x,modelOneClass1{i},'-q');
+            [~, ~, decision_values2] = svmpredict(y,x,modelOneClass2{i},'-q');
+            decision_valuesDiff__Tr{i} = decision_values1-decision_values2;
         end
     else
         error('code that')
@@ -296,7 +309,7 @@ for i = 1:numel(dP)
             [predicted_label1, accuracy1, decision_values1] = svmpredict(y,x,modelOneClass1{subjInd,trainInd},'-q');
             [predicted_label2, accuracy2, decision_values2] = svmpredict(y,x,modelOneClass2{subjInd,trainInd},'-q');
             decision_valuesDiff = decision_values1-decision_values2;
-            decision_valuesMean = mean([decision_values2 decision_values1],2);
+%             decision_valuesMean = mean([decision_values2 decision_values1],2);
 
             %                 figure('WindowStyle','docked');
             %                 scatter(decision_values1(y==1),decision_values2(y==1)); hold on
@@ -347,6 +360,9 @@ for i = 1:numel(dP)
 %             
 %             suptitle(['subj' num2str(subjInd) ' sess' num2str(testInd)])
             
+
+%             decision_valuesDiff = decision_valuesDiff__Tr{subjInd,testInd};
+%             yHat = resTr.yHat{subjInd,testInd};
             figure('WindowStyle','docked');
             hScat1 = scatter(yHat(y==1),decision_valuesDiff(y==1)); hold on
             hScat2 = scatter(yHat(y==2),decision_valuesDiff(y==2)); hold on
