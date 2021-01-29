@@ -8,41 +8,42 @@ if ~exist('figOption','var') || isempty(figOption)
     figOption.subj = 1; % 'all' or subjInd
 end
 
-plotUpperErrorBar = 0;
+plotUpperErrorBar = 1;
 lw = 1;
 yLim = [0 100]./100;
 % yLim = 'auto';
 
 spaceList = fields(res)';
-subjList = res.(spaceList{1}).subjList;
+subjList = res.(spaceList{1}).subj.subjList;
 
+accGroup = nan(1,length(spaceList));
+nObsGroup = nan(1,length(spaceList));
+pGroup = nan(1,length(spaceList));
+accGroup5 = nan(1,length(spaceList));
+accGroup95 = nan(1,length(spaceList));
+signedrank = nan(1,length(spaceList));
+signedrankP = nan(1,length(spaceList));
+
+accSubj = nan(length(subjList),length(spaceList));
+nObsSubj = nan(length(subjList),length(spaceList));
+pSubj = nan(length(subjList),length(spaceList));
+accSubj5 = nan(length(subjList),length(spaceList));
+accSubj95 = nan(length(subjList),length(spaceList));
 for spaceInd = 1:length(spaceList)
-    acc = res.(spaceList{spaceInd}).acc;
-    nObs = res.(spaceList{spaceInd}).nObs;
-%     p = res.(spaceList{spaceInd}).p;
+    accGroup(1,spaceInd) = res.(spaceList{spaceInd}).group.acc;
+    nObsGroup(1,spaceInd) = res.(spaceList{spaceInd}).group.nObs;
+    pGroup(1,spaceInd) = res.(spaceList{spaceInd}).group.acc_p;
+    accGroup5(1,spaceInd) = res.(spaceList{spaceInd}).group.acc_CI5;
+    accGroup95(1,spaceInd) = res.(spaceList{spaceInd}).group.acc_CI95;
+    
+    accSubj(:,spaceInd) = res.(spaceList{spaceInd}).subj.acc;
+    nObsSubj(:,spaceInd) = res.(spaceList{spaceInd}).subj.nObs;
+    pSubj(:,spaceInd) = res.(spaceList{spaceInd}).subj.acc_p;
+    accSubj5(:,spaceInd) = res.(spaceList{spaceInd}).subj.acc_CI5;
+    accSubj95(:,spaceInd) = res.(spaceList{spaceInd}).subj.acc_CI95;
 
-    acc = sum(acc.*nObs,2)./sum(nObs,2);
-    nObs = sum(nObs,2);
-    acc(end+1) = sum(acc.*nObs,1)./sum(nObs,1);
-    nObs(end+1) = sum(nObs,1);
-    p = binocdf(acc.*nObs,nObs,0.5,'upper');
-    [P,~,STATS] = signrank(acc(1:end-1),0.5,'tail','right');
-    [~,pci] = binofit(round(acc.*nObs),nObs,0.1);
-%     [~,pci] = binofit(acc.*nObs,nObs,0.05);
-
-    accGroup(:,spaceInd) = acc(end);
-    accSubj(:,spaceInd) = acc(1:end-1); clear acc
-    nObsSubj(:,spaceInd) = nObs(1:end-1);
-    nObsGroup(:,spaceInd) = nObs(end); clear nObs
-    pSubj(:,spaceInd) = p(1:end-1);
-    pGroup(:,spaceInd) = p(end); clear p
-    accSubj5(:,spaceInd) = pci(1:end-1,1);
-    accSubj95(:,spaceInd) = pci(1:end-1,2);
-    accGroup5(1,spaceInd) = pci(end,1);
-    accGroup95(1,spaceInd) = pci(end,2); clear pci
-
-    signedrank(1,spaceInd) = STATS.signedrank; clear STATS
-    signedrankP(1,spaceInd) = P; clear P
+    signedrank(1,spaceInd) = res.(spaceList{spaceInd}).group.acc_wilcoxonSignedrank;
+    signedrankP(1,spaceInd) = res.(spaceList{spaceInd}).group.acc_wilcoxonP ;
 end
 t = table(...
     num2str(accGroup'*100,'%0.2f%%'),...
@@ -56,6 +57,7 @@ disp(t)
 %% Group stats
 switch groupStatMethod
     case 'pseudoMedian' %90%CI (90% because one-sided test)
+        error('double-check that')
         accPseudoMedian = pseudomedian(accSubj,1);
         accPseudoMedian5 = accPseudoMedian;
         accPseudoMedian95 = accPseudoMedian;
@@ -89,8 +91,7 @@ switch groupStatMethod
         error('X')
 end
 
-%% Pseudomedian
-
+%% Plot
 f = figure('WindowStyle','docked');
 y = cat(1,accSubj,groupE)';
 hb = bar(y);

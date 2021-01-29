@@ -9,24 +9,29 @@ if ~exist('figOption','var') || isempty(figOption)
 end
 
 svmSpace = 'cart';
-resTmp = runDecoding(svmSpace,verbose);
-res.(svmSpace) = resTmp;
+[resBS.(svmSpace),resWS.(svmSpace)] = runDecoding(svmSpace,verbose);
 
 svmSpace = 'cartNoAmp';
-resTmp = runDecoding(svmSpace,verbose);
-res.(svmSpace) = resTmp;
+[resBS.(svmSpace),resWS.(svmSpace)] = runDecoding(svmSpace,verbose);
+
+svmSpace = 'polDelay';
+[resBS.(svmSpace),resWS.(svmSpace)] = runDecoding(svmSpace,verbose);
 
 svmSpace = 'cartNoDelay';
-resTmp = runDecoding(svmSpace,verbose);
-res.(svmSpace) = resTmp;
+[resBS.(svmSpace),resWS.(svmSpace)] = runDecoding(svmSpace,verbose);
 
 svmSpace = 'cartReal';
-resTmp = runDecoding(svmSpace,verbose);
-res.(svmSpace) = resTmp;
+[resBS.(svmSpace),resWS.(svmSpace)] = runDecoding(svmSpace,verbose);
 
-[P,~,STATS] = signrank(mean(res.cart.acc,2),mean(res.cartReal.acc,2),'tail','right');
-disp('cart VS cartReal:')
-disp(['signed rank = ' num2str(STATS.signedrank)])
-disp(['one-sided p = ' num2str(P)])
+% [P,~,STATS] = signrank(mean(res.cart.acc,2),mean(res.cartReal.acc,2),'tail','right');
+% disp('cart VS cartReal:')
+% disp(['signed rank = ' num2str(STATS.signedrank)])
+% disp(['one-sided p = ' num2str(P)])
 
-plotDecoding_acc(res,figOption,verbose)
+disp('Between-session')
+plotDecoding_acc(resBS,figOption,verbose)
+disp('Between-session')
+plotDecoding_acc(resWS,figOption,verbose)
+
+res.BS = resBS;
+res.WS = resWS;

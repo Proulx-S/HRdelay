@@ -1,4 +1,5 @@
-function res = runDecoding(SVMspace,verbose,nPerm,figOption)
+function [resBS,resWS] = runDecoding(SVMspace,verbose,nPerm,figOption)
+doAntiAntiLearning = 0;
 if ~exist('verbose','var')
     verbose = 1;
 end
@@ -89,42 +90,39 @@ if verbose
     disp(['SVM space: ' SVMspace]);
 end
 
-%% Between-session feature selection
-dP = cell(length(dC),2);
+%% Reorganize
+dP = cell(size(dC));
 for subjInd = 1:length(dC)
     for sessInd = 1:length(sessList)
         sess = ['sess' num2str(sessInd)];
-        ind.(sess) = true(1,size(dC{subjInd}.(sess).data,2));
-        % Select non-vein voxels
-        ind.(sess) = ind.(sess) & ~dC{subjInd}.(sess).vein_mask;
-        % Select active voxels
-        ind.(sess) = ind.(sess) & dC{subjInd}.(sess).anyCondActivation_mask;
-        % Select most discrimant voxels
-        ind.(sess) = ind.(sess) & dC{subjInd}.(sess).discrim_mask;
-    end
-    % Apply voxel selection
-    for sessInd = 1:length(sessList)
-        sessFeat = ['sess' num2str(~(sessInd-1)+1)]; % the session on which voxel selection is defined
-        sess = ['sess' num2str(sessInd)]; % the session on which voxel selection is applied
-
-        allFields = fields(dC{subjInd}.(sess));
-        nVox = size(dC{subjInd}.(sess).data,2);
-        for i = 1:length(allFields)
-            if (isnumeric(dC{subjInd}.(sess).(allFields{i})) || islogical(dC{subjInd}.(sess).(allFields{i})) ) && size(dC{subjInd}.(sess).(allFields{i}),2)==nVox
-                % remove unslected voxels identified from the other session
-                dC{subjInd}.(sess).(allFields{i})(:,~ind.(sessFeat),:,:) = [];
-            end
-        end
         dP{subjInd,sessInd} = dC{subjInd}.(sessList{sessInd});
+        dC{subjInd}.(sessList{sessInd}) = [];
     end
-    dC{subjInd} = [];
 end
 clear dC
 
+%% Between-session feature selection
+featSel = cell(size(dP));
+for i = 1:numel(dP)
+    featSel{i}.ind = true(1,size(dP{i}.data,2));
+    featSel{i}.info = 'V1';
+    % Select non-vein voxels
+    featSel{i}.ind = featSel{i}.ind & ~dP{i}.vein_mask;
+    featSel{i}.info = strjoin({featSel{i}.info 'nonVein'},' & ');
+    % Select active voxels
+    featSel{i}.ind = featSel{i}.ind & dP{i}.anyCondActivation_mask;
+    featSel{i}.info = strjoin({featSel{i}.info 'active'},' & ');
+    % Select most discrimant voxels
+    featSel{i}.ind = featSel{i}.ind & dP{i}.discrim_mask;
+    featSel{i}.info = strjoin({featSel{i}.info 'mostDisciminant'},' & ');
+end
+
 
 %% Example plot of trigonometric (polar) representation
-[~,b] = max(dP{1}.anyCondActivation_F);
-f = plotPolNormExample(dP{1}.data(:,b,1:3),SVMspace);
+i = 1;
+[~,b] = sort(dP{i}.anyCondActivation_F,'descend');
+b = b(featSel{i}.ind);
+f = plotPolNormExample(dP{i}.data(:,b(1),1:3),SVMspace);
 if figOption.save
     filename = fullfile(pwd,mfilename);
     if ~exist(filename,'dir'); mkdir(filename); end
@@ -148,185 +146,323 @@ switch SVMspace
             'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'...
             'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'...
             'cartReal' 'cartReal_T'...
-            'polMag' 'polMag_T'}
+            'polMag' 'polMag_T'...
+            'polDelay'}
         % Does not apply
     otherwise
         error('X')
 end
 
+%% Between-session svm
+svmModel = cell(size(dP));
+nrmlz = cell(size(dP));
+yHat_tr = cell(size(dP));
+svmModelK = cell(size(dP));
+nrmlzK = cell(size(dP));
+yHatK = cell(size(dP));
+yHatK_tr = cell(size(dP));
+yHat = cell(size(dP));
+% polNorm = repmat(struct('rhoScale',[],'thetaShift',[]),size(dP));
+% svmNorm = repmat(struct('scale',[],'shift',[]),size(dP));
+% svmModel = repmat(struct('w',[],'b',[],'Paramters',[],'info',[]),size(dP));
+% resTr.y  = cell(size(dP));
+% resTr.yHat  = cell(size(dP));
+% resTr.nObs = nan(size(dP));
+% resTr.acc  = nan(size(dP));
+% decision_valuesDiff__Tr = cell(size(dP));
+% if doAntiAntiLearning
+%     modelOneClass1 = cell(size(dP));
+%     modelOneClass2 = cell(size(dP));
+% end
 
-%% Run svm
-if ~doPerm
-    res.nVox = nan(size(dP));
-    res.nDim = nan(size(dP));
-    res.acc  = nan(size(dP));
-    res.auc  = nan(size(dP));
-    res.distT = nan(size(dP));
-    res.nObs = nan(size(dP));
-    res.p = nan(size(dP));
-    res.subjList = subjList;
-else
-    res.perm.acc = nan([nPerm size(res.acc)]);
-    res.perm.auc = nan([nPerm size(res.auc)]);
-    res.perm.distT = nan([nPerm size(res.distT)]);
-end
+% Within-session training and testing
+Y = cell(size(dP));
 for i = 1:numel(dP)
-    if doPerm
-        disp(['for sess ' num2str(i) ' of ' num2str(numel(dP))])
-        tic
-    end
-    % Define x(data), y(label) and k(xValFolds)
-    switch SVMspace
-        case {'hr' 'hrNoAmp'}
-            nSamplePaire = size(dP{i}.hr,1);
-            x1 = dP{i}.hr(:,:,1,:); x1 = x1(:,:);
-            x2 = dP{i}.hr(:,:,2,:); x2 = x2(:,:);
-        case {'cart' 'cart_HT' 'cart_HTbSess'...
-                'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'...
-                'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'...
-                'cartReal' 'cartReal_T'...
-                'polMag' 'polMag_T'}
-            nSamplePaire = size(dP{i}.data,1);
-            x1 = dP{i}.data(:,:,1);
-            x2 = dP{i}.data(:,:,2);
+    [subjInd,sessInd] = ind2sub(size(dP),i);
+    switch sessInd
+        case 1
+            sessIndCross = 2;
+        case 2
+            sessIndCross = 1;
         otherwise
             error('X')
     end
-    y1 = 1.*ones(nSamplePaire,1);
-    k1 = (1:nSamplePaire)';
-    y2 = 2.*ones(nSamplePaire,1);
-    k2 = (1:nSamplePaire)';
-
-    x = cat(1,x1,x2); clear x1 x2
-    y = cat(1,y1,y2); clear y1 y2
-    k = cat(1,k1,k2); clear k1 k2
-
-    % SVM
-    if ~doPerm
-        %cross-validated SVM
-        [yTe,d,yHatTe] = xValSVM(x,y,k,SVMspace);
-    else
-        % with permutations
-        yTe = nan(length(y),nPerm);
-        yHatTe = nan(length(y),nPerm);
-        y1 = y(y==1);
-        y2 = y(y==2);
-        parfor permInd = 1:nPerm
-            %permute labels
-            y = cat(2,y1,y2);
-            for sInd = 1:size(y,1); y(sInd,:) = y(sInd,randperm(2)); end
-            y = cat(1,y(:,1),y(:,2));
-            %cross-validated SVM
-            [yTe(:,permInd),~,yHatTe(:,permInd)] = xValSVM(x,y,k,SVMspace);
-        end
-        y = cat(1,y1,y2); clear y1 y2
-    end
-
-    % Evaluate SVM
-    if ~doPerm
-        res.nObs(i) = length(y);
-        res.acc(i) = sum(yTe==y)./res.nObs(i);
-        [FP,TP,T,AUC] = perfcurve(y,yHatTe,1);
-        res.auc(i) = AUC;
-%         figure('WindowStyle','docked')
-%         plot(FP.*res.nObs(i)./2,TP.*res.nObs(i)./2,'r','linewidth',2)
-%         xlabel('False Positives')
-%         ylabel('True Positives')
-%         ax = gca; ax.PlotBoxAspectRatio = [1 1 1];
-        [~,~,~,STATS] = ttest(yHatTe(y==1),yHatTe(y==2));
-        res.distT(i) = STATS.tstat;
-        res.p(i) = binocdf(res.acc(i).*res.nObs(i),res.nObs(i),0.5,'upper');
-        res.nDim(i) = mean(d);
-        
-        switch SVMspace
-            case 'hr'
-                res.nVox1(i) = size(dP{i}.hr,2); % before within-session feature selection
-                res.nVox2(i) = mean(d)./size(dP{i}.hr,4); % before within-session feature selection
-            case {'cart' 'cart_HT' 'cart_HTbSess'...
-                    'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'...
-                    'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'}
-                res.nVox1(i) = size(dP{i}.data,2); % before within-session feature selection
-                res.nVox2(i) = mean(d)./2; % before within-session feature selection
-            case {'polMag' 'polMag_T'...
-                    'cartReal' 'cartReal_T'}
-                res.nVox1(i) = size(dP{i}.data,2); % before within-session feature selection
-                res.nVox2(i) = mean(d); % before within-session feature selection
-            otherwise
-                error('X')
-        end
-    else
-        res.perm.acc(:,i) = sum(yTe==y,1)./res.nObs(i);
-        for permInd = 1:nPerm
-            [~,~,~,res.auc(permInd,i)] = perfcurve(y,yHatTe(:,permInd),1);
-            [~,~,~,STATS] = ttest(yHatTe(y==1,permInd),yHatTe(y==2,permInd));
-            res.distT(permInd,i) = STATS.tstat;
-        end
-    end
+    
     if doPerm
-        toc
+        error('code that')
+        disp(['for sess ' num2str(i) ' of ' num2str(numel(dP))])
+        tic
     end
+    
+    [X,y,k] = getXYK(dP{subjInd,sessInd},SVMspace);
+    
+    % SVM on within-session crossvalidation folds
+    % feature selection
+    x = X(:,featSel{subjInd,sessIndCross}.ind);
+    % train
+    [svmModelK{i},nrmlzK{i}] = SVMtrain(y,x,SVMspace,k);
+    % test
+    [yHatK{i},yHatK_tr{i}] = SVMtest(y,x,svmModelK{i},nrmlzK{i},k);
+    yHatK{i} = nanmean(yHatK{i},2);
+    
+    
+    % SVM on full sessions
+    % feature-selected data
+    x = X(:,featSel{subjInd,sessInd}.ind);
+    % train
+    [svmModel{i},nrmlz{i}] = SVMtrain(y,x,SVMspace);
+    % test (not crossvalidated)
+    [yHat_tr{i},~] = SVMtest(y,x,svmModel{i},nrmlz{i});
+    
+    
+    % Output
+    Y{i} = y;
 end
-% figure('WindowStyle','docked')
-% x = res.auc(:);
-% y = res.acc(:);
-% scatter(x,y); hold on
-% ax = gca;
-% ax.PlotBoxAspectRatio = [1 1 1];
-% grid on
-% xlim([0 1]); ylim([0 1]);
-% uistack(plot([0 1],[0 1],'k'),'bottom')
 
-
-%% Add info
-if ~doPerm
-    res.info = 'subj x sess';
-    res.summary.SVMspace = SVMspace;
-    res.summary.hit = sum(res.acc(:).*res.nObs(:));
-    res.summary.nObs = sum(res.nObs(:));
-    res.summary.acc = res.summary.hit/res.summary.nObs;
-    res.summary.auc = mean(mean(res.auc,2),1);
-    res.summary.distT = mean(mean(res.distT,2),1);
-    [~,pci] = binofit(res.summary.nObs/2,res.summary.nObs,0.1);
-    res.summary.accThresh = pci(2);
-    res.summary.p = binocdf(res.summary.hit,res.summary.nObs,0.5,'upper');
-    if verbose
-        disp('Group results:')
-        disp(['  hit    =' num2str(res.summary.hit) '/' num2str(res.summary.nObs)])
-        disp(['  acc    =' num2str(res.summary.acc*100,'%0.2f%%')])
-        disp(['  auc    =' num2str(res.summary.auc*100,'%0.2f')])
-        disp(['  distT  =' num2str(res.summary.distT,'%0.2f')])
-        disp(' binomial stats')
-        disp(['  thresh =' num2str(res.summary.accThresh*100,'%0.2f')])
-        disp(['  p      =' num2str(res.summary.p,'%0.3f')])
+% Between-session testing
+for i = 1:numel(dP)
+    [subjInd,testInd] = ind2sub(size(dP),i);
+    switch testInd
+        case 1
+            trainInd = 2;
+        case 2
+            trainInd = 1;
+        otherwise
+            error('X')
     end
+    % Get cross-session feature-selected data
+    [X,y,~] = getXYK(dP{subjInd,testInd},SVMspace);
+    x = X(:,featSel{subjInd,trainInd}.ind);
+    
+    % Test
+    [yHat{subjInd,testInd},~] = SVMtest(y,x,svmModel{subjInd,trainInd});
+end
+
+%% Compute performance metrics
+% Between-sess
+resBS_sess = repmat(perfMetric,[size(dP,1) size(dP,2)]);
+for i = 1:numel(dP)
+    resBS_sess(i) = perfMetric(Y{i},yHat{i});
+end
+acc_fdr = mafdr([resBS_sess.acc_p],'BHFDR',true);
+for i = 1:numel(dP)
+    resBS_sess(i).acc_fdr = acc_fdr(i);
+    resBS_sess(i).nVoxOrig = size(dP{i}.data,2);
+    resBS_sess(i).nVox = sum(featSel{i}.ind);
+    resBS_sess(i).SVMspace = SVMspace;
+end
+resBS_sess = orderfields(resBS_sess,[1 2 3 4 5 6 7 8 9 13 10 11 12 14 15 16]);
+% Within-sess
+resWS_sess = repmat(perfMetric,[size(dP,1) size(dP,2)]);
+for i = 1:numel(dP)
+    resWS_sess(i) = perfMetric(Y{i},yHatK{i});
+end
+acc_fdr = mafdr([resWS_sess.acc_p],'BHFDR',true);
+for i = 1:numel(dP)
+    resWS_sess(i).acc_fdr = acc_fdr(i);
+    resWS_sess(i).nVoxOrig = size(dP{i}.data,2);
+    resWS_sess(i).nVox = sum(featSel{i}.ind);
+    resWS_sess(i).SVMspace = SVMspace;
+end
+resWS_sess = orderfields(resWS_sess,[1 2 3 4 5 6 7 8 9 13 10 11 12 14 15 16]);
+
+%% Summarize group performances
+[resBSsess,resBSsubj,resBSgroup] = summarizePerf(resBS_sess);
+[resWSsess,resWSsubj,resWSgroup] = summarizePerf(resWS_sess);
+
+%% Plot between-session vs within-session
+if verbose
+    figure('WindowStyle','docked');
+    metric = 'acc';
+    hPlot = plot(resWSsess.(metric)',resBSsess.(metric)','o'); hold on
+    for subjInd = 1:size(hPlot,1)
+        hPlot(subjInd).MarkerFaceColor = hPlot(subjInd).Color;
+        hPlot(subjInd).MarkerEdgeColor = 'k';
+    end
+    switch metric
+        case {'acc' 'auc'}
+            xlim([0 1])
+            ylim([0 1])
+            plot(xlim,[1 1].*0.5,'-k')
+            plot([1 1].*0.5,ylim,'-k')
+            ax = gca;
+            ax.PlotBoxAspectRatio = [1 1 1];
+        case 'distT'
+            plot(xlim,[1 1].*0,'-k')
+            plot([1 1].*0,ylim,'-k')
+    end
+    xlabel('Within-sess acc')
+    ylabel('Between-sess acc')
+    title(SVMspace)
+    legend(subjList)
+    grid on
+end
+
+%% Print info
+if verbose
+    disp('-----------------')
+    disp('*Between-session*')
+    printRes(resBSsess,resBSsubj,resBSgroup)
+    disp(' ')
+    disp('*Within-session*')
+    printRes(resWSsess,resWSsubj,resWSgroup)
+    disp('-----------------')
+end
+resBS.sess = resBSsess;
+resBS.sess.subjList = subjList;
+resBS.subj = resBSsubj;
+resBS.subj.subjList = subjList;
+resBS.group = resBSgroup;
+resWS.sess = resWSsess;
+resWS.sess.subjList = subjList;
+resWS.subj = resWSsubj;
+resWS.subj.subjList = subjList;
+resWS.group = resWSgroup;
+
+
+
+
+
+
+
+
+% %% Add info
+% if ~doPerm
+%     
+% else
+%     res.perm.info = 'subj x sess x perm';
+%     nObs = permute(repmat(res.nObs,[1 1 nPerm]),[3 1 2]);
+%     res.perm.summary.hit = sum(res.perm.acc(:,:).*nObs(:,:),2);
+%     res.perm.summary.nObs = sum(nObs(:,:),2);
+%     res.perm.summary.acc = res.perm.summary.hit./res.perm.summary.nObs;
+%     res.perm.summary.accThresh = prctile(res.perm.summary.acc,95);
+%     res.perm.summary.p = sum(res.perm.summary.acc>res.summary.acc)./nPerm;
+% 
+%     res.perm.acc = permute(res.perm.acc,[2 3 1]);
+%     res.perm.auc = permute(res.perm.auc,[2 3 1]);
+%     res.perm.distT = permute(res.perm.distT,[2 3 1]);
+% 
+%     if verbose
+%         disp('Group results:')
+%         disp(['  hit    =' num2str(res.summary.hit) '/' num2str(res.summary.nObs)])
+%         disp(['  acc    =' num2str(res.summary.acc*100,'%0.2f%%')])
+%         disp(' permutation test stats')
+%         disp(['  thresh =' num2str(res.perm.summary.accThresh*100,'%0.2f%%')])
+%         disp(['  p      =' num2str(res.perm.summary.p,'%0.3f')])
+%     end
+% 
+%     filename = fullfile(pwd,mfilename);
+%     if ~exist(filename,'dir'); mkdir(filename); end
+%     filename = fullfile(filename,[SVMspace '_' num2str(nPerm) 'perm']);
+%     save(filename,'res')
+%     if verbose; disp([filename '.mat']); end
+% end
+
+function [x,y,k] = getXYK(dP,SVMspace)
+% Define x(data), y(label) and k(xValFolds)
+switch SVMspace
+    case {'hr' 'hrNoAmp'}
+        error('double-check that')
+        nSamplePaire = size(dP.hr,1);
+        x1 = dP.hr(:,:,1,:); x1 = x1(:,:);
+        x2 = dP.hr(:,:,2,:); x2 = x2(:,:);
+    case {'cart' 'cart_HT' 'cart_HTbSess'...
+            'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'...
+            'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'...
+            'cartReal' 'cartReal_T'...
+            'polMag' 'polMag_T'...
+            'polDelay'}
+        nSamplePaire = size(dP.data,1);
+        x1 = dP.data(:,:,1);
+        x2 = dP.data(:,:,2);
+    otherwise
+        error('X')
+end
+y1 = 1.*ones(nSamplePaire,1);
+k1 = (1:nSamplePaire)';
+y2 = 2.*ones(nSamplePaire,1);
+k2 = (1:nSamplePaire)';
+
+x = cat(1,x1,x2); clear x1 x2
+y = cat(1,y1,y2); clear y1 y2
+k = cat(1,k1,k2); clear k1 k2
+
+function [svmModel,normTr] = SVMtrain(y,x,SVMspace,k)
+Y = y;
+X = x;
+if ~exist('k','var') || isempty(k) || all(k(:)==0)
+    k = ones(size(y)); % no crossvalidation
+    kList = 0;
 else
-    res.perm.info = 'subj x sess x perm';
-    nObs = permute(repmat(res.nObs,[1 1 nPerm]),[3 1 2]);
-    res.perm.summary.hit = sum(res.perm.acc(:,:).*nObs(:,:),2);
-    res.perm.summary.nObs = sum(nObs(:,:),2);
-    res.perm.summary.acc = res.perm.summary.hit./res.perm.summary.nObs;
-    res.perm.summary.accThresh = prctile(res.perm.summary.acc,95);
-    res.perm.summary.p = sum(res.perm.summary.acc>res.summary.acc)./nPerm;
-
-    res.perm.acc = permute(res.perm.acc,[2 3 1]);
-    res.perm.auc = permute(res.perm.auc,[2 3 1]);
-    res.perm.distT = permute(res.perm.distT,[2 3 1]);
-
-    if verbose
-        disp('Group results:')
-        disp(['  hit    =' num2str(res.summary.hit) '/' num2str(res.summary.nObs)])
-        disp(['  acc    =' num2str(res.summary.acc*100,'%0.2f%%')])
-        disp(' permutation test stats')
-        disp(['  thresh =' num2str(res.perm.summary.accThresh*100,'%0.2f%%')])
-        disp(['  p      =' num2str(res.perm.summary.p,'%0.3f')])
-    end
-
-    filename = fullfile(pwd,mfilename);
-    if ~exist(filename,'dir'); mkdir(filename); end
-    filename = fullfile(filename,[SVMspace '_' num2str(nPerm) 'perm']);
-    save(filename,'res')
-    if verbose; disp([filename '.mat']); end
+    kList = unique(k);
 end
+
+
+normTr.k = [];
+normTr.svmSpace = '';
+normTr.pol = struct('rhoScale',[],'thetaShift',[]);
+normTr.svm = struct('scale',[],'shift',[]);
+normTr = repmat(normTr,[1 1 length(kList)]);
+svmModel = repmat(struct('k',[],'svmSpace',[],'w',[],'b',[],'Paramters',[],'info',[]),[1 1 length(kList)]);
+for kInd = 1:length(kList)
+    % Split train and test
+    te = k==kList(kInd);
+    y = Y(~te,:);
+    x = X(~te,:);
+    
+    % Normalize
+    [x,normTr(:,:,kInd).pol] = polarSpaceNormalization(x,SVMspace);
+    [x,normTr(:,:,kInd).svm] = svmSpaceNormalization(x,SVMspace);
+    normTr(:,:,kInd).k = kList(kInd);
+    normTr(:,:,kInd).svmSpace = SVMspace;
+    
+    % Train
+    model = svmtrain(y,x,'-t 0 -q');
+    w = model.sv_coef'*model.SVs;
+    b = model.rho;
+    
+    % Store
+    svmModel(:,:,kInd).k = kList(kInd);
+    svmModel(:,:,kInd).w = w;
+    svmModel(:,:,kInd).b = b;
+    svmModel(:,:,kInd).Paramters = model.Parameters;
+    svmModel(:,:,kInd).info = '   yHat = x*w''-b   ';
+    svmModel(:,:,kInd).svmSpace = SVMspace;
+end
+
+function [yHat,yHatTr] = SVMtest(y,x,svmModel,nrmlz,k)
+X = x;
+if ~exist('k','var') || isempty(k) || all(k(:)==0)
+    k = ones(size(y)); % no crossvalidation
+end
+kList = [svmModel.k];
+
+yHat = nan([size(y,1) length(kList)]);
+yHatTr = nan([size(y,1) length(kList)]);
+for kInd = 1:length(kList)
+    x = X;
+    % Split train and test
+    if kList(kInd)==0
+        te = true(size(y));
+    else
+        te = k==kList(kInd);
+    end
+    
+    % Normalize
+    if ~exist('nrmlz','var') || isempty(nrmlz)
+        [x,~] = polarSpaceNormalization(x,svmModel(kInd).svmSpace);
+        [x,~] = svmSpaceNormalization(x,svmModel(kInd).svmSpace);
+    else
+        [x,~] = polarSpaceNormalization(x,nrmlz(kInd),te);
+        [x,~] = svmSpaceNormalization(x,nrmlz(kInd),te);
+    end
+    
+    w = svmModel(kInd).w;
+    b = svmModel(kInd).b;
+    yHat(te,kInd) = x(te,:)*w'-b;
+    yHatTr(~te,kInd) = x(~te,:)*w'-b;
+end
+    
 
 
 function [yTe,d,yHatTe] = xValSVM(x,y,k,SVMspace)
@@ -342,7 +478,7 @@ for kInd = 1:length(kList)
     te = k==kList(kInd);
 
     % Polar space normalization
-    x = polarSpaceNormalization(X,te,SVMspace);
+    x = polarSpaceNormalization(X,SVMspace,te);
 
 %     % Within-session feature selection
 %     % get feature selection stats
@@ -401,7 +537,17 @@ for kInd = 1:length(kList)
     d(kInd) = size(x,2);
 end
 
-function x = polarSpaceNormalization(x,te,SVMspace)
+function [x,polNorm] = polarSpaceNormalization(x,SVMspace,te)
+if ~exist('te','var') || isempty(te)
+    te = false(size(x,1),1);
+end
+if isstruct(SVMspace)
+    polNorm = SVMspace.pol;
+    SVMspace = SVMspace.svmSpace;
+    computeNorm = false;
+else
+    computeNorm = true;
+end
 sz = size(x);
 nDim = ndims(x);
 switch nDim
@@ -420,6 +566,7 @@ switch nDim
         error('dim1 must be samples and dim2 voxels, that''s it')
 end
 
+% Compute norm
 switch SVMspace
     case {'hr' 'hrNoAmp'}
         % does not apply
@@ -427,33 +574,47 @@ switch SVMspace
             'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'...
             'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'...
             'cartReal' 'cartReal_T'...
-            'polMag' 'polMag_T'}
-        % set to mean rho=1 and mean theta=0 in each voxel)
+            'polMag' 'polMag_T'...
+            'polDelay'}
+        % rho
         switch SVMspace
-            case {'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'}
-                % but set rho=1 for each vector (omit any amplitude information)
-                rho = 1;
+            case {'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'...
+                    'polDelay'}
+                if computeNorm
+                    polNorm.rhoScale = ones([1 size(x,2)]);
+                end
+                rho = ones(size(x));
             case {'cart' 'cart_HT' 'cart_HTbSess'...
                     'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'...
                     'cartReal' 'cartReal_T'...
                     'polMag' 'polMag_T'}
-                rho = abs(x)./abs(mean(x(~te,:),1));
+                if computeNorm
+                   polNorm.rhoScale = abs(mean(mean(x(~te,:),1),2)); 
+                end
+                rho = abs(x)./polNorm.rhoScale;
             otherwise
                 error('X')
         end
+        % thetaShift
         switch SVMspace
             case {'cart' 'cart_HT' 'cart_HTbSess'...
                     'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'...
-                    'cartReal' 'cartReal_T'}
-                theta = angle(x) - angle(mean(x(~te,:),1)); theta = wrapToPi(theta);
+                    'cartReal' 'cartReal_T'...
+                    'polDelay'}
+                if computeNorm
+                    polNorm.thetaShift = angle(mean(mean(x(~te,:),1),2));
+                end
+                theta = angle(x) - polNorm.thetaShift; theta = wrapToPi(theta);
             case {'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'...
                     'polMag' 'polMag_T'}
-                % but set theta=0 for each vector (omit any delay information)
-                theta = 0;
+                if computeNorm
+                    polNorm.thetaShift = zeros([1,size(x,2)]);
+                end
+                theta = zeros(size(x));
             otherwise
                 error('X')
         end
-        [u,v] = pol2cart(theta,rho);
+        [u,v] = pol2cart(theta,rho); clear theta rho
         x = complex(u,v); clear u v
     otherwise
         error('X')
@@ -466,6 +627,68 @@ if nDim==3
         xTmp(:,:,i) = x( (1:sz(1)) + sz(1)*(i-1) , : );
     end
     x = xTmp;
+end
+
+function [x,svmNorm] = svmSpaceNormalization(x,SVMspace,te)
+if ~exist('te','var') || isempty(te)
+    te = false(size(x,1),1);
+end
+if isstruct(SVMspace)
+    svmNorm = SVMspace.svm;
+    SVMspace = SVMspace.svmSpace;
+    computeNorm = false;
+else
+    computeNorm = true;
+end
+
+% Move to SVMspace and Cocktail bank normalize
+switch SVMspace
+    case {'hr' 'hrNoAmp'}
+        error('code that')
+        x = x-mean(x(~te,:),1);
+    case {'cart' 'cart_HT' 'cart_HTbSess'...
+            'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'}
+        if computeNorm
+            svmNorm.scale = ones(1,size(x(~te,:),2));
+            svmNorm.shift = mean(x(~te,:),1);
+        end
+        x = (x-svmNorm.shift) ./ svmNorm.scale;
+        x = cat(2,real(x),imag(x));
+    case {'cartReal' 'cartReal_T'}
+        x = real(x);
+        if computeNorm
+            svmNorm.scale = ones(1,size(x(~te,:),2));
+            svmNorm.shift = mean(x(~te,:),1);
+        end
+        x = (x-svmNorm.shift) ./ svmNorm.scale;
+    case 'cartImag'
+        error('code that')
+        x = imag(x);
+        if computeNorm
+            svmNorm.scale = ones(1,size(x(~te,:),2));
+            svmNorm.shift = mean(x(~te,:),1);
+        end
+        x = (x-svmNorm.shift) ./ svmNorm.scale;
+    case 'pol'
+        error('code that')
+        x = cat(2,angle(x),abs(x));
+        x = x-mean(x(~te,:),1);
+    case {'polMag' 'polMag_T' 'cartNoDelay' 'cartNoDelay_HT'  'cartNoDelay_HTbSess'}
+        x = abs(x);
+        if computeNorm
+            svmNorm.scale = ones(1,size(x(~te,:),2));
+            svmNorm.shift = mean(x(~te,:),1);
+        end
+        x = (x-svmNorm.shift) ./ svmNorm.scale;
+    case 'polDelay'
+        if computeNorm
+            svmNorm.scale = ones(1,size(x(~te,:),2));
+            svmNorm.shift = zeros(1,size(x(~te,:),2));
+        end
+        x = angle(x);
+        x = (x - svmNorm.shift) ./ svmNorm.scale;
+    otherwise
+        error('x')
 end
 
 
@@ -521,8 +744,7 @@ hPP1 = hPP; clear hPP
 ax1 = gca;
 
 % Normalize
-te = false(size(x,1),1);
-x = polarSpaceNormalization(x,te,SVMspace);
+x = polarSpaceNormalization(x,SVMspace);
 
 % Plot after
 subplot(1,2,2);
@@ -558,3 +780,152 @@ ax.Title.String = 'after';
 hSup = suptitle({'Polar space normalization' SVMspace});
 hSup.Interpreter = 'none';
 drawnow
+
+function res = perfMetric(y,yHat)
+if ~exist('y','var')
+    res = struct(...
+        'y',[],...
+        'yHat',[],...
+        'nObs',[],...
+        'hit',[],...
+        'acc',[],...
+        'acc_CI5',[],...
+        'acc_CI95',[],...
+        'acc_thresh',[],...
+        'acc_p',[],...);
+        'auc',[],...
+        'distT',[],...
+        'distT_p',[]);
+    return
+end
+res.y = {y};
+res.yHat = {yHat};
+res.nObs = length(y);
+% acc
+res.hit = sum((yHat<0)+1==y);
+res.acc = res.hit./res.nObs;
+[~,pci] = binofit(res.hit,res.nObs,0.1);
+res.acc_CI5 = pci(1);
+res.acc_CI95 = pci(2);
+[~,pci] = binofit(res.nObs/2,res.nObs,0.1);
+res.acc_thresh = pci(2);
+res.acc_p = binocdf(res.hit,res.nObs,0.5,'upper');
+% auc
+[~,~,~,res.auc] = perfcurve(y,yHat,1);
+% distT
+[~,P,~,STATS] = ttest(yHat(y==1),yHat(y==2));
+res.distT = STATS.tstat;
+res.distT_p = P;
+
+
+function [resSess,resSubj,resGroup] = summarizePerf(res_sess)
+allField = fields(res_sess);
+for i = 1:length(allField)
+    if isnumeric(res_sess(1).(allField{i}))
+        resSess.(allField{i}) = nan(size(res_sess));
+        resSess.(allField{i})(:) = [res_sess.(allField{i})];
+    elseif iscell(res_sess(1).(allField{i}))
+        resSess.(allField{i}) = cell(size(res_sess));
+        resSess.(allField{i})(:) = [res_sess.(allField{i})];
+    elseif ischar(res_sess(1).(allField{i}))
+        resSess.(allField{i}) = cell(size(res_sess));
+        resSess.(allField{i})(:) = {res_sess.(allField{i})};
+    else
+        error('code that')
+    end
+end
+resSess.info = 'subj x sess';
+resSess.distT_fdr = resSess.distT_p;
+resSess.distT_fdr(:) = mafdr(resSess.distT_p(:),'BHFDR',true);
+resSess = orderfields(resSess,[1 2 3 4 5 6 7 8 9 10 11 12 13 18 14 15 16 17]);
+
+resSubj.y = cell(size(resSess.y,1),1);
+resSubj.yHat = cell(size(resSess.yHat,1),1);
+for subjInd = 1:size(resSess.y,1)
+    resSubj.y{subjInd} = cell2mat(resSess.y(subjInd,:)');
+    resSubj.yHat{subjInd} = cell2mat(resSess.yHat(subjInd,:)');
+end
+resSubj.nObs = sum(resSess.nObs,2);
+resSubj.hit = sum(resSess.hit,2);
+resSubj.acc = resSubj.hit./resSubj.nObs;
+[~,pci] = binofit(resSubj.hit,resSubj.nObs,0.1);
+resSubj.acc_CI5 = pci(:,1);
+resSubj.acc_CI95 = pci(:,2);
+[~,pci] = binofit(resSubj.nObs/2,resSubj.nObs,0.1);
+resSubj.acc_thresh = pci(:,2);
+resSubj.acc_p = binocdf(resSubj.hit,resSubj.nObs,0.5,'upper');
+resSubj.acc_fdr = mafdr(resSubj.acc_p,'BHFDR',true);
+resSubj.auc = nan(size(resSubj.y));
+resSubj.distT = nan(size(resSubj.y));
+resSubj.distT_p = nan(size(resSubj.y));
+for subjInd = 1:size(resSubj.y,1)
+    [~,~,~,resSubj.auc(subjInd)] = perfcurve(resSubj.y{subjInd},resSubj.yHat{subjInd},1);
+    [~,P,~,STATS] = ttest(resSubj.yHat{subjInd}(resSubj.y{subjInd}==1),resSubj.yHat{subjInd}(resSubj.y{subjInd}==2));
+    resSubj.distT(subjInd) = STATS.tstat;
+    resSubj.distT_p(subjInd) = P;
+end
+resSubj.nVoxOrig = round(mean(resSess.nVoxOrig,2));
+resSubj.nVox = round(mean(resSess.nVox,2));
+resSubj.SVMspace = resSess.SVMspace(:,1);
+
+resGroup.y = cell2mat(resSubj.y);
+resGroup.yHat = cell2mat(resSubj.yHat);
+resGroup.nObs = sum(resSubj.nObs,1);
+resGroup.hit = sum(resSubj.hit,1);
+
+resGroup.acc = resGroup.hit./resGroup.nObs;
+[~,pci] = binofit(resGroup.hit,resGroup.nObs,0.1);
+resGroup.acc_CI5 = pci(:,1);
+resGroup.acc_CI95 = pci(:,2);
+[~,pci] = binofit(resGroup.nObs/2,resGroup.nObs,0.1);
+resGroup.acc_thresh = pci(:,2);
+resGroup.acc_p = binocdf(resGroup.hit,resGroup.nObs,0.5,'upper');
+[~,P,~,STATS] = ttest(resSubj.acc,0.5,'tail','right');
+resGroup.acc_T = STATS.tstat;
+resGroup.acc_P = P;
+[P,~,STATS] = signrank(resSubj.acc,0.5,'tail','right');
+resGroup.acc_wilcoxonSignedrank = STATS.signedrank;
+resGroup.acc_wilcoxonP = P;
+
+[~,~,~,auc] = perfcurve(resGroup.y,resGroup.yHat,1,'NBOOT',1000);
+resGroup.auc = auc(1);
+resGroup.auc_CI = auc(2:3);
+[~,P,~,STATS] = ttest(resSubj.auc,0.5,'tail','right');
+resGroup.auc_T = STATS.tstat;
+resGroup.auc_P = P;
+[P,~,STATS] = signrank(resSubj.auc,0.5,'tail','right');
+resGroup.auc_wilcoxonSignedrank = STATS.signedrank;
+resGroup.auc_wilcoxonP = P;
+
+[~,P,~,STATS] = ttest(resGroup.yHat(resGroup.y==1),resGroup.yHat(resGroup.y==2),'tail','right');
+resGroup.distT = STATS.tstat;
+resGroup.distT_p = P;
+[~,P,~,STATS] = ttest(resSubj.distT,0,'tail','right');
+resGroup.distT_T = STATS.tstat;
+resGroup.distT_P = P;
+resGroup.nVoxOrig = round(mean(resSubj.nVoxOrig,1));
+resGroup.nVox = round(mean(resSubj.nVox,1));
+resGroup.SVMspace = resSubj.SVMspace{1};
+
+function printRes(resSess,resSubj,resGroup)
+disp(['Session results:'])
+disp([' -acc (one-sided p)'])
+disp(resSess.acc)
+disp(resSess.acc_p)
+disp([' -distT (one-sided p)'])
+disp(resSess.distT)
+disp(resSess.distT_p)
+
+disp(['Group results:'])
+disp(['hit    =' num2str(resGroup.hit) '/' num2str(resGroup.nObs)])
+disp([' -fixedEffect'])
+disp(['  acc    =' num2str(resGroup.acc*100,'%0.2f%%') '; p=' num2str(resGroup.acc_p,'%0.3f') '; thresh=' num2str(resGroup.acc_thresh,'%0.2f')])
+disp(['  auc    =' num2str(resGroup.auc*100,'%0.2f') '; 90%CI=' num2str(resGroup.auc_CI,'%0.3f ')])
+disp(['  distT  =' num2str(resGroup.distT,'%0.2f') '; p=' num2str(resGroup.distT_p,'%0.3f ')])
+disp([' -randomEffect'])
+disp(['  acc=' num2str(mean(resSubj.acc)*100,'%0.2f%%')])
+disp(['  -student'])
+disp(['   T=' num2str(resGroup.acc_T,'%0.2f') '; P=' num2str(resGroup.acc_P,'%0.3f')])
+disp(['  -wilcoxon'])
+disp(['   sRank=' num2str(resGroup.acc_wilcoxonSignedrank,'%0.2f') '; P=' num2str(resGroup.acc_wilcoxonP,'%0.3f')])
+
