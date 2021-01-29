@@ -102,19 +102,19 @@ end
 clear dC
 
 %% Between-session feature selection
-featSel = repmat(struct('ind',[],'info',''),size(dP));
+featSel = cell(size(dP));
 for i = 1:numel(dP)
-    featSel(i).ind = true(1,size(dP{i}.data,2));
-    featSel(i).info = strjoin({featSel(i).info 'V1'},'');
+    featSel{i}.ind = true(1,size(dP{i}.data,2));
+    featSel{i}.info = 'V1';
     % Select non-vein voxels
-    featSel(i).ind = featSel(i).ind & ~dP{i}.vein_mask;
-    featSel(i).info = strjoin({featSel(i).info 'nonVein'},' & ');
+    featSel{i}.ind = featSel{i}.ind & ~dP{i}.vein_mask;
+    featSel{i}.info = strjoin({featSel{i}.info 'nonVein'},' & ');
     % Select active voxels
-    featSel(i).ind = featSel(i).ind & dP{i}.anyCondActivation_mask;
-    featSel(i).info = strjoin({featSel(i).info 'active'},' & ');
+    featSel{i}.ind = featSel{i}.ind & dP{i}.anyCondActivation_mask;
+    featSel{i}.info = strjoin({featSel{i}.info 'active'},' & ');
     % Select most discrimant voxels
-    featSel(i).ind = featSel(i).ind & dP{i}.discrim_mask;
-    featSel(i).info = strjoin({featSel(i).info 'mostDisciminant'},' & ');
+    featSel{i}.ind = featSel{i}.ind & dP{i}.discrim_mask;
+    featSel{i}.info = strjoin({featSel{i}.info 'mostDisciminant'},' & ');
 end
 
 % %% Between-session feature selection
@@ -165,7 +165,7 @@ end
 %% Example plot of trigonometric (polar) representation
 i = 1;
 [~,b] = sort(dP{i}.anyCondActivation_F,'descend');
-b = b(featSel(i).ind);
+b = b(featSel{i}.ind);
 f = plotPolNormExample(dP{i}.data(:,b(1),1:3),SVMspace);
 if figOption.save
     filename = fullfile(pwd,mfilename);
@@ -205,6 +205,7 @@ svmModelK = cell(size(dP));
 nrmlzK = cell(size(dP));
 yHatK = cell(size(dP));
 yHatK_tr = cell(size(dP));
+yHat = cell(size(dP));
 % polNorm = repmat(struct('rhoScale',[],'thetaShift',[]),size(dP));
 % svmNorm = repmat(struct('scale',[],'shift',[]),size(dP));
 % svmModel = repmat(struct('w',[],'b',[],'Paramters',[],'info',[]),size(dP));
@@ -217,6 +218,8 @@ yHatK_tr = cell(size(dP));
 %     modelOneClass1 = cell(size(dP));
 %     modelOneClass2 = cell(size(dP));
 % end
+
+% Within-session training and testing
 for i = 1:numel(dP)
     if doPerm
         error('code that')
@@ -225,7 +228,7 @@ for i = 1:numel(dP)
     end
     % Get feature-selected data
     [x,y,k] = getXYK(dP{i},SVMspace);
-    x = x(:,featSel(i).ind);
+    x = x(:,featSel{i}.ind);
     
     % SVM on full sessions
     % train
@@ -282,9 +285,7 @@ for i = 1:numel(dP)
 %         y = cat(1,y1,y2); clear y1 y2
 %     end
 end
-% Cross-session validation
-warning('stopped coding here')
-keyboard
+% Between-session testing
 for i = 1:numel(dP)
     [subjInd,testInd] = ind2sub(size(dP),i);
     switch testInd
@@ -297,19 +298,16 @@ for i = 1:numel(dP)
     end
     % Get cross-session feature-selected data
     [x,y,~] = getXYK(dP{subjInd,testInd},SVMspace);
-    x = x(:,featSel(subjInd,trainInd).ind);
-    % Normalize
-    [x,~] = polarSpaceNormalization(x,SVMspace);
-    [x,~] = svmSpaceNormalization(x,SVMspace);
-    % Apply cross-session svm model
-    w = svmModel(subjInd,trainInd).w;
-    b = svmModel(subjInd,trainInd).b;
-    yHat = x*w'-b;
-    if any(yHat==0)
-        error('yHat==0')
-    end
+    x = x(:,featSel{subjInd,trainInd}.ind);
     
+    % Test
+    [yHat{subjInd,testInd},~] = SVMtest(y,x,svmModel{subjInd,trainInd});
 end
+
+
+
+
+
 
 % Test
 if ~doPerm
@@ -343,7 +341,7 @@ for i = 1:numel(dP)
         end
         % Get cross-session feature-selected data
         [x,y,~] = getXYK(dP{subjInd,testInd},SVMspace);
-        x = x(:,featSel(subjInd,trainInd).ind);
+        x = x(:,featSel{subjInd,trainInd}.ind);
         % Normalize
         [x,~] = polarSpaceNormalization(x,SVMspace);
         [x,~] = svmSpaceNormalization(x,SVMspace);
@@ -625,9 +623,8 @@ for kInd = 1:length(kList)
     svmModel(:,:,kInd).svmSpace = SVMspace;
 end
 
-function [yHat,yHatTr] = SVMtest(y,x,svmModel,normTr,k)
+function [yHat,yHatTr] = SVMtest(y,x,svmModel,nrmlz,k)
 X = x;
-
 if ~exist('k','var') || isempty(k) || all(k(:)==0)
     k = ones(size(y)); % no crossvalidation
 end
@@ -645,8 +642,13 @@ for kInd = 1:length(kList)
     end
     
     % Normalize
-    [x,~] = polarSpaceNormalization(x,normTr(kInd),te);
-    [x,~] = svmSpaceNormalization(x,normTr(kInd),te);
+    if ~exist('nrmlz','var') || isempty(nrmlz)
+        [x,~] = polarSpaceNormalization(x,svmModel(kInd).svmSpace);
+        [x,~] = svmSpaceNormalization(x,svmModel(kInd).svmSpace);
+    else
+        [x,~] = polarSpaceNormalization(x,nrmlz(kInd),te);
+        [x,~] = svmSpaceNormalization(x,nrmlz(kInd),te);
+    end
     
     w = svmModel(kInd).w;
     b = svmModel(kInd).b;
