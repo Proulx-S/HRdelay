@@ -1,4 +1,4 @@
-function res = runDecoding(SVMspace,verbose,nPerm,figOption)
+function [resBS,resWS] = runDecoding(SVMspace,verbose,nPerm,figOption)
 doAntiAntiLearning = 0;
 if ~exist('verbose','var')
     verbose = 1;
@@ -116,50 +116,6 @@ for i = 1:numel(dP)
     featSel{i}.ind = featSel{i}.ind & dP{i}.discrim_mask;
     featSel{i}.info = strjoin({featSel{i}.info 'mostDisciminant'},' & ');
 end
-
-% %% Between-session feature selection
-% dP = cell(length(dC),2);
-% featSel = repmat(struct('ind',[],'info',''),size(dP));
-% for subjInd = 1:length(dC)
-%     for sessInd = 1:length(sessList)
-%         sess = ['sess' num2str(sessInd)];
-%         %         ind.(sess) = true(1,size(dC{subjInd}.(sess).data,2));
-%         featSel(subjInd,sessInd).ind = true(1,size(dC{subjInd}.(sess).data,2));
-%         featSel(subjInd,sessInd).info = strjoin({featSel(subjInd,sessInd).info 'V1'},'');
-%         % Select non-vein voxels
-%         %         ind.(sess) = ind.(sess) & ~dC{subjInd}.(sess).vein_mask;
-%         featSel(subjInd,sessInd).ind = featSel(subjInd,sessInd).ind & ~dC{subjInd}.(sess).vein_mask;
-%         featSel(subjInd,sessInd).info = strjoin({featSel(subjInd,sessInd).info 'nonVein'},' & ');
-%         % Select active voxels
-%         %         ind.(sess) = ind.(sess) & dC{subjInd}.(sess).anyCondActivation_mask;
-%         featSel(subjInd,sessInd).ind = featSel(subjInd,sessInd).ind & dC{subjInd}.(sess).anyCondActivation_mask;
-%         featSel(subjInd,sessInd).info = strjoin({featSel(subjInd,sessInd).info 'active'},' & ');
-%         % Select most discrimant voxels
-%         %         ind.(sess) = ind.(sess) & dC{subjInd}.(sess).discrim_mask;
-%         featSel(subjInd,sessInd).ind = featSel(subjInd,sessInd).ind & dC{subjInd}.(sess).discrim_mask;
-%         featSel(subjInd,sessInd).info = strjoin({featSel(subjInd,sessInd).info 'mostDisciminant'},' & ');
-%     end
-%     
-%     for sessInd = 1:length(sessList)
-%         
-%         % Apply voxel selection
-%         for sessInd = 1:length(sessList)
-%             sessFeat = ['sess' num2str(~(sessInd-1)+1)]; % the session on which voxel selection is defined
-%             sess = ['sess' num2str(sessInd)]; % the session on which voxel selection is applied
-%             
-%             allFields = fields(dC{subjInd}.(sess));
-%             nVox = size(dC{subjInd}.(sess).data,2);
-%             for i = 1:length(allFields)
-%                 if (isnumeric(dC{subjInd}.(sess).(allFields{i})) || islogical(dC{subjInd}.(sess).(allFields{i})) ) && size(dC{subjInd}.(sess).(allFields{i}),2)==nVox
-%                     % remove unslected voxels identified from the other session
-%                     dC{subjInd}.(sess).(allFields{i})(:,~ind.(sessFeat),:,:) = [];
-%                 end
-%             end
-%             dP{subjInd,sessInd} = dC{subjInd}.(sessList{sessInd});
-%         end
-%         dC{subjInd} = [];
-%     end
-%     clear dC
 
 
 %% Example plot of trigonometric (polar) representation
@@ -295,7 +251,7 @@ for i = 1:numel(dP)
     resBS_sess(i).nVox = sum(featSel{i}.ind);
     resBS_sess(i).SVMspace = SVMspace;
 end
-resBS_sess = orderfields(resBS_sess,[1 2 3 4 5 6 7 11 8 9 10 12 13 14]);
+resBS_sess = orderfields(resBS_sess,[1 2 3 4 5 6 7 8 9 13 10 11 12 14 15 16]);
 % Within-sess
 resWS_sess = repmat(perfMetric,[size(dP,1) size(dP,2)]);
 for i = 1:numel(dP)
@@ -308,33 +264,39 @@ for i = 1:numel(dP)
     resWS_sess(i).nVox = sum(featSel{i}.ind);
     resWS_sess(i).SVMspace = SVMspace;
 end
-resWS_sess = orderfields(resWS_sess,[1 2 3 4 5 6 7 11 8 9 10 12 13 14]);
+resWS_sess = orderfields(resWS_sess,[1 2 3 4 5 6 7 8 9 13 10 11 12 14 15 16]);
 
 %% Summarize group performances
 [resBSsess,resBSsubj,resBSgroup] = summarizePerf(resBS_sess);
 [resWSsess,resWSsubj,resWSgroup] = summarizePerf(resWS_sess);
 
-figure('WindowStyle','docked');
-metric = 'acc';
-hPlot = plot(resWSsess.(metric)',resBSsess.(metric)','o'); hold on
-for subjInd = 1:size(hPlot,1)
-    hPlot(subjInd).MarkerFaceColor = hPlot(subjInd).Color;
-    hPlot(subjInd).MarkerEdgeColor = 'k';
+%% Plot between-session vs within-session
+if verbose
+    figure('WindowStyle','docked');
+    metric = 'acc';
+    hPlot = plot(resWSsess.(metric)',resBSsess.(metric)','o'); hold on
+    for subjInd = 1:size(hPlot,1)
+        hPlot(subjInd).MarkerFaceColor = hPlot(subjInd).Color;
+        hPlot(subjInd).MarkerEdgeColor = 'k';
+    end
+    switch metric
+        case {'acc' 'auc'}
+            xlim([0 1])
+            ylim([0 1])
+            plot(xlim,[1 1].*0.5,'-k')
+            plot([1 1].*0.5,ylim,'-k')
+            ax = gca;
+            ax.PlotBoxAspectRatio = [1 1 1];
+        case 'distT'
+            plot(xlim,[1 1].*0,'-k')
+            plot([1 1].*0,ylim,'-k')
+    end
+    xlabel('Within-sess acc')
+    ylabel('Between-sess acc')
+    title(SVMspace)
+    legend(subjList)
+    grid on
 end
-switch metric
-    case {'acc' 'auc'}
-        xlim([0 1])
-        ylim([0 1])
-        plot(xlim,[1 1].*0.5,'-k')
-        plot([1 1].*0.5,ylim,'-k')
-        ax = gca;
-        ax.PlotBoxAspectRatio = [1 1 1];
-    case 'distT'
-        plot(xlim,[1 1].*0,'-k')
-        plot([1 1].*0,ylim,'-k')
-end
-xlabel('Within-sess')
-ylabel('Between-sess')
 
 %% Print info
 if verbose
@@ -346,6 +308,23 @@ if verbose
     printRes(resWSsess,resWSsubj,resWSgroup)
     disp('-----------------')
 end
+resBS.sess = resBSsess;
+resBS.sess.subjList = subjList;
+resBS.subj = resBSsubj;
+resBS.subj.subjList = subjList;
+resBS.group = resBSgroup;
+resWS.sess = resWSsess;
+resWS.sess.subjList = subjList;
+resWS.subj = resWSsubj;
+resWS.subj.subjList = subjList;
+resWS.group = resWSgroup;
+
+
+
+
+
+
+
 
 % %% Add info
 % if ~doPerm
@@ -810,6 +789,8 @@ if ~exist('y','var')
         'nObs',[],...
         'hit',[],...
         'acc',[],...
+        'acc_CI5',[],...
+        'acc_CI95',[],...
         'acc_thresh',[],...
         'acc_p',[],...);
         'auc',[],...
@@ -823,6 +804,9 @@ res.nObs = length(y);
 % acc
 res.hit = sum((yHat<0)+1==y);
 res.acc = res.hit./res.nObs;
+[~,pci] = binofit(res.hit,res.nObs,0.1);
+res.acc_CI5 = pci(1);
+res.acc_CI95 = pci(2);
 [~,pci] = binofit(res.nObs/2,res.nObs,0.1);
 res.acc_thresh = pci(2);
 res.acc_p = binocdf(res.hit,res.nObs,0.5,'upper');
@@ -853,7 +837,7 @@ end
 resSess.info = 'subj x sess';
 resSess.distT_fdr = resSess.distT_p;
 resSess.distT_fdr(:) = mafdr(resSess.distT_p(:),'BHFDR',true);
-resSess = orderfields(resSess,[1 2 3 4 5 6 7 8 9 10 11 16 12 13 14 15]);
+resSess = orderfields(resSess,[1 2 3 4 5 6 7 8 9 10 11 12 13 18 14 15 16 17]);
 
 resSubj.y = cell(size(resSess.y,1),1);
 resSubj.yHat = cell(size(resSess.yHat,1),1);
@@ -864,6 +848,9 @@ end
 resSubj.nObs = sum(resSess.nObs,2);
 resSubj.hit = sum(resSess.hit,2);
 resSubj.acc = resSubj.hit./resSubj.nObs;
+[~,pci] = binofit(resSubj.hit,resSubj.nObs,0.1);
+resSubj.acc_CI5 = pci(:,1);
+resSubj.acc_CI95 = pci(:,2);
 [~,pci] = binofit(resSubj.nObs/2,resSubj.nObs,0.1);
 resSubj.acc_thresh = pci(:,2);
 resSubj.acc_p = binocdf(resSubj.hit,resSubj.nObs,0.5,'upper');
@@ -887,6 +874,9 @@ resGroup.nObs = sum(resSubj.nObs,1);
 resGroup.hit = sum(resSubj.hit,1);
 
 resGroup.acc = resGroup.hit./resGroup.nObs;
+[~,pci] = binofit(resGroup.hit,resGroup.nObs,0.1);
+resGroup.acc_CI5 = pci(:,1);
+resGroup.acc_CI95 = pci(:,2);
 [~,pci] = binofit(resGroup.nObs/2,resGroup.nObs,0.1);
 resGroup.acc_thresh = pci(:,2);
 resGroup.acc_p = binocdf(resGroup.hit,resGroup.nObs,0.5,'upper');
