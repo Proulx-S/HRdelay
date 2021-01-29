@@ -220,71 +220,49 @@ yHat = cell(size(dP));
 % end
 
 % Within-session training and testing
+Y = cell(size(dP));
 for i = 1:numel(dP)
+    [subjInd,sessInd] = ind2sub(size(dP),i);
+    switch sessInd
+        case 1
+            sessIndCross = 2;
+        case 2
+            sessIndCross = 1;
+        otherwise
+            error('X')
+    end
+    
     if doPerm
         error('code that')
         disp(['for sess ' num2str(i) ' of ' num2str(numel(dP))])
         tic
     end
-    % Get feature-selected data
-    [x,y,k] = getXYK(dP{i},SVMspace);
-    x = x(:,featSel{i}.ind);
     
-    % SVM on full sessions
-    % train
-    [svmModel{i},nrmlz{i}] = SVMtrain(y,x,SVMspace);
-    % test (not crossvalidated)
-    [yHat_tr{i},~] = SVMtest(y,x,svmModel{i},nrmlz{i});
-    
+    [X,y,k] = getXYK(dP{subjInd,sessInd},SVMspace);
     
     % SVM on within-session crossvalidation folds
+    % feature selection
+    x = X(:,featSel{subjInd,sessIndCross}.ind);
     % train
     [svmModelK{i},nrmlzK{i}] = SVMtrain(y,x,SVMspace,k);
     % test
     [yHatK{i},yHatK_tr{i}] = SVMtest(y,x,svmModelK{i},nrmlzK{i},k);
     yHatK{i} = nanmean(yHatK{i},2);
     
-%     
-%     
-%     % SVM
-%     if ~doPerm
-%         [x,polNorm(i)] = polarSpaceNormalization(x,SVMspace);
-%         [x,svmNorm(i)] = svmSpaceNormalization(x,SVMspace);
-%         model = svmtrain(y,x,'-t 0 -q -c 2');
-%         w = model.sv_coef'*model.SVs;
-%         b = model.rho;
-%         svmModel(i).w = w; svmModel(i).b = b; svmModel(i).Paramters = model.Parameters; svmModel(i).info = '   yHat = x*w''-b   ';
-%         resTr.y{i} = y;
-%         yHat = x*w'-b;
-%         resTr.yHat{i} = yHat;
-%         resTr.nObs(i) = length(y);
-%         resTr.acc(i) = sum((yHat<0)+1==y)./resTr.nObs(i);
-%         
-%         if doAntiAntiLearning
-%             modelOneClass1{i} = svmtrain(y(y==1),x(y==1,:),'-s 2 -t 0 -q');
-%             modelOneClass2{i} = svmtrain(y(y==2),x(y==2,:),'-s 2 -t 0 -q');
-%             [~, ~, decision_values1] = svmpredict(y,x,modelOneClass1{i},'-q');
-%             [~, ~, decision_values2] = svmpredict(y,x,modelOneClass2{i},'-q');
-%             decision_valuesDiff__Tr{i} = decision_values1-decision_values2;
-%         end
-%     else
-%         error('code that')
-%         % with permutations
-%         yTe = nan(length(y),nPerm);
-%         yHatTe = nan(length(y),nPerm);
-%         y1 = y(y==1);
-%         y2 = y(y==2);
-%         parfor permInd = 1:nPerm
-%             %permute labels
-%             y = cat(2,y1,y2);
-%             for sInd = 1:size(y,1); y(sInd,:) = y(sInd,randperm(2)); end
-%             y = cat(1,y(:,1),y(:,2));
-%             %cross-validated SVM
-%             [yTe(:,permInd),~,yHatTe(:,permInd)] = xValSVM(x,y,k,SVMspace);
-%         end
-%         y = cat(1,y1,y2); clear y1 y2
-%     end
+    
+    % SVM on full sessions
+    % feature-selected data
+    x = X(:,featSel{subjInd,sessInd}.ind);
+    % train
+    [svmModel{i},nrmlz{i}] = SVMtrain(y,x,SVMspace);
+    % test (not crossvalidated)
+    [yHat_tr{i},~] = SVMtest(y,x,svmModel{i},nrmlz{i});
+    
+    
+    % Output
+    Y{i} = y;
 end
+
 % Between-session testing
 for i = 1:numel(dP)
     [subjInd,testInd] = ind2sub(size(dP),i);
@@ -297,14 +275,94 @@ for i = 1:numel(dP)
             error('X')
     end
     % Get cross-session feature-selected data
-    [x,y,~] = getXYK(dP{subjInd,testInd},SVMspace);
-    x = x(:,featSel{subjInd,trainInd}.ind);
+    [X,y,~] = getXYK(dP{subjInd,testInd},SVMspace);
+    x = X(:,featSel{subjInd,trainInd}.ind);
     
     % Test
     [yHat{subjInd,testInd},~] = SVMtest(y,x,svmModel{subjInd,trainInd});
 end
 
+%% Compute performance metrics
+% Between-sess
+resBS = repmat(perfMetric,[size(dP,1) size(dP,2)]);
+for i = 1:numel(dP)
+    resBS(i) = perfMetric(Y{i},yHat{i});
+end
+for i = 1:numel(dP)
+    resBS(i).nVoxOrig = size(dP{i}.data,2);
+    resBS(i).nVox = sum(featSel{i}.ind);
+end
+% Within-sess
+resWS = repmat(perfMetric,[size(dP,1) size(dP,2)]);
+for i = 1:numel(dP)
+    resWS(i) = perfMetric(Y{i},yHatK{i});
+end
+for i = 1:numel(dP)
+    resWS(i).nVoxOrig = size(dP{i}.data,2);
+    resWS(i).nVox = sum(featSel{i}.ind);
+end
 
+figure('WindowStyle','docked');
+for subjInd = 1:size(resWS,1)
+    scatter([resWS(subjInd,:).acc],[resBS(subjInd,:).acc],'filled'); hold on
+end
+% scatter([resWS(:,1).acc],[resBS(:,1).acc]); hold
+% scatter([resWS(:,2).acc],[resBS(:,2).acc]); hold
+xlim([0 1])
+ylim([0 1])
+plot(xlim,[1 1].*0.5,'-k')
+plot([1 1].*0.5,ylim,'-k')
+xlabel('Within-sess')
+ylabel('Between-sess')
+
+
+resWithinSessXval.y = res.y;
+resWithinSessXval.yHat = yHatK;
+
+
+res.yHat  = yHat;
+res.acc  = nan(size(dP));
+res.auc  = nan(size(dP));
+res.distT = nan(size(dP));
+res.nObs = nan(size(dP));
+res.p = nan(size(dP));
+res.subjList = subjList;
+res.nVox = nan(size(dP));
+res.nVoxOrig = nan(size(dP));
+for i = 1:numel(dP)
+    % Within-session
+    y = resWithinSessXval.y{i};
+    yHat = resWithinSessXval.yHat{i};
+    nObs = length(y);
+    % acc
+    hit = sum((yHat<0)+1==y);
+    acc = hit./nObs;
+    [~,pci] = binofit(nObs/2,nObs,0.1);
+    acc_thresh = pci(2);
+    acc_p = binocdf(hit,nObs,0.5,'upper');
+    % auc
+    [~,~,~,auc] = perfcurve(y,yHat,1);
+    % distT
+    [H,P,CI,STATS] = ttest(yHat(y==1),yHat(y==2));
+    distT = STATS.tstat;
+    distT_p = P;
+    % nVox
+    nVoxOrig = size(dP{i}.data,2);
+    nVox = sum(featSel{i}.ind);
+    
+    
+    
+    
+    resWithinSessXval.acc{i}  = nan(size(dP));
+    res.auc  = nan(size(dP));
+    res.distT = nan(size(dP));
+    res.nObs = nan(size(dP));
+    res.p = nan(size(dP));
+    res.subjList = subjList;
+    res.nVox = nan(size(dP));
+    res.nVoxOrig = nan(size(dP));
+    res.nDim = nan(size(dP));
+end
 
 
 
@@ -807,7 +865,7 @@ switch SVMspace
             otherwise
                 error('X')
         end
-        [u,v] = pol2cart(theta,rho);
+        [u,v] = pol2cart(theta,rho); clear theta rho
         x = complex(u,v); clear u v
     otherwise
         error('X')
@@ -973,3 +1031,39 @@ ax.Title.String = 'after';
 hSup = suptitle({'Polar space normalization' SVMspace});
 hSup.Interpreter = 'none';
 drawnow
+
+function res = perfMetric(y,yHat)
+if ~exist('y','var')
+    res = struct(...
+        'y',[],...
+        'yHat',[],...
+        'nObs',[],...
+        'hit',[],...
+        'acc',[],...
+        'acc_thresh',[],...
+        'acc_p',[],...);
+        'auc',[],...
+        'distT',[],...
+        'distT_p',[]);
+    return
+end
+res.y = {y};
+res.yHat = {yHat};
+res.nObs = length(y);
+% acc
+res.hit = sum((yHat<0)+1==y);
+res.acc = res.hit./res.nObs;
+[~,pci] = binofit(res.nObs/2,res.nObs,0.1);
+res.acc_thresh = pci(2);
+res.acc_p = binocdf(res.hit,res.nObs,0.5,'upper');
+% auc
+[~,~,~,res.auc] = perfcurve(y,yHat,1);
+% distT
+[~,P,~,STATS] = ttest(yHat(y==1),yHat(y==2));
+res.distT = STATS.tstat;
+res.distT_p = P;
+
+
+
+
+
