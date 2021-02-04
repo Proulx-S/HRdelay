@@ -15,11 +15,13 @@ featSel_bSess.vein.source = 'fullModelResid';% 'reducedModelResid' (stimulus-dri
 featSel_bSess.vein.percentile = 20;
 % Discriminant voxels
 featSel_bSess.discrim.doIt = 1;
+featSel_bSess.discrim.percentile = 20;
 %% Display parameters
 figOption.save = 0; % save all figures
 figOption.subj = 1; % subjInd-> plots participants subjInd; +inf-> plots all participant (if verbose==0, will only plot subjInd==1 but still produce and save all the other figures)
 
-runFit(verbose)
+runFit(verbose,figOption)
+runWave(verbose,figOption)
 
 preprocAndShowMasks(featSel_bSess,figOption,verbose)
 

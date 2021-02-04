@@ -1,5 +1,7 @@
 function preprocAndShowMasks(featSel_bSess,figOption,verbose)
 close all
+actuallyRun = 0;
+doWave = 1;
 if ~exist('verbose','var')
     verbose = 1;
 end
@@ -85,6 +87,13 @@ end
 
 
 for subjInd = 1:length(subjList)
+    if ~actuallyRun && figOption.subj~=subjInd && figOption.subj~=inf
+        continue
+    end
+
+    
+    
+    disp(['Doing ' num2str(subjList{subjInd})])
     %% Load fun data
     load(fullfile(funPath,funLevel2,subjList{subjInd},sinFitFile),'results')
     tmp = load(fullfile(funPath,funLevel2,subjList{subjInd},hrFitFile),'results');
@@ -124,7 +133,7 @@ for subjInd = 1:length(subjList)
     a = load_nii(fullfile(funPath,funLevel1,subjList{subjInd},tmpFilename));
     brain = flip(permute(a.img,[3 1 2 4]),1); clear a
     brain = brain(:,:,:,1);
-%     figure('WindowStyle','docked')
+%     ('WindowStyle','docked')
 %     imagesc(brain(:,:,10)); colormap gray
     %% ROI mask
     % Get mask of V1
@@ -191,7 +200,6 @@ for subjInd = 1:length(subjList)
     
     %     figure('WindowStyle','docked')
     %     imagesc(abs(data.(sess).data(:,:,10,1,1)))
-    
     
     %% Stats for later between-session feature selection
     exclusion.subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'};
@@ -313,7 +321,7 @@ for subjInd = 1:length(subjList)
             x = [real(x) imag(x)];
             featStat = nan(1,nVox);
             featP = nan(1,nVox);
-            for voxInd = 1:nVox
+            parfor voxInd = 1:nVox
                 stats = T2Hot2d(x(:,[0 nVox]+voxInd));
                 featStat(voxInd) = stats.T2;
                 featP(voxInd) = stats.P;
@@ -323,7 +331,7 @@ for subjInd = 1:length(subjList)
             featSel.(sess).discrim_P(maskROI) = featP;
             % get thresh based on percentile of ACTIVE NON-VEIN ROI voxels
             mask = ~featSel.(sess).vein_mask & featSel.(sess).anyCondActivation_mask;
-            featSel.(sess).discrim_T2thresh = prctile(featStat(mask(maskROI)),20);
+            featSel.(sess).discrim_T2thresh = prctile(featStat(mask(maskROI)),featSel_bSess.discrim.percentile);
             featSel.(sess).discrim_mask = featSel.(sess).discrim_T2>featSel.(sess).discrim_T2thresh;
         end
     end
@@ -528,7 +536,42 @@ for subjInd = 1:length(subjList)
             end
         end
     end
+    if ~actuallyRun
+        continue
+    end
     
+    
+    
+    %% Load wave data
+    if doWave
+        waveFile = 'v1wave';
+        load(fullfile(funPath,funLevel2,subjList{subjInd},[waveFile '.mat']),'results')
+        
+        %% Split sessions and conditions
+        for sessInd = 1:2
+            sess = ['sess' num2str(sessInd)];
+            runInd = sessLabel==sessInd;
+            if sessInd==1
+                wave.(sess).data = permute(results.wave(:,:,:,:,runInd),[1 2 3 5 6 4]); results.wave(:,:,:,:,runInd) = [];
+            else
+                wave.(sess).data = permute(results.wave,[1 2 3 5 6 4]); results.wave = [];
+            end
+            wave.(sess).condLabel = permute(condLabel(runInd),[1 3 4 2]);
+            wave.(sess).runLabel = permute(runLabel(runInd),[1 3 4 2]);
+            %         [squeeze(data.(sess).condLabel) squeeze(data.(sess).runLabel)]
+            
+            cond1 = wave.(sess).condLabel==1;
+            cond2 = wave.(sess).condLabel==2;
+            cond3 = wave.(sess).condLabel==3;
+            wave.(sess).data = cat(5,wave.(sess).data(:,:,:,cond1,:,:),wave.(sess).data(:,:,:,cond2,:,:),wave.(sess).data(:,:,:,cond3,:,:));
+            wave.(sess).runLabel = cat(5,wave.(sess).runLabel(:,:,:,cond1,:,:),wave.(sess).runLabel(:,:,:,cond2,:,:),wave.(sess).runLabel(:,:,:,cond3,:,:));
+            wave.(sess).badStart = permute(results.badStart,[1 3 4 5 6 2]);
+            wave.(sess).badEnd = permute(results.badEnd,[1 3 4 5 6 2]);
+            wave.(sess).info = 'x X y X z X run X cond[ori1,ori2,plaid] X time';
+            wave.(sess) = rmfield(wave.(sess),'condLabel');
+        end
+        clear results
+    end
     
     %% Apply ROI mask and vectorize
     for sessInd = 1:2
@@ -540,16 +583,32 @@ for subjInd = 1:length(subjList)
 %         imagesc(voxInd(:,:,10))
 
         % sin responses
-        d.(sess).data = permute(data.(sess).data,[4 5 1 2 3]);
+        d.(sess).data = permute(data.(sess).data,[4 5 1 2 3]); data.(sess).data = [];
         d.(sess).data = d.(sess).data(:,:,voxInd);
         d.(sess).data = permute(d.(sess).data,[1 3 2]);
-        d.(sess).hr = permute(hr.(sess),[4 5 6 1 2 3]);
+        d.(sess).hr = permute(hr.(sess),[4 5 6 1 2 3]); hr.(sess) = [];
         d.(sess).hr = d.(sess).hr(:,:,:,voxInd);
         d.(sess).hr = permute(d.(sess).hr,[2 4 3 1]);
+        if doWave
+            d.(sess).wave = permute(wave.(sess).data,[4 5 6 1 2 3]); wave.(sess).data = [];
+            d.(sess).wave = d.(sess).wave(:,:,:,voxInd);
+            d.(sess).wave = permute(d.(sess).wave,[1 4 2 3]);
+            d.(sess).badStart = permute(wave.(sess).badStart,[1 2 3 6 4 5]);
+            d.(sess).badEnd = permute(wave.(sess).badEnd,[1 2 3 6 4 5]);
+        end
         d.(sess).runLabel = permute(data.(sess).runLabel,[4 5 1 2 3]);
         d.(sess).runLabel = permute(d.(sess).runLabel,[1 3 2]);
         d.(sess).info = 'run x vox x cond[ori1, ori2, plaid] X TR';
-
+        
+%         ind = ~(d.(sess).badStart | d.(sess).badEnd);
+%         tmpWave = mean(d.(sess).wave(:,:,:,ind),4);
+%         tmpSin = d.(sess).data;
+%         figure('WindowStyle','docked');
+%         hScat = scatter(abs(tmpWave(:)),abs(tmpSin(:)),'filled');
+%         hScat.MarkerFaceColor = 'k';
+%         alpha(hScat,0.05)
+%         hist(abs(tmpWave(:)),100)
+        
         % feature slection stats
         fieldList = fields(featSel.(sess));
         for i = 1:length(fieldList)
@@ -574,6 +633,39 @@ for subjInd = 1:length(subjList)
     end
     clear featSel
 
+    %% Discriminant voxels based on wave
+    if doWave
+        for sessInd = 1:2
+            sess = ['sess' num2str(sessInd)];
+            
+            ptsPerCycle = 12;
+            nPts = nnz(~d.(sess).badEnd);
+            nCycle = floor(nPts/12)-1;
+            startCycles = (nPts - nCycle*ptsPerCycle)/ptsPerCycle;
+            d.(sess).badStart = false(size(d.(sess).badStart));
+            d.(sess).badStart(1:floor(startCycles*ptsPerCycle)) = true;
+            d.(sess).bad = d.(sess).badStart | d.(sess).badEnd;
+            
+            x = mean(d.(sess).wave(:,:,:,~d.(sess).bad),4);
+            nVox = size(x,2);
+            featStat = nan(1,nVox);
+            featP = nan(1,nVox);
+            parfor voxInd = 1:nVox
+                stats = T2Hot2d(cat(1,cat(2,real(x(:,voxInd,1)),imag(x(:,voxInd,1))),...
+                                      cat(2,real(x(:,voxInd,2)),imag(x(:,voxInd,2)))...
+                                      ));
+                featStat(voxInd) = stats.T2;
+                featP(voxInd) = stats.P;
+            end
+            d.(sess).waveDiscrim_T2 = featStat;
+            d.(sess).waveDiscrim_P = featP;
+            % get thresh based on percentile of ACTIVE NON-VEIN ROI voxels
+            tmpMask = ~d.(sess).vein_mask & d.(sess).anyCondActivation_mask;
+            d.(sess).waveDiscrim_T2thresh = prctile(featStat(tmpMask),featSel_bSess.discrim.percentile);
+            d.(sess).waveDiscrim_mask = d.(sess).waveDiscrim_T2>d.(sess).waveDiscrim_T2thresh;
+        end
+    end
+    
     %% Export some parameters
     param.subjList = subjList;
     param.brain = brain;
@@ -592,7 +684,7 @@ for subjInd = 1:length(subjList)
 
     tmp = fullfile(funPath,funLevel3,[subjList{subjInd} '_' mfilename]);
     if verbose; disp(['Saving to: ' tmp '.mat']); end
-    save(tmp,'d','param')
+    save(tmp,'d','param'); clear d param
     
     %% Reorder for notebook
     if subjInd==figOption.subj

@@ -1,5 +1,4 @@
-function [resBS,resWS] = runDecoding(SVMspace,verbose,nPerm,figOption)
-doAntiAntiLearning = 0;
+function [resBS,resWS] = runDecoding(SVMspace,dataType,verbose,nPerm,figOption)
 if ~exist('verbose','var')
     verbose = 1;
 end
@@ -10,6 +9,9 @@ end
 if ~exist('SVMspace','var') || isempty(SVMspace)
     SVMspace = 'cart'; % 'cart_HTbSess' 'cartNoAmp_HTbSess' 'cartNoDelay_HTbSess'
     % 'hr' 'hrNoAmp' 'cart' 'cartNoAmp' cartNoAmp_HT 'cartReal', 'cartImag', 'pol', 'polMag' 'polMag_T' or 'polDelay'
+end
+if ~exist('dataType','var') || strcmp(dataType,'sin')
+    dataType = 'data';
 end
 if isstruct(SVMspace)
     doPerm = 1;
@@ -87,7 +89,7 @@ sessList = fields(dC{1});
 
 if verbose
     disp('---');
-    disp(['SVM space: ' SVMspace]);
+    disp(['SVM space: ' SVMspace '; on ' dataType]);
 end
 
 %% Reorganize
@@ -101,6 +103,9 @@ for subjInd = 1:length(dC)
 end
 clear dC
 
+% figure('WindowStyle','docked');
+% scatter(dP{1}.discrim_T2,dP{1}.waveDiscrim_T2)
+
 %% Between-session feature selection
 featSel = cell(size(dP));
 for i = 1:numel(dP)
@@ -113,7 +118,14 @@ for i = 1:numel(dP)
     featSel{i}.ind = featSel{i}.ind & dP{i}.anyCondActivation_mask;
     featSel{i}.info = strjoin({featSel{i}.info 'active'},' & ');
     % Select most discrimant voxels
-    featSel{i}.ind = featSel{i}.ind & dP{i}.discrim_mask;
+    switch dataType
+        case 'wave'
+            featSel{i}.ind = featSel{i}.ind & dP{i}.waveDiscrim_mask;
+        case 'data'
+            featSel{i}.ind = featSel{i}.ind & dP{i}.discrim_mask;
+        otherwise
+            error('X')
+    end
     featSel{i}.info = strjoin({featSel{i}.info 'mostDisciminant'},' & ');
 end
 
@@ -122,7 +134,7 @@ end
 i = 1;
 [~,b] = sort(dP{i}.anyCondActivation_F,'descend');
 b = b(featSel{i}.ind);
-f = plotPolNormExample(dP{i}.data(:,b(1),1:3),SVMspace);
+f = plotPolNormExample(dP{i}.(dataType)(:,b(1),1:3),SVMspace);
 if figOption.save
     filename = fullfile(pwd,mfilename);
     if ~exist(filename,'dir'); mkdir(filename); end
@@ -194,7 +206,14 @@ for i = 1:numel(dP)
         tic
     end
     
-    [X,y,k] = getXYK(dP{subjInd,sessInd},SVMspace);
+    switch dataType
+        case 'data'
+            [X,y,k] = getXYK(dP{subjInd,sessInd},SVMspace);
+        case 'wave'
+            [X,y,k,~] = getXYK_wave(dP{subjInd,sessInd},SVMspace);
+        otherwise
+            error('X')
+    end
     
     % SVM on within-session crossvalidation folds
     % feature selection
@@ -230,8 +249,16 @@ for i = 1:numel(dP)
         otherwise
             error('X')
     end
+    
     % Get cross-session feature-selected data
-    [X,y,~] = getXYK(dP{subjInd,testInd},SVMspace);
+    switch dataType
+        case 'data'
+            [X,y,~] = getXYK(dP{subjInd,testInd},SVMspace);
+        case 'wave'
+            [X,y,~,~] = getXYK_wave(dP{subjInd,testInd},SVMspace);
+        otherwise
+            error('X')
+    end
     x = X(:,featSel{subjInd,trainInd}.ind);
     
     % Test
@@ -274,17 +301,33 @@ resWS_sess = orderfields(resWS_sess,[1 2 3 4 5 6 7 8 9 13 10 11 12 14 15 16]);
 if verbose
     figure('WindowStyle','docked');
     metric = 'acc';
-    hPlot = plot(resWSsess.(metric)',resBSsess.(metric)','o'); hold on
-    for subjInd = 1:size(hPlot,1)
-        hPlot(subjInd).MarkerFaceColor = hPlot(subjInd).Color;
-        hPlot(subjInd).MarkerEdgeColor = 'k';
+    metric_lowCI = 'acc_CI5';
+    metric_highCI = 'acc_CI95';
+    Xi = resWSsess.(metric)';
+    Yi = resBSsess.(metric)';
+    YNEG = Yi - resBSsess.(metric_lowCI)';
+    YPOS = resBSsess.(metric_highCI)' - Yi;
+    XNEG = Xi - resWSsess.(metric_lowCI)';
+    XPOS = resWSsess.(metric_highCI)' - Xi;
+    hEb = errorbar(Xi,Yi,YNEG,YPOS,XNEG,XPOS,'o'); hold on
+    for i = 1:length(hEb)
+        hEb(i).MarkerFaceColor = hEb(i).Color;
+        hEb(i).CapSize = 0;
+        hEb(i).MarkerEdgeColor = 'k';
     end
+%     hPlot = errorbar(resWSsess.(metric)',resBSsess.(metric)','o'); hold on
+%     hPlot = plot(resWSsess.(metric)',resBSsess.(metric)','o'); hold on
+%     for subjInd = 1:size(hPlot,1)
+%         hPlot(subjInd).MarkerFaceColor = hPlot(subjInd).Color;
+%         hPlot(subjInd).MarkerEdgeColor = 'k';
+%     end
     switch metric
         case {'acc' 'auc'}
             xlim([0 1])
             ylim([0 1])
-            plot(xlim,[1 1].*0.5,'-k')
-            plot([1 1].*0.5,ylim,'-k')
+            hChance(1) = plot(xlim,[1 1].*0.5,'-k');
+            hChance(2) = plot([1 1].*0.5,ylim,'-k');
+            uistack(hChance,'bottom')
             ax = gca;
             ax.PlotBoxAspectRatio = [1 1 1];
         case 'distT'
@@ -293,8 +336,8 @@ if verbose
     end
     xlabel('Within-sess acc')
     ylabel('Between-sess acc')
-    title(SVMspace)
-    legend(subjList)
+    title([SVMspace ' ' dataType])
+    legend(hEb,subjList)
     grid on
 end
 
@@ -386,6 +429,42 @@ k2 = (1:nSamplePaire)';
 x = cat(1,x1,x2); clear x1 x2
 y = cat(1,y1,y2); clear y1 y2
 k = cat(1,k1,k2); clear k1 k2
+
+function [x,y,k,t] = getXYK_wave(dP,SVMspace)
+% Define x(data), y(label) and k(xValFolds)
+switch SVMspace
+    case {'hr' 'hrNoAmp'}
+        error('double-check that')
+        nSamplePaire = size(dP.hr,1);
+        x1 = dP.hr(:,:,1,:); x1 = x1(:,:);
+        x2 = dP.hr(:,:,2,:); x2 = x2(:,:);
+    case {'cart' 'cart_HT' 'cart_HTbSess'...
+            'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'...
+            'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'...
+            'cartReal' 'cartReal_T'...
+            'polMag' 'polMag_T'...
+            'polDelay'}
+        ptsPerCycle = 12;
+        dP.wave(:,:,:,dP.bad) = [];
+        sz = size(dP.wave);
+        sz = [sz(1:3) ptsPerCycle sz(4)/ptsPerCycle];
+        x = permute(mean(reshape(dP.wave,sz),4),[2 3 5 1 4]);
+        sz = size(x);
+        y = repmat(1:sz(2),[1 1 sz(3:4)]);
+        t = repmat(permute(1:sz(3),[1 3 2 4]),[1 sz(2) 1 sz(4)]);
+        k = repmat(permute(1:sz(4),[1 3 4 2]),[1 sz(2:3) 1]);
+        x = x(:,:,:);
+        y = y(:,:,:);
+        t = t(:,:,:);
+        k = k(:,:,:);
+        x = cat(1,permute(x(:,1,:),[3 1 2]),permute(x(:,2,:),[3 1 2]));
+        y = cat(1,permute(y(:,1,:),[3 1 2]),permute(y(:,2,:),[3 1 2]));
+        t = cat(1,permute(t(:,1,:),[3 1 2]),permute(t(:,2,:),[3 1 2]));
+        k = cat(1,permute(k(:,1,:),[3 1 2]),permute(k(:,2,:),[3 1 2]));
+    otherwise
+        error('X')
+end
+
 
 function [svmModel,normTr] = SVMtrain(y,x,SVMspace,k)
 Y = y;

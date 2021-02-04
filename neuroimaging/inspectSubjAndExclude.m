@@ -1,5 +1,6 @@
 function inspectSubjAndExclude(figOption,verbose)
 close all
+actuallyRun = 0;
 if ~exist('verbose','var')
     verbose = 1;
 end
@@ -43,7 +44,7 @@ subjList = param.subjList;
 
 
 
-%% Load data
+%% load data
 dAll = cell(size(subjList,1),1);
 paramAll = cell(size(subjList,1),1);
 for subjInd = 1:size(subjList,1)
@@ -150,6 +151,7 @@ end
 rLim = nan(2,length(subjList),2);
 yLim = nan(2,length(subjList),2);
 fSubj = cell(length(subjList),1);
+fSubjWave = cell(length(subjList),1);
 for subjInd = 1:length(subjList)
     if subjInd==1
         visibility = 'on';
@@ -209,6 +211,49 @@ for subjInd = 1:length(subjList)
             box off
             yLim(:,sessInd,subjInd) = ylim;
         end
+        fSubjWave{subjInd} = figure('WindowStyle','docked','visible',visibility);
+        tmpData = permute(d.sess1.data,[2 1 3]);
+        tmpData = tmpData(:,:);
+        tmpData = tmpData - mean(tmpData,2) + mean(tmpData(:));
+        theta = angle(tmpData);
+        thetaMean = angle(mean(tmpData(:)));
+        rho = abs(tmpData);
+        [u,v] = pol2cart(wrapToPi(theta - thetaMean),rho);
+        tmpData = complex(u,v);
+        
+        tmpWave = permute(mean(d.sess1.wave(:,:,:,~(d.sess1.badEnd & d.sess1.badStart)),4),[2 1 3]);
+        tmpWave = tmpWave(:,:);
+        tmpWave = tmpWave - mean(tmpWave,2) + mean(tmpWave(:));
+        theta = angle(tmpWave);
+        thetaMean = angle(mean(tmpWave(:)));
+        rho = abs(tmpWave);
+        [u,v] = pol2cart(wrapToPi(theta - thetaMean),rho);
+        tmpWave = complex(u,v);
+        
+        subplot(1,2,1)
+        hScat = scatter(abs(tmpData(:)),abs(tmpWave(:)),'filled');
+        hScat.MarkerFaceColor = 'k'; hScat.SizeData = hScat.SizeData/8;
+        alpha(hScat,0.05)
+        xlabel('sinFit');
+        ylabel('wave');
+        title('amp (a.u.)')
+        
+        subplot(1,2,2)
+        hScat = scatter(angle(tmpData(:)),angle(tmpWave(:)),'filled');
+        hScat.MarkerFaceColor = 'k'; hScat.SizeData = hScat.SizeData/8;
+        alpha(hScat,0.05)
+        xlabel('sinFit');
+        ylabel('wave');
+        title('delay (s)')
+        ax = gca;
+        ax.XTick = [-pi -pi/2 0 pi/2 pi];
+        ax.XTickLabel = ax.XTick./pi*6;
+        ax.XLim = [-pi pi];
+        ax.YTick = [-pi -pi/2 0 pi/2 pi];
+        ax.YTickLabel = ax.YTick./pi*6;
+        ax.YLim = [-pi pi];
+        
+        suptitle([subjList{subjInd} '; sess' num2str(sessInd)])
     end
 end
 rLim = [0 max(rLim(2,:))];
@@ -275,15 +320,18 @@ for subjInd = 1:length(subjList)
 end
 
 %% Save cleaned data
-if verbose; disp('Updating param and cleaned data to:'); end
-for subjInd = 1:length(subjList)
-    tmp = fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]);
-    if verbose; disp(tmp); end
-    dC = dAll{subjInd};
-    save(tmp,'dC','param','-append');
+if actuallyRun
+    if verbose; disp('Updating param and cleaned data to:'); end
+    for subjInd = 1:length(subjList)
+        disp(subjList{subjInd})
+        tmp = fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]);
+        if verbose; disp(tmp); end
+        dC = dAll{subjInd};
+        save(tmp,'dC','param','-append');
+    end
 end
 
 %% Reorder for notebook
-fList = [fSubj{:} f]';
+fList = [fSubj{:} fSubjWave{:} f]';
 set(0,'Children',flipud(fList))
 

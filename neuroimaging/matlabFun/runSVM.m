@@ -1,6 +1,5 @@
 function [hitRate, svmStruct,sortInd,w,A,mi,data,Rsquared] = runSVM(d,p,verbose,sortIndFix)
 
-global err
 svmStruct = cell(1,1);
 if ~exist('verbose','var')
     verbose = 0;

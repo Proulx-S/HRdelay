@@ -9,19 +9,28 @@ if ~exist('figOption','var') || isempty(figOption)
 end
 
 svmSpace = 'cart';
-[resBS.(svmSpace),resWS.(svmSpace)] = runDecoding(svmSpace,verbose);
+dataType = 'wave';
+[resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
+dataType = 'sin';
+[resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
 
 svmSpace = 'cartNoAmp';
-[resBS.(svmSpace),resWS.(svmSpace)] = runDecoding(svmSpace,verbose);
-
-svmSpace = 'polDelay';
-[resBS.(svmSpace),resWS.(svmSpace)] = runDecoding(svmSpace,verbose);
+dataType = 'wave';
+[resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
+dataType = 'sin';
+[resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
 
 svmSpace = 'cartNoDelay';
-[resBS.(svmSpace),resWS.(svmSpace)] = runDecoding(svmSpace,verbose);
+dataType = 'wave';
+[resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
+dataType = 'sin';
+[resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
 
 svmSpace = 'cartReal';
-[resBS.(svmSpace),resWS.(svmSpace)] = runDecoding(svmSpace,verbose);
+dataType = 'wave';
+[resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
+dataType = 'sin';
+[resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
 
 % [P,~,STATS] = signrank(mean(res.cart.acc,2),mean(res.cartReal.acc,2),'tail','right');
 % disp('cart VS cartReal:')
@@ -30,8 +39,12 @@ svmSpace = 'cartReal';
 
 disp('Between-session')
 plotDecoding_acc(resBS,figOption,verbose)
-disp('Between-session')
+disp('Witheen-session')
 plotDecoding_acc(resWS,figOption,verbose)
 
 res.BS = resBS;
 res.WS = resWS;
+
+
+% resBS.cartNoAmp.sess.acc
+% 1-resBS.cartNoAmp.sess.acc_p

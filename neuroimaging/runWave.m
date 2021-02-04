@@ -1,4 +1,4 @@
-function runFit(verbose,figOption)
+function runWave(verbose,figOption)
 if ~exist('verbose','var')
     verbose = 1;
 end
@@ -44,158 +44,9 @@ subjStimList = {'jp' 'sk' 'sp' 'bm' 'sb' 'bj'};
 
 
 if ~actuallyRun
-    if verbose
-        disp('Not actually running because way too long')
-    end
-    
-    subjInd = 1;
-    
-    % Random Effect Model
-    f = figure('WindowStyle','docked');
-    
-    subplot(1,16+25,25+(1:16))
-    if noMovement
-        load(fullfile(repo,funDir,outDir,subjList{subjInd},'v1SinCos_1perRun.mat'),'results')
-        run1 = results.OLS.mixed.designmatrix(:,[1 2 67:68]);
-    else
-        load(fullfile(repo,funDir,outDir,subjList{subjInd},'v1SinCos_1perRun_move12.mat'),'results')
-        run1 = results.OLS.mixed.designmatrix(:,[1 2 67:80]);
-    end
-    %scale for max contrast matix
-    tmp = run1(any(run1,2),:);
-    tmp(:,3) = max(tmp(:,1));
-    tmp(:,4) = tmp(:,4)./max(abs(tmp(:,4)));
-    imagesc(tmp); colormap gray
-    title('Sinusoidal Response');
-    ax1 = gca; ax1.XTick = []; ax1.YTick = [];
-%     xlabel('Regressors');
-    ylabel('TRs');
-    ax1.XTick = 1:size(run1,2);
-    ax1.Box = 'off';
-    ax1.TickDir = 'out';
-    ax1.XTickLabel = {'sin' 'cos' 'constant' 'drift' 'x' 'y' 'z' 'pitch' 'roll' 'yaw' 'x''' 'y''' 'z''' 'pitch''' 'roll''' 'yaw'''};
-    ax1.XTickLabelRotation = -90;
-    ax1.YAxis.Color = 'none';
-    ax1.YAxis.Label.Visible = 'on';
-    ax1.YAxis.Label.Color = 'k';
-    
-    xVal = diff(ax1.XLim);
-    xWidth = ax1.Position(3);
-    
-    subplot(1,16+25,0+(1:25))
-    if noMovement
-        tmp = load(fullfile(repo,funDir,outDir,subjList{1},'v1resp_1perRun_resp.mat'));
-        run1 = tmp.results.OLS.mixed.designmatrix(:,[1:12 397]);
-    else
-        tmp = load(fullfile(repo,funDir,outDir,subjList{1},'v1resp_1perRun_move12_resp.mat'));
-        run1 = tmp.results.OLS.mixed.designmatrix(:,[1:12 397:409]);
-    end
-    tmp = run1(any(run1,2),:);
-    tmp(:,end) = tmp(:,end)./max(abs(tmp(:,end)));
-    imagesc(tmp); colormap gray
-    title('Model-Free Response');
-    ax2 = gca; ax2.XTick = []; ax2.YTick = [];
-%     xlabel('Regressors');% ylabel('TRs');
-    ax2.XTick = 1:size(run1,2);
-    ax2.Box = 'off';
-    ax2.TickDir = 'out';
-    ax2.XTickLabel = cat(1,cellstr([repmat('t+',12,1) num2str((0:11)','%-d')]),{'drift'},{'x' 'y' 'z' 'pitch' 'roll' 'yaw' 'x''' 'y''' 'z''' 'pitch''' 'roll''' 'yaw'''}');
-    ax2.XTickLabelRotation = -90;
-    ax2.YAxis.Color = 'none';
-    ax2.YAxis.Label.Visible = 'on';
-    ax2.YAxis.Label.Color = 'k';
-    
-    suptitle('Design Matrices (random-effect)');
-    
-    ax1.XAxis.FontSize = ax1.XAxis.FontSize*0.8;
-    ax2.XAxis.FontSize = ax2.XAxis.FontSize*0.8;
-    
-    ax = [ax1 ax2];
-    for i = 1:length(ax)
-        curAxe = ax(i);
-        curAxeB = axes();
-        linkprop([curAxe curAxeB],'position'); linkprop([curAxe curAxeB],'XLim');
-        curAxeB.Color = 'none'; curAxeB.Box = 'on';
-        curAxeB.XTick = []; curAxeB.YTick = [];
-%         delta = mode(diff(curAxe.XTick));
-%         curAxeB.XTick = [curAxe.XTick curAxe.XTick(end)+delta]-delta/2;
-%         curAxeB.TickLength = [0 0];
-%         curAxeB.XTickLabel = [];
-%         curAxeB.XGrid = 'on';
-%         curAxeB.GridAlpha = 1;
-    end
-    if saveFig
-        saveas(f,fullfile(repo,funDir,outDir,'designMatrices_randomEffect'))
-        if verbose
-            disp(fullfile(repo,funDir,outDir,'designMatrices_randomEffect.fig'))
-        end
-    end
-    
-    
-    % Fixed Effect model
-    f = figure('WindowStyle','docked');
-    if noMovement
-        load(fullfile(repo,funDir,outDir,subjList{subjInd},'v1SinCos_1perRun.mat'),'results')
-%         run1 = results.OLS.fixed.designmatrix(:,[1 2 67:68]);
-    else
-        load(fullfile(repo,funDir,outDir,subjList{subjInd},'v1SinCos_1perRun_move12.mat'),'results')
-%         run1 = results.OLS.fixed.designmatrix(:,[1 2 67:80]);
-    end
-    sessInd = results.OLS.fixed.designmatrixSessInd==1;
-    run1 = results.OLS.fixed.designmatrix(sessInd,:);
-    runOrderLabel = results.OLS.fixed.designmatrixRunInd(sessInd,:);
-    run1 = run1(:,~all(run1==0,1));
-    runOrderLabelList = unique(runOrderLabel);
-    tmp = [];
-    for i = 1:length(runOrderLabelList)
-        trInd = runOrderLabel==runOrderLabelList(i);
-        tmp = cat(1,tmp,run1(trInd,:));
-    end
-    tmp(:,7:end) = run1(:,7:end);
-    run1 = tmp;
-    tmp = run1(:,7:2:end);
-    run1(:,7:2:end) = run1(:,7:2:end)./mode(tmp(tmp~=0));
-    tmp = run1(:,8:2:end);
-    run1(:,8:2:end) = run1(:,8:2:end)./max(abs(tmp(tmp~=0)));
-    
-    imagesc(run1); colormap gray
-    title({'Fixed-Effect Model' '\fontsize{8}Sinusoidal Response'});
-    ax1 = gca; ax1.XTick = []; ax1.YTick = [];
-%     xlabel('Regressors');
-    ylabel('TRs');
-    ax1.XTick = [1.5 3.5 5.5];
-    ax1.Box = 'off';
-    ax1.TickDir = 'out';
-    ax1.XTickLabel = {'ori1' 'ori2' 'plaid'};
-    ax1.XTickLabelRotation = -90;
-    ax1.YAxis.Color = 'none';
-    ax1.YAxis.Label.Visible = 'on';
-    ax1.YAxis.Label.Color = 'k';
-    
-    ax = [ax1];
-    for i = 1:length(ax)
-        curAxe = ax(i);
-        curAxeB = axes();
-        linkprop([curAxe curAxeB],'position'); linkprop([curAxe curAxeB],'XLim');
-        curAxeB.Color = 'none'; curAxeB.Box = 'on';
-        curAxeB.XTick = []; curAxeB.YTick = [];
-%         delta = mode(diff(curAxe.XTick));
-%         curAxeB.XTick = [curAxe.XTick curAxe.XTick(end)+delta]-delta/2;
-%         curAxeB.TickLength = [0 0];
-%         curAxeB.XTickLabel = [];
-%         curAxeB.XGrid = 'on';
-%         curAxeB.GridAlpha = 1;
-    end
-    curAxeB.XTick = mean([6.5 size(run1,2)+0.5]);
-    curAxeB.XTickLabel = {'constant+drift for each run'};
-    curAxeB.TickDir = 'out';
-    
-    if saveFig
-        saveas(f,fullfile(repo,funDir,outDir,'designMatrices_fixedEffect'))
-        if verbose
-            disp(fullfile(repo,funDir,outDir,'designMatrices_fixedEffect.fig'))
-        end
-    end
+    filename = ['/Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/y/' subjList{figOption.subj} '/v1wave.mat'];
+    warning('need some more coding to show figure without actually processing the thing')
+%     load(filename);
     return
 end
 
@@ -207,7 +58,7 @@ for smLevel = {''}
 %         try
             
             %% Get data and design
-            clearvars -except tstart mask subjInd smLevel subjStimList subjList maskLabel matFun repo funDir anatDir stimDir inDir outDir noMovement runInd exclude exclusion
+            clearvars -except tstart mask subjInd smLevel subjStimList subjList maskLabel matFun repo funDir anatDir stimDir inDir outDir noMovement runInd exclude exclusion figOption
             subj = subjList{subjInd}; subjStim = subjStimList{subjInd};
             
             switch getenv('OS')
@@ -280,7 +131,7 @@ for smLevel = {''}
             labelList = [45 135 999];
             condCount = zeros(1,3);
             for cond = 1:3
-                clearvars -except tstart mask subjInd subjList subjStimList smLevel subj funData_folderIN funData_folderOUT labelDir files label labelList cond sessionLabel data design extraRegr labelList curLabel condCount sessionLabel maskLabel matFun repo funDir anatDir stimDir inDir outDir noMovement runInd exclude exclusion
+                clearvars -except tstart mask subjInd subjList subjStimList smLevel subj funData_folderIN funData_folderOUT labelDir files label labelList cond sessionLabel data design extraRegr labelList curLabel condCount sessionLabel maskLabel matFun repo funDir anatDir stimDir inDir outDir noMovement runInd exclude exclusion figOption
                 close all
                 curLabel = labelList(cond);
                 
@@ -293,7 +144,7 @@ for smLevel = {''}
                         runInd(curInd1,curInd2) = i;
                         display(['Loading condition ' num2str(cond) '; run ' num2str(curInd2) '; ' subjList{subjInd}])
                         %Load data
-                        nDataPtsToCensor = 12;
+                        nDataPtsToCensor = 0;
                         sessionLabel{curInd1,curInd2} = str2num(files{i}(5));
                         curRun = load_nii(fullfile(funData_folderIN,files{i}));
                         allTr(i) = curRun.original.hdr.dime.pixdim(5);
@@ -334,14 +185,14 @@ for smLevel = {''}
             fprintf('The sampling rate (TR) is %.6f seconds.\n',tr);
             
             
-            clearvars -except tstart mask subjInd smLevel subjStimList subjList subj funData_folderIN funData_folderOUT labelDir data design extraRegr sessionLabel sessModel stimdur tr maskLabel repo funDir anatDir stimDir inDir outDir noMovement runInd exclude exclusion
+            clearvars -except tstart mask subjInd smLevel subjStimList subjList subj funData_folderIN funData_folderOUT labelDir data design extraRegr sessionLabel sessModel stimdur tr maskLabel repo funDir anatDir stimDir inDir outDir noMovement runInd exclude exclusion allTr figOption
             %% GLMdenoise on all sessions (not split)
             % - - - - - - - - - -
             % o x ------------
             splitIn = 1;
             display([subj '; split in ' num2str(splitIn)])
             
-            splitPossible = 8;
+            splitPossible = 10;
             splitData = data;
             splitDesign = design;
             splitExtraRegr = extraRegr;
@@ -362,10 +213,10 @@ for smLevel = {''}
             splitSessionLabel_tmp = cell(length(splitData),splitIn);
             splitRunInd_tmp = cell(length(splitData),splitIn);
             for i = 1:length(splitData)
-                %remove another cycle at the begining, keep the end
-                splitData{i}(:,:,:,1:12) = [];
-                splitDesign{i}(1:12) = [];
-                splitExtraRegr{i}(1:12,:) = [];
+%                 %remove another cycle at the begining, keep the end
+%                 splitData{i}(:,:,:,1:12) = [];
+%                 splitDesign{i}(1:12) = [];
+%                 splitExtraRegr{i}(1:12,:) = [];
                 
                 for ii = 1:splitIn
                     splitRun_tmp{i,ii} = i;
@@ -393,49 +244,130 @@ for smLevel = {''}
                 splitSessionLabel(ii:splitIn:length(splitDesign)) = splitSessionLabel_tmp(:,ii);
                 splitRunInd(ii:splitIn:length(splitDesign)) = splitRunInd_tmp(:,ii);
             end
-            clearvars -except tstart mask subjInd smLevel subjStimList subjList subj funData_folderIN funData_folderOUT labelDir data design extraRegr sessionLabel sessModel splitDesign splitData splitIn splitExtraRegr splitSessionLabel stimdur tr maskLabel repo funDir anatDir stimDir inDir outDir noMovement runInd splitRunInd exclude exclusion
+            clearvars -except tstart mask subjInd smLevel subjStimList subjList subj funData_folderIN funData_folderOUT labelDir data design extraRegr sessionLabel sessModel splitDesign splitData splitIn splitExtraRegr splitSessionLabel stimdur tr maskLabel repo funDir anatDir stimDir inDir outDir noMovement runInd splitRunInd exclude exclusion allTr figOption
             
-            %hemodynamic response extraction
-            disp('--- Response Time Course Extraction ---')
-            ana = 'resp';
-            [results] = GLMresp(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'splitedIn',splitIn),splitIn);
-            if noMovement
-                outName = fullfile(funData_folderOUT,[maskLabel ana '_' num2str(splitIn) 'perRun' smLevel{1}]);
-            else
-                outName = fullfile(funData_folderOUT,[maskLabel ana '_' num2str(splitIn) 'perRun_move12' smLevel{1}]);
-            end
-            save([outName '_resp.mat'],'results'); clear results
+            runInd = 1;
+            tmp = permute(splitData{runInd},[4 1 2 3]);
+            sz = size(tmp);
+            Fs = 1;
+            X = mean(tmp(:,:),2)';
+            tms = (0:length(X)-1)./Fs;
+            NV = 10;
+            minfreq = 1/12 / 2;
+            maxfreq = 1/12 * 2;
+            fb = cwtfilterbank('SignalLength',numel(X),'SamplingFrequency',Fs,...
+                'FrequencyLimits',[minfreq maxfreq],...
+                'Wavelet','Morse',...
+                'TimeBandwidth',4);
+            [wave,wave_t] = wavelets(fb);
+            [cfs,frq,coi,fb] = cwt(X,'filterbank',fb);
+            [~,b] = min(abs(1./frq-12));
+            1./frq(b);
+            tmsLim = interp1(coi(end/4*3:end),tms(end/4*3:end),frq(b));
+            good = tms<tmsLim;
             
-            disp('--- Response Sinusoidal Fit ---')
-            %sin mixed(random)-model
-            ana = 'SinCos';
-            if noMovement
-                outName = fullfile(funData_folderOUT,[maskLabel ana '_' num2str(splitIn) 'perRun' smLevel{1}]);
-            else
-                outName = fullfile(funData_folderOUT,[maskLabel ana '_' num2str(splitIn) 'perRun_move12' smLevel{1}]);
-            end
-            [resultsTmp,~] = GLMsinCos3(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'runLabel',{splitRunInd},'splitedIn',splitIn),splitIn);
-            resultsTmp.OLS.mixed.inputs = resultsTmp.inputs; resultsTmp = rmfield(resultsTmp,'inputs');
-            %sin fixed-model
-            if exclude && ismember(subjList(subjInd),exclusion.subjList(exclusion.subj))
-                exclInd = ismember(exclusion.subjList(exclusion.subj),subjList(subjInd));
-                if length(exclInd)>1
-                    error('need adjust the code for multiple exclusion here');
+            if figOption.subj==subjInd
+                figure('WindowStyle','docked');
+                ax1 = subplot(3,1,1);
+                plot(X); hold on
+                ylabel('BOLD signal')
+                yyaxis right
+                plot(wave_t-wave_t(1)-3,real(wave(b,:)))
+                xlim(tms([1 end]));
+                ylabel({'Morse wavelet' 'real amplitude'})
+                ax2 = subplot(3,1,2);
+                hSurf = surface(tms,frq,real(cfs)); hold on
+                axis tight
+                shading flat
+                ylabel('Frequency (Hz)')
+                set(gca,'yscale','log')
+                hCb = colorbar;
+                ylabel(hCb,'real')
+                drawnow
+                ax2.Position([1 3]) = ax1.Position([1 3]);
+                linkaxes([ax1 ax2],'x')
+                xlim(tms([1 end]));
+                z = ones(size(tms)).*(max(hSurf.ZData(:))*2);
+                hP = plot3(tms,ones(size(tms)).*frq(b),z,'k');
+                tmsTmp = tms; tmsTmp(coi<min(frq)) = nan;
+                coiTmp = coi; coiTmp(coi<min(frq)) = nan;
+                plot3(tmsTmp,coiTmp,z,':k')
+                ax3 = subplot(3,1,3);
+                plot(tms,real(cfs(b,:))); hold on
+                ylabel('Signal magnitude')
+                yyaxis right
+                plot(tms,angle(cfs(b,:))./pi*6); hold on
+                ylabel('Signal phase');
+                xlabel('Time (s)')
+                xlim(tms([1 end]));
+                
+                %rotate at stim freq
+                rho = abs(cfs(b,:));
+                theta = angle(cfs(b,:));
+                theta = theta - tms.*(2*pi/12);
+                [u,v] = pol2cart(theta,rho);
+                sig = complex(u,v);
+                rho = abs(sig);
+                theta = wrapToPi(angle(sig)-angle(mean(sig)));
+                [u,v] = pol2cart(theta,rho);
+                sig = complex(u,v);
+                plot(tms,angle(sig)./pi*6)
+                yyaxis left
+                plot(tms,real(sig))
+                
+                hLeg = legend({'real' 'realPhased' 'phase' 'phasePhased'});
+                hLeg.Box = 'off';
+                if figOption.save
+                    saveas(gcf,fullfile(repo,funDir,outDir,[mfilename '.fig']))
                 end
-                curExclusion.sess = exclusion.sess{exclInd};
-                curExclusion.run = exclusion.run{exclInd};
-                curExclusion.cond = exclusion.cond{exclInd};
-                [results,~] = GLMsinCos5(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'runLabel',{splitRunInd},'splitedIn',splitIn),splitIn,curExclusion);
-            else
-                [results,~] = GLMsinCos5(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'runLabel',{splitRunInd},'splitedIn',splitIn),splitIn);
             end
-            results.OLS.fixed.inputs = results.inputs; results = rmfield(results,'inputs');
-            %put mixed(random) and mixed models in the same variable
-            results.OLS.mixed = resultsTmp.OLS.mixed; clear resultsTmp
-            results.mask = mask;
-            save([outName '.mat'],'results','-v7.3');
+            
+            
+            disp('--- Wavelet Analysis ---')
+            ana = 'wave';
+            
+            splitWave = cell(size(splitData));
+            for runInd = 1:length(splitData)
+                disp(['Run' num2str(runInd) '/' num2str(length(splitData))])
+                tmp = permute(splitData{runInd},[4 1 2 3]); splitData{runInd} = [];
+                sig = nan(size(tmp));
+                for voxInd = 1:prod(sz(2:end))
+                    if all(tmp(:,voxInd)==0)
+                    else
+                        X = tmp(:,voxInd)';
+                        
+                        [cfs,~,~,~] = cwt(X,'filterbank',fb);
+                        rho = abs(cfs(b,:));
+                        theta = angle(cfs(b,:));
+                        theta = theta - tms.*(2*pi/12);
+                        [u,v] = pol2cart(theta,rho);
+                        sig(:,voxInd) = complex(u,v);
+                    end
+                end
+                %store
+                splitWave{runInd} = permute(sig,[2 3 4 1]);
+            end
+            
+            splitWave = cell2mat(permute(splitWave,[1 3 4 5 2]));
+            results.wave = splitWave; clear splitWave
+            results.badEnd = ~good;
+            results.badStart = false(size(good)); results.badStart(1:24) = 1;
+            
+            if noMovement
+                if isempty(smLevel{1})
+                    outName = fullfile(funData_folderOUT,[maskLabel ana]);
+                else
+                    outName = fullfile(funData_folderOUT,[maskLabel ana '_' smLevel{1}]);
+                end
+            else
+                if isempty(smLevel{1})
+                    outName = fullfile(funData_folderOUT,[maskLabel ana '_move12']);
+                else
+                    outName = fullfile(funData_folderOUT,[maskLabel ana '_move12' smLevel{1}]);
+                end
+            end     
+            save([outName '.mat'],'results','-v7.3'); clear results % 
             disp([subj '; split in ' num2str(splitIn) ': done'])
-            telapsed = toc;
-            disp(['Whole thing took: ' num2str(telapsed) 'sec'])
+            disp(['saved to ' outName])
     end
 end

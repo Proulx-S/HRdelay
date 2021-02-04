@@ -13,6 +13,7 @@
 *.asv
 **/*.asv
 *.fig
+*.mat
 
 # OS generated files #
 ######################
