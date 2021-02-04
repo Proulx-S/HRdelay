@@ -13,24 +13,33 @@ dataType = 'wave';
 [resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
 dataType = 'sin';
 [resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
+compareDataType(resBS,'wave','sin',svmSpace,'between-session')
+compareDataType(resWS,'wave','sin',svmSpace,'within-session')
+
 
 svmSpace = 'cartNoAmp';
 dataType = 'wave';
 [resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
 dataType = 'sin';
 [resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
+compareDataType(resBS,'wave','sin',svmSpace,'between-session')
+compareDataType(resWS,'wave','sin',svmSpace,'within-session')
 
 svmSpace = 'cartNoDelay';
 dataType = 'wave';
 [resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
 dataType = 'sin';
 [resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
+compareDataType(resBS,'wave','sin',svmSpace,'between-session')
+compareDataType(resWS,'wave','sin',svmSpace,'within-session')
 
 svmSpace = 'cartReal';
 dataType = 'wave';
 [resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
 dataType = 'sin';
 [resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
+compareDataType(resBS,'wave','sin',svmSpace,'between-session')
+compareDataType(resWS,'wave','sin',svmSpace,'within-session')
 
 % [P,~,STATS] = signrank(mean(res.cart.acc,2),mean(res.cartReal.acc,2),'tail','right');
 % disp('cart VS cartReal:')
@@ -38,9 +47,15 @@ dataType = 'sin';
 % disp(['one-sided p = ' num2str(P)])
 
 disp('Between-session')
-plotDecoding_acc(resBS,figOption,verbose)
+tmpField = fields(resBS);
+tmp = struct2cell(resBS);
+tmp = cell2struct(tmp(1:2:end),tmpField(1:2:end));
+plotDecoding_acc(tmp,figOption,verbose)
 disp('Witheen-session')
-plotDecoding_acc(resWS,figOption,verbose)
+tmpField = fields(resWS);
+tmp = struct2cell(resWS);
+tmp = cell2struct(tmp(1:2:end),tmpField(1:2:end));
+plotDecoding_acc(tmp,figOption,verbose)
 
 res.BS = resBS;
 res.WS = resWS;

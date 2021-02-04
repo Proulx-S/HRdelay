@@ -21,8 +21,14 @@ nObsGroup = nan(1,length(spaceList));
 pGroup = nan(1,length(spaceList));
 accGroup5 = nan(1,length(spaceList));
 accGroup95 = nan(1,length(spaceList));
-signedrank = nan(1,length(spaceList));
-signedrankP = nan(1,length(spaceList));
+acc_signedrank = nan(1,length(spaceList));
+acc_signedrankP = nan(1,length(spaceList));
+auc_signedrank = nan(1,length(spaceList));
+auc_signedrankP = nan(1,length(spaceList));
+acc_T = nan(1,length(spaceList));
+acc_P = nan(1,length(spaceList));
+auc_T = nan(1,length(spaceList));
+auc_P = nan(1,length(spaceList));
 
 accSubj = nan(length(subjList),length(spaceList));
 nObsSubj = nan(length(subjList),length(spaceList));
@@ -42,15 +48,29 @@ for spaceInd = 1:length(spaceList)
     accSubj5(:,spaceInd) = res.(spaceList{spaceInd}).subj.acc_CI5;
     accSubj95(:,spaceInd) = res.(spaceList{spaceInd}).subj.acc_CI95;
 
-    signedrank(1,spaceInd) = res.(spaceList{spaceInd}).group.acc_wilcoxonSignedrank;
-    signedrankP(1,spaceInd) = res.(spaceList{spaceInd}).group.acc_wilcoxonP ;
+    acc_signedrank(1,spaceInd) = res.(spaceList{spaceInd}).group.acc_wilcoxonSignedrank;
+    acc_signedrankP(1,spaceInd) = res.(spaceList{spaceInd}).group.acc_wilcoxonP;
+    acc_T(1,spaceInd) = res.(spaceList{spaceInd}).group.acc_T;
+    acc_P(1,spaceInd) = res.(spaceList{spaceInd}).group.acc_P;
+    
+    auc_signedrank(1,spaceInd) = res.(spaceList{spaceInd}).group.auc_wilcoxonSignedrank;
+    auc_signedrankP(1,spaceInd) = res.(spaceList{spaceInd}).group.auc_wilcoxonP;
+    auc_T(1,spaceInd) = res.(spaceList{spaceInd}).group.auc_T;
+    auc_P(1,spaceInd) = res.(spaceList{spaceInd}).group.auc_P;
 end
 t = table(...
-    num2str(accGroup'*100,'%0.2f%%'),...
-    num2str(pGroup','%0.4f'),...
-    num2str(signedrank','%0.2f'),...
-    num2str(signedrankP','%0.4f'));
-t.Properties.VariableNames = {'acc' 'bino p' 'signed rank' 'signed rank one-tailed p'};
+    num2str(accGroup'*100,'%0.2f%%')...
+    ,num2str(pGroup','%0.4f')...
+    ,num2str(acc_signedrank','%0.2f')...
+    ,num2str(acc_signedrankP','%0.4f')...
+    ,num2str(auc_signedrank','%0.2f')...
+    ,num2str(auc_signedrankP','%0.4f')...
+    ,num2str(acc_T','%0.2f')...
+    ,num2str(acc_P','%0.4f')...
+    ,num2str(auc_T','%0.2f')...
+    ,num2str(auc_P','%0.4f')...
+    );
+t.Properties.VariableNames = {'acc' 'bino p' 'acc signed rank' ' acc signed rank one-tailed p'  'auc signed rank' ' auc signed rank one-tailed p' 'acc T' 'acc one-tailed P' 'auc T' 'auc one-tailed P'};
 t.Properties.RowNames = spaceList;
 disp(t)
 

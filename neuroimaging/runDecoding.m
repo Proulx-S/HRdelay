@@ -189,6 +189,7 @@ yHat = cell(size(dP));
 
 % Within-session training and testing
 Y = cell(size(dP));
+K = cell(size(dP));
 for i = 1:numel(dP)
     [subjInd,sessInd] = ind2sub(size(dP),i);
     switch sessInd
@@ -236,6 +237,7 @@ for i = 1:numel(dP)
     
     % Output
     Y{i} = y;
+    K{i} = k;
 end
 
 % Between-session testing
@@ -269,7 +271,7 @@ end
 % Between-sess
 resBS_sess = repmat(perfMetric,[size(dP,1) size(dP,2)]);
 for i = 1:numel(dP)
-    resBS_sess(i) = perfMetric(Y{i},yHat{i});
+    resBS_sess(i) = perfMetric(Y{i},yHat{i},K{i});
 end
 acc_fdr = mafdr([resBS_sess.acc_p],'BHFDR',true);
 for i = 1:numel(dP)
@@ -282,7 +284,7 @@ resBS_sess = orderfields(resBS_sess,[1 2 3 4 5 6 7 8 9 13 10 11 12 14 15 16]);
 % Within-sess
 resWS_sess = repmat(perfMetric,[size(dP,1) size(dP,2)]);
 for i = 1:numel(dP)
-    resWS_sess(i) = perfMetric(Y{i},yHatK{i});
+    resWS_sess(i) = perfMetric(Y{i},yHatK{i},K{i});
 end
 acc_fdr = mafdr([resWS_sess.acc_p],'BHFDR',true);
 for i = 1:numel(dP)
@@ -297,51 +299,7 @@ resWS_sess = orderfields(resWS_sess,[1 2 3 4 5 6 7 8 9 13 10 11 12 14 15 16]);
 [resBSsess,resBSsubj,resBSgroup] = summarizePerf(resBS_sess);
 [resWSsess,resWSsubj,resWSgroup] = summarizePerf(resWS_sess);
 
-%% Plot between-session vs within-session
-if verbose
-    figure('WindowStyle','docked');
-    metric = 'acc';
-    metric_lowCI = 'acc_CI5';
-    metric_highCI = 'acc_CI95';
-    Xi = resWSsess.(metric)';
-    Yi = resBSsess.(metric)';
-    YNEG = Yi - resBSsess.(metric_lowCI)';
-    YPOS = resBSsess.(metric_highCI)' - Yi;
-    XNEG = Xi - resWSsess.(metric_lowCI)';
-    XPOS = resWSsess.(metric_highCI)' - Xi;
-    hEb = errorbar(Xi,Yi,YNEG,YPOS,XNEG,XPOS,'o'); hold on
-    for i = 1:length(hEb)
-        hEb(i).MarkerFaceColor = hEb(i).Color;
-        hEb(i).CapSize = 0;
-        hEb(i).MarkerEdgeColor = 'k';
-    end
-%     hPlot = errorbar(resWSsess.(metric)',resBSsess.(metric)','o'); hold on
-%     hPlot = plot(resWSsess.(metric)',resBSsess.(metric)','o'); hold on
-%     for subjInd = 1:size(hPlot,1)
-%         hPlot(subjInd).MarkerFaceColor = hPlot(subjInd).Color;
-%         hPlot(subjInd).MarkerEdgeColor = 'k';
-%     end
-    switch metric
-        case {'acc' 'auc'}
-            xlim([0 1])
-            ylim([0 1])
-            hChance(1) = plot(xlim,[1 1].*0.5,'-k');
-            hChance(2) = plot([1 1].*0.5,ylim,'-k');
-            uistack(hChance,'bottom')
-            ax = gca;
-            ax.PlotBoxAspectRatio = [1 1 1];
-        case 'distT'
-            plot(xlim,[1 1].*0,'-k')
-            plot([1 1].*0,ylim,'-k')
-    end
-    xlabel('Within-sess acc')
-    ylabel('Between-sess acc')
-    title([SVMspace ' ' dataType])
-    legend(hEb,subjList)
-    grid on
-end
-
-%% Print info
+%% Print info and output
 if verbose
     disp('-----------------')
     disp('*Between-session*')
@@ -363,7 +321,14 @@ resWS.subj.subjList = subjList;
 resWS.group = resWSgroup;
 
 
-
+%% Plot between-session vs within-session
+if verbose
+    figure('WindowStyle','docked');
+    compareRes(resBS,resWS)
+    xlabel('between-session')
+    ylabel('within-session')
+    title([SVMspace '; ' dataType])
+end
 
 
 
@@ -860,7 +825,8 @@ hSup = suptitle({'Polar space normalization' SVMspace});
 hSup.Interpreter = 'none';
 drawnow
 
-function res = perfMetric(y,yHat)
+function res = perfMetric(y,yHat,k)
+averageWR = 1;
 if ~exist('y','var')
     res = struct(...
         'y',[],...
@@ -877,6 +843,13 @@ if ~exist('y','var')
         'distT_p',[]);
     return
 end
+
+if averageWR
+    nRun = length(unique(k))*length(unique(y));
+    y = mean(reshape(y,[length(y)/nRun nRun]),1)';
+    yHat = mean(reshape(yHat,[length(yHat)/nRun nRun]),1)';
+end
+
 res.y = {y};
 res.yHat = {yHat};
 res.nObs = length(y);
