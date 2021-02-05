@@ -1,6 +1,6 @@
 function preprocAndShowMasks(featSel_bSess,figOption,verbose)
 close all
-actuallyRun = 0;
+actuallyRun = 1;
 doWave = 1;
 if ~exist('verbose','var')
     verbose = 1;

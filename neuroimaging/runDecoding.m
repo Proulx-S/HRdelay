@@ -119,7 +119,7 @@ for i = 1:numel(dP)
     featSel{i}.info = strjoin({featSel{i}.info 'active'},' & ');
     % Select most discrimant voxels
     switch dataType
-        case 'wave'
+        case {'wave' 'waveFull' 'waveRun' 'waveTrialSparse' 'waveTrialSparseCat2' 'waveTrialSparseRep'}
             featSel{i}.ind = featSel{i}.ind & dP{i}.waveDiscrim_mask;
         case 'data'
             featSel{i}.ind = featSel{i}.ind & dP{i}.discrim_mask;
@@ -134,7 +134,22 @@ end
 i = 1;
 [~,b] = sort(dP{i}.anyCondActivation_F,'descend');
 b = b(featSel{i}.ind);
-f = plotPolNormExample(dP{i}.(dataType)(:,b(1),1:3),SVMspace);
+switch dataType
+    case 'data'
+        [X,y,k] = getXYK(dP{i},SVMspace);
+    case 'waveTrialSparse' % do not average and use 1 tPts out of 12 in each stimulus cycle
+        [X,y,k,~] = getXYK_wave(dP{i},SVMspace,'trialSparse');
+    case 'waveRun' % average within runs
+        [X,y,k,~] = getXYK_wave(dP{i},SVMspace,'run');
+    case {'wave' 'waveTrialSparseCat2' 'waveTrialSparseRep'} % average within trials
+        [X,y,k,~] = getXYK_wave(dP{i},SVMspace,'trial');
+    case 'waveFull' % do not average and use all tPts
+        [X,y,k,~] = getXYK_wave(dP{i},SVMspace,'full');
+    otherwise
+        error('X')
+end
+x = cat(3,X(y==1,b(1)),X(y==2,b(1)));
+f = plotPolNormExample(x,SVMspace);
 if figOption.save
     filename = fullfile(pwd,mfilename);
     if ~exist(filename,'dir'); mkdir(filename); end
@@ -148,22 +163,6 @@ if figOption.save
     saveas(f,[filename '.jpg']); if verbose; disp([filename '.jpg']); end
 end
 
-%% Some more independant-sample normalization
-switch SVMspace
-    case 'hrNoAmp' % scale each hr to 1 accroding to sin fit
-        for i = 1:numel(dP)
-            dP{i}.hr = dP{i}.hr./abs(dP{i}.data./100);
-        end
-    case {'cart' 'cart_HT' 'cart_HTbSess'...
-            'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'...
-            'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'...
-            'cartReal' 'cartReal_T'...
-            'polMag' 'polMag_T'...
-            'polDelay'}
-        % Does not apply
-    otherwise
-        error('X')
-end
 
 %% Between-session svm
 svmModel = cell(size(dP));
@@ -174,23 +173,14 @@ nrmlzK = cell(size(dP));
 yHatK = cell(size(dP));
 yHatK_tr = cell(size(dP));
 yHat = cell(size(dP));
-% polNorm = repmat(struct('rhoScale',[],'thetaShift',[]),size(dP));
-% svmNorm = repmat(struct('scale',[],'shift',[]),size(dP));
-% svmModel = repmat(struct('w',[],'b',[],'Paramters',[],'info',[]),size(dP));
-% resTr.y  = cell(size(dP));
-% resTr.yHat  = cell(size(dP));
-% resTr.nObs = nan(size(dP));
-% resTr.acc  = nan(size(dP));
-% decision_valuesDiff__Tr = cell(size(dP));
-% if doAntiAntiLearning
-%     modelOneClass1 = cell(size(dP));
-%     modelOneClass2 = cell(size(dP));
-% end
 
 % Within-session training and testing
 Y = cell(size(dP));
 K = cell(size(dP));
 for i = 1:numel(dP)
+    if verbose
+        disp(['Doing sess ' num2str(i) '/' num2str(numel(dP))])
+    end
     [subjInd,sessInd] = ind2sub(size(dP),i);
     switch sessInd
         case 1
@@ -210,17 +200,37 @@ for i = 1:numel(dP)
     switch dataType
         case 'data'
             [X,y,k] = getXYK(dP{subjInd,sessInd},SVMspace);
-        case 'wave'
-            [X,y,k,~] = getXYK_wave(dP{subjInd,sessInd},SVMspace);
+        case 'waveTrialSparse' % do not average and use 1 tPts out of 12 in each stimulus cycle
+            [X,y,k,~] = getXYK_wave(dP{subjInd,sessInd},SVMspace,'trialSparse');
+        case 'waveTrialSparseCat2' % do not average and use 1 tPts out of 12 in each stimulus cycle, concatenating each tPts in the feature (vox) dimension
+            [X,y,k,~] = getXYK_wave(dP{subjInd,sessInd},SVMspace,'trialSparseCat2');
+        case 'waveTrialSparseRep' % do not average and use 1 tPts out of 12 in each stimulus cycle, repeating svm training for each time points and averaging only the end model
+            [X,y,k,t] = getXYK_wave(dP{subjInd,sessInd},SVMspace,'full');
+            tmp = repmat(1:12,[length(t)/12 1])';
+            t = tmp(:);
+        case 'waveRun' % average within runs
+            [X,y,k,~] = getXYK_wave(dP{subjInd,sessInd},SVMspace,'run');
+        case 'wave' % average within trials
+            [X,y,k,~] = getXYK_wave(dP{subjInd,sessInd},SVMspace,'trial');
+        case 'waveFull' % do not average and use all tPts
+            [X,y,k,~] = getXYK_wave(dP{subjInd,sessInd},SVMspace,'full');
         otherwise
             error('X')
     end
-    
+
     % SVM on within-session crossvalidation folds
     % feature selection
-    x = X(:,featSel{subjInd,sessIndCross}.ind);
+    featSelInd = featSel{subjInd,sessIndCross}.ind;
+    if strcmp(dataType,'waveTrialSparseCat2')
+        featSelInd = repmat(featSelInd,[1 12]);
+    end
+    x = X(:,featSelInd);
     % train
-    [svmModelK{i},nrmlzK{i}] = SVMtrain(y,x,SVMspace,k);
+    if ~strcmp(dataType,'waveTrialSparseRep')
+        [svmModelK{i},nrmlzK{i}] = SVMtrain(y,x,SVMspace,k);
+    else
+        [svmModelK{i},nrmlzK{i}] = SVMtrain(y,x,SVMspace,k,t);
+    end
     % test
     [yHatK{i},yHatK_tr{i}] = SVMtest(y,x,svmModelK{i},nrmlzK{i},k);
     yHatK{i} = nanmean(yHatK{i},2);
@@ -228,9 +238,17 @@ for i = 1:numel(dP)
     
     % SVM on full sessions
     % feature-selected data
-    x = X(:,featSel{subjInd,sessInd}.ind);
+    featSelInd = featSel{subjInd,sessInd}.ind;
+    if strcmp(dataType,'waveTrialSparseCat2')
+        featSelInd = repmat(featSelInd,[1 12]);
+    end
+    x = X(:,featSelInd);
     % train
-    [svmModel{i},nrmlz{i}] = SVMtrain(y,x,SVMspace);
+    if ~strcmp(dataType,'waveTrialSparseRep')
+        [svmModel{i},nrmlz{i}] = SVMtrain(y,x,SVMspace);
+    else
+        [svmModel{i},nrmlz{i}] = SVMtrain(y,x,SVMspace,[],t);
+    end
     % test (not crossvalidated)
     [yHat_tr{i},~] = SVMtest(y,x,svmModel{i},nrmlz{i});
     
@@ -253,15 +271,33 @@ for i = 1:numel(dP)
     end
     
     % Get cross-session feature-selected data
+    sessInd = testInd;
     switch dataType
         case 'data'
-            [X,y,~] = getXYK(dP{subjInd,testInd},SVMspace);
-        case 'wave'
-            [X,y,~,~] = getXYK_wave(dP{subjInd,testInd},SVMspace);
+            [X,y,k] = getXYK(dP{subjInd,sessInd},SVMspace);
+        case 'waveTrialSparse' % do not average and use 1 tPts out of 12 in each stimulus cycle
+            [X,y,k,~] = getXYK_wave(dP{subjInd,sessInd},SVMspace,'trialSparse');
+        case 'waveTrialSparseCat2' % do not average and use 1 tPts out of 12 in each stimulus cycle
+            [X,y,k,~] = getXYK_wave(dP{subjInd,sessInd},SVMspace,'trialSparseCat2');
+        case 'waveTrialSparseRep' % do not average and use 1 tPts out of 12 in each stimulus cycle, repeating svm training for each time points and averaging only the end model
+            [X,y,k,t] = getXYK_wave(dP{subjInd,sessInd},SVMspace,'full');
+            tmp = repmat(1:12,[length(t)/12 1])';
+            t = tmp(:);
+        case 'waveRun' % average within runs
+            [X,y,k,~] = getXYK_wave(dP{subjInd,sessInd},SVMspace,'run');
+        case 'wave' % average within trials
+            [X,y,k,~] = getXYK_wave(dP{subjInd,sessInd},SVMspace,'trial');
+        case 'waveFull' % do not average and use all tPts
+            [X,y,k,~] = getXYK_wave(dP{subjInd,sessInd},SVMspace,'full');
         otherwise
             error('X')
     end
-    x = X(:,featSel{subjInd,trainInd}.ind);
+    sessInd = trainInd;
+    featSelInd = featSel{subjInd,sessInd}.ind;
+    if strcmp(dataType,'waveTrialSparseCat2')
+        featSelInd = repmat(featSelInd,[1 12]);
+    end
+    x = X(:,featSelInd);
     
     % Test
     [yHat{subjInd,testInd},~] = SVMtest(y,x,svmModel{subjInd,trainInd});
@@ -395,7 +431,7 @@ x = cat(1,x1,x2); clear x1 x2
 y = cat(1,y1,y2); clear y1 y2
 k = cat(1,k1,k2); clear k1 k2
 
-function [x,y,k,t] = getXYK_wave(dP,SVMspace)
+function [x,y,k,t] = getXYK_wave(dP,SVMspace,opt)
 % Define x(data), y(label) and k(xValFolds)
 switch SVMspace
     case {'hr' 'hrNoAmp'}
@@ -409,11 +445,33 @@ switch SVMspace
             'cartReal' 'cartReal_T'...
             'polMag' 'polMag_T'...
             'polDelay'}
-        ptsPerCycle = 12;
         dP.wave(:,:,:,dP.bad) = [];
-        sz = size(dP.wave);
-        sz = [sz(1:3) ptsPerCycle sz(4)/ptsPerCycle];
-        x = permute(mean(reshape(dP.wave,sz),4),[2 3 5 1 4]);
+        ptsPerCycle = 12;
+        
+        switch opt
+            case 'full'
+                x = permute(dP.wave,[2 3 4 1]);
+            case 'trial'
+                sz = size(dP.wave);
+                sz = [sz(1:3) ptsPerCycle sz(4)/ptsPerCycle];
+                x = permute(mean(reshape(dP.wave,sz),4),[2 3 5 1 4]);
+            case 'trialSparse'
+                x = permute(dP.wave(:,:,:,1:ptsPerCycle:end),[2 3 4 1]);
+            case 'trialSparseCat2'
+                sz = size(dP.wave);
+                sz(4) = sz(4)./ptsPerCycle;
+                x = nan([sz([2 3 4 1]) ptsPerCycle]);
+                for t = 1:ptsPerCycle
+                    x(:,:,:,:,t) = permute(dP.wave(:,:,:,t:ptsPerCycle:end),[2 3 4 1]);
+                end
+                x = permute(x,[2 3 4 1 5]);
+                x = permute(x(:,:,:,:),[4 1 2 3]);
+            case 'run'
+                x = mean(dP.wave,4);
+                x = permute(x,[2 3 4 1]);
+            otherwise
+                error('X')
+        end
         sz = size(x);
         y = repmat(1:sz(2),[1 1 sz(3:4)]);
         t = repmat(permute(1:sz(3),[1 3 2 4]),[1 sz(2) 1 sz(4)]);
@@ -430,15 +488,78 @@ switch SVMspace
         error('X')
 end
 
+% function [x,y,k,t] = getXYK_waveFull(dP,SVMspace)
+% % Define x(data), y(label) and k(xValFolds)
+% switch SVMspace
+%     case {'hr' 'hrNoAmp'}
+%         error('double-check that')
+%         nSamplePaire = size(dP.hr,1);
+%         x1 = dP.hr(:,:,1,:); x1 = x1(:,:);
+%         x2 = dP.hr(:,:,2,:); x2 = x2(:,:);
+%     case {'cart' 'cart_HT' 'cart_HTbSess'...
+%             'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'...
+%             'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'...
+%             'cartReal' 'cartReal_T'...
+%             'polMag' 'polMag_T'...
+%             'polDelay'}
+%         dP.wave(:,:,:,dP.bad) = [];
+%         
+% %         ptsPerCycle = 12;
+% %         sz = size(dP.wave);
+% %         sz = [sz(1:3) ptsPerCycle sz(4)/ptsPerCycle];
+% %         x = permute(mean(reshape(dP.wave,sz),4),[2 3 5 1 4]);
+%         x = permute(dP.wave,[2 3 4 1]);
+%         
+%         sz = size(x);
+%         y = repmat(1:sz(2),[1 1 sz(3:4)]);
+%         t = repmat(permute(1:sz(3),[1 3 2 4]),[1 sz(2) 1 sz(4)]);
+%         k = repmat(permute(1:sz(4),[1 3 4 2]),[1 sz(2:3) 1]);
+%         x = x(:,:,:);
+%         y = y(:,:,:);
+%         t = t(:,:,:);
+%         k = k(:,:,:);
+%         x = cat(1,permute(x(:,1,:),[3 1 2]),permute(x(:,2,:),[3 1 2]));
+%         y = cat(1,permute(y(:,1,:),[3 1 2]),permute(y(:,2,:),[3 1 2]));
+%         t = cat(1,permute(t(:,1,:),[3 1 2]),permute(t(:,2,:),[3 1 2]));
+%         k = cat(1,permute(k(:,1,:),[3 1 2]),permute(k(:,2,:),[3 1 2]));
+%     otherwise
+%         error('X')
+% end
 
-function [svmModel,normTr] = SVMtrain(y,x,SVMspace,k)
-Y = y;
-X = x;
-if ~exist('k','var') || isempty(k) || all(k(:)==0)
-    k = ones(size(y)); % no crossvalidation
+
+function [svmModel,normTr] = SVMtrain(Y,X,SVMspace,K,T)
+if exist('T','var')
+    tList = unique(T);
+    for i = 1:length(tList)
+        ind = tList(i)==T;
+        x = X(ind,:);
+        y = Y(ind,:);
+        if isempty(K)
+            k = [];
+        else
+            k = K(ind,:);
+        end
+        [svmModel(:,:,:,i),normTr(:,:,:,i)] = SVMtrain(y,x,SVMspace,k);
+    end
+    for i = 1:size(svmModel,3)
+        svmModel(:,:,i,1).w = mean(cat(1,svmModel(:,:,i,:).w),1);
+        svmModel(:,:,i,1).b = mean(cat(1,svmModel(:,:,i,:).b),1);
+        tmp = cat(1,normTr(:,:,i,:).pol);
+        normTr(:,:,i,1).pol.rhoScale = mean(cat(1,tmp.rhoScale),1);
+        normTr(:,:,i,1).pol.thetaShift = mean(cat(1,tmp.thetaShift),1);
+        tmp = cat(1,normTr(:,:,i,:).svm);
+        normTr(:,:,i,1).svm.scale = mean(cat(1,tmp.scale),1);
+        normTr(:,:,i,1).svm.shift = mean(cat(1,tmp.shift),1);
+    end
+    svmModel = svmModel(:,:,:,1);
+    normTr = normTr(:,:,:,1);
+    return
+end
+if ~exist('K','var') || isempty(K) || all(K(:)==0)
+    K = ones(size(Y)); % no crossvalidation
     kList = 0;
 else
-    kList = unique(k);
+    kList = unique(K);
 end
 
 
@@ -450,7 +571,7 @@ normTr = repmat(normTr,[1 1 length(kList)]);
 svmModel = repmat(struct('k',[],'svmSpace',[],'w',[],'b',[],'Paramters',[],'info',[]),[1 1 length(kList)]);
 for kInd = 1:length(kList)
     % Split train and test
-    te = k==kList(kInd);
+    te = K==kList(kInd);
     y = Y(~te,:);
     x = X(~te,:);
     
@@ -474,22 +595,21 @@ for kInd = 1:length(kList)
     svmModel(:,:,kInd).svmSpace = SVMspace;
 end
 
-function [yHat,yHatTr] = SVMtest(y,x,svmModel,nrmlz,k)
-X = x;
-if ~exist('k','var') || isempty(k) || all(k(:)==0)
-    k = ones(size(y)); % no crossvalidation
+function [yHat,yHatTr] = SVMtest(Y,X,svmModel,nrmlz,K)
+if ~exist('K','var') || isempty(K) || all(K(:)==0)
+    K = ones(size(Y)); % no crossvalidation
 end
 kList = [svmModel.k];
 
-yHat = nan([size(y,1) length(kList)]);
-yHatTr = nan([size(y,1) length(kList)]);
+yHat = nan([size(Y,1) length(kList)]);
+yHatTr = nan([size(Y,1) length(kList)]);
 for kInd = 1:length(kList)
     x = X;
     % Split train and test
     if kList(kInd)==0
-        te = true(size(y));
+        te = true(size(Y));
     else
-        te = k==kList(kInd);
+        te = K==kList(kInd);
     end
     
     % Normalize
@@ -633,7 +753,8 @@ switch SVMspace
                     'cartReal' 'cartReal_T'...
                     'polMag' 'polMag_T'}
                 if computeNorm
-                   polNorm.rhoScale = abs(mean(mean(x(~te,:),1),2)); 
+%                     polNorm.rhoScale = abs(mean(mean(x(~te,:),1),2));
+                    polNorm.rhoScale = abs(mean(x(~te,:),1));
                 end
                 rho = abs(x)./polNorm.rhoScale;
             otherwise
@@ -641,9 +762,13 @@ switch SVMspace
         end
         % thetaShift
         switch SVMspace
+            case {'cartReal' 'cartReal_T'}
+                if computeNorm
+                    polNorm.thetaShift = angle(mean(x(~te,:),1));
+                end
+                theta = angle(x) - polNorm.thetaShift; theta = wrapToPi(theta);
             case {'cart' 'cart_HT' 'cart_HTbSess'...
                     'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'...
-                    'cartReal' 'cartReal_T'...
                     'polDelay'}
                 if computeNorm
                     polNorm.thetaShift = angle(mean(mean(x(~te,:),1),2));
@@ -674,6 +799,7 @@ if nDim==3
 end
 
 function [x,svmNorm] = svmSpaceNormalization(x,SVMspace,te)
+skipScale = 0;
 if ~exist('te','var') || isempty(te)
     te = false(size(x,1),1);
 end
@@ -693,7 +819,11 @@ switch SVMspace
     case {'cart' 'cart_HT' 'cart_HTbSess'...
             'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'}
         if computeNorm
-            svmNorm.scale = ones(1,size(x(~te,:),2));
+            if skipScale
+                svmNorm.scale = ones(1,size(x(~te,:),2));
+            else
+                svmNorm.scale = std(x(~te,:),[],1);
+            end
             svmNorm.shift = mean(x(~te,:),1);
         end
         x = (x-svmNorm.shift) ./ svmNorm.scale;
@@ -701,15 +831,22 @@ switch SVMspace
     case {'cartReal' 'cartReal_T'}
         x = real(x);
         if computeNorm
-            svmNorm.scale = ones(1,size(x(~te,:),2));
+            if skipScale
+                svmNorm.scale = ones(1,size(x(~te,:),2));
+            else
+                svmNorm.scale = std(x(~te,:),[],1);
+            end
             svmNorm.shift = mean(x(~te,:),1);
         end
         x = (x-svmNorm.shift) ./ svmNorm.scale;
     case 'cartImag'
-        error('code that')
         x = imag(x);
         if computeNorm
-            svmNorm.scale = ones(1,size(x(~te,:),2));
+            if skipScale
+                svmNorm.scale = ones(1,size(x(~te,:),2));
+            else
+                svmNorm.scale = std(x(~te,:),[],1);
+            end
             svmNorm.shift = mean(x(~te,:),1);
         end
         x = (x-svmNorm.shift) ./ svmNorm.scale;
@@ -720,11 +857,16 @@ switch SVMspace
     case {'polMag' 'polMag_T' 'cartNoDelay' 'cartNoDelay_HT'  'cartNoDelay_HTbSess'}
         x = abs(x);
         if computeNorm
-            svmNorm.scale = ones(1,size(x(~te,:),2));
+            if skipScale
+                svmNorm.scale = ones(1,size(x(~te,:),2));
+            else
+                svmNorm.scale = std(x(~te,:),[],1);
+            end
             svmNorm.shift = mean(x(~te,:),1);
         end
         x = (x-svmNorm.shift) ./ svmNorm.scale;
     case 'polDelay'
+        error('code that')
         if computeNorm
             svmNorm.scale = ones(1,size(x(~te,:),2));
             svmNorm.shift = zeros(1,size(x(~te,:),2));
@@ -774,10 +916,13 @@ switch SVMspace
 end
 
 function f = plotPolNormExample(x,SVMspace)
+x = permute(x,[2 3 1 4]);
+x = x(:,:,:);
+x = permute(x,[3 4 2 1]);
 f = figure('WindowStyle','docked');
 subplot(1,2,1); clear hPP
 % polarplot(angle(x(:)),abs(x(:)),'.'); hold on
-for condInd = 1:3
+for condInd = 1:size(x,3)
     hPP(condInd) = polarplot(angle(x(:,:,condInd)),abs(x(:,:,condInd)),'o'); hold on
     hPP(condInd).MarkerFaceColor = hPP(condInd).Color;
     hPP(condInd).MarkerEdgeColor = 'w';
@@ -793,7 +938,7 @@ x = polarSpaceNormalization(x,SVMspace);
 % Plot after
 subplot(1,2,2);
 % polarplot(angle(xAfter(:)),abs(xAfter(:)),'.'); hold on
-for condInd = 1:3
+for condInd = 1:size(x,3)
     hPP(condInd) = polarplot(angle(x(:,:,condInd)),abs(x(:,:,condInd)),'o'); hold on
     hPP(condInd).MarkerFaceColor = hPP(condInd).Color;
     hPP(condInd).MarkerEdgeColor = 'w';

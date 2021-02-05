@@ -8,38 +8,129 @@ if ~exist('figOption','var') || isempty(figOption)
     figOption.subj = 1; % 'all' or subjInd
 end
 
+% dataType = 'waveFull';
+% [resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
+% compareDataType(resBS,'wave',dataType,svmSpace,'between-session')
+% compareDataType(resWS,'wave',dataType,svmSpace,'within-session')
+% dataType = 'waveRun';
+% [resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
+% compareDataType(resBS,'wave',dataType,svmSpace,'between-session')
+% compareDataType(resWS,'wave',dataType,svmSpace,'within-session')
+% dataType = 'waveTrialSparse';
+% [resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
+% compareDataType(resBS,'wave',dataType,svmSpace,'between-session')
+% compareDataType(resWS,'wave',dataType,svmSpace,'within-session')
+
 svmSpace = 'cart';
 dataType = 'wave';
 [resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
-dataType = 'sin';
+dataType = 'waveTrialSparseCat2';
 [resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
-compareDataType(resBS,'wave','sin',svmSpace,'between-session')
-compareDataType(resWS,'wave','sin',svmSpace,'within-session')
-
+dataType = 'waveTrialSparseRep';
+[resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
 
 svmSpace = 'cartNoAmp';
 dataType = 'wave';
 [resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
-dataType = 'sin';
+dataType = 'waveTrialSparseCat2';
 [resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
-compareDataType(resBS,'wave','sin',svmSpace,'between-session')
-compareDataType(resWS,'wave','sin',svmSpace,'within-session')
+dataType = 'waveTrialSparseRep';
+[resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
 
 svmSpace = 'cartNoDelay';
 dataType = 'wave';
 [resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
-dataType = 'sin';
+dataType = 'waveTrialSparseCat2';
 [resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
-compareDataType(resBS,'wave','sin',svmSpace,'between-session')
-compareDataType(resWS,'wave','sin',svmSpace,'within-session')
+dataType = 'waveTrialSparseRep';
+[resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
 
 svmSpace = 'cartReal';
 dataType = 'wave';
 [resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
-dataType = 'sin';
+dataType = 'waveTrialSparseCat2';
 [resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
-compareDataType(resBS,'wave','sin',svmSpace,'between-session')
-compareDataType(resWS,'wave','sin',svmSpace,'within-session')
+dataType = 'waveTrialSparseRep';
+[resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
+
+
+svmSpace = 'cart';
+compareDataType(resBS,'waveTrialSparseCat2','waveTrialSparseRep',svmSpace,'between-session')
+svmSpace = 'cartNoAmp';
+compareDataType(resBS,'waveTrialSparseCat2','waveTrialSparseRep',svmSpace,'between-session')
+svmSpace = 'cartNoDelay';
+compareDataType(resBS,'waveTrialSparseCat2','waveTrialSparseRep',svmSpace,'between-session')
+svmSpace = 'cartReal';
+compareDataType(resBS,'waveTrialSparseCat2','waveTrialSparseRep',svmSpace,'between-session')
+
+
+close all
+clear resBS resWS
+dataType = 'wave';
+svmSpace = 'cart';
+[resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
+svmSpace = 'cartNoAmp';
+[resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
+svmSpace = 'cartNoDelay';
+[resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
+svmSpace = 'cartReal';
+[resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
+% not scaled at svm; roi-wise rho scale
+aBS = resBS;
+aWS = resWS;
+% scaled at svm; roi-wise rho scale
+bBS = resBS;
+bWS = resWS;
+% not scaled at svm; voxel-spec rho scale
+cBS = resBS;
+cWS = resWS;
+% scaled at svm; voxel-spec rho scale
+dBS = resBS;
+dWS = resWS;
+save tmp aBS aWS bBS bWS cBS cWS dBS dWS
+
+plotDecoding_acc(aBS,figOption,verbose)
+plotDecoding_acc(bBS,figOption,verbose)
+
+figure('WindowStyle','docked');
+compareRes(aBS.cart_wave,bBS.cart_wave)
+figure('WindowStyle','docked');
+compareRes(bBS.cart_wave,dBS.cart_wave)
+figure('WindowStyle','docked');
+compareRes(aBS.cart_wave,cBS.cart_wave)
+
+% svmSpace = 'cart';
+% dataType = 'wave';
+% [resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
+% dataType = 'sin';
+% [resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
+% compareDataType(resBS,'wave','sin',svmSpace,'between-session')
+% compareDataType(resWS,'wave','sin',svmSpace,'within-session')
+% 
+% 
+% svmSpace = 'cartNoAmp';
+% dataType = 'wave';
+% [resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
+% dataType = 'sin';
+% [resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
+% compareDataType(resBS,'wave','sin',svmSpace,'between-session')
+% compareDataType(resWS,'wave','sin',svmSpace,'within-session')
+% 
+% svmSpace = 'cartNoDelay';
+% dataType = 'wave';
+% [resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
+% dataType = 'sin';
+% [resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
+% compareDataType(resBS,'wave','sin',svmSpace,'between-session')
+% compareDataType(resWS,'wave','sin',svmSpace,'within-session')
+% 
+% svmSpace = 'cartReal';
+% dataType = 'wave';
+% [resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
+% dataType = 'sin';
+% [resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
+% compareDataType(resBS,'wave','sin',svmSpace,'between-session')
+% compareDataType(resWS,'wave','sin',svmSpace,'within-session')
 
 % [P,~,STATS] = signrank(mean(res.cart.acc,2),mean(res.cartReal.acc,2),'tail','right');
 % disp('cart VS cartReal:')

@@ -1,6 +1,6 @@
 function inspectSubjAndExclude(figOption,verbose)
 close all
-actuallyRun = 0;
+actuallyRun = 1;
 if ~exist('verbose','var')
     verbose = 1;
 end
