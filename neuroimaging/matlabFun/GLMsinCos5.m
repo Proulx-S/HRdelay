@@ -84,7 +84,7 @@ if ~iscell(design)
 end
 if ~iscell(data)
     data = {data};
-end;
+end
 for p=1:length(data)
     if ~isa(data{p},'single')
         %     fprintf('*** GLMdenoisedata: converting data in run %d to single format (consider doing this before the function call to reduce memory usage). ***\n',p);
@@ -169,7 +169,7 @@ constant = cell(1,numruns);
 
 numtime = size(data{p},dimtime)*splitIn;
 for p=1:numruns/splitIn
-    tmp = constructpolynomialmatrix(numtime,0:opt.maxpolydeg(p));
+    tmp = constructpolynomialmatrix(numtime,0:opt.maxpolydeg(p),0);
     poly((p-1)*splitIn+1:p*splitIn) = mat2cell(tmp,repmat(size(data{p},dimtime),1,splitIn),2)';
 end
 
@@ -317,10 +317,11 @@ for sess = 1:2
     %% Reformat outputs
     results.OLS.fixed.(['sess' num2str(sess)]).parameters =   reshape(param',  [xyzsize size(param,1)]);
     
-    %% Convert to percent BOLD
-    results.OLS.fixed.(['sess' num2str(sess)]).constant.brain = mean(results.OLS.fixed.(['sess' num2str(sess)]).parameters(:,:,:,any(results.OLS.fixed.(['sess' num2str(sess)]).designMatrixConstant,1)).*(vectorlength(ones(numtime,1))/numtime),4); %vectorlength(ones(numtime,1))/numtime is the value in the design matrix
-    con = 1./abs(results.OLS.fixed.(['sess' num2str(sess)]).constant.brain) * 100;
-    results.OLS.fixed.(['sess' num2str(sess)]).parameters = bsxfun(@times,results.OLS.fixed.(['sess' num2str(sess)]).parameters,con);
+%     %% Convert to percent BOLD
+%     results.OLS.fixed.(['sess' num2str(sess)]).constant.brain = mean(results.OLS.fixed.(['sess' num2str(sess)]).parameters(:,:,:,any(results.OLS.fixed.(['sess' num2str(sess)]).designMatrixConstant,1)).*(vectorlength(ones(numtime,1))/numtime),4); %vectorlength(ones(numtime,1))/numtime is the value in the design matrix
+    results.OLS.fixed.(['sess' num2str(sess)]).constant.brain = results.OLS.fixed.(['sess' num2str(sess)]).parameters(:,:,:,any(results.OLS.fixed.(['sess' num2str(sess)]).designMatrixConstant,1)); %.*(vectorlength(ones(numtime,1))/numtime),4); %vectorlength(ones(numtime,1))/numtime is the value in the design matrix
+%     con = 1./abs(results.OLS.fixed.(['sess' num2str(sess)]).constant.brain) * 100;
+%     results.OLS.fixed.(['sess' num2str(sess)]).parameters = bsxfun(@times,results.OLS.fixed.(['sess' num2str(sess)]).parameters,con);
     
     %% Compute amp and delay
     [results.OLS.fixed.(['sess' num2str(sess)]).delay, results.OLS.fixed.(['sess' num2str(sess)]).amp] = cart2pol(results.OLS.fixed.(['sess' num2str(sess)]).parameters(:,:,:,1:2:6),results.OLS.fixed.(['sess' num2str(sess)]).parameters(:,:,:,2:2:6));
