@@ -142,7 +142,7 @@ constant = cell(1,numruns);
 
 numtime = size(data{p},dimtime)*splitIn;
 for p=1:numruns/splitIn
-    tmp = constructpolynomialmatrix(numtime,0:opt.maxpolydeg(p));
+    tmp = constructpolynomialmatrix(numtime,0:opt.maxpolydeg(p),0);
     poly((p-1)*splitIn+1:p*splitIn) = mat2cell(tmp,repmat(size(data{p},dimtime),1,splitIn),2)';
 end
 
@@ -239,8 +239,8 @@ for i = 1:3*2
 end
 results.OLS.fixed = rmfield(results.OLS.fixed,'parameters');
 
-%percent BOLD (constant term, so baseline is captured bu the regressors of interest)
-respFixed = (respFixed - repmat(mean(respFixed,1),[12 1 1]))./repmat(mean(respFixed,1),[12 1 1]);
+% %percent BOLD (no constant term, so baseline is captured bu the regressors of interest)
+% respFixed = (respFixed - repmat(mean(respFixed,1),[12 1 1]))./repmat(mean(respFixed,1),[12 1 1]);
 respFixed = cat(4,respFixed(:,:,1:2:end),respFixed(:,:,2:2:end));
 
 for cond = 1:3
@@ -263,7 +263,7 @@ constant = cell(1,numruns);
 
 numtime = size(data{p},dimtime)*splitIn;
 for p=1:numruns/splitIn
-    tmp = constructpolynomialmatrix(numtime,0:opt.maxpolydeg(p));
+    tmp = constructpolynomialmatrix(numtime,0:opt.maxpolydeg(p),0);
     poly((p-1)*splitIn+1:p*splitIn) = mat2cell(tmp,repmat(size(data{p},dimtime),1,splitIn),2)';
 end
 
@@ -366,9 +366,9 @@ respMixed2 = respTmp(:,:,cell2mat(opt.sessionLabel)==2);
 respMixed2 = cat(4,respMixed2(:,:,1:end/3),respMixed2(:,:,end/3+1:end/3*2),respMixed2(:,:,end/3*2+1:end));
 clear respTmp
 
-%Percent BOLD
-respMixed1 = (respMixed1 - repmat(mean(respMixed1,1),[12 1 1 1]))./repmat(mean(respMixed1,1),[12 1 1 1]);
-respMixed2 = (respMixed2 - repmat(mean(respMixed2,1),[12 1 1 1]))./repmat(mean(respMixed2,1),[12 1 1 1]);
+% %Percent BOLD
+% respMixed1 = (respMixed1 - repmat(mean(respMixed1,1),[12 1 1 1]))./repmat(mean(respMixed1,1),[12 1 1 1]);
+% respMixed2 = (respMixed2 - repmat(mean(respMixed2,1),[12 1 1 1]))./repmat(mean(respMixed2,1),[12 1 1 1]);
 
 for run = 1:size(respMixed1,3)
     for cond = 1:size(respMixed1,4)

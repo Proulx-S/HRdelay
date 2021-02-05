@@ -1,4 +1,7 @@
-function f = constructpolynomialmatrix(n,degrees)
+function f = constructpolynomialmatrix(n,degrees,toNormOf1)
+if ~exist('toNormOf1','var')
+    toNormOf1 = 1;
+end
 
 % function f = constructpolynomialmatrix(n,degrees)
 %
@@ -28,7 +31,11 @@ for p=1:length(degrees)
   polyvector = temp .^ degrees(p);
   
   % orthogonalize with respect to earlier polynomials and make unit length
-  polyvector = unitlength(projectionmatrix(f)*polyvector);
+  polyvector = projectionmatrix(f)*polyvector;
+  
+  if toNormOf1
+      polyvector = unitlength(polyvector);
+  end
 
   % record
   f = cat(2,f,polyvector);
