@@ -686,7 +686,11 @@ for subjInd = 1:length(subjList)
     if ~exist(fullfile(funPath,funLevel3),'dir')
         mkdir(fullfile(funPath,funLevel3));
     end
-
+    
+    for sess = {'sess1' 'sess2'}
+        sess = char(sess);
+        d.(sess).sin = d.(sess).data; d.(sess) = rmfield(d.(sess),'data'); tmp = 1:length(fields(d.(sess))); d.(sess) = orderfields(d.(sess),[tmp(end) tmp(1:end-1)]);
+    end
     tmp = fullfile(funPath,funLevel3,[subjList{subjInd} '_' mfilename]);
     if verbose; disp(['Saving to: ' tmp '.mat']); end
     save(tmp,'d','param'); clear d param
