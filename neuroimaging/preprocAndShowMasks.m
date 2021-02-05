@@ -179,6 +179,7 @@ for subjInd = 1:length(subjList)
         sess = ['sess' num2str(sessInd)];
         runInd = sessLabel==sessInd;
         data.(sess).data = complex(X(:,:,:,runInd),Y(:,:,:,runInd));
+        data.(sess).meanBOLD = results.OLS.mixed.constant.brain(:,:,:,runInd);
         data.(sess).condLabel = permute(condLabel(runInd),[1 3 4 2]);
         data.(sess).runLabel = permute(runLabel(runInd),[1 3 4 2]);
         %         [squeeze(data.(sess).condLabel) squeeze(data.(sess).runLabel)]
@@ -187,6 +188,7 @@ for subjInd = 1:length(subjList)
         cond2 = data.(sess).condLabel==2;
         cond3 = data.(sess).condLabel==3;
         data.(sess).data = cat(5,data.(sess).data(:,:,:,cond1),data.(sess).data(:,:,:,cond2),data.(sess).data(:,:,:,cond3));
+        data.(sess).meanBOLD = cat(5,data.(sess).meanBOLD(:,:,:,cond1),data.(sess).meanBOLD(:,:,:,cond2),data.(sess).meanBOLD(:,:,:,cond3));
         data.(sess).runLabel = cat(5,data.(sess).runLabel(:,:,:,cond1),data.(sess).runLabel(:,:,:,cond2),data.(sess).runLabel(:,:,:,cond3));
         data.(sess).info = 'x X y X z X run X cond[ori1,ori2,plaid]';
         
@@ -586,6 +588,9 @@ for subjInd = 1:length(subjList)
         d.(sess).data = permute(data.(sess).data,[4 5 1 2 3]); data.(sess).data = [];
         d.(sess).data = d.(sess).data(:,:,voxInd);
         d.(sess).data = permute(d.(sess).data,[1 3 2]);
+        d.(sess).meanBOLD = permute(data.(sess).meanBOLD,[4 5 1 2 3]); data.(sess).meanBOLD = [];
+        d.(sess).meanBOLD = d.(sess).meanBOLD(:,:,voxInd);
+        d.(sess).meanBOLD = permute(d.(sess).meanBOLD,[1 3 2]);
         d.(sess).hr = permute(hr.(sess),[4 5 6 1 2 3]); hr.(sess) = [];
         d.(sess).hr = d.(sess).hr(:,:,:,voxInd);
         d.(sess).hr = permute(d.(sess).hr,[2 4 3 1]);

@@ -46,7 +46,45 @@ subjStimList = {'jp' 'sk' 'sp' 'bm' 'sb' 'bj'};
 if ~actuallyRun
     filename = ['/Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/y/' subjList{figOption.subj} '/v1wave.mat'];
     warning('need some more coding to show figure without actually processing the thing')
-%     load(filename);
+    
+    stimPeriod = 12;
+    fac = 100;
+    Fs = 1;
+    n = 120;
+    X = ones(n*fac,1);
+%     tms = (0:length(X)-1)./Fs;
+%     NV = 10;
+    minfreq = 1/stimPeriod / 2;
+    maxfreq = 1/stimPeriod * 2;
+    fb = cwtfilterbank('SignalLength',n*fac,'SamplingFrequency',Fs*fac,...
+        'FrequencyLimits',[minfreq maxfreq],...
+        'Wavelet','Morse',...
+        'TimeBandwidth',4);
+    [wave,wave_t] = wavelets(fb);
+    [cfs,frq,coi,fb] = cwt(X,'filterbank',fb);
+    [~,b] = min(abs(1./frq-stimPeriod));
+    1./frq(b)
+    thresh = 0.02:0.0001:0.021;
+    TimeSupport = nan(size(thresh));
+    for i = 1:length(thresh)
+        spsi = waveletsupport(fb,thresh(i));
+        TimeSupport(i) = spsi(b(1),:).TimeSupport;
+    end
+    [~,bb] = min(abs(TimeSupport-stimPeriod));
+    disp([num2str((1-2*thresh(bb))*100,'%0.2f%%') ' of the energy of the ' num2str(1./frq(b)) 'sec-wavelength wavelet is captured over ' num2str(TimeSupport(bb)) ' seconds around the wavelet''s center']);
+    
+    figure('WindowStyle','docked');
+    hWave = plot(wave_t,imag(wave(b(1),:))); hold on
+    plot(xlim,[0 0],':k');
+    plot([-0.5 0.5].*stimPeriod,[0 0],'k');
+    uistack(hWave,'top');
+    spsi = waveletsupport(fb,0.3e-4);
+    xlim([spsi(b,:).Begin spsi(b,:).End])
+    ax = gca;
+    ax.XTick = -24:6:24;
+    ax.XGrid = 'on';
+    xlabel('time (sec)')
+    ylabel('wavelet amplitude (a.u.)')
     return
 end
 
