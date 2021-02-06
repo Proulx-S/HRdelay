@@ -17,11 +17,11 @@ featSel_bSess.vein.percentile = 20;
 featSel_bSess.discrim.doIt = 1;
 featSel_bSess.discrim.percentile = 20;
 %% Display parameters
-figOption.save = 0; % save all figures
+figOption.save = 1; % save all figures
 figOption.subj = 1; % subjInd-> plots participants subjInd; +inf-> plots all participant (if verbose==0, will only plot subjInd==1 but still produce and save all the other figures)
 
 runFit(verbose,figOption)
-runWave(verbose,figOption) % save timeseries from here
+runWave(verbose,figOption)
 
 preprocAndShowMasks(featSel_bSess,figOption,verbose)
 

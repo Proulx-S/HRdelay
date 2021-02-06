@@ -334,6 +334,13 @@ results.OLS.mixed.designmatrix = cat(2,condDesign,polyNmotionDesign);% time x re
 results.OLS.mixed.designmatrixPieces.cond = cat(2,condDesign,zeros(size(polyNmotionDesign)));
 results.OLS.mixed.designmatrixPieces.motion = cat(2,zeros(size(condDesign)),polyNmotionDesign);
 results.OLS.mixed.designmatrixPieces.constant = cat(2,zeros(size(condDesign)),constantDesign);
+%deal with higher order poly
+ind = find(any(results.OLS.mixed.designmatrixPieces.constant,1));
+for i = 1:unique(opt.maxpolydeg)
+    results.OLS.mixed.designmatrixPieces.(['p' num2str(i)]) = zeros(size(results.OLS.mixed.designmatrixPieces.constant));
+    results.OLS.mixed.designmatrixPieces.(['p' num2str(i)])(:,ind+i) = results.OLS.mixed.designmatrix(:,ind+i);
+end
+
 %     close all
 %     figure('WindowStyle','docked'); colormap gray
 %     imagesc(results.OLS.mixed.designmatrix)
@@ -345,9 +352,15 @@ results.OLS.mixed.designmatrixPieces.constant = cat(2,zeros(size(condDesign)),co
 %     imagesc(results.OLS.mixed.designmatrixPieces.constant,[-1 1])
 
 
+
 %remove constant
-results.OLS.mixed.designmatrix(:,any(results.OLS.mixed.designmatrixPieces.constant,1)) = [];
-results.OLS.mixed.designmatrixPieces.constant = zeros(size(results.OLS.mixed.designmatrixPieces.constant));
+ind = any(results.OLS.mixed.designmatrixPieces.constant,1);
+results.OLS.mixed.designmatrix(:,ind) = [];
+fieldList = fields(results.OLS.mixed.designmatrixPieces);
+for i = 1:length(fieldList)
+    results.OLS.mixed.designmatrixPieces.(fieldList{i})(:,ind) = [];
+end
+results.OLS.mixed.designmatrixPieces = rmfield(results.OLS.mixed.designmatrixPieces,'constant');
 
 %% Estimate parameters with OLS
 display('computing OLS')
@@ -358,13 +371,25 @@ results.OLS.mixed.parameters = ...
 for i = 1:length(opt.sessionLabel)
     respTmp(:,:,i) = results.OLS.mixed.parameters((i-1)*12+1:i*12,:);
 end
+for i = 1:unique(opt.maxpolydeg)
+    ind = any(results.OLS.mixed.designmatrixPieces.(['p' num2str(i)]),1);
+    polyPar.(['p' num2str(i)]) = permute(results.OLS.mixed.parameters(ind,:),[3 2 1]);
+end
 results.OLS.mixed = rmfield(results.OLS.mixed,'parameters');
 
 respMixed1 = respTmp(:,:,cell2mat(opt.sessionLabel)==1);
 respMixed1 = cat(4,respMixed1(:,:,1:end/3),respMixed1(:,:,end/3+1:end/3*2),respMixed1(:,:,end/3*2+1:end));
+for i = 1:unique(opt.maxpolydeg)
+    polyPar1.(['p' num2str(i)]) = polyPar.(['p' num2str(i)])(:,:,cell2mat(opt.sessionLabel)==1);
+    polyPar1.(['p' num2str(i)]) = cat(4,polyPar1.(['p' num2str(i)])(:,:,1:end/3),polyPar1.(['p' num2str(i)])(:,:,end/3+1:end/3*2),polyPar1.(['p' num2str(i)])(:,:,end/3*2+1:end));
+end
 respMixed2 = respTmp(:,:,cell2mat(opt.sessionLabel)==2);
 respMixed2 = cat(4,respMixed2(:,:,1:end/3),respMixed2(:,:,end/3+1:end/3*2),respMixed2(:,:,end/3*2+1:end));
-clear respTmp
+for i = 1:unique(opt.maxpolydeg)
+    polyPar2.(['p' num2str(i)]) = polyPar.(['p' num2str(i)])(:,:,cell2mat(opt.sessionLabel)==2);
+    polyPar2.(['p' num2str(i)]) = cat(4,polyPar2.(['p' num2str(i)])(:,:,1:end/3),polyPar2.(['p' num2str(i)])(:,:,end/3+1:end/3*2),polyPar2.(['p' num2str(i)])(:,:,end/3*2+1:end));
+end
+clear respTmp polyPar
 
 % %Percent BOLD
 % respMixed1 = (respMixed1 - repmat(mean(respMixed1,1),[12 1 1 1]))./repmat(mean(respMixed1,1),[12 1 1 1]);
@@ -373,11 +398,17 @@ clear respTmp
 for run = 1:size(respMixed1,3)
     for cond = 1:size(respMixed1,4)
         results.OLS.mixed.sess1.resp(:,:,:,:,run,cond) =   reshape(respMixed1(:,:,run,cond)',  [xyzsize size(respMixed1(:,:,run,cond),1)]);
+        for i = 1:unique(opt.maxpolydeg)
+            results.OLS.mixed.sess1.(['p' num2str(i)])(:,:,:,:,run,cond) =   reshape(polyPar1.(['p' num2str(i)])(:,:,run,cond)',  [xyzsize size(polyPar1.(['p' num2str(i)])(:,:,run,cond),1)]);
+        end
     end
 end
 for run = 1:size(respMixed2,3)
     for cond = 1:size(respMixed2,4)
         results.OLS.mixed.sess2.resp(:,:,:,:,run,cond) =   reshape(respMixed2(:,:,run,cond)',  [xyzsize size(respMixed2(:,:,run,cond),1)]);
+        for i = 1:unique(opt.maxpolydeg)
+            results.OLS.mixed.sess2.(['p' num2str(i)])(:,:,:,:,run,cond) =   reshape(polyPar2.(['p' num2str(i)])(:,:,run,cond)',  [xyzsize size(polyPar2.(['p' num2str(i)])(:,:,run,cond),1)]);
+        end
     end
 end
 

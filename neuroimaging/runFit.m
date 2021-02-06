@@ -224,9 +224,9 @@ for smLevel = {''}
                     labelDir = fullfile(repo,stimDir);
             end
             
-            tmp = dir(fullfile(funData_folderIN,['trun*_preprocessed' smLevel{1} '.nii.gz']));
+            tmp = dir(fullfile(funData_folderIN,['trun*_preprocessed.nii.gz']));
             if isempty(tmp)
-                tmp = dir(fullfile(funData_folderIN,['trun*_preprocessed' smLevel{1} '.nii']));
+                tmp = dir(fullfile(funData_folderIN,['trun*_preprocessed.nii']));
             end
             for i = 1:length(tmp)
                 files{i,:} = tmp(i).name;
@@ -400,9 +400,12 @@ for smLevel = {''}
             ana = 'resp';
             [results] = GLMresp(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'splitedIn',splitIn),splitIn);
             if noMovement
-                outName = fullfile(funData_folderOUT,[maskLabel ana '_' num2str(splitIn) 'perRun' smLevel{1}]);
+                outName = fullfile(funData_folderOUT,[maskLabel ana]);
             else
-                outName = fullfile(funData_folderOUT,[maskLabel ana '_' num2str(splitIn) 'perRun_move12' smLevel{1}]);
+                outName = fullfile(funData_folderOUT,[maskLabel ana '_move12']);
+            end
+            if strcmp(outName(end),'_')
+                outName(end) = [];
             end
             save([outName '_resp.mat'],'results'); clear results
             
@@ -410,11 +413,14 @@ for smLevel = {''}
             %sin mixed(random)-model
             ana = 'SinCos';
             if noMovement
-                outName = fullfile(funData_folderOUT,[maskLabel ana '_' num2str(splitIn) 'perRun' smLevel{1}]);
+                outName = fullfile(funData_folderOUT,[maskLabel ana]);
             else
-                outName = fullfile(funData_folderOUT,[maskLabel ana '_' num2str(splitIn) 'perRun_move12' smLevel{1}]);
+                outName = fullfile(funData_folderOUT,[maskLabel ana '_move12']);
             end
-            [resultsTmp,~] = GLMsinCos3(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'runLabel',{splitRunInd},'splitedIn',splitIn),splitIn);
+            if strcmp(outName(end),'_')
+                outName(end) = [];
+            end
+            [resultsTmp,detrendedData] = GLMsinCos3(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'runLabel',{splitRunInd},'splitedIn',splitIn),splitIn);
             resultsTmp.OLS.mixed.inputs = resultsTmp.inputs; resultsTmp = rmfield(resultsTmp,'inputs');
             %sin fixed-model
             if exclude && ismember(subjList(subjInd),exclusion.subjList(exclusion.subj))
@@ -434,7 +440,8 @@ for smLevel = {''}
             results.OLS.mixed = resultsTmp.OLS.mixed; clear resultsTmp
             results.mask = mask;
             save([outName '.mat'],'results','-v7.3');
-            disp([subj '; split in ' num2str(splitIn) ': done'])
+            save([outName '_detrendedData.mat'],'detrendedData','-v7.3');
+            disp([subj ': done'])
             telapsed = toc;
             disp(['Whole thing took: ' num2str(telapsed) 'sec'])
     end

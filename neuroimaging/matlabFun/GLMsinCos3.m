@@ -1,4 +1,4 @@
-function [results,sessModel] = GLMsinCos3(design,data,stimdur,tr,hrfmodel,hrfknobs,opt,splitIn)
+function [results,ResidReduced] = GLMsinCos3(design,data,stimdur,tr,hrfmodel,hrfknobs,opt,splitIn)
 
 %WARNINGWARNINGWARNINGWARNINGWARNINGWARNINGWARNING
 %stimdur is internally fixed to 6 in GLMestimatemodel>fitmodel_helper at 884
@@ -148,6 +148,7 @@ clear polyNmotion_b constant_b
 
 % Conditions and Sessions
 condLabel = cat(1,ones(numruns/3,1)*1,ones(numruns/3,1)*2,ones(numruns/3,1)*3);
+sessLabel = [opt.sessionLabel{:}]';
 
 condDesign = cell(1,3);
 polyNmotionDesign = cell(1,3);
@@ -172,6 +173,13 @@ results.OLS.mixed.designmatrix = cat(2,condDesign,polyNmotionDesign);% time x re
 results.OLS.mixed.designmatrixPieces.cond = cat(2,condDesign,zeros(size(polyNmotionDesign)));
 results.OLS.mixed.designmatrixPieces.motion = cat(2,zeros(size(condDesign)),polyNmotionDesign);
 results.OLS.mixed.designmatrixPieces.constant = cat(2,zeros(size(condDesign)),constantDesign);
+%deal with higher order poly
+ind = find(any(results.OLS.mixed.designmatrixPieces.constant,1));
+for i = 1:unique(opt.maxpolydeg)
+    results.OLS.mixed.designmatrixPieces.(['p' num2str(i)]) = zeros(size(results.OLS.mixed.designmatrixPieces.constant));
+    results.OLS.mixed.designmatrixPieces.(['p' num2str(i)])(:,ind+i) = results.OLS.mixed.designmatrix(:,ind+i);
+end
+
 % close all
 % figure('WindowStyle','docked'); colormap gray
 % imagesc(results.OLS.mixed.designmatrix)
@@ -193,7 +201,8 @@ display('computing F stats')
 % Set-up full and reduced design matrices
 designMatrixFull = results.OLS.mixed.designmatrix;
 designMatrixReduced = designMatrixFull;
-designMatrixReduced(:,numruns*2/3*2+1:numruns*2) = zeros(size(designMatrixReduced(:,numruns*2/3*2+1:numruns*2)));
+% designMatrixReduced(:,numruns*2/3*2+1:numruns*2) = zeros(size(designMatrixReduced(:,numruns*2/3*2+1:numruns*2)));
+designMatrixReduced(:,1:numruns*2) = zeros(size(designMatrixReduced(:,1:numruns*2)));
 results.OLS.mixed.designMatrixReduced = designMatrixReduced;
 
 % Compute predictions
@@ -207,36 +216,25 @@ end
 fullModel = reshape(fullModel,  [xyzsize size(fullModel,2)]);
 reducedModel = reshape(reducedModel,  [xyzsize size(reducedModel,2)]);
 
-% Find indices of data to include for different F tests
-ind_cond3 = size(fullModel,4)*2/3+1:size(fullModel,4);
-ind_sess1 = [size(fullModel,4)*0/6+1:size(fullModel,4)*1/6 size(fullModel,4)*2/6+1:size(fullModel,4)*3/6 size(fullModel,4)*4/6+1:size(fullModel,4)*5/6];
-ind_sess2 = [size(fullModel,4)*1/6+1:size(fullModel,4)*2/6 size(fullModel,4)*3/6+1:size(fullModel,4)*4/6 size(fullModel,4)*5/6+1:size(fullModel,4)*6/6];
-ind_cond3sess1 = size(fullModel,4)*4/6+1:size(fullModel,4)*5/6;
-ind_cond3sess2 = size(fullModel,4)*5/6+1:size(fullModel,4)*6/6;
-% figure('WindowStyle','docked');
-% tmp = nan(size(designMatrixFull,1),1);
-% tmp(ind_sess1) = 1;
-% imagesc(cat(2,tmp,designMatrixFull))
-
 % Compute RSSs
 RSSfull = bsxfun(@minus, fullModel, catcell(4,data));
 ResidFull = squeeze(mat2cell(RSSfull,xyzsize(1),xyzsize(2),xyzsize(3),ones(numruns,1).*numtime))';
 RSSfull = bsxfun(@times, RSSfull, RSSfull);
-RSSfull_cond3 = sum(RSSfull(:,:,:,ind_cond3),4);
-RSSfull_sess1 = sum(RSSfull(:,:,:,ind_sess1),4);
-RSSfull_sess2 = sum(RSSfull(:,:,:,ind_sess2),4);
-RSSfull_cond3sess1 = sum(RSSfull(:,:,:,ind_cond3sess1),4);
-RSSfull_cond3sess2 = sum(RSSfull(:,:,:,ind_cond3sess2),4);
+RSSfull_cond3 = sum(RSSfull(:,:,:,condLabel==3),4);
+RSSfull_sess1 = sum(RSSfull(:,:,:,sessLabel==1),4);
+RSSfull_sess2 = sum(RSSfull(:,:,:,sessLabel==2),4);
+RSSfull_cond3sess1 = sum(RSSfull(:,:,:,condLabel==3&sessLabel==1),4);
+RSSfull_cond3sess2 = sum(RSSfull(:,:,:,condLabel==3&sessLabel==2),4);
 RSSfull = sum(RSSfull,4);
 
 RSSreduced = bsxfun(@minus, reducedModel, catcell(4,data));
 ResidReduced = squeeze(mat2cell(RSSreduced,xyzsize(1),xyzsize(2),xyzsize(3),ones(numruns,1).*numtime))';
 RSSreduced = bsxfun(@times, RSSreduced, RSSreduced);
-RSSreduced_cond3 = sum(RSSreduced(:,:,:,ind_cond3),4);
-RSSreduced_sess1 = sum(RSSreduced(:,:,:,ind_sess1),4);
-RSSreduced_sess2 = sum(RSSreduced(:,:,:,ind_sess2),4);
-RSSreduced_cond3sess1 = sum(RSSreduced(:,:,:,ind_cond3sess1),4);
-RSSreduced_cond3sess2 = sum(RSSreduced(:,:,:,ind_cond3sess2),4);
+RSSreduced_cond3 = sum(RSSreduced(:,:,:,condLabel==3),4);
+RSSreduced_sess1 = sum(RSSreduced(:,:,:,sessLabel==1),4);
+RSSreduced_sess2 = sum(RSSreduced(:,:,:,sessLabel==2),4);
+RSSreduced_cond3sess1 = sum(RSSreduced(:,:,:,condLabel==3&sessLabel==1),4);
+RSSreduced_cond3sess2 = sum(RSSreduced(:,:,:,condLabel==3&sessLabel==2),4);
 RSSreduced = sum(RSSreduced,4);
 
 
@@ -256,9 +254,9 @@ results.OLS.mixed.F.info = 'considering all data';
 
 % Compute and output F (considering sess1 only)
 %Define degrees of freedom
-pFull = length(find(any(designMatrixFull(ind_sess1,:),1)));
+pFull = length(find(any(designMatrixFull(sessLabel==1,:),1)));
 pReduced = pFull-2*(numruns/3/2);
-n = size(designMatrixFull(ind_sess1,:),1);
+n = size(designMatrixFull(sessLabel==1,:),1);
 %Compute F
 results.OLS.mixed.Fsess1.val.F = ((RSSreduced_sess1-RSSfull_sess1)./(pFull-pReduced)) ./ (RSSfull_sess1./(n-pFull));
 results.OLS.mixed.Fsess1.val.F(results.OLS.mixed.Fsess1.val.F<=0) = eps(class(results.OLS.mixed.Fsess1.val.F)); % replace with smallest possible number if impossible value
@@ -266,14 +264,14 @@ results.OLS.mixed.Fsess1.df.pFull = pFull;
 results.OLS.mixed.Fsess1.df.pReduced = pReduced;
 results.OLS.mixed.Fsess1.df.n = n;
 results.OLS.mixed.Fsess1.info = 'considering sess1 only';
-results.OLS.mixed.Fsess1_DMind = ind_sess1;
+results.OLS.mixed.Fsess1_DMind = sessLabel==1;
 
 
 % Compute and output F (considering sess2 only)
 %Define degrees of freedom
-pFull = length(find(any(designMatrixFull(ind_sess2,:),1)));
+pFull = length(find(any(designMatrixFull(sessLabel==2,:),1)));
 pReduced = pFull-2*(numruns/3/2);
-n = size(designMatrixFull(ind_sess2,:),1);
+n = size(designMatrixFull(sessLabel==2,:),1);
 %Compute F
 results.OLS.mixed.Fsess2.val.F = ((RSSreduced_sess2-RSSfull_sess2)./(pFull-pReduced)) ./ (RSSfull_sess2./(n-pFull));
 results.OLS.mixed.Fsess2.val.F(results.OLS.mixed.Fsess2.val.F<=0) = eps(class(results.OLS.mixed.Fsess2.val.F)); % replace with smallest possible number if impossible value
@@ -281,61 +279,62 @@ results.OLS.mixed.Fsess2.df.pFull = pFull;
 results.OLS.mixed.Fsess2.df.pReduced = pReduced;
 results.OLS.mixed.Fsess2.df.n = n;
 results.OLS.mixed.Fsess2.info = 'considering sess2 only';
-results.OLS.mixed.Fsess2_DMind = ind_sess2;
+results.OLS.mixed.Fsess2_DMind = sessLabel==2;
 
 
 % Compute and output F (considering only cond3)
 %Define degrees of freedom
-pFull = length(find(any(designMatrixFull(ind_cond3,:),1)));
+pFull = length(find(any(designMatrixFull(condLabel==3,:),1)));
 pReduced = pFull-2*(numruns/3);
-n = size(designMatrixFull(ind_cond3,:),1);
+n = size(designMatrixFull(condLabel==3,:),1);
 %Compute F
 results.OLS.mixed.Fcond3.val.F = ((RSSreduced_cond3-RSSfull_cond3)./(pFull-pReduced)) ./ (RSSfull_cond3./(n-pFull));
 results.OLS.mixed.Fcond3.val.F(results.OLS.mixed.Fcond3.val.F<=0) = eps(class(results.OLS.mixed.Fcond3.val.F)); % replace with smallest possible number if impossible value
 results.OLS.mixed.Fcond3.df.pFull = pFull;
 results.OLS.mixed.Fcond3.df.pReduced = pReduced;
 results.OLS.mixed.Fcond3.df.n = n;
-results.OLS.mixed.Fcond3_DMind = ind_cond3;
+results.OLS.mixed.Fcond3_DMind = condLabel==3;
 
 
 % Compute and output F (considering only cond3 sess1)
 %Define degrees of freedom
-pFull = length(find(any(designMatrixFull(ind_cond3sess1,:),1)));
+pFull = length(find(any(designMatrixFull(condLabel==3&sessLabel==1,:),1)));
 pReduced = pFull-2*(numruns/3/2);
-n = size(designMatrixFull(ind_cond3sess1,:),1);
+n = size(designMatrixFull(condLabel==3&sessLabel==1,:),1);
 %Compute F
 results.OLS.mixed.Fcond3sess1.val.F = ((RSSreduced_cond3sess1-RSSfull_cond3sess1)./(pFull-pReduced)) ./ (RSSfull_cond3sess1./(n-pFull));
 results.OLS.mixed.Fcond3sess1.val.F(results.OLS.mixed.Fcond3sess1.val.F<=0) = eps(class(results.OLS.mixed.Fcond3sess1.val.F)); % replace with smallest possible number if impossible value
 results.OLS.mixed.Fcond3sess1.df.pFull = pFull;
 results.OLS.mixed.Fcond3sess1.df.pReduced = pReduced;
 results.OLS.mixed.Fcond3sess1.df.n = n;
-results.OLS.mixed.Fcond3sess1_DMind = ind_cond3sess1;
+results.OLS.mixed.Fcond3sess1_DMind = condLabel==3&sessLabel==1;
 
 
 % Compute and output F (considering only cond3 sess2)
 %Define degrees of freedom
-pFull = length(find(any(designMatrixFull(ind_cond3sess2,:),1)));
+pFull = length(find(any(designMatrixFull(condLabel==3&sessLabel==2,:),1)));
 pReduced = pFull-2*(numruns/3/2);
-n = size(designMatrixFull(ind_cond3sess2,:),1);
+n = size(designMatrixFull(condLabel==3&sessLabel==2,:),1);
 %Compute F
 results.OLS.mixed.Fcond3sess2.val.F = ((RSSreduced_cond3sess2-RSSfull_cond3sess2)./(pFull-pReduced)) ./ (RSSfull_cond3sess2./(n-pFull));
 results.OLS.mixed.Fcond3sess2.val.F(results.OLS.mixed.Fcond3sess2.val.F<=0) = eps(class(results.OLS.mixed.Fcond3sess2.val.F)); % replace with smallest possible number if impossible value
 results.OLS.mixed.Fcond3sess2.df.pFull = pFull;
 results.OLS.mixed.Fcond3sess2.df.pReduced = pReduced;
 results.OLS.mixed.Fcond3sess2.df.n = n;
-results.OLS.mixed.Fcond3sess2_DMind = ind_cond3sess2;
+results.OLS.mixed.Fcond3sess2_DMind = condLabel==3&sessLabel==2;
 
 
 clear temp temp2 sumsq good X fullModel reducedModel RSSfull RSSreduced
 
 %% Reformat outputs
 results.OLS.mixed.parameters =   reshape(results.OLS.mixed.parameters',  [xyzsize size(results.OLS.mixed.parameters,1)]);
-
-% %% Convert to percent BOLD
-results.OLS.mixed.constant.brain = results.OLS.mixed.parameters(:,:,:,any(results.OLS.mixed.designmatrixPieces.constant,1)); %.*(vectorlength(ones(numtime,1))/numtime); %vectorlength(ones(numtime,1))/numtime is the value in the design matrix
-results.OLS.mixed.runInd = reshape(repmat(1:size(results.OLS.mixed.constant.brain,4),[numruns*2/size(results.OLS.mixed.constant.brain,4) 1]),[1 numruns*2]);
-% for run = 1:size(results.OLS.mixed.constant.brain,4)
-%     con = 1./abs(results.OLS.mixed.constant.brain(:,:,:,run)) * 100;
+results.OLS.mixed.poly.p0 = results.OLS.mixed.parameters(:,:,:,any(results.OLS.mixed.designmatrixPieces.constant,1));
+for i = 1:unique(opt.maxpolydeg)
+    results.OLS.mixed.poly.(['p' num2str(i)]) = results.OLS.mixed.parameters(:,:,:,any(results.OLS.mixed.designmatrixPieces.(['p' num2str(i)]),1));
+end
+results.OLS.mixed.runInd = reshape(repmat(1:size(results.OLS.mixed.poly.p0,4),[numruns*2/size(results.OLS.mixed.poly.p0,4) 1]),[1 numruns*2]);
+% for run = 1:size(results.OLS.mixed.poly.p0,4)
+%     con = 1./abs(results.OLS.mixed.poly.p0(:,:,:,run)) * 100;
 %     curInd = find(results.OLS.mixed.runInd==run);
 %     results.OLS.mixed.parameters(:,:,:,curInd) = bsxfun(@times,results.OLS.mixed.parameters(:,:,:,curInd),con);
 % end
@@ -351,8 +350,8 @@ tic
 % % where conversion to %BOLD on the parameter estimate is suboptimal since
 % % each parameter is estimated on data with heterogeneous mean BOLD.
 % fprintf('*** CONVERTING BOLD TIME SERIES TO PERCENT BOLD ***\n');
-% for run = 1:size(results.OLS.mixed.constant.brain,4)
-%     oneOver_curBrain = 1./results.OLS.mixed.constant.brain(:,:,:,run);
+% for run = 1:size(results.OLS.mixed.poly.p0,4)
+%     oneOver_curBrain = 1./results.OLS.mixed.poly.p0(:,:,:,run);
 %     
 %     curData = data{results.OLS.mixed.runInd(1:2:end)==run};
 %     curData = bsxfun(@times,curData,oneOver_curBrain);
@@ -365,8 +364,8 @@ results.OLS.mixed.veinFull = nan([xyzsize numruns]);
 results.OLS.mixed.veinFull_info = 'std of full model (including regressors of interest) residuals  /  constant term';
 results.OLS.mixed.veinReduced = nan([xyzsize numruns]);
 results.OLS.mixed.veinReduced_info = 'std of reduced model (excluding regressors of interest) residuals  /  constant term';
-for run = 1:size(results.OLS.mixed.constant.brain,4)
-    base = results.OLS.mixed.constant.brain(:,:,:,run);
+for run = 1:size(results.OLS.mixed.poly.p0,4)
+    base = results.OLS.mixed.poly.p0(:,:,:,run);
     
     sd = std(ResidFull{run},[],4);
     results.OLS.mixed.veinFull(:,:,:,run) = sd./base;
@@ -378,10 +377,6 @@ end
 toc
 
 
-if isfield(opt,'sessModel')
-    opt.sessModel = [];
-end
-sessModel = [];
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% PREPARE ADDITIONAL OUTPUTS
 
