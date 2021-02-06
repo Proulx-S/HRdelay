@@ -8,6 +8,17 @@ if ~exist('figOption','var') || isempty(figOption)
     figOption.subj = 1; % 'all' or subjInd
 end
 
+dataType = 'sin';
+svmSpace = 'cart';
+[resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
+svmSpace = 'cartNoAmp';
+[resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
+svmSpace = 'cartNoDelay';
+[resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
+svmSpace = 'cartReal';
+[resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
+
+
 % dataType = 'waveFull';
 % [resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
 % compareDataType(resBS,'wave',dataType,svmSpace,'between-session')
@@ -20,6 +31,10 @@ end
 % [resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
 % compareDataType(resBS,'wave',dataType,svmSpace,'between-session')
 % compareDataType(resWS,'wave',dataType,svmSpace,'within-session')
+
+
+
+
 
 svmSpace = 'cart';
 dataType = 'wave';

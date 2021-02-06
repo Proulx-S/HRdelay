@@ -44,16 +44,16 @@ subjList = param.subjList;
 
 
 %% Load data
-dCAll = cell(size(subjList,1),1);
+dAll = cell(size(subjList,1),1);
 paramAll = cell(size(subjList,1),1);
 for subjInd = 1:size(subjList,1)
     curFile = fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]);
     if verbose; disp(['loading: ' curFile]); end
-    load(curFile,'dC','param');
-    dCAll{subjInd} = dC;
+    load(curFile,'d','param');
+    dAll{subjInd} = d;
     paramAll{subjInd} = param;
 end
-dC = dCAll; clear dAll
+d = dAll; clear dAll
 param = paramAll; clear paramAll
 
 % Average voxels
@@ -62,12 +62,12 @@ for subjInd = 1:length(subjList)
         % Between-session feature selection
         sess = ['sess' num2str(sessInd)];
         sessFeat = ['sess' num2str(~(sessInd-1)+1)];
-        ind = true(1,size(dC{subjInd}.(sess).data,2));
-        ind = ind & dC{subjInd}.(sessFeat).anyCondActivation_mask;
-        ind = ind & ~dC{subjInd}.(sessFeat).vein_mask;
+        ind = true(1,size(d{subjInd}.(sess).sin,2));
+        ind = ind & d{subjInd}.(sessFeat).anyCondActivation_mask;
+        ind = ind & ~d{subjInd}.(sessFeat).vein_mask;
 
-        dC{subjInd}.(sess).data = mean(dC{subjInd}.(sess).data(:,ind,:),2);
-        dC{subjInd}.(sess).hr = mean(dC{subjInd}.(sess).hr(:,ind,:,:),2);
+        d{subjInd}.(sess).sin = mean(d{subjInd}.(sess).sin(:,ind,:),2);
+        d{subjInd}.(sess).hr = mean(d{subjInd}.(sess).hr(:,ind,:,:),2);
     end
 end
 
@@ -75,7 +75,7 @@ end
 condList = {'ori1' 'ori2' 'plaid'};
 xData = nan(length(subjList),length(condList),2);
 for subjInd = 1:length(subjList)
-    xData(subjInd,:,:) = permute(cat(1,mean(dC{subjInd}.sess1.data,1),mean(dC{subjInd}.sess2.data,1)),[2 3 1]);
+    xData(subjInd,:,:) = permute(cat(1,mean(d{subjInd}.sess1.sin,1),mean(d{subjInd}.sess2.sin,1)),[2 3 1]);
 end
 xDataInfo = 'subj x cond[or1, ori2, plaid] x sess';
 
@@ -366,7 +366,7 @@ xLabel = [];
 for subjInd = 1:length(subjList)
     for sessInd = 1:2
 
-        tmp = squeeze(dC{subjInd}.(['sess' num2str(sessInd)]).data);
+        tmp = squeeze(d{subjInd}.(['sess' num2str(sessInd)]).sin);
         tmp = mean(tmp,1);
         xData = cat(1,xData,tmp);
         sz = size(tmp);
@@ -436,7 +436,7 @@ xData = [];
 for subjInd = 1:length(subjList)
     for sessInd = 1:2
         for condInd = 1:3
-            tmp = squeeze(dC{subjInd}.(['sess' num2str(sessInd)]).data);
+            tmp = squeeze(d{subjInd}.(['sess' num2str(sessInd)]).sin);
             xData = [xData; tmp(:)];
         end
     end
@@ -447,7 +447,7 @@ xData = [];
 for subjInd = 1:length(subjList)
     for sessInd = 1:2
         for condInd = 1:3
-            tmp = squeeze(dC{subjInd}.(['sess' num2str(sessInd)]).data);
+            tmp = squeeze(d{subjInd}.(['sess' num2str(sessInd)]).sin);
             tmp = tmp - mean(tmp,1) + xDataMean;
             xData = [xData; tmp(:)];
         end

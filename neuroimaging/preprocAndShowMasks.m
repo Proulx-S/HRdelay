@@ -675,6 +675,22 @@ for subjInd = 1:length(subjList)
         end
     end
     
+    %% Change data to sin
+    for sess = {'sess1' 'sess2'}
+        sess = char(sess);
+        d.(sess).sin = d.(sess).data; d.(sess) = rmfield(d.(sess),'data'); tmp = 1:length(fields(d.(sess))); d.(sess) = orderfields(d.(sess),[tmp(end) tmp(1:end-1)]);
+    end
+    
+    %% Convert to %BOLD
+    for sessInd = 1:2
+        sess = ['sess' num2str(sessInd)];
+        d.(sess).sin = d.(sess).sin./d.(sess).meanBOLD.*100;
+        d.(sess).hr = (d.(sess).hr-d.(sess).meanBOLD)./d.(sess).meanBOLD.*100;
+        if doWave
+            error('code that')
+        end
+    end
+    
     %% Export some parameters
     param.subjList = subjList;
     param.brain = brain;
@@ -691,10 +707,6 @@ for subjInd = 1:length(subjList)
         mkdir(fullfile(funPath,funLevel3));
     end
     
-    for sess = {'sess1' 'sess2'}
-        sess = char(sess);
-        d.(sess).sin = d.(sess).data; d.(sess) = rmfield(d.(sess),'data'); tmp = 1:length(fields(d.(sess))); d.(sess) = orderfields(d.(sess),[tmp(end) tmp(1:end-1)]);
-    end
     tmp = fullfile(funPath,funLevel3,[subjList{subjInd} '_' mfilename]);
     if verbose; disp(['Saving to: ' tmp '.mat']); end
     save(tmp,'d','param'); clear d param

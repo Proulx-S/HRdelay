@@ -44,14 +44,14 @@ subjList = param.subjList;
 
 
 %% Load data
-dCAll = cell(size(subjList,1),1);
+dAll = cell(size(subjList,1),1);
 for subjInd = 1:size(subjList,1)
     curFile = fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]);
     if verbose; disp(['loading ' curFile]); end
-    load(curFile,'dC');
-    dCAll{subjInd} = dC;
+    load(curFile,'d');
+    dAll{subjInd} = d;
 end
-dC = dCAll; clear dAll
+d = dAll; clear dAll
 
 % Average voxels
 for subjInd = 1:length(subjList)
@@ -59,12 +59,12 @@ for subjInd = 1:length(subjList)
         % Between-session feature selection
         sess = ['sess' num2str(sessInd)];
         sessFeat = ['sess' num2str(~(sessInd-1)+1)];
-        ind = true(1,size(dC{subjInd}.(sess).data,2));
-        ind = ind & dC{subjInd}.(sessFeat).anyCondActivation_mask;
-        ind = ind & ~dC{subjInd}.(sessFeat).vein_mask;
+        ind = true(1,size(d{subjInd}.(sess).sin,2));
+        ind = ind & d{subjInd}.(sessFeat).anyCondActivation_mask;
+        ind = ind & ~d{subjInd}.(sessFeat).vein_mask;
 
-        dC{subjInd}.(sess).data = mean(dC{subjInd}.(sess).data(:,ind,:),2);
-        dC{subjInd}.(sess).hr = mean(dC{subjInd}.(sess).hr(:,ind,:,:),2);
+        d{subjInd}.(sess).sin = mean(d{subjInd}.(sess).sin(:,ind,:),2);
+        d{subjInd}.(sess).hr = mean(d{subjInd}.(sess).hr(:,ind,:,:),2);
     end
 end
 
@@ -72,7 +72,7 @@ end
 condList = {'ori1' 'ori2' 'plaid'};
 xData = nan(length(subjList),length(condList),2);
 for subjInd = 1:length(subjList)
-    xData(subjInd,:,:) = permute(cat(1,mean(dC{subjInd}.sess1.data,1),mean(dC{subjInd}.sess2.data,1)),[2 3 1]);
+    xData(subjInd,:,:) = permute(cat(1,mean(d{subjInd}.sess1.sin,1),mean(d{subjInd}.sess2.sin,1)),[2 3 1]);
 end
 xDataInfo = 'subj x cond[or1, ori2, plaid] x sess';
 
@@ -91,11 +91,11 @@ for subjInd = 1:length(subjList)
     for sessInd = 1:2
         sess = ['sess' num2str(sessInd)];
         % response amplitude
-        dC{subjInd}.(sess).hr = dC{subjInd}.(sess).hr./rhoSubj(sessInd).*rhoGroup;
+        d{subjInd}.(sess).hr = d{subjInd}.(sess).hr./rhoSubj(sessInd).*rhoGroup;
 
         % response delay
         %upsample
-        curHR = dC{subjInd}.(sess).hr;
+        curHR = d{subjInd}.(sess).hr;
         curT = permute(linspace(0,11,size(curHR,4)),[1 3 4 2]);
 
         n = size(curHR,4);
@@ -129,7 +129,7 @@ for subjInd = 1:length(subjList)
         end
 %         plot(curT,curHR4(:,i),'o');
 
-        dC{subjInd}.(sess).hr = permute(curHR4,[2 3 4 1]);
+        d{subjInd}.(sess).hr = permute(curHR4,[2 3 4 1]);
     end
 end
 
@@ -137,7 +137,7 @@ end
 condList = {'ori1' 'ori2' 'plaid'};
 xData = nan(length(subjList),length(condList),2,12);
 for subjInd = 1:length(subjList)
-    xData(subjInd,:,:,:) = permute(cat(1,mean(dC{subjInd}.sess1.hr,1),mean(dC{subjInd}.sess2.hr,1)),[2 3 1 4]);
+    xData(subjInd,:,:,:) = permute(cat(1,mean(d{subjInd}.sess1.hr,1),mean(d{subjInd}.sess2.hr,1)),[2 3 1 4]);
 end
 xDataInfo = 'subj x cond[or1, ori2, plaid] x sess x t';
 
@@ -152,7 +152,7 @@ xDataInfo = 'subj x cond[or1, ori2, plaid, ori] x t';
 
 %% Plot results
 fGroup = figure('WindowStyle','docked');
-xDataPlot = xData*100;
+xDataPlot = xData;
 tPlot = t;
 xDataPlot = cat(3,xDataPlot,xDataPlot(:,:,1:7));
 tPlot = cat(2,tPlot,tPlot(1:7)+n);
@@ -213,13 +213,15 @@ if figOption.save
     filename = fullfile(filename,'hr');
     fGroup.Color = 'none';
     set(findobj(fGroup.Children,'type','Axes'),'color','none')
-
-    curFile = filename;
-    curExt = 'svg';
-    saveas(fGroup,[curFile '.' curExt]); if verbose; ([curFile '.' curExt]); end
-    fGroup.Color = 'w';
-    curExt = 'fig';
-    saveas(fGroup,[curFile '.' curExt]); if verbose; ([curFile '.' curExt]); end
-    curExt = 'jpg';
-    saveas(fGroup,[curFile '.' curExt]); if verbose; ([curFile '.' curExt]); end
+    
+    if figOption.save
+        curFile = filename;
+        curExt = 'svg';
+        saveas(fGroup,[curFile '.' curExt]); if verbose; ([curFile '.' curExt]); end
+        fGroup.Color = 'w';
+        curExt = 'fig';
+        saveas(fGroup,[curFile '.' curExt]); if verbose; ([curFile '.' curExt]); end
+        curExt = 'jpg';
+        saveas(fGroup,[curFile '.' curExt]); if verbose; ([curFile '.' curExt]); end
+    end
 end

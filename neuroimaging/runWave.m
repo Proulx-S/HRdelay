@@ -3,7 +3,7 @@ if ~exist('verbose','var')
     verbose = 1;
 end
 
-actuallyRun = 0;
+actuallyRun = 1;
 noMovement = 1;
 if exist('figOption','var') && isfield(figOption,'save')
     saveFig = figOption.save;

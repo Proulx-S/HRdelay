@@ -10,9 +10,6 @@ if ~exist('SVMspace','var') || isempty(SVMspace)
     SVMspace = 'cart'; % 'cart_HTbSess' 'cartNoAmp_HTbSess' 'cartNoDelay_HTbSess'
     % 'hr' 'hrNoAmp' 'cart' 'cartNoAmp' cartNoAmp_HT 'cartReal', 'cartImag', 'pol', 'polMag' 'polMag_T' or 'polDelay'
 end
-if ~exist('dataType','var') || strcmp(dataType,'sin')
-    dataType = 'data';
-end
 if isstruct(SVMspace)
     doPerm = 1;
     res = SVMspace;
@@ -76,16 +73,16 @@ subjList = param.subjList;
 
 
 %% Load data
-dCAll = cell(size(subjList,1),1);
+dAll = cell(size(subjList,1),1);
 for subjInd = 1:size(subjList,1)
     curFile = fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]);
     if verbose; disp(['loading: ' curFile]); end
     
-    load(curFile,'dC');
-    dCAll{subjInd} = dC;
+    load(curFile,'d');
+    dAll{subjInd} = d;
 end
-dC = dCAll; clear dAll
-sessList = fields(dC{1});
+d = dAll; clear dAll
+sessList = fields(d{1});
 
 if verbose
     disp('---');
@@ -93,15 +90,15 @@ if verbose
 end
 
 %% Reorganize
-dP = cell(size(dC));
-for subjInd = 1:length(dC)
+dP = cell(size(d));
+for subjInd = 1:length(d)
     for sessInd = 1:length(sessList)
         sess = ['sess' num2str(sessInd)];
-        dP{subjInd,sessInd} = dC{subjInd}.(sessList{sessInd});
-        dC{subjInd}.(sessList{sessInd}) = [];
+        dP{subjInd,sessInd} = d{subjInd}.(sessList{sessInd});
+        d{subjInd}.(sessList{sessInd}) = [];
     end
 end
-clear dC
+clear d
 
 % figure('WindowStyle','docked');
 % scatter(dP{1}.discrim_T2,dP{1}.waveDiscrim_T2)
@@ -109,7 +106,7 @@ clear dC
 %% Between-session feature selection
 featSel = cell(size(dP));
 for i = 1:numel(dP)
-    featSel{i}.ind = true(1,size(dP{i}.data,2));
+    featSel{i}.ind = true(1,size(dP{i}.sin,2));
     featSel{i}.info = 'V1';
     % Select non-vein voxels
     featSel{i}.ind = featSel{i}.ind & ~dP{i}.vein_mask;
@@ -121,7 +118,7 @@ for i = 1:numel(dP)
     switch dataType
         case {'wave' 'waveFull' 'waveRun' 'waveTrialSparse' 'waveTrialSparseCat2' 'waveTrialSparseRep'}
             featSel{i}.ind = featSel{i}.ind & dP{i}.waveDiscrim_mask;
-        case 'data'
+        case 'sin'
             featSel{i}.ind = featSel{i}.ind & dP{i}.discrim_mask;
         otherwise
             error('X')
@@ -135,7 +132,7 @@ i = 1;
 [~,b] = sort(dP{i}.anyCondActivation_F,'descend');
 b = b(featSel{i}.ind);
 switch dataType
-    case 'data'
+    case 'sin'
         [X,y,k] = getXYK(dP{i},SVMspace);
     case 'waveTrialSparse' % do not average and use 1 tPts out of 12 in each stimulus cycle
         [X,y,k,~] = getXYK_wave(dP{i},SVMspace,'trialSparse');
@@ -198,7 +195,7 @@ for i = 1:numel(dP)
     end
     
     switch dataType
-        case 'data'
+        case 'sin'
             [X,y,k] = getXYK(dP{subjInd,sessInd},SVMspace);
         case 'waveTrialSparse' % do not average and use 1 tPts out of 12 in each stimulus cycle
             [X,y,k,~] = getXYK_wave(dP{subjInd,sessInd},SVMspace,'trialSparse');
@@ -273,7 +270,7 @@ for i = 1:numel(dP)
     % Get cross-session feature-selected data
     sessInd = testInd;
     switch dataType
-        case 'data'
+        case 'sin'
             [X,y,k] = getXYK(dP{subjInd,sessInd},SVMspace);
         case 'waveTrialSparse' % do not average and use 1 tPts out of 12 in each stimulus cycle
             [X,y,k,~] = getXYK_wave(dP{subjInd,sessInd},SVMspace,'trialSparse');
@@ -312,7 +309,7 @@ end
 acc_fdr = mafdr([resBS_sess.acc_p],'BHFDR',true);
 for i = 1:numel(dP)
     resBS_sess(i).acc_fdr = acc_fdr(i);
-    resBS_sess(i).nVoxOrig = size(dP{i}.data,2);
+    resBS_sess(i).nVoxOrig = size(dP{i}.sin,2);
     resBS_sess(i).nVox = sum(featSel{i}.ind);
     resBS_sess(i).SVMspace = SVMspace;
 end
@@ -325,7 +322,7 @@ end
 acc_fdr = mafdr([resWS_sess.acc_p],'BHFDR',true);
 for i = 1:numel(dP)
     resWS_sess(i).acc_fdr = acc_fdr(i);
-    resWS_sess(i).nVoxOrig = size(dP{i}.data,2);
+    resWS_sess(i).nVoxOrig = size(dP{i}.sin,2);
     resWS_sess(i).nVox = sum(featSel{i}.ind);
     resWS_sess(i).SVMspace = SVMspace;
 end
@@ -416,9 +413,9 @@ switch SVMspace
             'cartReal' 'cartReal_T'...
             'polMag' 'polMag_T'...
             'polDelay'}
-        nSamplePaire = size(dP.data,1);
-        x1 = dP.data(:,:,1);
-        x2 = dP.data(:,:,2);
+        nSamplePaire = size(dP.sin,1);
+        x1 = dP.sin(:,:,1);
+        x2 = dP.sin(:,:,2);
     otherwise
         error('X')
 end
@@ -434,11 +431,6 @@ k = cat(1,k1,k2); clear k1 k2
 function [x,y,k,t] = getXYK_wave(dP,SVMspace,opt)
 % Define x(data), y(label) and k(xValFolds)
 switch SVMspace
-    case {'hr' 'hrNoAmp'}
-        error('double-check that')
-        nSamplePaire = size(dP.hr,1);
-        x1 = dP.hr(:,:,1,:); x1 = x1(:,:);
-        x2 = dP.hr(:,:,2,:); x2 = x2(:,:);
     case {'cart' 'cart_HT' 'cart_HTbSess'...
             'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'...
             'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'...
@@ -487,44 +479,6 @@ switch SVMspace
     otherwise
         error('X')
 end
-
-% function [x,y,k,t] = getXYK_waveFull(dP,SVMspace)
-% % Define x(data), y(label) and k(xValFolds)
-% switch SVMspace
-%     case {'hr' 'hrNoAmp'}
-%         error('double-check that')
-%         nSamplePaire = size(dP.hr,1);
-%         x1 = dP.hr(:,:,1,:); x1 = x1(:,:);
-%         x2 = dP.hr(:,:,2,:); x2 = x2(:,:);
-%     case {'cart' 'cart_HT' 'cart_HTbSess'...
-%             'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'...
-%             'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'...
-%             'cartReal' 'cartReal_T'...
-%             'polMag' 'polMag_T'...
-%             'polDelay'}
-%         dP.wave(:,:,:,dP.bad) = [];
-%         
-% %         ptsPerCycle = 12;
-% %         sz = size(dP.wave);
-% %         sz = [sz(1:3) ptsPerCycle sz(4)/ptsPerCycle];
-% %         x = permute(mean(reshape(dP.wave,sz),4),[2 3 5 1 4]);
-%         x = permute(dP.wave,[2 3 4 1]);
-%         
-%         sz = size(x);
-%         y = repmat(1:sz(2),[1 1 sz(3:4)]);
-%         t = repmat(permute(1:sz(3),[1 3 2 4]),[1 sz(2) 1 sz(4)]);
-%         k = repmat(permute(1:sz(4),[1 3 4 2]),[1 sz(2:3) 1]);
-%         x = x(:,:,:);
-%         y = y(:,:,:);
-%         t = t(:,:,:);
-%         k = k(:,:,:);
-%         x = cat(1,permute(x(:,1,:),[3 1 2]),permute(x(:,2,:),[3 1 2]));
-%         y = cat(1,permute(y(:,1,:),[3 1 2]),permute(y(:,2,:),[3 1 2]));
-%         t = cat(1,permute(t(:,1,:),[3 1 2]),permute(t(:,2,:),[3 1 2]));
-%         k = cat(1,permute(k(:,1,:),[3 1 2]),permute(k(:,2,:),[3 1 2]));
-%     otherwise
-%         error('X')
-% end
 
 
 function [svmModel,normTr] = SVMtrain(Y,X,SVMspace,K,T)
