@@ -1,6 +1,7 @@
 function inspectSubjAndExclude(figOption,verbose)
 close all
 actuallyRun = 1;
+doWave = 0;
 if ~exist('verbose','var')
     verbose = 1;
 end
@@ -62,12 +63,12 @@ f = figure('WindowStyle','docked');
 
 sz = 0;
 for subjInd = 1:length(subjList)
-    tmp = size(dAll{subjInd}.sess1.data,1);
+    tmp = size(dAll{subjInd}.sess1.sin,1);
     if tmp>sz; sz = tmp; end
 end
 
 for subjInd = 1:length(subjList)
-    tmp1 = squeeze(mean(dAll{subjInd}.sess1.data,2))';
+    tmp1 = squeeze(mean(dAll{subjInd}.sess1.sin,2))';
     tmpInd = squeeze(dAll{subjInd}.sess1.runLabel)';
     [~,b] = sort(tmpInd(:));
     tmpInd(b) = 1:numel(tmpInd);
@@ -76,7 +77,7 @@ for subjInd = 1:length(subjList)
     tmp1 = angle(tmp1);
     tmp1 = wrapToPi(tmp1-circ_mean(tmp1));
 
-    tmp2 = squeeze(mean(dAll{subjInd}.sess2.data,2))';
+    tmp2 = squeeze(mean(dAll{subjInd}.sess2.sin,2))';
     tmpInd = squeeze(dAll{subjInd}.sess2.runLabel)';
     [~,b] = sort(tmpInd(:));
     tmpInd(b) = 1:numel(tmpInd);
@@ -106,7 +107,7 @@ legend(char(subjList))
 % Update exclude
 subjInd = 2;
 sessInd = 1;
-dataTmp = angle(mean(dAll{subjInd}.(['sess' num2str(sessInd)]).data,2));
+dataTmp = angle(mean(dAll{subjInd}.(['sess' num2str(sessInd)]).sin,2));
 dataTmp = wrapToPi(dataTmp - circ_mean(dataTmp));
 dataTmp = abs(dataTmp);
 a = max(dataTmp(:),[],1);
@@ -135,7 +136,7 @@ if exist('exclusion','var') && ~isempty(exclusion) && ~isempty(exclusion.subj)
         if verbose; disp(['Excluding: ' subjList{subjInd} ', sess' num2str(sessInd) ', runTriplet(repeat)=' num2str(runInd)]); end
 
         allFields = fields(dAll{subjInd}.(sess));
-        nRepeat = size(dAll{subjInd}.(sess).data,1);
+        nRepeat = size(dAll{subjInd}.(sess).sin,1);
         for ii = 1:length(allFields)
             curField = dAll{subjInd}.(sess).(allFields{ii});
             isDataField = ( isnumeric(curField) || islogical(curField) ) && size(curField,1)==nRepeat;
@@ -166,12 +167,12 @@ for subjInd = 1:length(subjList)
             % Between-session feature selection
             sess = ['sess' num2str(sessInd)];
             sessFeat = ['sess' num2str(~(sessInd-1)+1)];
-            ind = true(1,size(dAll{subjInd}.(sess).data,2));
+            ind = true(1,size(dAll{subjInd}.(sess).sin,2));
             ind = ind & dAll{subjInd}.(sessFeat).anyCondActivation_mask;
             ind = ind & ~dAll{subjInd}.(sessFeat).vein_mask;
             % Polar plot
             subplot(2,2,sessInd)
-            xData = squeeze(mean(dAll{subjInd}.(sess).data(:,ind,:),2));
+            xData = squeeze(mean(dAll{subjInd}.(sess).sin(:,ind,:),2));
             for condInd = 1:size(xData,2)
                 [theta,rho] = cart2pol(real(xData(:,condInd)),imag(xData(:,condInd)));
                 h(condInd) = polarplot(theta,rho,'o'); hold on
@@ -211,49 +212,52 @@ for subjInd = 1:length(subjList)
             box off
             yLim(:,sessInd,subjInd) = ylim;
         end
-        fSubjWave{subjInd} = figure('WindowStyle','docked','visible',visibility);
-        tmpData = permute(d.sess1.data,[2 1 3]);
-        tmpData = tmpData(:,:);
-        tmpData = tmpData - mean(tmpData,2) + mean(tmpData(:));
-        theta = angle(tmpData);
-        thetaMean = angle(mean(tmpData(:)));
-        rho = abs(tmpData);
-        [u,v] = pol2cart(wrapToPi(theta - thetaMean),rho);
-        tmpData = complex(u,v);
-        
-        tmpWave = permute(mean(d.sess1.wave(:,:,:,~(d.sess1.badEnd & d.sess1.badStart)),4),[2 1 3]);
-        tmpWave = tmpWave(:,:);
-        tmpWave = tmpWave - mean(tmpWave,2) + mean(tmpWave(:));
-        theta = angle(tmpWave);
-        thetaMean = angle(mean(tmpWave(:)));
-        rho = abs(tmpWave);
-        [u,v] = pol2cart(wrapToPi(theta - thetaMean),rho);
-        tmpWave = complex(u,v);
-        
-        subplot(1,2,1)
-        hScat = scatter(abs(tmpData(:)),abs(tmpWave(:)),'filled');
-        hScat.MarkerFaceColor = 'k'; hScat.SizeData = hScat.SizeData/8;
-        alpha(hScat,0.05)
-        xlabel('sinFit');
-        ylabel('wave');
-        title('amp (a.u.)')
-        
-        subplot(1,2,2)
-        hScat = scatter(angle(tmpData(:)),angle(tmpWave(:)),'filled');
-        hScat.MarkerFaceColor = 'k'; hScat.SizeData = hScat.SizeData/8;
-        alpha(hScat,0.05)
-        xlabel('sinFit');
-        ylabel('wave');
-        title('delay (s)')
-        ax = gca;
-        ax.XTick = [-pi -pi/2 0 pi/2 pi];
-        ax.XTickLabel = ax.XTick./pi*6;
-        ax.XLim = [-pi pi];
-        ax.YTick = [-pi -pi/2 0 pi/2 pi];
-        ax.YTickLabel = ax.YTick./pi*6;
-        ax.YLim = [-pi pi];
-        
-        suptitle([subjList{subjInd} '; sess' num2str(sessInd)])
+        if doWave
+            error('code that')
+            fSubjWave{subjInd} = figure('WindowStyle','docked','visible',visibility);
+            tmpData = permute(dAll{subjInd}.sess1.sin,[2 1 3]);
+            tmpData = tmpData(:,:);
+            tmpData = tmpData - mean(tmpData,2) + mean(tmpData(:));
+            theta = angle(tmpData);
+            thetaMean = angle(mean(tmpData(:)));
+            rho = abs(tmpData);
+            [u,v] = pol2cart(wrapToPi(theta - thetaMean),rho);
+            tmpData = complex(u,v);
+            
+            tmpWave = permute(mean(dAll{subjInd}.sess1.wave(:,:,:,~(dAll{subjInd}.sess1.badEnd & dAll{subjInd}.sess1.badStart)),4),[2 1 3]);
+            tmpWave = tmpWave(:,:);
+            tmpWave = tmpWave - mean(tmpWave,2) + mean(tmpWave(:));
+            theta = angle(tmpWave);
+            thetaMean = angle(mean(tmpWave(:)));
+            rho = abs(tmpWave);
+            [u,v] = pol2cart(wrapToPi(theta - thetaMean),rho);
+            tmpWave = complex(u,v);
+            
+            subplot(1,2,1)
+            hScat = scatter(abs(tmpData(:)),abs(tmpWave(:)),'filled');
+            hScat.MarkerFaceColor = 'k'; hScat.SizeData = hScat.SizeData/8;
+            alpha(hScat,0.05)
+            xlabel('sinFit');
+            ylabel('wave');
+            title('amp (a.u.)')
+            
+            subplot(1,2,2)
+            hScat = scatter(angle(tmpData(:)),angle(tmpWave(:)),'filled');
+            hScat.MarkerFaceColor = 'k'; hScat.SizeData = hScat.SizeData/8;
+            alpha(hScat,0.05)
+            xlabel('sinFit');
+            ylabel('wave');
+            title('delay (s)')
+            ax = gca;
+            ax.XTick = [-pi -pi/2 0 pi/2 pi];
+            ax.XTickLabel = ax.XTick./pi*6;
+            ax.XLim = [-pi pi];
+            ax.YTick = [-pi -pi/2 0 pi/2 pi];
+            ax.YTickLabel = ax.YTick./pi*6;
+            ax.YLim = [-pi pi];
+            
+            suptitle([subjList{subjInd} '; sess' num2str(sessInd)])
+        end
     end
 end
 rLim = [0 max(rLim(2,:))];
@@ -326,8 +330,8 @@ if actuallyRun
         disp(subjList{subjInd})
         tmp = fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]);
         if verbose; disp(tmp); end
-        dC = dAll{subjInd};
-        save(tmp,'dC','param','-append');
+        d = dAll{subjInd};
+        save(tmp,'d','param','-append');
     end
 end
 

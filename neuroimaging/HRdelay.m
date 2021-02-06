@@ -24,7 +24,6 @@ runFit(verbose,figOption)
 runWave(verbose,figOption)
 
 preprocAndShowMasks(featSel_bSess,figOption,verbose)
-
 inspectSubjAndExclude(figOption,verbose)
 
 runGroupAnalysis_sin(figOption,verbose)
