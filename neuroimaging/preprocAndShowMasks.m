@@ -1,7 +1,7 @@
 function preprocAndShowMasks(featSel_bSess,figOption,verbose)
 close all
 actuallyRun = 1;
-doWave = 1;
+doWave = 0;
 if ~exist('verbose','var')
     verbose = 1;
 end
@@ -72,11 +72,12 @@ funLevel1 = 'x';
 funLevel2 = 'y';
 funLevel3 = 'z';
 if noMovement
-    sinFitFile = 'v1SinCos_1perRun.mat';
-    hrFitFile = 'v1resp_1perRun_resp.mat';
+    sinFitFile = 'v1SinCos.mat';
+    hrFitFile = 'v1resp_resp.mat';
 else
-    sinFitFile = 'v1SinCos_1perRun_move12.mat';
-    hrFitFile = 'v1resp_1perRun_move12_resp.mat';
+    error('this option was removed')
+    sinFitFile = 'v1SinCos_move12.mat';
+    hrFitFile = 'v1resp_move12_resp.mat';
 end
 subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'}';
 
@@ -127,6 +128,13 @@ for subjInd = 1:length(subjList)
     repeatLabel = repeatLabel(b);
     %     [runLabel' sessLabel' condLabel' repeatLabel']
 
+    %% Define exclusion
+    exclusion.subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'};
+    exclusion.subj = 2;
+    exclusion.sess = {1};
+    exclusion.run = {4};
+    exclusion.cond = {2};
+    
     %% Brain image
     tmpFilename = dir(fullfile(funPath,funLevel1,subjList{subjInd},'trun101_preprocessed.nii*'));
     if all(size(tmpFilename)==[1 1]); tmpFilename = tmpFilename.name; else; error('X'); end
@@ -179,7 +187,13 @@ for subjInd = 1:length(subjList)
         sess = ['sess' num2str(sessInd)];
         runInd = sessLabel==sessInd;
         data.(sess).data = complex(X(:,:,:,runInd),Y(:,:,:,runInd));
-        data.(sess).meanBOLD = results.OLS.mixed.constant.brain(:,:,:,runInd);
+        data.(sess).meanBOLD = results.OLS.mixed.poly.p0(:,:,:,runInd);
+        switch veinSource
+            case 'fullModelResid'
+                data.(sess).veinMap = results.OLS.mixed.veinFull(:,:,:,runInd);
+            case 'reducedModelResid'
+                data.(sess).veinMap = results.OLS.mixed.veinReduced(:,:,:,runInd);
+        end
         data.(sess).condLabel = permute(condLabel(runInd),[1 3 4 2]);
         data.(sess).runLabel = permute(runLabel(runInd),[1 3 4 2]);
         %         [squeeze(data.(sess).condLabel) squeeze(data.(sess).runLabel)]
@@ -189,10 +203,18 @@ for subjInd = 1:length(subjList)
         cond3 = data.(sess).condLabel==3;
         data.(sess).data = cat(5,data.(sess).data(:,:,:,cond1),data.(sess).data(:,:,:,cond2),data.(sess).data(:,:,:,cond3));
         data.(sess).meanBOLD = cat(5,data.(sess).meanBOLD(:,:,:,cond1),data.(sess).meanBOLD(:,:,:,cond2),data.(sess).meanBOLD(:,:,:,cond3));
+        data.(sess).veinMap = cat(5,data.(sess).veinMap(:,:,:,cond1),data.(sess).veinMap(:,:,:,cond2),data.(sess).veinMap(:,:,:,cond3));
         data.(sess).runLabel = cat(5,data.(sess).runLabel(:,:,:,cond1),data.(sess).runLabel(:,:,:,cond2),data.(sess).runLabel(:,:,:,cond3));
         data.(sess).info = 'x X y X z X run X cond[ori1,ori2,plaid]';
-        
         data.(sess) = rmfield(data.(sess),'condLabel');
+        
+        % redefine exclusion
+        sz = size(data.(sess).data); sz(1:3) = 1;
+        data.(sess).excl = false(sz);
+        if length(exclusion.subj)>1; error('Need to code for multiple exclusions'); end
+        if strcmp(exclusion.subjList{exclusion.subj},subjList{subjInd}) && exclusion.sess{1}==sessInd
+            data.(sess).excl(:,:,:,exclusion.run{1},:) = true;
+        end
     end
     clear X Y
     
@@ -204,23 +226,8 @@ for subjInd = 1:length(subjList)
     %     imagesc(abs(data.(sess).data(:,:,10,1,1)))
     
     %% Stats for later between-session feature selection
-    exclusion.subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'};
-    exclusion.subj = 2;
-    exclusion.sess = {1};
-    exclusion.run = {4};
-    exclusion.cond = {2};
     for sessInd = 1:2
         sess = ['sess' num2str(sessInd)];
-        % First deal with exclusion
-        if length(exclusion.subj)>1; error('Need to code for multiple exclusions'); end
-        if strcmp(exclusion.subjList{exclusion.subj},subjList{subjInd}) && exclusion.sess{1}==sessInd
-
-            runInd = repeatLabel==exclusion.run{1} & sessLabel==exclusion.sess{1};
-            runInd = ~runInd;
-        else
-            runInd = true(size(runLabel));
-        end
-        
         
         % Activated voxels
         if ~featSel_bSess.activation.doIt
@@ -274,12 +281,9 @@ for subjInd = 1:length(subjList)
             error('code that')
         else
             % get vein score
-            switch veinSource
-                case 'fullModelResid'
-                    featSel.(sess).vein_score(maskFitArea) = mean(results.OLS.mixed.veinFull(:,:,:,runInd & sessLabel==sessInd),4);
-                case 'reducedModelResid'
-                    featSel.(sess).vein_score(maskFitArea) = mean(results.OLS.mixed.veinReduced(:,:,:,runInd & sessLabel==sessInd),4);
-            end
+            tmp = data.(sess).veinMap(:,:,:,~any(data.(sess).excl,5),:);
+            featSel.(sess).vein_score(maskFitArea) = mean(tmp(:,:,:,:),4);
+            
             % get vein threshold as the percentile of ACTIVE (see Activation map above) voxels in ROI
             maskTmp = featSel.(sess).anyCondActivation_mask & maskROI;
             %             % get vein threshold as percentile of voxels in ROI
@@ -305,9 +309,9 @@ for subjInd = 1:length(subjList)
         featSel.(sess).discrim_mask = true(size(brain));
         if ~featSel_bSess.vein.doIt
             error('code that')
-        else
+        else            
             % get discriminant voxels (in vector format within ROI)
-            x = data.(sess).data;
+            x = data.(sess).data(:,:,:,~any(data.(sess).excl,5),:);
             ind = false(size(x,[1 2 3]));
             ind(:) = maskROI(maskFitArea);
             x = permute(x,[4 5 1 2 3]);
@@ -363,7 +367,7 @@ for subjInd = 1:length(subjList)
         filename = fullfile(pwd,mfilename);
         if ~exist(filename,'dir'); mkdir(filename); end
         filename = fullfile(filename,'cmap.mat');
-        if exist(filename,'file')
+        if exist(filename,'file') && ~actuallyRun
             load(filename,'cMap_F','cMap_vein');
         else
             try
