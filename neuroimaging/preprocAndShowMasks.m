@@ -1,7 +1,7 @@
 function preprocAndShowMasks(featSel_bSess,figOption,verbose)
 close all
 actuallyRun = 1;
-doWave = 0;
+doWave = 1;
 if ~exist('verbose','var')
     verbose = 1;
 end
@@ -44,7 +44,7 @@ if ~isfield(featSel_bSess,'discrim') || isempty(featSel_bSess.discrim)
 end
 if featSel_bSess.discrim.doIt
     if ~isfield(featSel_bSess.discrim,'percentile') || isempty(featSel_bSess.discrim.percentile)
-        featSel_bSess.vein.percentile = 20;
+        featSel_bSess.discrim.percentile = 20;
     end
 end
 
@@ -87,7 +87,7 @@ for tmpPath = {'repoPath' 'dataDir' 'anatPath' 'funPath'}
 end
 
 
-for subjInd = 1:length(subjList)
+for subjInd = 2%:length(subjList)
     if ~actuallyRun && figOption.subj~=subjInd && figOption.subj~=inf
         continue
     end
@@ -205,9 +205,6 @@ for subjInd = 1:length(subjList)
         data.(sess).meanBOLD = cat(5,data.(sess).meanBOLD(:,:,:,cond1),data.(sess).meanBOLD(:,:,:,cond2),data.(sess).meanBOLD(:,:,:,cond3));
         data.(sess).veinMap = cat(5,data.(sess).veinMap(:,:,:,cond1),data.(sess).veinMap(:,:,:,cond2),data.(sess).veinMap(:,:,:,cond3));
         data.(sess).runLabel = cat(5,data.(sess).runLabel(:,:,:,cond1),data.(sess).runLabel(:,:,:,cond2),data.(sess).runLabel(:,:,:,cond3));
-        data.(sess).info = 'x X y X z X run X cond[ori1,ori2,plaid]';
-        data.(sess) = rmfield(data.(sess),'condLabel');
-        
         % redefine exclusion
         sz = size(data.(sess).data); sz(1:3) = 1;
         data.(sess).excl = false(sz);
@@ -215,6 +212,8 @@ for subjInd = 1:length(subjList)
         if strcmp(exclusion.subjList{exclusion.subj},subjList{subjInd}) && exclusion.sess{1}==sessInd
             data.(sess).excl(:,:,:,exclusion.run{1},:) = true;
         end
+        data.(sess).info = 'x X y X z X run X cond[ori1,ori2,plaid]';
+        data.(sess) = rmfield(data.(sess),'condLabel');
     end
     clear X Y
     
@@ -550,7 +549,7 @@ for subjInd = 1:length(subjList)
     
     %% Load wave data
     if doWave
-        waveFile = 'v1wave';
+        waveFile = 'v1Wave';
         load(fullfile(funPath,funLevel2,subjList{subjInd},[waveFile '.mat']),'results')
         
         %% Split sessions and conditions
@@ -558,7 +557,7 @@ for subjInd = 1:length(subjList)
             sess = ['sess' num2str(sessInd)];
             runInd = sessLabel==sessInd;
             if sessInd==1
-                wave.(sess).data = permute(results.wave(:,:,:,:,runInd),[1 2 3 5 6 4]); results.wave(:,:,:,:,runInd) = [];
+                wave.(sess).data = permute(results.wave(:,:,:,runInd,:),[1 2 3 5 6 4]); results.wave(:,:,:,runInd,:) = [];
             else
                 wave.(sess).data = permute(results.wave,[1 2 3 5 6 4]); results.wave = [];
             end
@@ -569,10 +568,10 @@ for subjInd = 1:length(subjList)
             cond1 = wave.(sess).condLabel==1;
             cond2 = wave.(sess).condLabel==2;
             cond3 = wave.(sess).condLabel==3;
-            wave.(sess).data = cat(5,wave.(sess).data(:,:,:,cond1,:,:),wave.(sess).data(:,:,:,cond2,:,:),wave.(sess).data(:,:,:,cond3,:,:));
+            wave.(sess).data = permute(cat(5,wave.(sess).data(:,:,:,:,:,cond1),wave.(sess).data(:,:,:,:,:,cond2),wave.(sess).data(:,:,:,:,:,cond3)),[1 2 3 6 5 4]);
             wave.(sess).runLabel = cat(5,wave.(sess).runLabel(:,:,:,cond1,:,:),wave.(sess).runLabel(:,:,:,cond2,:,:),wave.(sess).runLabel(:,:,:,cond3,:,:));
-            wave.(sess).badStart = permute(results.badStart,[1 3 4 5 6 2]);
-            wave.(sess).badEnd = permute(results.badEnd,[1 3 4 5 6 2]);
+            wave.(sess).condLabel = cat(5,wave.(sess).condLabel(:,:,:,cond1,:,:),wave.(sess).condLabel(:,:,:,cond2,:,:),wave.(sess).condLabel(:,:,:,cond3,:,:));
+            wave.(sess).good = permute(squeeze(results.good),[2 3 4 5 6 1]);
             wave.(sess).info = 'x X y X z X run X cond[ori1,ori2,plaid] X time';
             wave.(sess) = rmfield(wave.(sess),'condLabel');
         end
@@ -602,11 +601,11 @@ for subjInd = 1:length(subjList)
             d.(sess).wave = permute(wave.(sess).data,[4 5 6 1 2 3]); wave.(sess).data = [];
             d.(sess).wave = d.(sess).wave(:,:,:,voxInd);
             d.(sess).wave = permute(d.(sess).wave,[1 4 2 3]);
-            d.(sess).badStart = permute(wave.(sess).badStart,[1 2 3 6 4 5]);
-            d.(sess).badEnd = permute(wave.(sess).badEnd,[1 2 3 6 4 5]);
+            d.(sess).good = permute(wave.(sess).good,[1 2 3 6 4 5]);
         end
         d.(sess).runLabel = permute(data.(sess).runLabel,[4 5 1 2 3]);
         d.(sess).runLabel = permute(d.(sess).runLabel,[1 3 2]);
+        d.(sess).excl = permute(data.(sess).excl,[4 1 5 2 3]);
         d.(sess).info = 'run x vox x cond[ori1, ori2, plaid] X TR';
         
 %         ind = ~(d.(sess).badStart | d.(sess).badEnd);
@@ -645,7 +644,10 @@ for subjInd = 1:length(subjList)
     %% Discriminant voxels based on wave
     if doWave
         for sessInd = 1:2
+            error('Grrrrr ''good'' is not good')
             sess = ['sess' num2str(sessInd)];
+            x = mean(d.(sess).wave(:,:,:,d.(sess).good),4);
+            
             
             ptsPerCycle = 12;
             nPts = nnz(~d.(sess).badEnd);
