@@ -545,6 +545,25 @@ for subjInd = 1:length(subjList)
         continue
     end
     
+    %% Load detrended time-series
+    filename = 'v1SinCos_detrendedData';
+    load(fullfile(funPath,funLevel2,subjList{subjInd},[filename '.mat']),'detrendedData')
+    
+    for sessInd = 1:2
+        sess = ['sess' num2str(sessInd)];
+        runInd = sessLabel==sessInd;
+        if sessInd==1
+            data.(sess).ts = cat(5,detrendedData{runInd}); detrendedData(runInd) = [];
+        else
+            data.(sess).ts = cat(5,detrendedData{:}); clear detrendedData
+        end
+        cond1 = condLabel(runInd)==1;
+        cond2 = condLabel(runInd)==2;
+        cond3 = condLabel(runInd)==3;
+        data.(sess).ts = permute(cat(6,data.(sess).ts(:,:,:,:,cond1),data.(sess).ts(:,:,:,:,cond2),data.(sess).ts(:,:,:,:,cond3)),[1 2 3 5 6 4]);
+        data.(sess) = orderfields(data.(sess),[1 7 2 3 4 5 6]);
+        data.(sess).info = strjoin({data.(sess).info 'time'},' X ');
+    end
     
     
     %% Load wave data
@@ -591,6 +610,9 @@ for subjInd = 1:length(subjList)
         d.(sess).data = permute(data.(sess).data,[4 5 1 2 3]); data.(sess).data = [];
         d.(sess).data = d.(sess).data(:,:,voxInd);
         d.(sess).data = permute(d.(sess).data,[1 3 2]);
+        d.(sess).ts = permute(data.(sess).ts,[4 5 6 1 2 3]); data.(sess).ts = [];
+        d.(sess).ts = d.(sess).ts(:,:,:,voxInd);
+        d.(sess).ts = permute(d.(sess).ts,[1 4 2 3]);
         d.(sess).meanBOLD = permute(data.(sess).meanBOLD,[4 5 1 2 3]); data.(sess).meanBOLD = [];
         d.(sess).meanBOLD = d.(sess).meanBOLD(:,:,voxInd);
         d.(sess).meanBOLD = permute(d.(sess).meanBOLD,[1 3 2]);
@@ -716,6 +738,7 @@ for subjInd = 1:length(subjList)
         end
         
         d.(sess).sin = d.(sess).sin./d.(sess).meanBOLD.*100;
+        d.(sess).ts = d.(sess).ts./d.(sess).meanBOLD.*100;
         d.(sess).wave = d.(sess).wave./d.(sess).meanBOLD.*100;
         d.(sess).hr = (d.(sess).hr-d.(sess).meanBOLD)./d.(sess).meanBOLD.*100;
     end
