@@ -87,7 +87,7 @@ for tmpPath = {'repoPath' 'dataDir' 'anatPath' 'funPath'}
 end
 
 
-for subjInd = 2%:length(subjList)
+for subjInd = 1:length(subjList)
     if ~actuallyRun && figOption.subj~=subjInd && figOption.subj~=inf
         continue
     end
@@ -210,7 +210,7 @@ for subjInd = 2%:length(subjList)
         data.(sess).excl = false(sz);
         if length(exclusion.subj)>1; error('Need to code for multiple exclusions'); end
         if strcmp(exclusion.subjList{exclusion.subj},subjList{subjInd}) && exclusion.sess{1}==sessInd
-            data.(sess).excl(:,:,:,exclusion.run{1},:) = true;
+            data.(sess).excl(:,:,:,exclusion.run{1},exclusion.cond{1}) = true;
         end
         data.(sess).info = 'x X y X z X run X cond[ori1,ori2,plaid]';
         data.(sess) = rmfield(data.(sess),'condLabel');
@@ -644,26 +644,25 @@ for subjInd = 2%:length(subjList)
     %% Discriminant voxels based on wave
     if doWave
         for sessInd = 1:2
-            error('Grrrrr ''good'' is not good')
             sess = ['sess' num2str(sessInd)];
-            x = mean(d.(sess).wave(:,:,:,d.(sess).good),4);
             
-            
+            bad = ~d.(sess).good;
             ptsPerCycle = 12;
-            nPts = nnz(~d.(sess).badEnd);
+            nPts = nnz(~bad);
             nCycle = floor(nPts/12)-1;
             startCycles = (nPts - nCycle*ptsPerCycle)/ptsPerCycle;
-            d.(sess).badStart = false(size(d.(sess).badStart));
-            d.(sess).badStart(1:floor(startCycles*ptsPerCycle)) = true;
-            d.(sess).bad = d.(sess).badStart | d.(sess).badEnd;
+            bad(1:floor(startCycles*ptsPerCycle)) = true;
+            d.(sess).good = d.(sess).good & ~bad;
             
-            x = mean(d.(sess).wave(:,:,:,~d.(sess).bad),4);
+            % take only good and non-excluded points and average time out
+            x = mean(d.(sess).wave(~any(d.(sess).excl,3),:,:,d.(sess).good),4);
             nVox = size(x,2);
             featStat = nan(1,nVox);
             featP = nan(1,nVox);
+            x1 = x(:,:,1); x2 = x(:,:,2); x3 = x(:,:,3); clear x
             parfor voxInd = 1:nVox
-                stats = T2Hot2d(cat(1,cat(2,real(x(:,voxInd,1)),imag(x(:,voxInd,1))),...
-                                      cat(2,real(x(:,voxInd,2)),imag(x(:,voxInd,2)))...
+                stats = T2Hot2d(cat(1,cat(2,real(x1(:,voxInd)),imag(x1(:,voxInd))),...
+                                      cat(2,real(x2(:,voxInd)),imag(x2(:,voxInd)))...
                                       ));
                 featStat(voxInd) = stats.T2;
                 featP(voxInd) = stats.P;
@@ -686,11 +685,39 @@ for subjInd = 2%:length(subjList)
     %% Convert to %BOLD
     for sessInd = 1:2
         sess = ['sess' num2str(sessInd)];
-        d.(sess).sin = d.(sess).sin./d.(sess).meanBOLD.*100;
-        d.(sess).hr = (d.(sess).hr-d.(sess).meanBOLD)./d.(sess).meanBOLD.*100;
-        if doWave
-            error('code that')
+        
+        if doWave && ( (subjInd==figOption.subj || figOption.subj==inf) && sessInd == 1)
+            x = d.(sess).sin(~any(d.(sess).excl,3),:,:);
+            y = mean(d.(sess).wave(~any(d.(sess).excl,3),:,:,d.(sess).good),4);
+            figure('WindowStyle','docked');
+            subplot(2,1,1)
+            hScat = scatter(abs(x(:)),abs(y(:)),'filled'); hold on
+            xlabel('sin')
+            ylabel('wave')
+            alpha(hScat,0.01)
+            ax = gca;
+            ax.DataAspectRatio = [1 1 1];
+            ax.PlotBoxAspectRatio = [1 1 1];
+            plot(xlim,ylim,'k')
+            grid on
+            title('amplitude')
+            
+            subplot(2,1,2)
+            hScat = scatter(angle(x(:)),angle(y(:)),'filled'); hold on
+            xlabel('sin')
+            ylabel('wave')
+            alpha(hScat,0.01)
+            ax = gca;
+            ax.DataAspectRatio = [1 1 1];
+            ax.PlotBoxAspectRatio = [1 1 1];
+            plot(xlim,ylim,'k')
+            grid on
+            title('delay')
         end
+        
+        d.(sess).sin = d.(sess).sin./d.(sess).meanBOLD.*100;
+        d.(sess).wave = d.(sess).wave./d.(sess).meanBOLD.*100;
+        d.(sess).hr = (d.(sess).hr-d.(sess).meanBOLD)./d.(sess).meanBOLD.*100;
     end
     
     %% Export some parameters
@@ -713,11 +740,11 @@ for subjInd = 2%:length(subjList)
     if verbose; disp(['Saving to: ' tmp '.mat']); end
     save(tmp,'d','param'); clear d param
     
-    %% Reorder for notebook
-    if subjInd==figOption.subj
-        fList = [f{:}]';
-        fList = fList([1 7 2 5 4 6 3]);
-        delete(fList(1)); fList(1) = [];
-        set(0,'Children',flipud(fList))
-    end
+%     %% Reorder for notebook
+%     if subjInd==figOption.subj
+%         fList = [f{:}]';
+%         fList = fList([1 7 2 5 4 6 3]);
+%         delete(fList(1)); fList(1) = [];
+%         set(0,'Children',flipud(fList))
+%     end
 end

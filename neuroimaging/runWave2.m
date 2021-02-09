@@ -89,7 +89,8 @@ for subjInd = 1:length(subjList)
     cfs = nan([sz(1:3) length(detrendedData) sz(end)]);
     for i = 1:length(detrendedData)
         disp(['Run' num2str(i) '/' num2str(length(detrendedData))])
-        [cfsTmp,t,good,wave,wave_t,frq,waveEnergy] = getWaves(detrendedData{i}); detrendedData{i} = [];
+        showFig = (figOption.subj==subjInd || figOption.subj == inf) && i == 1;
+        [cfsTmp,t,good,wave,wave_t,frq,waveEnergy] = getWaves(detrendedData{i},showFig); detrendedData{i} = [];
         cfs(:,:,:,i,:) = cfsTmp(:,:,:,:,frqInd);
     end
     t = permute(t,[1 2 3 5 4]);
@@ -112,7 +113,10 @@ for subjInd = 1:length(subjList)
     disp(['saved to ' filenameOut '.mat'])
 end
 
-function [cfs,t,good,wave,wave_t,frq,waveEnergy] = getWaves(data)
+function [cfs,t,good,wave,wave_t,frq,waveEnergy] = getWaves(data,verbose)
+if ~exist('verbose','var')
+    verbose = 0;
+end
 
 % Prep
 data = permute(data,[4 1 2 3]);
@@ -134,8 +138,8 @@ bFund = b(1);
 [~,b] = min(abs(frq-1/stimPeriod*2));
 bMod = b(1);
 frq = frq([bFund bMod],:);
-good = true(size(frq));
-for i = 1:size(frq,1)
+good = true([length(frq) sz(1)]);
+for i = 1:size(good,1)
     good(i,t>=interp1(coi(end/4*3:end),t(end/4*3:end),frq(i))) = false;
     good(i,t<=interp1(coi(1:end/4),t(1:end/4),frq(i))) = false;
 end
@@ -146,6 +150,30 @@ parfor voxInd = 1:prod(sz(2:end))
     [cfsTmp,~,~,~,~] = cwt(data(:,voxInd),'filterbank',fb);
     cfs(:,:,voxInd) = cfsTmp([bFund bMod],:);
 end
+%rotate time series
+if verbose
+    figure('WindowStyle','docked');
+    subplot(2,1,1)
+    plot(t,angle(mean(cfs(1,:,:),3))); hold on
+    ylabel('delay (rad)')
+    subplot(2,1,2)
+    plot(t,abs(mean(cfs(1,:,:),3))); hold on
+    ylabel('amplitude (BOLD)')
+    xlabel('time (sec)')
+    legend({'raw' 'rotated'})
+end
+theta = wrapToPi(angle(cfs) - (t/stimPeriod*2*pi)');
+rho = abs(cfs);
+[u,v] = pol2cart(theta,rho); clear theta rho
+cfs = complex(u,v);
+if verbose
+    subplot(2,1,1)
+    plot(t,angle(mean(cfs(1,:,:),3))); hold on
+    subplot(2,1,2)
+    plot(t,abs(mean(cfs(1,:,:),3))); hold on
+end
+
+
 cfs = permute(cfs,[3 4 5 2 1]);
 frq = permute(frq,[2 3 4 5 1]);
 good = permute(good,[3 4 5 2 1]);
