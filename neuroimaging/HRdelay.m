@@ -24,6 +24,7 @@ runFit(verbose,figOption)
 runWave2(verbose,figOption)
 
 preprocAndShowMasks(featSel_bSess,figOption,verbose)
+return
 inspectSubjAndExclude(figOption,verbose)
 
 
