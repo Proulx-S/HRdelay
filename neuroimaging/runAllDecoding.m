@@ -8,7 +8,7 @@ if ~exist('figOption','var') || isempty(figOption)
     figOption.subj = 1; % 'all' or subjInd
 end
 
-dataType = 'sin';
+dataType = 'wave';
 svmSpace = 'cart';
 [resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
 svmSpace = 'cartNoAmp';

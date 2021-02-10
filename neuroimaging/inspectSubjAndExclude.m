@@ -323,6 +323,32 @@ for subjInd = 1:length(subjList)
     end
 end
 
+%% Show Cone Of Influence (COI)
+if verbose
+    t = 1:length(d.sess1.good);
+    figure('WindowStyle','docked');
+    for subjInd = 1:6
+        for sessInd = 1:2
+            sess = ['sess' num2str(sessInd)];
+            subplot(6,2,(subjInd-1)*2+sessInd)
+            ind = logical(dAll{subjInd}.(sess).anyCondActivation_mask);
+            wave = permute(mean(dAll{subjInd}.(sess).wave(:,ind,:,:),2),[4 1 3 2]);
+            wave = abs(wave(:,:));
+            yMean = mean(wave,2);
+            yErr = std(wave,[],2);
+            errorbar(t,yMean,yErr); hold on
+            errorbar(t(dAll{subjInd}.(sess).good),yMean(dAll{subjInd}.(sess).good),yErr(dAll{subjInd}.(sess).good),'color','r')
+            yAll(:,subjInd,sessInd) = yMean;
+        end
+    end
+    y = yAll(:,:);
+    figure('WindowStyle','docked');
+    yMean = mean(y,2);
+    yErr = std(y,[],2);
+    errorbar(t,yMean,yErr); hold on
+    errorbar(t(dAll{subjInd}.(sess).good),yMean(dAll{subjInd}.(sess).good),yErr(dAll{subjInd}.(sess).good))
+end
+
 %% Save cleaned data
 if actuallyRun
     if verbose; disp('Updating param and cleaned data to:'); end
@@ -335,7 +361,7 @@ if actuallyRun
     end
 end
 
-%% Reorder for notebook
-fList = [fSubj{:} fSubjWave{:} f]';
-set(0,'Children',flipud(fList))
+% %% Reorder for notebook
+% fList = [fSubj{:} fSubjWave{:} f]';
+% set(0,'Children',flipud(fList))
 

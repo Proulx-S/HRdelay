@@ -666,15 +666,12 @@ for subjInd = 1:length(subjList)
     %% Discriminant voxels based on wave
     if doWave
         for sessInd = 1:2
+            % redefine good point (COI from cwt is shit)
             sess = ['sess' num2str(sessInd)];
-            
-            bad = ~d.(sess).good;
+            d.(sess).good(:) = true;
             ptsPerCycle = 12;
-            nPts = nnz(~bad);
-            nCycle = floor(nPts/12)-1;
-            startCycles = (nPts - nCycle*ptsPerCycle)/ptsPerCycle;
-            bad(1:floor(startCycles*ptsPerCycle)) = true;
-            d.(sess).good = d.(sess).good & ~bad;
+            d.(sess).good(1:ptsPerCycle/2) = false;
+            d.(sess).good(end-ptsPerCycle/2+1:end) = false;
             
             % take only good and non-excluded points and average time out
             x = mean(d.(sess).wave(~any(d.(sess).excl,3),:,:,d.(sess).good),4);

@@ -437,7 +437,7 @@ switch SVMspace
             'cartReal' 'cartReal_T'...
             'polMag' 'polMag_T'...
             'polDelay'}
-        dP.wave(:,:,:,dP.bad) = [];
+        dP.wave(:,:,:,~dP.good) = [];
         ptsPerCycle = 12;
         
         switch opt
