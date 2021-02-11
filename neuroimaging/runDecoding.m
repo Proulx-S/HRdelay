@@ -531,7 +531,8 @@ for kInd = 1:length(kList)
     
     % Normalize
     [x,normTr(:,:,kInd).pol] = polarSpaceNormalization(x,SVMspace);
-    [x,normTr(:,:,kInd).svm] = svmSpaceNormalization(x,SVMspace);
+    [x,normTr(:,:,kInd).svm] = cartSpaceNormalization(x,SVMspace);
+    [x,~,~] = complex2svm(x,SVMspace);
     normTr(:,:,kInd).k = kList(kInd);
     normTr(:,:,kInd).svmSpace = SVMspace;
     
@@ -569,10 +570,10 @@ for kInd = 1:length(kList)
     % Normalize
     if ~exist('nrmlz','var') || isempty(nrmlz)
         [x,~] = polarSpaceNormalization(x,svmModel(kInd).svmSpace);
-        [x,~] = svmSpaceNormalization(x,svmModel(kInd).svmSpace);
+        [x,~] = cartSpaceNormalization(x,svmModel(kInd).svmSpace);
     else
         [x,~] = polarSpaceNormalization(x,nrmlz(kInd),te);
-        [x,~] = svmSpaceNormalization(x,nrmlz(kInd),te);
+        [x,~] = cartSpaceNormalization(x,nrmlz(kInd),te);
     end
     
     w = svmModel(kInd).w;
@@ -656,6 +657,19 @@ for kInd = 1:length(kList)
 end
 
 function [x,polNorm] = polarSpaceNormalization(x,SVMspace,te)
+[x,sz] = reDim1(x);
+
+switch SVMspace
+    case 'cart'
+        normSpace.rhoScale = 'roi';
+        normSpace.thetaShift = 'roi';
+    otherwise
+        error('X')
+end
+% if ~exist('normSpace','var') || isempty(normSpace)
+%     normSpace.rhoScale = 'roi';
+%     normSpace.thetaShift = 'roi';
+% end
 if ~exist('te','var') || isempty(te)
     te = false(size(x,1),1);
 end
@@ -666,170 +680,174 @@ if isstruct(SVMspace)
 else
     computeNorm = true;
 end
-sz = size(x);
-nDim = ndims(x);
-switch nDim
-    case 2
-    case 3
-        % Redim
-        xTmp = nan(prod(sz([1 3])),sz(2));
-        teTmp = nan(prod(sz([1 3])),1);
-        for i = 1:sz(3)
-            xTmp( (1:sz(1)) + sz(1)*(i-1) , : ) = x(:,:,i);
-            teTmp( (1:sz(1)) + sz(1)*(i-1) , 1 ) = false(sz(1),1);
-        end
-        x = xTmp;
-        te = teTmp;
-    otherwise
-        error('dim1 must be samples and dim2 voxels, that''s it')
-end
 
 % Compute norm
-switch SVMspace
-    case {'hr' 'hrNoAmp'}
-        % does not apply
-    case {'cart' 'cart_HT' 'cart_HTbSess'...
-            'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'...
-            'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'...
-            'cartReal' 'cartReal_T'...
-            'polMag' 'polMag_T'...
-            'polDelay'}
-        % rho
-        switch SVMspace
-            case {'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'...
-                    'polDelay'}
-                if computeNorm
-                    polNorm.rhoScale = ones([1 size(x,2)]);
-                end
-                rho = ones(size(x));
-            case {'cart' 'cart_HT' 'cart_HTbSess'...
-                    'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'...
-                    'cartReal' 'cartReal_T'...
-                    'polMag' 'polMag_T'}
-                if computeNorm
-%                     polNorm.rhoScale = abs(mean(mean(x(~te,:),1),2));
-                    polNorm.rhoScale = abs(mean(x(~te,:),1));
-                end
-                rho = abs(x)./polNorm.rhoScale;
-            otherwise
-                error('X')
-        end
-        % thetaShift
-        switch SVMspace
-            case {'cartReal' 'cartReal_T'}
-                if computeNorm
-                    polNorm.thetaShift = angle(mean(x(~te,:),1));
-                end
-                theta = angle(x) - polNorm.thetaShift; theta = wrapToPi(theta);
-            case {'cart' 'cart_HT' 'cart_HTbSess'...
-                    'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'...
-                    'polDelay'}
-                if computeNorm
-                    polNorm.thetaShift = angle(mean(mean(x(~te,:),1),2));
-                end
-                theta = angle(x) - polNorm.thetaShift; theta = wrapToPi(theta);
-            case {'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'...
-                    'polMag' 'polMag_T'}
-                if computeNorm
-                    polNorm.thetaShift = zeros([1,size(x,2)]);
-                end
-                theta = zeros(size(x));
-            otherwise
-                error('X')
-        end
-        [u,v] = pol2cart(theta,rho); clear theta rho
-        x = complex(u,v); clear u v
+if computeNorm
+    %rho scale
+    switch normSpace.rhoScale
+        case 'vox'
+            polNorm.rhoScale = abs(mean(x(~te,:),1));
+        case 'roi'
+            polNorm.rhoScale = abs(mean(mean(x(~te,:),1),2));
+        case 'none'
+            polNorm.rhoScale = ones([1 size(x,2)]);
+        case 'rm'
+            polNorm.rhoScale = nan([1 size(x,2)]);
+        otherwise
+            error('X')
+    end
+    %theta shift
+    switch normSpace.thetaShift
+        case 'vox'
+            polNorm.thetaShift = angle(mean(x(~te,:),1));
+        case 'roi'
+            polNorm.thetaShift = angle(mean(mean(x(~te,:),1),2));
+        case 'none'
+            polNorm.thetaShift = zeros([1,size(x,2)]);
+        case 'rm'
+            polNorm.thetaShift = nan([1,size(x,2)]);
+        otherwise
+            error('X')
+    end
+end
+% Apply norm
+%rho scale
+switch normSpace.rhoScale
+    case 'vox'
+        rho = abs(x)./polNorm.rhoScale;
+    case 'roi'
+        rho = abs(x)./polNorm.rhoScale;
+    case 'none'
+        rho = abs(x);
+    case 'rm'
+        rho = ones(size(x));
     otherwise
         error('X')
 end
-
-if nDim==3
-    % Redim
-    xTmp = nan(sz);
-    for i = 1:sz(3)
-        xTmp(:,:,i) = x( (1:sz(1)) + sz(1)*(i-1) , : );
-    end
-    x = xTmp;
+%theta shift
+switch normSpace.thetaShift
+    case 'vox'
+        theta = angle(x) - polNorm.thetaShift;
+    case 'roi'
+        theta = angle(x) - polNorm.thetaShift;
+    case 'none'
+        theta = angle(x);
+    case 'rm'
+        theta = zeros(size(x));
+    otherwise
+        error('X')
 end
+[u,v] = pol2cart(theta,rho); clear theta rho
+x = complex(u,v); clear u v
 
-function [x,svmNorm] = svmSpaceNormalization(x,SVMspace,te)
-skipScale = 0;
+x = reDim2(x,sz);
+
+function [x,cartNorm] = cartSpaceNormalization(x,SVMspace,te)
+[x,sz] = reDim1(x);
+
+switch SVMspace
+    case 'cart'
+        normSpace.realShift = 'vox';
+        normSpace.imagShift = 'vox';
+        normSpace.realScale = 'vox';
+        normSpace.imagScale = 'vox';
+    otherwise
+        error('X')
+end
 if ~exist('te','var') || isempty(te)
     te = false(size(x,1),1);
 end
 if isstruct(SVMspace)
-    svmNorm = SVMspace.svm;
+    cartNorm = SVMspace.svm;
     SVMspace = SVMspace.svmSpace;
     computeNorm = false;
 else
     computeNorm = true;
 end
 
-% Move to SVMspace and Cocktail bank normalize
-switch SVMspace
-    case {'hr' 'hrNoAmp'}
-        error('code that')
-        x = x-mean(x(~te,:),1);
-    case {'cart' 'cart_HT' 'cart_HTbSess'...
-            'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'}
-        if computeNorm
-            if skipScale
-                svmNorm.scale = ones(1,size(x(~te,:),2));
-            else
-                svmNorm.scale = std(x(~te,:),[],1);
-            end
-            svmNorm.shift = mean(x(~te,:),1);
-        end
-        x = (x-svmNorm.shift) ./ svmNorm.scale;
-        x = cat(2,real(x),imag(x));
-    case {'cartReal' 'cartReal_T'}
-        x = real(x);
-        if computeNorm
-            if skipScale
-                svmNorm.scale = ones(1,size(x(~te,:),2));
-            else
-                svmNorm.scale = std(x(~te,:),[],1);
-            end
-            svmNorm.shift = mean(x(~te,:),1);
-        end
-        x = (x-svmNorm.shift) ./ svmNorm.scale;
-    case 'cartImag'
-        x = imag(x);
-        if computeNorm
-            if skipScale
-                svmNorm.scale = ones(1,size(x(~te,:),2));
-            else
-                svmNorm.scale = std(x(~te,:),[],1);
-            end
-            svmNorm.shift = mean(x(~te,:),1);
-        end
-        x = (x-svmNorm.shift) ./ svmNorm.scale;
-    case 'pol'
-        error('code that')
-        x = cat(2,angle(x),abs(x));
-        x = x-mean(x(~te,:),1);
-    case {'polMag' 'polMag_T' 'cartNoDelay' 'cartNoDelay_HT'  'cartNoDelay_HTbSess'}
-        x = abs(x);
-        if computeNorm
-            if skipScale
-                svmNorm.scale = ones(1,size(x(~te,:),2));
-            else
-                svmNorm.scale = std(x(~te,:),[],1);
-            end
-            svmNorm.shift = mean(x(~te,:),1);
-        end
-        x = (x-svmNorm.shift) ./ svmNorm.scale;
-    case 'polDelay'
-        error('code that')
-        if computeNorm
-            svmNorm.scale = ones(1,size(x(~te,:),2));
-            svmNorm.shift = zeros(1,size(x(~te,:),2));
-        end
-        x = angle(x);
-        x = (x - svmNorm.shift) ./ svmNorm.scale;
-    otherwise
-        error('x')
+% Compute norm
+if computeNorm
+    u = real(x(~te,:));
+    v = imag(x(~te,:));
+    %real shift
+    switch normSpace.realShift
+        case 'vox'
+            cartNorm.realShift = mean(u,1);
+        otherwise
+            error('X')
+    end
+    %imag shift
+    switch normSpace.imagShift
+        case 'vox'
+            cartNorm.imagShift = mean(v,1);
+        otherwise
+            error('X')
+    end
+    %real scale
+    switch normSpace.realScale
+        case 'vox'
+            cartNorm.realScale = std(u,[],1);
+        otherwise
+            error('X')
+    end
+    %imag scale
+    switch normSpace.imagScale
+        case 'vox'
+            cartNorm.imagScale = std(v,[],1);
+        otherwise
+            error('X')
+    end
 end
+
+% Apply norm
+u = real(x);
+v = imag(x);
+%real shift
+switch normSpace.realShift
+    case 'vox'
+        u = u - cartNorm.realShift;
+    otherwise
+        error('X')
+end
+%imag shift
+switch normSpace.imagShift
+    case 'vox'
+        v = v - cartNorm.imagShift;
+    otherwise
+        error('X')
+end
+%real scale
+switch normSpace.realScale
+    case 'vox'
+        u = u ./ cartNorm.realScale;
+    otherwise
+        error('X')
+end
+%imag scale
+switch normSpace.imagScale
+    case 'vox'
+        v = v ./ cartNorm.imagScale;
+    otherwise
+        error('X')
+end
+x = complex(u,v);
+
+x = reDim2(x,sz);
+
+
+function [x,nVox,nDim] = complex2svm(x,SVMspace)
+% Output SVM ready data
+nVox = size(x,2);
+switch SVMspace
+    case 'cart'
+        x = cat(2,real(x),imag(x));
+    otherwise
+        error('X')
+end
+nDim = size(x,2);
+
+
+
 
 
 function featStat = getFeatStat_ws(x,y,te,SVMspace)
@@ -874,7 +892,9 @@ x = permute(x,[2 3 1 4]);
 x = x(:,:,:);
 x = permute(x,[3 4 2 1]);
 f = figure('WindowStyle','docked');
-subplot(1,2,1); clear hPP
+
+%% Polar Normalization
+subplot(2,2,1); clear hPP
 % polarplot(angle(x(:)),abs(x(:)),'.'); hold on
 for condInd = 1:size(x,3)
     hPP(condInd) = polarplot(angle(x(:,:,condInd)),abs(x(:,:,condInd)),'o'); hold on
@@ -890,7 +910,7 @@ ax1 = gca;
 x = polarSpaceNormalization(x,SVMspace);
 
 % Plot after
-subplot(1,2,2);
+subplot(2,2,2);
 % polarplot(angle(xAfter(:)),abs(xAfter(:)),'.'); hold on
 for condInd = 1:size(x,3)
     hPP(condInd) = polarplot(angle(x(:,:,condInd)),abs(x(:,:,condInd)),'o'); hold on
@@ -910,7 +930,7 @@ ax.ThetaAxis.Label.Rotation = 0;
 ax.ThetaAxis.Label.HorizontalAlignment = 'left';
 ax.RAxis.Label.String = 'amp (%BOLD)';
 ax.RAxis.Label.Rotation = 80;
-ax.Title.String = 'before';
+ax.Title.String = 'before polNorm';
 
 ax = ax2;
 ax.ThetaTickLabel = (-wrapTo180(ax.ThetaTick(1:end))/360*12);
@@ -918,10 +938,86 @@ ax.ThetaTickLabel(1,:) = '0 ';
 % ax.ThetaAxis.Label.String = {'delay' '(sec)'};
 % ax.ThetaAxis.Label.Rotation = 0;
 % ax.ThetaAxis.Label.HorizontalAlignment = 'left';
-ax.Title.String = 'after';
+ax.Title.String = 'after polNorm';
 
-hSup = suptitle({'Polar space normalization' SVMspace});
-hSup.Interpreter = 'none';
+%% Cartesian Normalization
+subplot(2,2,3); clear hPP
+for condInd = 1:size(x,3)
+    hScat(condInd) = scatter(real(x(:,:,condInd)),imag(x(:,:,condInd)),'o'); hold on
+    hScat(condInd).MarkerFaceColor = hScat(condInd).CData;
+    hScat(condInd).MarkerEdgeColor = 'w';
+%     hScat(condInd).SizeData = 35;
+end
+ax = gca;
+ax.DataAspectRatio = [1 1 1];
+ax.PlotBoxAspectRatio = [1 1 1];
+xLim = xlim;
+delta = abs(diff(xLim)).*0.1;
+if ~(xLim(1)<0)
+    xLim(1) = -delta;
+end
+if ~(xLim(2)>0)
+    xLim(2) = +delta;
+end
+xlim(xLim)
+
+yLim = ylim;
+if ~(yLim(1)<0)
+    yLim(1) = -delta;
+end
+if ~(yLim(2)>0)
+    yLim(2) = +delta;
+end
+ylim(yLim)
+
+uistack(plot([0 0],ylim,'-k'),'bottom');
+uistack(plot(xlim,[0 0],'-k'),'bottom');
+grid on
+title('before cartNorm')
+xlabel('real')
+ylabel('imag')
+
+
+%normalize
+x = cartSpaceNormalization(x,SVMspace);
+
+%after
+subplot(2,2,4); clear hPP
+for condInd = 1:size(x,3)
+    hScat(condInd) = scatter(real(x(:,:,condInd)),imag(x(:,:,condInd)),'o'); hold on
+    hScat(condInd).MarkerFaceColor = hScat(condInd).CData;
+    hScat(condInd).MarkerEdgeColor = 'w';
+%     hScat(condInd).SizeData = 35;
+end
+
+ax = gca;
+ax.DataAspectRatio = [1 1 1];
+ax.PlotBoxAspectRatio = [1 1 1];
+xLim = xlim;
+delta = abs(diff(xLim)).*0.1;
+if ~(xLim(1)<0)
+    xLim(1) = -delta;
+end
+if ~(xLim(2)>0)
+    xLim(2) = +delta;
+end
+xlim(xLim)
+
+yLim = ylim;
+if ~(yLim(1)<0)
+    yLim(1) = -delta;
+end
+if ~(yLim(2)>0)
+    yLim(2) = +delta;
+end
+ylim(yLim)
+
+uistack(plot([0 0],ylim,'-k'),'bottom');
+uistack(plot(xlim,[0 0],'-k'),'bottom');
+grid on
+title('after cartNorm')
+xlabel('real')
+ylabel('imag')
 drawnow
 
 function res = perfMetric(y,yHat,k)
@@ -1080,3 +1176,31 @@ disp(['   T=' num2str(resGroup.acc_T,'%0.2f') '; P=' num2str(resGroup.acc_P,'%0.
 disp(['  -wilcoxon'])
 disp(['   sRank=' num2str(resGroup.acc_wilcoxonSignedrank,'%0.2f') '; P=' num2str(resGroup.acc_wilcoxonP,'%0.3f')])
 
+function [x,sz] = reDim1(x)
+sz = size(x);
+nDim = length(sz);
+switch nDim
+    case 2
+    case 3
+        % Redim
+        xTmp = nan(prod(sz([1 3])),sz(2));
+        teTmp = nan(prod(sz([1 3])),1);
+        for i = 1:sz(3)
+            xTmp( (1:sz(1)) + sz(1)*(i-1) , : ) = x(:,:,i);
+            teTmp( (1:sz(1)) + sz(1)*(i-1) , 1 ) = false(sz(1),1);
+        end
+        x = xTmp;
+        te = teTmp;
+    otherwise
+        error('dim1 must be samples and dim2 voxels, that''s it')
+end
+
+function x = reDim2(x,sz)
+nDim = length(sz);
+if nDim==3
+    xTmp = nan(sz);
+    for i = 1:sz(3)
+        xTmp(:,:,i) = x( (1:sz(1)) + sz(1)*(i-1) , : );
+    end
+    x = xTmp;
+end
