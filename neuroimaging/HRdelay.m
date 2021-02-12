@@ -20,7 +20,8 @@ featSel_bSess.discrim.percentile = 20;
 figOption.save = 0; % save all figures
 figOption.subj = 1; % subjInd-> plots participants subjInd; +inf-> plots all participant (if verbose==0, will only plot subjInd==1 but still produce and save all the other figures)
 
-runFit(verbose,figOption)
+% runFit(verbose,figOption)
+runFit2(verbose,figOption)
 runWave2(verbose,figOption)
 
 preprocAndShowMasks(featSel_bSess,figOption,verbose)

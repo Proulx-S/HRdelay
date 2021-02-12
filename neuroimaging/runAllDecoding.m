@@ -53,7 +53,7 @@ svmSpace = 'cartReal';
 
 
 clear resBS resWS
-dataType = 'wave';
+dataType = 'waveFull';
 svmSpace = 'cart';
 [resBS,resWS] = runDecoding(svmSpace,dataType,verbose);
 svmSpace = 'cartNoAmp';
