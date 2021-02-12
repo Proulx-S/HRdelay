@@ -7,12 +7,35 @@ if ~exist('figOption','var') || isempty(figOption)
     figOption.save = 0;
     figOption.subj = 1; % 'all' or subjInd
 end
-
+clear resBS resWS
 dataType = 'wave';
 svmSpace = 'cart';
-[resBS.,resWS] = runDecoding(svmSpace,dataType,verbose);
+[resBS.polRoi_cartRoi,resWS.polRoi_cartRoi] = runDecoding(svmSpace,dataType,verbose);
+[resBS.polRoi_cartVox,resWS.polRoi_cartVox] = runDecoding(svmSpace,dataType,verbose);
+[resBS.polRhoVoxThetaRoi_cartVox,resWS.polRhoVoxThetaRoi_cartVox] = runDecoding(svmSpace,dataType,verbose);
+[resBS.polVox_cartVox,resWS.polVox_cartVox] = runDecoding(svmSpace,dataType,verbose);
+[resBS.polRhoRoiThetaVox_cartVox,resWS.polRhoRoiThetaVox_cartVox] = runDecoding(svmSpace,dataType,verbose);
+[resBS.polRhoVoxThetaVox_cartNone,resWS.polRhoVoxThetaVox_cartNone] = runDecoding(svmSpace,dataType,verbose);
+[resBS.polRhoVoxThetaVox_cartShiftRoiScaleNone,resWS.polRhoVoxThetaVox_cartShiftRoiScaleNone] = runDecoding(svmSpace,dataType,verbose);
+[resBS.polRhoVoxThetaVox_cartShiftRoiScaleRoi,resWS.polRhoVoxThetaVox_cartShiftRoiScaleRoi] = runDecoding(svmSpace,dataType,verbose);
+[resBS.polRhoVoxThetaVox_cartShiftVoxScaleVox,resWS.polRhoVoxThetaVox_cartShiftVoxScaleVox] = runDecoding(svmSpace,dataType,verbose);
 
-compareRes(X,Y)
+figure('WindowStyle','docked');
+compareRes(resBS.polRhoRoiThetaVox_cartVox,resBS.polRhoVoxThetaRoi_cartVox)
+figure('WindowStyle','docked');
+compareRes(resBS.polRoi_cartVox,resBS.polRhoVoxThetaRoi_cartVox)
+
+figure('WindowStyle','docked');
+subplot(2,1,1)
+compareRes(resBS.polRhoVoxThetaRoi_cartVox,resBS.polVox_cartVox)
+subplot(2,1,2)
+compareRes(resWS.polRhoVoxThetaRoi_cartVox,resWS.polVox_cartVox)
+
+figure('WindowStyle','docked');
+subplot(2,1,1)
+compareRes(resBS.polRoi_cartVox,resBS.polRhoRoiThetaVox_cartVox)
+subplot(2,1,2)
+compareRes(resWS.polRoi_cartVox,resWS.polRhoRoiThetaVox_cartVox)
 
 
 dataType = 'wave';
@@ -24,6 +47,25 @@ svmSpace = 'cartNoDelay';
 [resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
 svmSpace = 'cartReal';
 [resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
+
+
+
+
+
+clear resBS resWS
+dataType = 'wave';
+svmSpace = 'cart';
+[resBS,resWS] = runDecoding(svmSpace,dataType,verbose);
+svmSpace = 'cartNoAmp';
+[resBS,resWS] = runDecoding(svmSpace,dataType,verbose);
+svmSpace = 'cartNoAmpImag';
+[resBS,resWS] = runDecoding(svmSpace,dataType,verbose);
+svmSpace = 'cartNoDelay';
+[resBS,resWS] = runDecoding(svmSpace,dataType,verbose);
+svmSpace = 'cartReal';
+[resBS,resWS] = runDecoding(svmSpace,dataType,verbose);
+svmSpace = 'cartImag';
+[resBS,resWS] = runDecoding(svmSpace,dataType,verbose);
 
 
 % dataType = 'waveFull';

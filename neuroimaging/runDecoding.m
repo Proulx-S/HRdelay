@@ -129,24 +129,20 @@ end
 
 %% Example plot of trigonometric (polar) representation
 i = 1;
-[f1,f2] = plotNorm(dP{i},featSel{i},SVMspace,dataType);
+f = plotNorm(dP{i},featSel{i},SVMspace,dataType);
 if figOption.save
-    suffix = {'vox' 'rep'};
-    for i = 1:2
-        f = eval(['f' num2str(i)]);
-        filename = fullfile(pwd,[mfilename '_' suffix{i}]);
-        if ~exist(filename,'dir'); mkdir(filename); end
-        filename = fullfile(filename,SVMspace);
-        f.Color = 'none';
-        set(findobj(f.Children,'type','Axes'),'color','none')
-        set(findobj(f.Children,'type','PolarAxes'),'color','none')
-        saveas(f,[filename '.svg']); if verbose; disp([filename '.svg']); end
-        f.Color = 'w';
-        set(findobj(f.Children,'type','Axes'),'color','w')
-        set(findobj(f.Children,'type','PolarAxes'),'color','w')
-        saveas(f,[filename '.fig']); if verbose; disp([filename '.fig']); end
-        saveas(f,[filename '.jpg']); if verbose; disp([filename '.jpg']); end
-    end
+    filename = fullfile(pwd,mfilename);
+    if ~exist(filename,'dir'); mkdir(filename); end
+    filename = fullfile(filename,SVMspace);
+    f.Color = 'none';
+    set(findobj(f.Children,'type','Axes'),'color','none')
+    set(findobj(f.Children,'type','PolarAxes'),'color','none')
+    saveas(f,[filename '.svg']); if verbose; disp([filename '.svg']); end
+    f.Color = 'w';
+    set(findobj(f.Children,'type','Axes'),'color','w')
+    set(findobj(f.Children,'type','PolarAxes'),'color','w')
+    saveas(f,[filename '.fig']); if verbose; disp([filename '.fig']); end
+    saveas(f,[filename '.jpg']); if verbose; disp([filename '.jpg']); end
 end
 
 %% Within-session SVM cross-validation (with cross-session feature selection)
@@ -354,10 +350,12 @@ resWS_sess = orderfields(resWS_sess,[1 2 3 4 5 6 7 8 9 13 10 11 12 14 15 16]);
 if verbose
     disp('-----------------')
     disp('*Between-session*')
-    printRes(resBSsess,resBSsubj,resBSgroup)
+%     printRes(resBSsess,resBSsubj,resBSgroup)
+    printRes2(resBSgroup)
     disp(' ')
     disp('*Within-session*')
-    printRes(resWSsess,resWSsubj,resWSgroup)
+%     printRes(resWSsess,resWSsubj,resWSgroup)
+    printRes2(resWSgroup)
     disp('-----------------')
 end
 resBS.sess = resBSsess;
@@ -465,8 +463,10 @@ function [x,y,k,t] = getXYK_wave(dP,SVMspace,opt)
 switch SVMspace
     case {'cart' 'cart_HT' 'cart_HTbSess'...
             'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'...
+            'cartNoAmpImag'...
             'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'...
             'cartReal' 'cartReal_T'...
+            'cartImag' 'cartReal_T'...
             'polMag' 'polMag_T'...
             'polDelay'}
         dP.wave(:,:,:,~dP.good) = [];
@@ -707,17 +707,18 @@ else
 end
 
 switch SVMspace
-    case 'cart'
-        normSpace.rhoScale = 'roi';
-        normSpace.thetaShift = 'roi';
+    case {'cart' 'cartReal' 'cartImag'}
+        normSpace.rhoScale = 'vox';
+        normSpace.thetaShift = 'vox';
+    case {'cartNoAmp' 'cartNoAmpImag'}
+        normSpace.rhoScale = 'rm';
+        normSpace.thetaShift = 'vox';
+    case 'cartNoDelay'
+        normSpace.rhoScale = 'vox';
+        normSpace.thetaShift = 'rm';
     otherwise
         error('X')
 end
-% if ~exist('normSpace','var') || isempty(normSpace)
-%     normSpace.rhoScale = 'roi';
-%     normSpace.thetaShift = 'roi';
-% end
-
 
 % Compute norm
 if computeNorm
@@ -728,9 +729,9 @@ if computeNorm
         case 'roi'
             polNorm.rhoScale = abs(mean(mean(x(~te,:),1),2));
         case 'none'
-            polNorm.rhoScale = ones([1 size(x,2)]);
+            polNorm.rhoScale = ones([1 size(x(~te,:),2)]);
         case 'rm'
-            polNorm.rhoScale = nan([1 size(x,2)]);
+            polNorm.rhoScale = nan;
         otherwise
             error('X')
     end
@@ -741,9 +742,9 @@ if computeNorm
         case 'roi'
             polNorm.thetaShift = angle(mean(mean(x(~te,:),1),2));
         case 'none'
-            polNorm.thetaShift = zeros([1,size(x,2)]);
+            polNorm.thetaShift = zeros([1,size(x(~te,:),2)]);
         case 'rm'
-            polNorm.thetaShift = nan([1,size(x,2)]);
+            polNorm.thetaShift = nan;
         otherwise
             error('X')
     end
@@ -790,10 +791,20 @@ else
 end
 
 switch SVMspace
-    case 'cart'
+    case {'cart' 'cartNoAmp'}
         normSpace.realShift = 'vox';
         normSpace.imagShift = 'vox';
         normSpace.realScale = 'vox';
+        normSpace.imagScale = 'vox';
+    case {'cartNoDelay' 'cartReal'}
+        normSpace.realShift = 'vox';
+        normSpace.imagShift = 'rm';
+        normSpace.realScale = 'vox';
+        normSpace.imagScale = 'rm';
+    case {'cartNoAmpImag' 'cartImag'}
+        normSpace.realShift = 'rm';
+        normSpace.imagShift = 'vox';
+        normSpace.realScale = 'rm';
         normSpace.imagScale = 'vox';
     otherwise
         error('X')
@@ -806,37 +817,53 @@ if computeNorm
     v = imag(x(~te,:));
     %real shift
     switch normSpace.realShift
+        case 'roi'
+            cartNorm.realShift = mean(u(:));
         case 'vox'
             cartNorm.realShift = mean(u,1);
         case 'none'
-            cartNorm.realShift = zeros([1 size(u,2)]);
+            cartNorm.realShift = 0;
+        case 'rm'
+            cartNorm.realShift = nan;
         otherwise
             error('X')
     end
     %imag shift
     switch normSpace.imagShift
+        case 'roi'
+            cartNorm.imagShift = mean(v(:));
         case 'vox'
             cartNorm.imagShift = mean(v,1);
         case 'none'
-            cartNorm.imagShift = zeros([1 size(v,2)]);
+            cartNorm.imagShift = 0;
+        case 'rm'
+            cartNorm.imagShift = nan;
         otherwise
             error('X')
     end
     %real scale
     switch normSpace.realScale
+        case 'roi'
+            cartNorm.realScale = std(mean(u,2),[],1);
         case 'vox'
             cartNorm.realScale = std(u,[],1);
         case 'none'
-            cartNorm.realScale = ones([1 size(u,2)]);
+            cartNorm.realScale = 1;
+        case 'rm'
+            cartNorm.realScale = nan;
         otherwise
             error('X')
     end
     %imag scale
     switch normSpace.imagScale
+        case 'roi'
+            cartNorm.imagScale = std(mean(v,2),[],1);
         case 'vox'
             cartNorm.imagScale = std(v,[],1);
         case 'none'
-            cartNorm.imagScale = ones([1 size(v,2)]);
+            cartNorm.imagScale = 1;
+        case 'rm'
+            cartNorm.imagScale = nan;
         otherwise
             error('X')
     end
@@ -847,29 +874,37 @@ u = real(x);
 v = imag(x);
 %real shift
 switch normSpace.realShift
-    case {'vox' 'none'}
+    case {'roi' 'vox' 'none'}
         u = u - cartNorm.realShift;
+    case 'rm'
+        u = 0;
     otherwise
         error('X')
 end
 %imag shift
 switch normSpace.imagShift
-    case {'vox' 'none'}
+    case {'roi' 'vox' 'none'}
         v = v - cartNorm.imagShift;
+    case 'rm'
+        v = 0;
     otherwise
         error('X')
 end
 %real scale
 switch normSpace.realScale
-    case {'vox' 'none'}
+    case {'roi' 'vox' 'none'}
         u = u ./ cartNorm.realScale;
+    case 'rm'
+        u = 0;
     otherwise
         error('X')
 end
 %imag scale
 switch normSpace.imagScale
-    case {'vox' 'none'}
+    case {'roi' 'vox' 'none'}
         v = v ./ cartNorm.imagScale;
+    case 'rm'
+        v = 0;
     otherwise
         error('X')
 end
@@ -882,8 +917,12 @@ function [x,nVox,nDim] = complex2svm(x,SVMspace)
 % Output SVM ready data
 nVox = size(x,2);
 switch SVMspace
-    case 'cart'
+    case {'cart' 'cartNoAmp'}
         x = cat(2,real(x),imag(x));
+    case {'cartNoDelay' 'cartReal'}
+        x = real(x);
+    case {'cartNoAmpImag' 'cartImag'}
+        x = imag(x);
     otherwise
         error('X')
 end
@@ -930,7 +969,7 @@ switch SVMspace
         error('X')
 end
 
-function [f1,f2] = plotNorm(d,featSel,SVMspace,dataType)
+function f0 = plotNorm(d,featSel,SVMspace,dataType)
 switch dataType
     case 'sin'
         [X,y,~] = getXYK(d,SVMspace);
@@ -945,34 +984,57 @@ switch dataType
     otherwise
         error('X')
 end
-f1 = plotPolNormExampleVox(X,SVMspace);
-
 [~,b] = sort(d.anyCondActivation_F,'descend');
 b = b(featSel.ind);
-x = cat(3,X(y==1,b(1)),X(y==2,b(1)));
-f2 = plotPolNormExample(x,SVMspace);
+f0 = plotPolNormExample(X,y,SVMspace,b(1));
+% f1 = plotPolNormExampleVox(X,SVMspace,b(1));
+% f2 = plotPolNormExampleRep(X,y,SVMspace,b(1));
 
-function f = plotPolNormExampleVox(x,SVMspace)
+% x = cat(3,X(y==1,b(1)),X(y==2,b(1)));
+% f2 = plotPolNormExample(x,SVMspace);
+
+function f = plotPolNormExample(x,y,SVMspace,b)
 f = figure('WindowStyle','docked');
 
 %% Polar Normalization
 % Plot before
 subplot(2,2,1); clear hPP
-polarplot(angle(mean(x,1)),abs(mean(x,1)),'.k'); hold on
+% polarplot(angle(mean(x,1)),abs(mean(x,1)),'.k'); hold on
+hPP1 = polarplot(angle(x(y==1,b)),abs(x(y==1,b)),'.'); hold on
+hPP2 = polarplot(angle(x(y==2,b)),abs(x(y==2,b)),'.'); hold on
+hPP3 = polarplot(angle(x(:)),abs(x(:)),'.k'); hold on
+uistack(hPP3,'bottom');
+hPP1.MarkerSize = hPP1.MarkerSize*2;
+hPP2.MarkerSize = hPP2.MarkerSize*2;
+hPP3.MarkerSize = eps;
+hPP3.Color = [1 1 1].*0;
 drawnow
 % Normalize
 x = polarSpaceNormalization(x,SVMspace);
 % Plot after
 subplot(2,2,2);
-polarplot(angle(mean(x,1)),abs(mean(x,1)),'.k'); hold on
+% polarplot(angle(mean(x,1)),abs(mean(x,1)),'.k'); hold on
+hPP1 = polarplot(angle(x(y==1,b)),abs(x(y==1,b)),'.'); hold on
+hPP2 = polarplot(angle(x(y==2,b)),abs(x(y==2,b)),'.'); hold on
+hPP3 = polarplot(angle(x(:)),abs(x(:)),'.k'); hold on
+uistack(hPP3,'bottom');
+hPP1.MarkerSize = hPP1.MarkerSize*2;
+hPP2.MarkerSize = hPP2.MarkerSize*2;
+hPP3.MarkerSize = eps;
+hPP3.Color = [1 1 1].*0;
 drawnow
 
 %% Cartesian Normalization
 % Plot before
 subplot(2,2,3);
-hScat = scatter(real(mean(x,1)),imag(mean(x,1)),'ko','filled'); hold on
-hScat.MarkerEdgeColor = 'none';
-alpha(hScat,0.2)
+% hScat = scatter(real(mean(x,1)),imag(mean(x,1)),'ko','filled'); hold on
+hScat1 = scatter(real(x(y==1,b)),imag(x(y==1,b)),'o','filled'); hold on
+hScat2 = scatter(real(x(y==2,b)),imag(x(y==2,b)),'o','filled'); hold on
+hScat3 = scatter(real(x(:)),imag(x(:)),'ko','filled'); hold on
+uistack(hScat3,'bottom')
+hScat3.SizeData = hScat3.SizeData./8;
+hScat1.MarkerEdgeColor = 'w';
+hScat2.MarkerEdgeColor = 'w';
 ax = gca;
 ax.DataAspectRatio = [1 1 1];
 ax.PlotBoxAspectRatio = [1 1 1];
@@ -1008,9 +1070,119 @@ x = cartSpaceNormalization(x,SVMspace);
 
 %Plot after
 subplot(2,2,4);
-hScat = scatter(real(mean(x,1)),imag(mean(x,1)),'ko','filled'); hold on
-hScat.MarkerEdgeColor = 'none';
-alpha(hScat,0.2)
+hScat1 = scatter(real(x(y==1,b)),imag(x(y==1,b)),'o','filled'); hold on
+hScat2 = scatter(real(x(y==2,b)),imag(x(y==2,b)),'o','filled'); hold on
+hScat3 = scatter(real(x(:)),imag(x(:)),'ko','filled'); hold on
+uistack(hScat3,'bottom')
+hScat3.SizeData = hScat3.SizeData./8;
+hScat1.MarkerEdgeColor = 'w';
+hScat2.MarkerEdgeColor = 'w';
+ax = gca;
+ax.DataAspectRatio = [1 1 1];
+ax.PlotBoxAspectRatio = [1 1 1];
+xLim = xlim;
+delta = abs(diff(xLim)).*0.1;
+if ~(xLim(1)<0)
+    xLim(1) = -delta;
+end
+if ~(xLim(2)>0)
+    xLim(2) = +delta;
+end
+xlim(xLim)
+
+yLim = ylim;
+if ~(yLim(1)<0)
+    yLim(1) = -delta;
+end
+if ~(yLim(2)>0)
+    yLim(2) = +delta;
+end
+ylim(yLim)
+
+uistack(plot([0 0],ylim,'-k'),'bottom');
+uistack(plot(xlim,[0 0],'-k'),'bottom');
+grid on
+title('before cartNorm')
+xlabel('real')
+ylabel('imag')
+drawnow
+suptitle('voxels (repetitions averaged)')
+
+
+function f = plotPolNormExampleVox(x,SVMspace,b)
+f = figure('WindowStyle','docked');
+
+%% Polar Normalization
+% Plot before
+subplot(2,2,1); clear hPP
+% polarplot(angle(mean(x,1)),abs(mean(x,1)),'.k'); hold on
+polarplot(angle(x(:)),abs(x(:)),'.k'); hold on
+polarplot(angle(x(:,b)),abs(x(:,b)),'.r'); hold on
+drawnow
+% Normalize
+x = polarSpaceNormalization(x,SVMspace);
+% Plot after
+subplot(2,2,2);
+% polarplot(angle(mean(x,1)),abs(mean(x,1)),'.k'); hold on
+polarplot(angle(x(:)),abs(x(:)),'.k'); hold on
+polarplot(angle(x(:,b)),abs(x(:,b)),'.r'); hold on
+drawnow
+
+%% Cartesian Normalization
+% Plot before
+subplot(2,2,3);
+% hScat = scatter(real(mean(x,1)),imag(mean(x,1)),'ko','filled'); hold on
+hScat1 = scatter(real(x(:)),imag(x(:)),'ko','filled'); hold on
+hScat1.MarkerEdgeColor = 'none';
+hScat1.SizeData = hScat1.SizeData/2;
+hScat2 = scatter(real(x(:,b)),imag(x(:,b)),'ro','filled'); hold on
+hScat2.MarkerEdgeColor = 'none';
+hScat2.SizeData = hScat2.SizeData/2;
+% alpha(hScat1,0.03)
+% alpha(hScat2,0.03)
+ax = gca;
+ax.DataAspectRatio = [1 1 1];
+ax.PlotBoxAspectRatio = [1 1 1];
+xLim = xlim;
+delta = abs(diff(xLim)).*0.1;
+if ~(xLim(1)<0)
+    xLim(1) = -delta;
+end
+if ~(xLim(2)>0)
+    xLim(2) = +delta;
+end
+xlim(xLim)
+
+yLim = ylim;
+if ~(yLim(1)<0)
+    yLim(1) = -delta;
+end
+if ~(yLim(2)>0)
+    yLim(2) = +delta;
+end
+ylim(yLim)
+
+uistack(plot([0 0],ylim,'-k'),'bottom');
+uistack(plot(xlim,[0 0],'-k'),'bottom');
+grid on
+title('before cartNorm')
+xlabel('real')
+ylabel('imag')
+drawnow
+
+% Normalize
+x = cartSpaceNormalization(x,SVMspace);
+
+%Plot after
+subplot(2,2,4);
+% hScat = scatter(real(mean(x,1)),imag(mean(x,1)),'ko','filled'); hold on
+hScat1 = scatter(real(x(:)),imag(x(:)),'ko','filled'); hold on
+hScat1.MarkerEdgeColor = 'none';
+hScat1.SizeData = hScat1.SizeData./2;
+hScat2 = scatter(real(x(:,b)),imag(x(:,b)),'ro','filled'); hold on
+hScat2.MarkerEdgeColor = 'none';
+hScat2.SizeData = hScat2.SizeData./2;
+% alpha(hScat1,0.03)
 ax = gca;
 ax.DataAspectRatio = [1 1 1];
 ax.PlotBoxAspectRatio = [1 1 1];
@@ -1042,67 +1214,33 @@ ylabel('imag')
 drawnow
 suptitle('voxels (repetitions averaged)')
 
-function f = plotPolNormExample(x,SVMspace)
-x = permute(x,[2 3 1 4]);
-x = x(:,:,:);
-x = permute(x,[3 4 2 1]);
+function f = plotPolNormExampleRep(x,y,SVMspace,b)
 f = figure('WindowStyle','docked');
 
 %% Polar Normalization
+% Plot before
 subplot(2,2,1); clear hPP
-% polarplot(angle(x(:)),abs(x(:)),'.'); hold on
-for condInd = 1:size(x,3)
-    hPP(condInd) = polarplot(angle(x(:,:,condInd)),abs(x(:,:,condInd)),'o'); hold on
-    hPP(condInd).MarkerFaceColor = hPP(condInd).Color;
-    hPP(condInd).MarkerEdgeColor = 'w';
-    hPP(condInd).MarkerSize = 3.5;
-end
+% polarplot(angle(mean(x,1)),abs(mean(x,1)),'.k'); hold on
+polarplot(angle(x(y==1,b)),abs(x(y==1,b)),'.'); hold on
+polarplot(angle(x(y==2,b)),abs(x(y==2,b)),'.'); hold on
 drawnow
-hPP1 = hPP; clear hPP
-ax1 = gca;
-
 % Normalize
 x = polarSpaceNormalization(x,SVMspace);
-
 % Plot after
 subplot(2,2,2);
-% polarplot(angle(xAfter(:)),abs(xAfter(:)),'.'); hold on
-for condInd = 1:size(x,3)
-    hPP(condInd) = polarplot(angle(x(:,:,condInd)),abs(x(:,:,condInd)),'o'); hold on
-    hPP(condInd).MarkerFaceColor = hPP(condInd).Color;
-    hPP(condInd).MarkerEdgeColor = 'w';
-    hPP(condInd).MarkerSize = 3.5;
-end
+% polarplot(angle(mean(x,1)),abs(mean(x,1)),'.k'); hold on
+polarplot(angle(x(y==1,b)),abs(x(y==1,b)),'.'); hold on
+polarplot(angle(x(y==2,b)),abs(x(y==2,b)),'.'); hold on
 drawnow
-hPP2 = hPP; clear hPP
-ax2 = gca;
-
-ax = ax1;
-ax.ThetaTickLabel = 12-ax.ThetaTick(1:end)/360*12;
-ax.ThetaTickLabel(1,:) = '0 ';
-ax.ThetaAxis.Label.String = {'delay' '(sec)'};
-ax.ThetaAxis.Label.Rotation = 0;
-ax.ThetaAxis.Label.HorizontalAlignment = 'left';
-ax.RAxis.Label.String = 'amp (%BOLD)';
-ax.RAxis.Label.Rotation = 80;
-ax.Title.String = 'before polNorm';
-
-ax = ax2;
-ax.ThetaTickLabel = (-wrapTo180(ax.ThetaTick(1:end))/360*12);
-ax.ThetaTickLabel(1,:) = '0 ';
-% ax.ThetaAxis.Label.String = {'delay' '(sec)'};
-% ax.ThetaAxis.Label.Rotation = 0;
-% ax.ThetaAxis.Label.HorizontalAlignment = 'left';
-ax.Title.String = 'after polNorm';
 
 %% Cartesian Normalization
-subplot(2,2,3); clear hPP
-for condInd = 1:size(x,3)
-    hScat(condInd) = scatter(real(x(:,:,condInd)),imag(x(:,:,condInd)),'o'); hold on
-    hScat(condInd).MarkerFaceColor = hScat(condInd).CData;
-    hScat(condInd).MarkerEdgeColor = 'w';
-%     hScat(condInd).SizeData = 35;
-end
+% Plot before
+subplot(2,2,3);
+% hScat = scatter(real(mean(x,1)),imag(mean(x,1)),'ko','filled'); hold on
+hScat(1) = scatter(real(x(y==1,b)),imag(x(y==1,b)),'o','filled'); hold on
+hScat(2) = scatter(real(x(y==2,b)),imag(x(y==2,b)),'o','filled'); hold on
+set(hScat,'MarkerEdgeColor','none');
+alpha(hScat,0.5)
 ax = gca;
 ax.DataAspectRatio = [1 1 1];
 ax.PlotBoxAspectRatio = [1 1 1];
@@ -1131,20 +1269,17 @@ grid on
 title('before cartNorm')
 xlabel('real')
 ylabel('imag')
+drawnow
 
-
-%normalize
+% Normalize
 x = cartSpaceNormalization(x,SVMspace);
 
-%after
-subplot(2,2,4); clear hPP
-for condInd = 1:size(x,3)
-    hScat(condInd) = scatter(real(x(:,:,condInd)),imag(x(:,:,condInd)),'o'); hold on
-    hScat(condInd).MarkerFaceColor = hScat(condInd).CData;
-    hScat(condInd).MarkerEdgeColor = 'w';
-%     hScat(condInd).SizeData = 35;
-end
-
+%Plot after
+subplot(2,2,4);
+hScat(1) = scatter(real(x(y==1,b)),imag(x(y==1,b)),'o','filled'); hold on
+hScat(2) = scatter(real(x(y==2,b)),imag(x(y==2,b)),'o','filled'); hold on
+set(hScat,'MarkerEdgeColor','none');
+alpha(hScat,0.5)
 ax = gca;
 ax.DataAspectRatio = [1 1 1];
 ax.PlotBoxAspectRatio = [1 1 1];
@@ -1174,8 +1309,142 @@ title('after cartNorm')
 xlabel('real')
 ylabel('imag')
 drawnow
+suptitle('voxels (repetitions averaged)')
 
-suptitle('repetitions (most active voxel)')
+% function f = plotPolNormExample(x,SVMspace)
+% x = permute(x,[2 3 1 4]);
+% x = x(:,:,:);
+% x = permute(x,[3 4 2 1]);
+% f = figure('WindowStyle','docked');
+% 
+% %% Polar Normalization
+% subplot(2,2,1); clear hPP
+% % polarplot(angle(x(:)),abs(x(:)),'.'); hold on
+% for condInd = 1:size(x,3)
+%     hPP(condInd) = polarplot(angle(x(:,:,condInd)),abs(x(:,:,condInd)),'o'); hold on
+%     hPP(condInd).MarkerFaceColor = hPP(condInd).Color;
+%     hPP(condInd).MarkerEdgeColor = 'w';
+%     hPP(condInd).MarkerSize = 3.5;
+% end
+% drawnow
+% hPP1 = hPP; clear hPP
+% ax1 = gca;
+% 
+% % Normalize
+% x = polarSpaceNormalization(x,SVMspace);
+% 
+% % Plot after
+% subplot(2,2,2);
+% % polarplot(angle(xAfter(:)),abs(xAfter(:)),'.'); hold on
+% for condInd = 1:size(x,3)
+%     hPP(condInd) = polarplot(angle(x(:,:,condInd)),abs(x(:,:,condInd)),'o'); hold on
+%     hPP(condInd).MarkerFaceColor = hPP(condInd).Color;
+%     hPP(condInd).MarkerEdgeColor = 'w';
+%     hPP(condInd).MarkerSize = 3.5;
+% end
+% drawnow
+% hPP2 = hPP; clear hPP
+% ax2 = gca;
+% 
+% ax = ax1;
+% ax.ThetaTickLabel = 12-ax.ThetaTick(1:end)/360*12;
+% ax.ThetaTickLabel(1,:) = '0 ';
+% ax.ThetaAxis.Label.String = {'delay' '(sec)'};
+% ax.ThetaAxis.Label.Rotation = 0;
+% ax.ThetaAxis.Label.HorizontalAlignment = 'left';
+% ax.RAxis.Label.String = 'amp (%BOLD)';
+% ax.RAxis.Label.Rotation = 80;
+% ax.Title.String = 'before polNorm';
+% 
+% ax = ax2;
+% ax.ThetaTickLabel = (-wrapTo180(ax.ThetaTick(1:end))/360*12);
+% ax.ThetaTickLabel(1,:) = '0 ';
+% % ax.ThetaAxis.Label.String = {'delay' '(sec)'};
+% % ax.ThetaAxis.Label.Rotation = 0;
+% % ax.ThetaAxis.Label.HorizontalAlignment = 'left';
+% ax.Title.String = 'after polNorm';
+% 
+% %% Cartesian Normalization
+% subplot(2,2,3); clear hPP
+% for condInd = 1:size(x,3)
+%     hScat(condInd) = scatter(real(x(:,:,condInd)),imag(x(:,:,condInd)),'o'); hold on
+%     hScat(condInd).MarkerFaceColor = hScat(condInd).CData;
+%     hScat(condInd).MarkerEdgeColor = 'w';
+% %     hScat(condInd).SizeData = 35;
+% end
+% ax = gca;
+% ax.DataAspectRatio = [1 1 1];
+% ax.PlotBoxAspectRatio = [1 1 1];
+% xLim = xlim;
+% delta = abs(diff(xLim)).*0.1;
+% if ~(xLim(1)<0)
+%     xLim(1) = -delta;
+% end
+% if ~(xLim(2)>0)
+%     xLim(2) = +delta;
+% end
+% xlim(xLim)
+% 
+% yLim = ylim;
+% if ~(yLim(1)<0)
+%     yLim(1) = -delta;
+% end
+% if ~(yLim(2)>0)
+%     yLim(2) = +delta;
+% end
+% ylim(yLim)
+% 
+% uistack(plot([0 0],ylim,'-k'),'bottom');
+% uistack(plot(xlim,[0 0],'-k'),'bottom');
+% grid on
+% title('before cartNorm')
+% xlabel('real')
+% ylabel('imag')
+% 
+% 
+% %normalize
+% x = cartSpaceNormalization(x,SVMspace);
+% 
+% %after
+% subplot(2,2,4); clear hPP
+% for condInd = 1:size(x,3)
+%     hScat(condInd) = scatter(real(x(:,:,condInd)),imag(x(:,:,condInd)),'o'); hold on
+%     hScat(condInd).MarkerFaceColor = hScat(condInd).CData;
+%     hScat(condInd).MarkerEdgeColor = 'w';
+% %     hScat(condInd).SizeData = 35;
+% end
+% 
+% ax = gca;
+% ax.DataAspectRatio = [1 1 1];
+% ax.PlotBoxAspectRatio = [1 1 1];
+% xLim = xlim;
+% delta = abs(diff(xLim)).*0.1;
+% if ~(xLim(1)<0)
+%     xLim(1) = -delta;
+% end
+% if ~(xLim(2)>0)
+%     xLim(2) = +delta;
+% end
+% xlim(xLim)
+% 
+% yLim = ylim;
+% if ~(yLim(1)<0)
+%     yLim(1) = -delta;
+% end
+% if ~(yLim(2)>0)
+%     yLim(2) = +delta;
+% end
+% ylim(yLim)
+% 
+% uistack(plot([0 0],ylim,'-k'),'bottom');
+% uistack(plot(xlim,[0 0],'-k'),'bottom');
+% grid on
+% title('after cartNorm')
+% xlabel('real')
+% ylabel('imag')
+% drawnow
+% 
+% suptitle('repetitions (most active voxel)')
 
 
 function res = perfMetric(y,yHat,k)
@@ -1333,6 +1602,16 @@ disp(['  -student'])
 disp(['   T=' num2str(resGroup.acc_T,'%0.2f') '; P=' num2str(resGroup.acc_P,'%0.3f')])
 disp(['  -wilcoxon'])
 disp(['   sRank=' num2str(resGroup.acc_wilcoxonSignedrank,'%0.2f') '; P=' num2str(resGroup.acc_wilcoxonP,'%0.3f')])
+
+function printRes2(resGroup)
+disp(['FixedEffect'])
+disp([' -auc    =' num2str(resGroup.auc*100,'%0.2f') '; 90%CI=' num2str(resGroup.auc_CI,'%0.3f ')])
+disp(['RandomEffect'])
+disp([' -student'])
+disp(['  T=' num2str(resGroup.acc_T,'%0.2f') '; P=' num2str(resGroup.acc_P,'%0.3f')])
+disp([' -wilcoxon'])
+disp(['  sRank=' num2str(resGroup.acc_wilcoxonSignedrank,'%0.2f') '; P=' num2str(resGroup.acc_wilcoxonP,'%0.3f')])
+
 
 function [x,sz] = reDim1(x)
 sz = size(x);
