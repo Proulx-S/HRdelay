@@ -10,6 +10,13 @@ end
 
 dataType = 'wave';
 svmSpace = 'cart';
+[resBS.,resWS] = runDecoding(svmSpace,dataType,verbose);
+
+compareRes(X,Y)
+
+
+dataType = 'wave';
+svmSpace = 'cart';
 [resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
 svmSpace = 'cartNoAmp';
 [resBS.([svmSpace '_' dataType]),resWS.([svmSpace '_' dataType])] = runDecoding(svmSpace,dataType,verbose);
