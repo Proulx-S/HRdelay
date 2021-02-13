@@ -51,9 +51,10 @@ end
 p.designInfo1 = cellstr(num2str((1:size(hrfknobs,2))','t%d'))';
 p.designInfo2 = cellstr(num2str(sort(unique(d.condLabel)),'cond%d'))';
 
+%%
 opt.rmPoly0 = 1;
+opt.condCombList = {[1 2 3]};
 ols = fitFixed(d,p,opt);
-
 regTlist = unique(ols.designInfo(1,:));
 regTlist = regTlist(~cellfun('isempty',regTlist));
 regCondList = unique(ols.designInfo(2,:));
@@ -72,10 +73,20 @@ res.info = 'X x Y x Z x cond x time';
 
 function res = fitFixed(d,p,opt)
 if ~exist('opt','var')
+    opt = [];
+end
+if ~isfield(opt,'rmPoly0')
     opt.rmPoly0 = 0;
 end
+if ~isfield(opt,'condCombList')
+    opt.condCombList = {};
+    opt.condComb = 0;
+elseif ~isempty(opt.condCombList)
+    opt.condComb = 1;
+end
 
-%% Fixed-effect
+
+
 fprintf('*** FIXED-EFFECT FIT ***\n');
 % Regressors of interest
 condList = sort(unique(d.condLabel));
@@ -95,6 +106,10 @@ for condInd = 1:length(condList)
     tmp4{condInd} = repmat(p.designInfo2(condInd),[1 size(tmp3{condInd},2)]);
 end
 clear tmp1 tmp2
+%add condition combination
+if opt.condComb
+    error('code that')
+end
 design = catcell(2,tmp3);
 runLabel = catcell(1,runLabel);
 designInfo1 = repmat(p.designInfo1,[1 size(tmp4,2)]);
@@ -123,22 +138,44 @@ polyInfo = [repmat({''},3,length(polyInfo)); polyInfo; repmat({''},0,length(poly
 design = cat(2,design,motion,poly);
 designInfo = cat(2,designInfo,motionInfo,polyInfo);
 
-
-% OLS Full-Model
+%% Activation to any cond
+% Full-Model
 if opt.rmPoly0
     modelInd = ~ismember(designInfo(4,:),'poly0');
 else
     modelInd = true(1,size(designInfo,2));
 end
-dataInd = ~catcell(1,d.censorPts);
-display('computing OLS')
-res.betas = ...
-    mtimescell(olsmatrix2(design(dataInd,modelInd)), ...
-    cellfun(@(x) squish(x(:,:,:,~d.censorPts{1}),3)',d.data,'UniformOutput',0));  % regressors x voxels
+res.anyAct.full = computeOLS(d,design(:,modelInd),designInfo(:,modelInd));
+% imagesc(res.full.design)
 
-res.betas = permute(reshape(res.betas,[size(design(:,modelInd),2) p.xyzSz]),[2 3 4 1]);
-res.design = design(:,modelInd);
-res.designInfo = designInfo(:,modelInd);
+% Reduced-Model
+modelInd = cellfun('isempty',designInfo(2,:));
+res.anyAct.red = computeOLS(d,design(:,modelInd),designInfo(:,modelInd));
+% imagesc(res.red.design)
+
+%% Activation difference between any cond
+% Full-Model
+if opt.rmPoly0
+    modelInd = ~ismember(designInfo(4,:),'poly0');
+else
+    modelInd = true(1,size(designInfo,2));
+end
+res.anyAct.full = computeOLS(d,design(:,modelInd),designInfo(:,modelInd));
+
+
+
+function res = computeOLS(d,design,designInfo)
+disp('computing OLS')
+dataInd = ~d.censorPts{1}; % this here works only if all runs have the same length and the same censored points
+xyzSz = size(d.data{1},1:3);
+res.betas = ...
+    mtimescell(olsmatrix2(design), ...
+    cellfun(@(x) squish(x(:,:,:,dataInd),3)',d.data,'UniformOutput',0));  % regressors x voxels
+res.betas = permute(reshape(res.betas,[size(design,2) xyzSz]),[2 3 4 1]);
+res.design = design;
+res.designInfo = designInfo;
+
+
 
 
 
