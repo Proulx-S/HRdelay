@@ -186,7 +186,7 @@ end
 
     
 
-for subjInd = 1:length(subjList)
+for subjInd = 2%1:length(subjList)
     %% Get data and design
     clearvars -except tstart mask subjInd smLevel subjStimList subjList maskLabel matFun repo funDir anatDir stimDir inDir outDir noMovement runInd exclude exclusion
     subj = subjList{subjInd}; subjStim = subjStimList{subjInd};
@@ -316,6 +316,62 @@ for subjInd = 1:length(subjList)
     
     
     clearvars -except tstart mask subjInd smLevel subjStimList subjList subj funData_folderIN funData_folderOUT labelDir data design extraRegr sessionLabel sessModel stimdur tr maskLabel repo funDir anatDir stimDir inDir outDir noMovement runInd exclude exclusion
+    
+    
+    %% Rorganize data
+    d.runInd = runInd';
+    d.repLabel = (1:size(d.runInd,1))'*ones(1,size(d.runInd,2));
+    d.condLabel = ones(size(d.runInd,1),1)*[1 2 3];
+    d.sessLabel = cell2mat(sessionLabel)';
+    d.data = data';
+    d.design = design';
+    d.extraRegr = extraRegr';
+    
+    [~,b] = sort(d.runInd(:));
+    fieldList = fields(d);
+    for fieldInd = 1:length(fieldList)
+        d.(fieldList{fieldInd}) = d.(fieldList{fieldInd})(b);
+    end
+    sessLabel = d.sessLabel;
+    for fieldInd = 1:length(fieldList)
+        d1.(fieldList{fieldInd}) = d.(fieldList{fieldInd})(sessLabel==1);
+        d2.(fieldList{fieldInd}) = d.(fieldList{fieldInd})(sessLabel==2);
+        d.(fieldList{fieldInd}) = [];
+    end
+    clear d
+    d2.repLabel = d2.repLabel - min(d2.repLabel) + 1;
+    
+    d1.excl = false(size(d1.data));
+    d2.excl = false(size(d2.data));
+    d.fun = rmfield(cat(2,d1,d2),{'sessLabel' 'runInd'}); clear d1 d2
+    d.info = '1 X sess';
+    % deal with exclusion
+    if exclude
+        subjIndX = ismember(exclusion.subj,subjInd);
+        if any(subjIndX)
+            sessIndX = exclusion.sess{subjIndX};
+            repeatIndX = exclusion.run{subjIndX};
+            d.fun(1,sessIndX).excl = d.fun(1,sessIndX).repLabel==repeatIndX;
+            
+%             condIndX = exclusion.cond{subjIndX};
+%             condIndX = d.fun(1,sessIndX).condLabel==condIndX;
+        end
+    end
+    p.tr = 1;
+    p.stimDur = stimdur;
+    p.doMotion = 0;
+    
+    sessInd = 1;
+    runGLMs(d.fun(1,sessInd),p)
+    
+    clearvars -except tstart mask subjInd smLevel subjStimList subjList subj funData_folderIN funData_folderOUT labelDir data design extraRegr sessionLabel sessModel splitDesign splitData splitIn splitExtraRegr splitSessionLabel stimdur tr maskLabel repo funDir anatDir stimDir inDir outDir noMovement runInd splitRunInd exclude exclusion d
+    
+    [results] = GLMresp(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'splitedIn',splitIn),splitIn);
+    
+    
+    
+    
+    
     %% GLMdenoise on all sessions (not split)
     % - - - - - - - - - -
     % o x ------------
@@ -374,6 +430,10 @@ for subjInd = 1:length(subjList)
         splitSessionLabel(ii:splitIn:length(splitDesign)) = splitSessionLabel_tmp(:,ii);
         splitRunInd(ii:splitIn:length(splitDesign)) = splitRunInd_tmp(:,ii);
     end
+    
+    
+    
+    
     clearvars -except tstart mask subjInd smLevel subjStimList subjList subj funData_folderIN funData_folderOUT labelDir data design extraRegr sessionLabel sessModel splitDesign splitData splitIn splitExtraRegr splitSessionLabel stimdur tr maskLabel repo funDir anatDir stimDir inDir outDir noMovement runInd splitRunInd exclude exclusion
     
     %hemodynamic response extraction
