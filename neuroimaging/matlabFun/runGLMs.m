@@ -22,8 +22,10 @@ end
 
 %% HRF
 res = runHRF(d,p);
+%% Sin
+res = runSin(d,p)
 
-function res = runHRF(d,p)
+function res = runSin(d,p)
 %% First exclude
 excl = d.excl;
 rep = unique(d.repLabel(excl));
@@ -36,6 +38,14 @@ for fieldInd = 1:length(fieldList)
 end
 d.repLabel(d.repLabel>rep) = d.repLabel(d.repLabel>rep)-1;
 d.runInd = (1:size(d.repLabel,1))';
+fieldList = fields(p);
+for fieldInd = 1:length(fieldList)
+    if size(p.(fieldList{fieldInd}),1)==p.runSz
+        p.(fieldList{fieldInd})(excl,:,:) = [];
+    end
+end
+p.runSz = p.runSz - nnz(excl);
+
 
 %% Prepare peices of design matrix
 for runInd = 1:size(d.data,1)
@@ -51,10 +61,79 @@ end
 p.designInfo1 = cellstr(num2str((1:size(hrfknobs,2))','t%d'))';
 p.designInfo2 = cellstr(num2str(sort(unique(d.condLabel)),'cond%d'))';
 
-%%
+%% Fixed-effect
+disp('Fixed-Effect')
 opt.rmPoly0 = 1;
-opt.condCombList = {[1 2 3]};
-ols = fitFixed(d,p,opt);
+fixedFitRes = fitFixed(d,p,opt);
+fieldList = fields(fixedFitRes);
+for fieldInd = 1:length(fieldList)
+    figure('WindowStyle','docked');
+    imagesc(fixedFitRes.(fieldList{fieldInd}).design)
+    title(fixedFitRes.(fieldList{fieldInd}).info)
+end
+
+regTlist = unique(ols.designInfo(1,:));
+regTlist = regTlist(~cellfun('isempty',regTlist));
+regCondList = unique(ols.designInfo(2,:));
+regCondList = regCondList(~cellfun('isempty',regCondList));
+hr = nan([p.xyzSz length(regCondList) length(regTlist)]);
+for regTind = 1:length(regTlist)
+    for regCondInd = 1:length(regCondList)
+        ind = ismember(ols.designInfo(1,:),regTlist{regTind}) & ismember(ols.designInfo(2,:),regCondList{regCondInd});
+        hr(:,:,:,regCondInd,regTind) = ols.betas(:,:,:,ind);
+    end
+end
+
+res.hr = hr; clear hr
+res.info = 'X x Y x Z x cond x time';
+
+function res = runHRF(d,p)
+%% First exclude
+excl = d.excl;
+rep = unique(d.repLabel(excl));
+if length(rep)>1
+    error('cannot deal with multiple exclusions')
+end
+fieldList = fields(d);
+for fieldInd = 1:length(fieldList)
+    d.(fieldList{fieldInd})(excl,:,:) = [];
+end
+d.repLabel(d.repLabel>rep) = d.repLabel(d.repLabel>rep)-1;
+d.runInd = (1:size(d.repLabel,1))';
+fieldList = fields(p);
+for fieldInd = 1:length(fieldList)
+    if size(p.(fieldList{fieldInd}),1)==p.runSz
+        p.(fieldList{fieldInd})(excl,:,:) = [];
+    end
+end
+p.runSz = p.runSz - nnz(excl);
+
+
+%% Prepare peices of design matrix
+for runInd = 1:size(d.data,1)
+    hrfknobs = zeros(p.stimDur/p.tr*2);
+    hrfknobs(logical(eye(size(hrfknobs)))) = 1;
+    d.design{runInd} = repmat(d.design{runInd},1,size(hrfknobs,2));
+    tmp = nan(p.timeSz(runInd)+p.stimDur/p.tr*2-1,p.stimDur/p.tr*2);
+    for knobInd = 1:size(hrfknobs,2)
+        tmp(:,knobInd) = conv2(full(d.design{runInd}(:,knobInd)),hrfknobs(:,knobInd));  % convolve
+    end
+    d.design{runInd} = tmp(1:p.timeSz(runInd,1),:); clear tmp
+end
+p.designInfo1 = cellstr(num2str((1:size(hrfknobs,2))','t%d'))';
+p.designInfo2 = cellstr(num2str(sort(unique(d.condLabel)),'cond%d'))';
+
+%% Fixed-effect
+disp('Fixed-Effect')
+opt.rmPoly0 = 1;
+fixedFitRes = fitFixed(d,p,opt);
+fieldList = fields(fixedFitRes);
+for fieldInd = 1:length(fieldList)
+    figure('WindowStyle','docked');
+    imagesc(fixedFitRes.(fieldList{fieldInd}).design)
+    title(fixedFitRes.(fieldList{fieldInd}).info)
+end
+
 regTlist = unique(ols.designInfo(1,:));
 regTlist = regTlist(~cellfun('isempty',regTlist));
 regCondList = unique(ols.designInfo(2,:));
@@ -78,17 +157,115 @@ end
 if ~isfield(opt,'rmPoly0')
     opt.rmPoly0 = 0;
 end
-if ~isfield(opt,'condCombList')
-    opt.condCombList = {};
-    opt.condComb = 0;
-elseif ~isempty(opt.condCombList)
-    opt.condComb = 1;
+% design
+[designFull,designFullInfo] = getDesign(d,p);
+% Polynomial regressors
+[poly,polyInfo,polyX,polyInfoX] = getPoly(d,p);
+% Extra regressors (e.g. motion)
+if p.doMotion
+    motionInfo = [repmat({''},2,length(motionInfo)); motionInfo; repmat({''},1,length(motionInfo))];
+else
+    motion = nan(sum(p.timeSz),0);
+    motionInfo = {};
 end
 
+%% Model 1
+modelName = 'null';
+modelLabel = 'null model';
+designMatrix = cat(2,motion,poly);
+designMatrixInfo = cat(2,motionInfo,polyInfo);
+design = designMatrix;
+designInfo = designMatrixInfo;
+res.(modelName) = computeOLS(d,design,designInfo);
+res.(modelName).info = modelLabel;
+% imagesc(res.(modelName).design)
+
+%% Model 2
+modelName = 'full';
+modelLabel = 'full model';
+design = designFull;
+designInfo = designFullInfo;
+if opt.rmPoly0
+    design = cat(2,design,motion,polyX);
+    designInfo = cat(2,designInfo,motionInfo,polyInfoX);
+else
+    design = cat(2,design,motion,poly);
+    designInfo = cat(2,designInfo,motionInfo,polyInfo);
+end
+res.(modelName) = computeOLS(d,design,designInfo);
+res.(modelName).info = modelLabel;
+% imagesc(res.(modelName).design)
+
+%% Model 3
+modelName = 'cond1v2v3null';
+modelLabel = 'cond1v2v3-null model';
+condToMerge = {'cond1' 'cond2' 'cond3'};
+condToMergeLabel = {'cond1v2v3'};
+[design,designInfo] = mergeCond(designFull,designFullInfo,condToMerge,condToMergeLabel);
+if opt.rmPoly0
+    design = cat(2,design,motion,polyX);
+    designInfo = cat(2,designInfo,motionInfo,polyInfoX);
+else
+    design = cat(2,design,motion,poly);
+    designInfo = cat(2,designInfo,motionInfo,polyInfo);
+end
+res.(modelName) = computeOLS(d,design,designInfo);
+res.(modelName).info = modelLabel;
+% imagesc(res.(modelName).design)
+
+%% Model 4
+modelName = 'cond1v2null';
+modelLabel = 'cond1v2-null model';
+condToMerge = {'cond1' 'cond2'};
+condToMergeLabel = {'cond1+2'};
+[design,designInfo] = mergeCond(designFull,designFullInfo,condToMerge,condToMergeLabel);
+if opt.rmPoly0
+    design = cat(2,design,motion,polyX);
+    designInfo = cat(2,designInfo,motionInfo,polyInfoX);
+else
+    design = cat(2,design,motion,poly);
+    designInfo = cat(2,designInfo,motionInfo,polyInfo);
+end
+res.(modelName) = computeOLS(d,design,designInfo);
+res.(modelName).info = modelLabel;
+% imagesc(res.(modelName).design)
+
+%% Model 5
+modelName = 'cond1v3null';
+modelLabel = 'cond1v3-null model';
+condToMerge = {'cond1' 'cond3'};
+condToMergeLabel = {'cond1+3'};
+[design,designInfo] = mergeCond(designFull,designFullInfo,condToMerge,condToMergeLabel);
+if opt.rmPoly0
+    design = cat(2,design,motion,polyX);
+    designInfo = cat(2,designInfo,motionInfo,polyInfoX);
+else
+    design = cat(2,design,motion,poly);
+    designInfo = cat(2,designInfo,motionInfo,polyInfo);
+end
+res.(modelName) = computeOLS(d,design,designInfo);
+res.(modelName).info = modelLabel;
+% imagesc(res.(modelName).design)
+
+%% Model 6
+modelName = 'cond2v3null';
+modelLabel = 'cond2v3-null model';
+condToMerge = {'cond2' 'cond3'};
+condToMergeLabel = {'cond2+3'};
+[design,designInfo] = mergeCond(designFull,designFullInfo,condToMerge,condToMergeLabel);
+if opt.rmPoly0
+    design = cat(2,design,motion,polyX);
+    designInfo = cat(2,designInfo,motionInfo,polyInfoX);
+else
+    design = cat(2,design,motion,poly);
+    designInfo = cat(2,designInfo,motionInfo,polyInfo);
+end
+res.(modelName) = computeOLS(d,design,designInfo);
+res.(modelName).info = modelLabel;
+% imagesc(res.(modelName).design)
 
 
-fprintf('*** FIXED-EFFECT FIT ***\n');
-% Regressors of interest
+function [design,designInfo] = getDesign(d,p)
 condList = sort(unique(d.condLabel));
 tmp1 = d.design;
 runLabel = cell(size(d.design));
@@ -96,73 +273,47 @@ for runInd = 1:size(tmp1,1)
     tmp1{runInd,1} = zeros(size(tmp1{runInd,1}));
     runLabel{runInd} = ones(size(tmp1{runInd,1},1),1).*runInd;
 end
-tmp3 = cell(1,length(condList));
-tmp4 = cell(1,length(condList));
+design = cell(1,length(condList));
+designInfo = cell(1,length(condList));
 for condInd = 1:length(condList)
     cond = condList(condInd);
     tmp2 = tmp1;
     tmp2(d.condLabel==cond) = d.design(d.condLabel==cond);
-    tmp3{condInd} = catcell(1,tmp2);
-    tmp4{condInd} = repmat(p.designInfo2(condInd),[1 size(tmp3{condInd},2)]);
+    design{condInd} = catcell(1,tmp2);
+    designInfo{condInd} = repmat(p.designInfo2(condInd),[1 size(design{condInd},2)]);
 end
 clear tmp1 tmp2
-%add condition combination
-if opt.condComb
-    error('code that')
-end
-design = catcell(2,tmp3);
-runLabel = catcell(1,runLabel);
-designInfo1 = repmat(p.designInfo1,[1 size(tmp4,2)]);
-designInfo2 = catcell(2,tmp4);
+design = catcell(2,design);
+designInfo1 = repmat(p.designInfo1,[1 size(designInfo,2)]);
+designInfo2 = catcell(2,designInfo);
+designInfo = cat(1,designInfo1,designInfo2); clear designInfo1 designInfo2
+designInfo = cat(1,designInfo,repmat({''},2,length(designInfo)));
 
-% Polynomial regressors
+function [poly,polyInfo,polyX,polyInfoX] = getPoly(d,p)
 poly = blkdiag(d.poly{:});
 polyInfo = catcell(1,d.polyInfo)';
 polyInfo = polyInfo(:)';
-
-% Extra regressors (e.g. motion)
-if p.doMotion
-    error('code that')
-else
-    motion = nan(size(design,1),0);
-    motionInfo = {};
-end
-
-% Design Matrix 
-designInfo = cat(1,designInfo1,designInfo2); clear designInfo1 designInfo2
-designInfo = [repmat({''},0,length(designInfo)); designInfo; repmat({''},2,length(designInfo))];
-if p.doMotion
-    motionInfo = [repmat({''},2,length(motionInfo)); motionInfo; repmat({''},1,length(motionInfo))];
-end
 polyInfo = [repmat({''},3,length(polyInfo)); polyInfo; repmat({''},0,length(polyInfo))];
-design = cat(2,design,motion,poly);
-designInfo = cat(2,designInfo,motionInfo,polyInfo);
 
-%% Activation to any cond
-% Full-Model
-if opt.rmPoly0
-    modelInd = ~ismember(designInfo(4,:),'poly0');
-else
-    modelInd = true(1,size(designInfo,2));
+polyX = poly;
+polyX(:,1:p.polyDeg(1)+1:end) = [];
+polyInfoX = polyInfo;
+polyInfoX(:,1:p.polyDeg(1)+1:end) = [];
+
+function [design,designInfo] = mergeCond(design,designInfo,condToMerge,condToMergeLabel)
+regList = unique(designInfo(1,:));
+designTmp = nan([size(design,1) size(regList,2)]);
+designInfoTmp = repmat({''},[size(designInfo,1) size(regList,2)]);
+for regInd = 1:length(regList)
+    ind = ismember(designInfo(1,:),regList{regInd});
+    ind = ind & ismember(designInfo(2,:),condToMerge);
+    designTmp(:,regInd) = sum(design(:,ind),2);
+    designInfoTmp(1,regInd) = regList(regInd);
+    designInfoTmp(2,regInd) = condToMergeLabel;
 end
-res.anyAct.full = computeOLS(d,design(:,modelInd),designInfo(:,modelInd));
-% imagesc(res.full.design)
-
-% Reduced-Model
-modelInd = cellfun('isempty',designInfo(2,:));
-res.anyAct.red = computeOLS(d,design(:,modelInd),designInfo(:,modelInd));
-% imagesc(res.red.design)
-
-%% Activation difference between any cond
-% Full-Model
-if opt.rmPoly0
-    modelInd = ~ismember(designInfo(4,:),'poly0');
-else
-    modelInd = true(1,size(designInfo,2));
-end
-res.anyAct.full = computeOLS(d,design(:,modelInd),designInfo(:,modelInd));
-
-
+ind = ~ismember(designInfo(2,:),condToMerge);
+design = cat(2,designTmp,design(:,ind));
+designInfo = cat(2,designInfoTmp,designInfo(:,ind));
 
 function res = computeOLS(d,design,designInfo)
 disp('computing OLS')
