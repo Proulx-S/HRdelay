@@ -116,7 +116,7 @@ runInd = ismember(d.condLabel,condInd);
 
 fit.(nullLabel) = getYhat(fit.(nullLabel),p);
 fit.(nullLabel) = getSS(fit.(nullLabel),'yHat');
-fit.(nullLabel) = getYerr(fit.(nullLabel),p);
+fit.(nullLabel) = getYerr(fit.(nullLabel),d);
 fit.(nullLabel) = getSS(fit.(nullLabel),'yErr');
 
 F.(testLabel) = getF(fit.(fullLabel),fit.(nullLabel),runInd);
@@ -131,7 +131,7 @@ runInd = ismember(d.condLabel,condInd);
 
 fit.(nullLabel) = getYhat(fit.(nullLabel),p);
 fit.(nullLabel) = getSS(fit.(nullLabel),'yHat');
-fit.(nullLabel) = getYerr(fit.(nullLabel),p);
+fit.(nullLabel) = getYerr(fit.(nullLabel),d);
 fit.(nullLabel) = getSS(fit.(nullLabel),'yErr');
 
 F.(testLabel) = getF(fit.(fullLabel),fit.(nullLabel),runInd);
@@ -146,7 +146,7 @@ runInd = ismember(d.condLabel,condInd);
 
 fit.(nullLabel) = getYhat(fit.(nullLabel),p);
 fit.(nullLabel) = getSS(fit.(nullLabel),'yHat');
-fit.(nullLabel) = getYerr(fit.(nullLabel),p);
+fit.(nullLabel) = getYerr(fit.(nullLabel),d);
 fit.(nullLabel) = getSS(fit.(nullLabel),'yErr');
 
 F.(testLabel) = getF(fit.(fullLabel),fit.(nullLabel),runInd);
@@ -161,7 +161,7 @@ runInd = ismember(d.condLabel,condInd);
 
 fit.(nullLabel) = getYhat(fit.(nullLabel),p);
 fit.(nullLabel) = getSS(fit.(nullLabel),'yHat');
-fit.(nullLabel) = getYerr(fit.(nullLabel),p);
+fit.(nullLabel) = getYerr(fit.(nullLabel),d);
 fit.(nullLabel) = getSS(fit.(nullLabel),'yErr');
 
 F.(testLabel) = getF(fit.(fullLabel),fit.(nullLabel),runInd);
@@ -176,7 +176,7 @@ runInd = ismember(d.condLabel,condInd);
 
 fit.(nullLabel) = getYhat(fit.(nullLabel),p);
 fit.(nullLabel) = getSS(fit.(nullLabel),'yHat');
-fit.(nullLabel) = getYerr(fit.(nullLabel),p);
+fit.(nullLabel) = getYerr(fit.(nullLabel),d);
 fit.(nullLabel) = getSS(fit.(nullLabel),'yErr');
 
 F.(testLabel) = getF(fit.(fullLabel),fit.(nullLabel),runInd);
