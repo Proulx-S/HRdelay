@@ -21,11 +21,13 @@ for runInd = 1:size(d.data,1)
 end
 
 %% HRF
-res = runHRF(d,p);
+opt.hrf = 'hr';
+res = runFit(d,p,opt);
 %% Sin
-res = runSin(d,p)
+opt.hrf = 'sin';
+res = runFit(d,p,opt)
 
-function res = runSin(d,p)
+function res = runFit(d,p,opt)
 %% First exclude
 excl = d.excl;
 rep = unique(d.repLabel(excl));
@@ -46,116 +48,149 @@ for fieldInd = 1:length(fieldList)
 end
 p.runSz = p.runSz - nnz(excl);
 
-
 %% Prepare peices of design matrix
-for runInd = 1:size(d.data,1)
-    hrfknobs = zeros(p.stimDur/p.tr*2);
-    hrfknobs(logical(eye(size(hrfknobs)))) = 1;
-    d.design{runInd} = repmat(d.design{runInd},1,size(hrfknobs,2));
-    tmp = nan(p.timeSz(runInd)+p.stimDur/p.tr*2-1,p.stimDur/p.tr*2);
-    for knobInd = 1:size(hrfknobs,2)
-        tmp(:,knobInd) = conv2(full(d.design{runInd}(:,knobInd)),hrfknobs(:,knobInd));  % convolve
-    end
-    d.design{runInd} = tmp(1:p.timeSz(runInd,1),:); clear tmp
+switch opt.hrf
+    case 'sin'
+        for runInd = 1:size(d.data,1)
+            t = (1:p.tr:p.tr*size(d.design{runInd},1))-1;
+            d.design{runInd}(:,1) = normalizemax(sin(2*pi*1/(p.stimDur*2)*t)');
+            d.design{runInd}(:,2) = normalizemax(cos(2*pi*1/(p.stimDur*2)*t)');
+        end
+        p.designInfo1 = {'sin' 'cos'};
+        p.designInfo2 = cellstr(num2str(sort(unique(d.condLabel)),'cond%d'))';
+    case 'hr'
+        for runInd = 1:size(d.data,1)
+            hrfknobs = zeros(p.stimDur/p.tr*2);
+            hrfknobs(logical(eye(size(hrfknobs)))) = 1;
+            d.design{runInd} = repmat(d.design{runInd},1,size(hrfknobs,2));
+            tmp = nan(p.timeSz(runInd)+p.stimDur/p.tr*2-1,p.stimDur/p.tr*2);
+            for knobInd = 1:size(hrfknobs,2)
+                tmp(:,knobInd) = conv2(full(d.design{runInd}(:,knobInd)),hrfknobs(:,knobInd));  % convolve
+            end
+            d.design{runInd} = tmp(1:p.timeSz(runInd,1),:); clear tmp
+        end
+        p.designInfo1 = cellstr(num2str((1:size(hrfknobs,2))','t%d'))';
+        p.designInfo2 = cellstr(num2str(sort(unique(d.condLabel)),'cond%d'))';
+    otherwise
+        error('X')
 end
-p.designInfo1 = cellstr(num2str((1:size(hrfknobs,2))','t%d'))';
-p.designInfo2 = cellstr(num2str(sort(unique(d.condLabel)),'cond%d'))';
 
 %% Fixed-effect
 disp('Fixed-Effect')
-opt.rmPoly0 = 1;
 fixedFitRes = fitFixed(d,p,opt);
-fieldList = fields(fixedFitRes);
-for fieldInd = 1:length(fieldList)
-    figure('WindowStyle','docked');
-    imagesc(fixedFitRes.(fieldList{fieldInd}).design)
-    title(fixedFitRes.(fieldList{fieldInd}).info)
-end
+betas = getBetas(fixedFitRes,p);
+% fieldList = fields(fixedFitRes);
+% for fieldInd = 1:length(fieldList)
+%     if isstruct(fixedFitRes.(fieldList{fieldInd}))
+%         figure('WindowStyle','docked');
+%         imagesc(fixedFitRes.(fieldList{fieldInd}).design)
+%         title(fixedFitRes.(fieldList{fieldInd}).info)
+%     end
+% end
 
-regTlist = unique(ols.designInfo(1,:));
-regTlist = regTlist(~cellfun('isempty',regTlist));
-regCondList = unique(ols.designInfo(2,:));
-regCondList = regCondList(~cellfun('isempty',regCondList));
-hr = nan([p.xyzSz length(regCondList) length(regTlist)]);
-for regTind = 1:length(regTlist)
-    for regCondInd = 1:length(regCondList)
-        ind = ismember(ols.designInfo(1,:),regTlist{regTind}) & ismember(ols.designInfo(2,:),regCondList{regCondInd});
-        hr(:,:,:,regCondInd,regTind) = ols.betas(:,:,:,ind);
+function betas = getBetas(fitRes,p)
+reg1list = unique(fitRes.full.designInfo(1,:));
+reg1list = reg1list(~cellfun('isempty',reg1list));
+reg2List = unique(fitRes.full.designInfo(2,:));
+reg2List = reg2List(~cellfun('isempty',reg2List));
+
+betas = nan([p.xyzSz length(reg2List) length(reg1list)]);
+for regTind = 1:length(reg1list)
+    for regCondInd = 1:length(reg2List)
+        ind = ismember(fitRes.full.designInfo(1,:),reg1list{regTind}) & ismember(fitRes.full.designInfo(2,:),reg2List{regCondInd});
+        betas(:,:,:,regCondInd,regTind) = fitRes.full.betas(:,:,:,ind);
     end
 end
-
-res.hr = hr; clear hr
-res.info = 'X x Y x Z x cond x time';
-
-function res = runHRF(d,p)
-%% First exclude
-excl = d.excl;
-rep = unique(d.repLabel(excl));
-if length(rep)>1
-    error('cannot deal with multiple exclusions')
-end
-fieldList = fields(d);
-for fieldInd = 1:length(fieldList)
-    d.(fieldList{fieldInd})(excl,:,:) = [];
-end
-d.repLabel(d.repLabel>rep) = d.repLabel(d.repLabel>rep)-1;
-d.runInd = (1:size(d.repLabel,1))';
-fieldList = fields(p);
-for fieldInd = 1:length(fieldList)
-    if size(p.(fieldList{fieldInd}),1)==p.runSz
-        p.(fieldList{fieldInd})(excl,:,:) = [];
-    end
-end
-p.runSz = p.runSz - nnz(excl);
-
-
-%% Prepare peices of design matrix
-for runInd = 1:size(d.data,1)
-    hrfknobs = zeros(p.stimDur/p.tr*2);
-    hrfknobs(logical(eye(size(hrfknobs)))) = 1;
-    d.design{runInd} = repmat(d.design{runInd},1,size(hrfknobs,2));
-    tmp = nan(p.timeSz(runInd)+p.stimDur/p.tr*2-1,p.stimDur/p.tr*2);
-    for knobInd = 1:size(hrfknobs,2)
-        tmp(:,knobInd) = conv2(full(d.design{runInd}(:,knobInd)),hrfknobs(:,knobInd));  % convolve
-    end
-    d.design{runInd} = tmp(1:p.timeSz(runInd,1),:); clear tmp
-end
-p.designInfo1 = cellstr(num2str((1:size(hrfknobs,2))','t%d'))';
-p.designInfo2 = cellstr(num2str(sort(unique(d.condLabel)),'cond%d'))';
-
-%% Fixed-effect
-disp('Fixed-Effect')
-opt.rmPoly0 = 1;
-fixedFitRes = fitFixed(d,p,opt);
-fieldList = fields(fixedFitRes);
-for fieldInd = 1:length(fieldList)
-    figure('WindowStyle','docked');
-    imagesc(fixedFitRes.(fieldList{fieldInd}).design)
-    title(fixedFitRes.(fieldList{fieldInd}).info)
+switch fitRes.info
+    case 'hr'
+        tmp = betas; clear betas
+        betas.hr = tmp;
+        betas.info = 'hr: X x Y x Z x cond x time';
+    case 'sin'
+        tmp = complex(betas(:,:,:,:,1),betas(:,:,:,:,2)); clear betas
+        betas.sin = tmp;
+        betas.info = 'sin: X x Y x Z x cond';
+    otherwise
+        error('X')
 end
 
-regTlist = unique(ols.designInfo(1,:));
-regTlist = regTlist(~cellfun('isempty',regTlist));
-regCondList = unique(ols.designInfo(2,:));
-regCondList = regCondList(~cellfun('isempty',regCondList));
-hr = nan([p.xyzSz length(regCondList) length(regTlist)]);
-for regTind = 1:length(regTlist)
-    for regCondInd = 1:length(regCondList)
-        ind = ismember(ols.designInfo(1,:),regTlist{regTind}) & ismember(ols.designInfo(2,:),regCondList{regCondInd});
-        hr(:,:,:,regCondInd,regTind) = ols.betas(:,:,:,ind);
-    end
-end
 
-res.hr = hr; clear hr
-res.info = 'X x Y x Z x cond x time';
+% function res = runHRF(d,p)
+% %% First exclude
+% excl = d.excl;
+% rep = unique(d.repLabel(excl));
+% if length(rep)>1
+%     error('cannot deal with multiple exclusions')
+% end
+% fieldList = fields(d);
+% for fieldInd = 1:length(fieldList)
+%     d.(fieldList{fieldInd})(excl,:,:) = [];
+% end
+% d.repLabel(d.repLabel>rep) = d.repLabel(d.repLabel>rep)-1;
+% d.runInd = (1:size(d.repLabel,1))';
+% fieldList = fields(p);
+% for fieldInd = 1:length(fieldList)
+%     if size(p.(fieldList{fieldInd}),1)==p.runSz
+%         p.(fieldList{fieldInd})(excl,:,:) = [];
+%     end
+% end
+% p.runSz = p.runSz - nnz(excl);
+% 
+% 
+% %% Prepare peices of design matrix
+% for runInd = 1:size(d.data,1)
+%     hrfknobs = zeros(p.stimDur/p.tr*2);
+%     hrfknobs(logical(eye(size(hrfknobs)))) = 1;
+%     d.design{runInd} = repmat(d.design{runInd},1,size(hrfknobs,2));
+%     tmp = nan(p.timeSz(runInd)+p.stimDur/p.tr*2-1,p.stimDur/p.tr*2);
+%     for knobInd = 1:size(hrfknobs,2)
+%         tmp(:,knobInd) = conv2(full(d.design{runInd}(:,knobInd)),hrfknobs(:,knobInd));  % convolve
+%     end
+%     d.design{runInd} = tmp(1:p.timeSz(runInd,1),:); clear tmp
+% end
+% p.designInfo1 = cellstr(num2str((1:size(hrfknobs,2))','t%d'))';
+% p.designInfo2 = cellstr(num2str(sort(unique(d.condLabel)),'cond%d'))';
+% 
+% %% Fixed-effect
+% disp('Fixed-Effect')
+% opt.rmPoly0 = 1;
+% fixedFitRes = fitFixed(d,p,opt);
+% fieldList = fields(fixedFitRes);
+% for fieldInd = 1:length(fieldList)
+%     figure('WindowStyle','docked');
+%     imagesc(fixedFitRes.(fieldList{fieldInd}).design)
+%     title(fixedFitRes.(fieldList{fieldInd}).info)
+% end
+% 
+% regTlist = unique(ols.designInfo(1,:));
+% regTlist = regTlist(~cellfun('isempty',regTlist));
+% regCondList = unique(ols.designInfo(2,:));
+% regCondList = regCondList(~cellfun('isempty',regCondList));
+% hr = nan([p.xyzSz length(regCondList) length(regTlist)]);
+% for regTind = 1:length(regTlist)
+%     for regCondInd = 1:length(regCondList)
+%         ind = ismember(ols.designInfo(1,:),regTlist{regTind}) & ismember(ols.designInfo(2,:),regCondList{regCondInd});
+%         hr(:,:,:,regCondInd,regTind) = ols.betas(:,:,:,ind);
+%     end
+% end
+% 
+% res.hr = hr; clear hr
+% res.info = 'X x Y x Z x cond x time';
 
 
 function res = fitFixed(d,p,opt)
 if ~exist('opt','var')
-    opt = [];
+    opt.hrf = 'sin';
 end
 if ~isfield(opt,'rmPoly0')
-    opt.rmPoly0 = 0;
+    switch opt.hrf
+        case 'sin'
+            opt.rmPoly0 = 0;
+        case 'hr'
+            opt.rmPoly0 = 1;
+        otherwise
+            error('X')
+    end
 end
 % design
 [designFull,designFullInfo] = getDesign(d,p);
@@ -264,6 +299,7 @@ res.(modelName) = computeOLS(d,design,designInfo);
 res.(modelName).info = modelLabel;
 % imagesc(res.(modelName).design)
 
+res.info = opt.hrf;
 
 function [design,designInfo] = getDesign(d,p)
 condList = sort(unique(d.condLabel));
