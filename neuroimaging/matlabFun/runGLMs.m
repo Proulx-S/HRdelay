@@ -116,6 +116,9 @@ runInd = ismember(d.condLabel,condInd);
 
 fit.(nullLabel) = getYhat(fit.(nullLabel),p);
 fit.(nullLabel) = getSS(fit.(nullLabel),'yHat');
+fit.(nullLabel) = getYerr(fit.(nullLabel),p);
+fit.(nullLabel) = getSS(fit.(nullLabel),'yErr');
+
 F.(testLabel) = getF(fit.(fullLabel),fit.(nullLabel),runInd);
 fit.(nullLabel) = rmfield(fit.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n'});
 
@@ -128,6 +131,9 @@ runInd = ismember(d.condLabel,condInd);
 
 fit.(nullLabel) = getYhat(fit.(nullLabel),p);
 fit.(nullLabel) = getSS(fit.(nullLabel),'yHat');
+fit.(nullLabel) = getYerr(fit.(nullLabel),p);
+fit.(nullLabel) = getSS(fit.(nullLabel),'yErr');
+
 F.(testLabel) = getF(fit.(fullLabel),fit.(nullLabel),runInd);
 fit.(nullLabel) = rmfield(fit.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n'});
 
@@ -140,6 +146,9 @@ runInd = ismember(d.condLabel,condInd);
 
 fit.(nullLabel) = getYhat(fit.(nullLabel),p);
 fit.(nullLabel) = getSS(fit.(nullLabel),'yHat');
+fit.(nullLabel) = getYerr(fit.(nullLabel),p);
+fit.(nullLabel) = getSS(fit.(nullLabel),'yErr');
+
 F.(testLabel) = getF(fit.(fullLabel),fit.(nullLabel),runInd);
 fit.(nullLabel) = rmfield(fit.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n'});
 
@@ -152,6 +161,9 @@ runInd = ismember(d.condLabel,condInd);
 
 fit.(nullLabel) = getYhat(fit.(nullLabel),p);
 fit.(nullLabel) = getSS(fit.(nullLabel),'yHat');
+fit.(nullLabel) = getYerr(fit.(nullLabel),p);
+fit.(nullLabel) = getSS(fit.(nullLabel),'yErr');
+
 F.(testLabel) = getF(fit.(fullLabel),fit.(nullLabel),runInd);
 fit.(nullLabel) = rmfield(fit.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n'});
 
@@ -164,6 +176,9 @@ runInd = ismember(d.condLabel,condInd);
 
 fit.(nullLabel) = getYhat(fit.(nullLabel),p);
 fit.(nullLabel) = getSS(fit.(nullLabel),'yHat');
+fit.(nullLabel) = getYerr(fit.(nullLabel),p);
+fit.(nullLabel) = getSS(fit.(nullLabel),'yErr');
+
 F.(testLabel) = getF(fit.(fullLabel),fit.(nullLabel),runInd);
 fit.(nullLabel) = rmfield(fit.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n'});
 
@@ -223,14 +238,14 @@ if n~=sum(fFull.yHatSS_n(runInd))
 end
 
 yErrSSfull = sum(catcell(4,fFull.yErrSS(runInd)),4);
-% yErrSSred = sum(catcell(4,fRed.yErrSS(runInd)),4);
-yHatSSfull = sum(catcell(4,fFull.yHatSS(runInd)),4);
-yHatSSred = sum(catcell(4,fRed.yHatSS(runInd)),4);
+yErrSSred = sum(catcell(4,fRed.yErrSS(runInd)),4);
+% yHatSSfull = sum(catcell(4,fFull.yHatSS(runInd)),4);
+% yHatSSred = sum(catcell(4,fRed.yHatSS(runInd)),4);
 
-% The following two methods are equivalent, the second demands less
+% The following two methods are equivalent, the second demands (a little) less
 % computations (no need to compute the residuals of the reduced model)
-% F.F  = ( (yErrSSred-yErrSSfull)./ (pFull-pRed) ) ./ ( yErrSSfull./(n-pFull) );
-F.F = ( (yHatSSfull-yHatSSred)./ (pFull-pRed) ) ./ ( yErrSSfull./(n-pFull) );
+F.F  = ( (yErrSSred-yErrSSfull)./ (pFull-pRed) ) ./ ( yErrSSfull./(n-pFull) );
+% F.F = ( (yHatSSfull-yHatSSred)./ (pFull-pRed) ) ./ ( yErrSSfull./(n-pFull) );
 
 F.p = fcdf(F.F,pFull-pRed,n-pFull);
 F.df.pFull = pFull;
