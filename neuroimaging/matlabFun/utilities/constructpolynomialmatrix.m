@@ -1,6 +1,6 @@
 function f = constructpolynomialmatrix(n,degrees,toNormOf1)
 if ~exist('toNormOf1','var')
-    toNormOf1 = 1;
+    toNormOf1 = 0;
 end
 
 % function f = constructpolynomialmatrix(n,degrees)
