@@ -78,15 +78,24 @@ end
 %% Fixed-effect
 disp('Fixed-Effect')
 fixedFitRes = fitFixed(d,p,opt);
+fieldList = fields(fixedFitRes);
+for fieldInd = 1:length(fieldList)
+    if isstruct(fixedFitRes.(fieldList{fieldInd}))
+        figure('WindowStyle','docked');
+        imagesc(fixedFitRes.(fieldList{fieldInd}).design)
+        title(fixedFitRes.(fieldList{fieldInd}).info)
+    end
+end
 betas = getBetas(fixedFitRes,p);
-% fieldList = fields(fixedFitRes);
-% for fieldInd = 1:length(fieldList)
-%     if isstruct(fixedFitRes.(fieldList{fieldInd}))
-%         figure('WindowStyle','docked');
-%         imagesc(fixedFitRes.(fieldList{fieldInd}).design)
-%         title(fixedFitRes.(fieldList{fieldInd}).info)
-%     end
-% end
+% figure('WindowStyle','docked');
+% tmp = permute(betas.hr,[4 5 1 2 3]);
+% tmp = mean(tmp(:,:,:),3);
+% plot(tmp')
+% figure('WindowStyle','docked');
+% tmp = mean(betas.sin,4);
+% imagesc(abs(tmp(:,:,10)))
+% imagesc(angle(tmp(:,:,10)))
+
 
 function betas = getBetas(fitRes,p)
 reg1list = unique(fitRes.full.designInfo(1,:));
@@ -302,6 +311,11 @@ res.(modelName).info = modelLabel;
 res.info = opt.hrf;
 
 function [design,designInfo] = getDesign(d,p)
+%first censor bad points
+for runInd = 1:size(d.poly,1)
+    d.design{runInd}(d.censorPts{runInd},:) = 0;
+end
+
 condList = sort(unique(d.condLabel));
 tmp1 = d.design;
 runLabel = cell(size(d.design));
@@ -326,6 +340,11 @@ designInfo = cat(1,designInfo1,designInfo2); clear designInfo1 designInfo2
 designInfo = cat(1,designInfo,repmat({''},2,length(designInfo)));
 
 function [poly,polyInfo,polyX,polyInfoX] = getPoly(d,p)
+%first censor bad points
+for runInd = 1:size(d.poly,1)
+    d.poly{runInd}(d.censorPts{runInd},:) = 0;
+end
+
 poly = blkdiag(d.poly{:});
 polyInfo = catcell(1,d.polyInfo)';
 polyInfo = polyInfo(:)';
@@ -353,11 +372,10 @@ designInfo = cat(2,designInfoTmp,designInfo(:,ind));
 
 function res = computeOLS(d,design,designInfo)
 disp('computing OLS')
-dataInd = ~d.censorPts{1}; % this here works only if all runs have the same length and the same censored points
 xyzSz = size(d.data{1},1:3);
 res.betas = ...
     mtimescell(olsmatrix2(design), ...
-    cellfun(@(x) squish(x(:,:,:,dataInd),3)',d.data,'UniformOutput',0));  % regressors x voxels
+    cellfun(@(x) squish(x,3)',d.data,'UniformOutput',0));  % regressors x voxels
 res.betas = permute(reshape(res.betas,[size(design,2) xyzSz]),[2 3 4 1]);
 res.design = design;
 res.designInfo = designInfo;
