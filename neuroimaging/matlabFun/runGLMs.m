@@ -21,13 +21,253 @@ for runInd = 1:size(d.data,1)
     d.censorPts{runInd,1} = false(timeSz,1);
     d.censorPts{runInd,1}(1:24) = true;
 end
+p.censorPts = d.censorPts;
 
 %% HRF
+res = fitHrMixed(d,p)
+
+
 opt.hrf = 'hr';
 res = runFit(d,p,opt);
 %% Sin
 opt.hrf = 'sin';
 res = runFit(d,p,opt)
+
+function res = fitSinMixed(d,p)
+%% First exclude
+excl = d.excl;
+rep = unique(d.repLabel(excl));
+if length(rep)>1
+    error('cannot deal with multiple exclusions')
+end
+fieldList = fields(d);
+for fieldInd = 1:length(fieldList)
+    d.(fieldList{fieldInd})(excl,:,:) = [];
+end
+d.repLabel(d.repLabel>rep) = d.repLabel(d.repLabel>rep)-1;
+d.runInd = (1:size(d.repLabel,1))';
+fieldList = fields(p);
+for fieldInd = 1:length(fieldList)
+    if size(p.(fieldList{fieldInd}),1)==p.runSz
+        p.(fieldList{fieldInd})(excl,:,:) = [];
+    end
+end
+p.runSz = p.runSz - nnz(excl);
+
+%% Prepare peices of design matrix
+switch opt.hrf
+    case 'sin'
+        for runInd = 1:size(d.data,1)
+            t = (1:p.tr:p.tr*size(d.design{runInd},1))-1;
+            d.design{runInd}(:,1) = normalizemax(sin(2*pi*1/(p.stimDur*2)*t)');
+            d.design{runInd}(:,2) = normalizemax(cos(2*pi*1/(p.stimDur*2)*t)');
+        end
+        p.designInfo1 = {'sin' 'cos'};
+        p.designInfo2 = cellstr(num2str(sort(unique(d.condLabel)),'cond%d'))';
+    case 'hr'
+        for runInd = 1:size(d.data,1)
+            hrfknobs = zeros(p.stimDur/p.tr*2);
+            hrfknobs(logical(eye(size(hrfknobs)))) = 1;
+            hrfknobs(:,1) = [];
+            d.design{runInd} = repmat(d.design{runInd},1,size(hrfknobs,2));
+            tmp = nan(p.timeSz(runInd)+p.stimDur/p.tr*2-1,size(hrfknobs,2));
+            for knobInd = 1:size(hrfknobs,2)
+                tmp(:,knobInd) = conv2(full(d.design{runInd}(:,knobInd)),hrfknobs(:,knobInd));  % convolve
+            end
+            d.design{runInd} = tmp(1:p.timeSz(runInd,1),:); clear tmp
+        end
+        p.designInfo1 = cellstr(num2str((1:size(hrfknobs,2))','t%d'))';
+        p.designInfo2 = cellstr(num2str(sort(unique(d.condLabel)),'cond%d'))';
+    otherwise
+        error('X')
+end
+
+%% Mixed-effect
+disp('Mixed-Effect')
+f = fitMixed(d,p,opt);
+info = squeeze(f.full.designInfo(:,:,:,:,:,1))';
+hrInd = all(~cellfun('isempty',info),1);
+info = squeeze(f.full.designInfo(:,:,:,:,:,4))';
+baseInd = ismember(info(1,:),'poly0');
+
+base = nan([p.xyzSz size(f.full.betas,5)]);
+for runInd = 1:size(f.full.betas,5)
+    base(:,:,:,runInd) = f.full.betas(:,:,:,baseInd,runInd);
+end
+hr = repmat(base,[1 1 1 1 p.stimDur*2./p.tr]);
+for runInd = 1:size(f.full.betas,5)
+    hr(:,:,:,runInd,2:end) = hr(:,:,:,runInd,2:end) + permute(f.full.betas(:,:,:,hrInd,runInd),[1 2 3 5 4]);
+end
+
+
+%% Fixed-effect
+disp('Fixed-Effect')
+f = fitFixed(d,p,opt);
+fieldList = fields(f);
+for fieldInd = 1:length(fieldList)
+    if isstruct(f.(fieldList{fieldInd}))
+        figure('WindowStyle','docked');
+        imagesc(catcell(1,f.(fieldList{fieldInd}).design))
+        title(f.(fieldList{fieldInd}).info)
+    end
+end
+
+%% Extract resp and brain
+[resp,~] = getBetas(f,p);
+tmp = permute(resp.hr,[4 5 1 2 3]);
+tmp = mean(tmp(:,:,:),3)';
+plot([0 0 0; tmp])
+
+
+
+%% F stats
+f.full = getYhat(f.full,p);
+f.full = getSS(f.full,'yHat');
+f.full = getYerr(f.full,d);
+f.full = getSS(f.full,'yErr');
+
+
+testLabel = 'act';
+fullLabel = 'full';
+nullLabel = 'actNull';
+condInd = [1 2 3];
+runInd = ismember(d.condLabel,condInd);
+
+f.(nullLabel) = getYhat(f.(nullLabel),p);
+f.(nullLabel) = getSS(f.(nullLabel),'yHat');
+f.(nullLabel) = getYerr(f.(nullLabel),d);
+f.(nullLabel) = getSS(f.(nullLabel),'yErr');
+
+F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
+f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n'});
+
+
+testLabel = 'cond1v2v3';
+fullLabel = 'full';
+nullLabel = 'cond1v2v3null';
+condInd = [1 2 3];
+runInd = ismember(d.condLabel,condInd);
+
+f.(nullLabel) = getYhat(f.(nullLabel),p);
+f.(nullLabel) = getSS(f.(nullLabel),'yHat');
+f.(nullLabel) = getYerr(f.(nullLabel),d);
+f.(nullLabel) = getSS(f.(nullLabel),'yErr');
+
+F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
+f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n'});
+
+
+testLabel = 'cond1v2';
+fullLabel = 'full';
+nullLabel = 'cond1v2null';
+condInd = [1 2];
+runInd = ismember(d.condLabel,condInd);
+
+f.(nullLabel) = getYhat(f.(nullLabel),p);
+f.(nullLabel) = getSS(f.(nullLabel),'yHat');
+f.(nullLabel) = getYerr(f.(nullLabel),d);
+f.(nullLabel) = getSS(f.(nullLabel),'yErr');
+
+F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
+f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n'});
+
+
+testLabel = 'cond1v3';
+fullLabel = 'full';
+nullLabel = 'cond1v3null';
+condInd = [1 3];
+runInd = ismember(d.condLabel,condInd);
+
+f.(nullLabel) = getYhat(f.(nullLabel),p);
+f.(nullLabel) = getSS(f.(nullLabel),'yHat');
+f.(nullLabel) = getYerr(f.(nullLabel),d);
+f.(nullLabel) = getSS(f.(nullLabel),'yErr');
+
+F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
+f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n'});
+
+
+testLabel = 'cond2v3';
+fullLabel = 'full';
+nullLabel = 'cond2v3null';
+condInd = [2 3];
+runInd = ismember(d.condLabel,condInd);
+
+f.(nullLabel) = getYhat(f.(nullLabel),p);
+f.(nullLabel) = getSS(f.(nullLabel),'yHat');
+f.(nullLabel) = getYerr(f.(nullLabel),d);
+f.(nullLabel) = getSS(f.(nullLabel),'yErr');
+
+F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
+f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n'});
+
+
+function res = fitHrMixed(d,p)
+%% First exclude
+excl = d.excl;
+rep = unique(d.repLabel(excl));
+if length(rep)>1
+    error('cannot deal with multiple exclusions')
+end
+fieldList = fields(d);
+for fieldInd = 1:length(fieldList)
+    d.(fieldList{fieldInd})(excl,:,:) = [];
+end
+d.repLabel(d.repLabel>rep) = d.repLabel(d.repLabel>rep)-1;
+d.runInd = (1:size(d.repLabel,1))';
+fieldList = fields(p);
+for fieldInd = 1:length(fieldList)
+    if size(p.(fieldList{fieldInd}),1)==p.runSz
+        p.(fieldList{fieldInd})(excl,:,:) = [];
+    end
+end
+p.runSz = p.runSz - nnz(excl);
+
+%% Prepare peices of design matrix
+for runInd = 1:size(d.data,1)
+    hrfknobs = zeros(p.stimDur/p.tr*2);
+    hrfknobs(logical(eye(size(hrfknobs)))) = 1;
+    hrfknobs(:,1) = [];
+    d.design{runInd} = repmat(d.design{runInd},1,size(hrfknobs,2));
+    tmp = nan(p.timeSz(runInd)+p.stimDur/p.tr*2-1,size(hrfknobs,2));
+    for knobInd = 1:size(hrfknobs,2)
+        tmp(:,knobInd) = conv2(full(d.design{runInd}(:,knobInd)),hrfknobs(:,knobInd));  % convolve
+    end
+    d.design{runInd} = tmp(1:p.timeSz(runInd,1),:); clear tmp
+end
+p.designInfo1 = cellstr(num2str((1:size(hrfknobs,2))','t%d'))';
+p.designInfo2 = cellstr(num2str(sort(unique(d.condLabel)),'cond%d'))';
+
+%% Mixed-effect
+disp('Mixed-Effect')
+f = fitMixed(d,p);
+info = squeeze(f.full.designInfo(:,:,:,:,:,1))';
+hrInd = all(~cellfun('isempty',info),1);
+info = squeeze(f.full.designInfo(:,:,:,:,:,4))';
+baseInd = ismember(info(1,:),'poly0');
+
+base = nan([p.xyzSz size(f.full.betas,5)]);
+for runInd = 1:size(f.full.betas,5)
+    base(:,:,:,runInd) = f.full.betas(:,:,:,baseInd,runInd);
+end
+hr = repmat(base,[1 1 1 1 p.stimDur*2./p.tr]);
+for runInd = 1:size(f.full.betas,5)
+    hr(:,:,:,runInd,2:end) = hr(:,:,:,runInd,2:end) + permute(f.full.betas(:,:,:,hrInd,runInd),[1 2 3 5 4]);
+end
+
+hr1 = hr(:,:,:,d.condLabel==1,:);
+[~,b] = sort(d.repLabel(d.condLabel==1));
+hr1 = hr1(:,:,:,b,:);
+hr2 = hr(:,:,:,d.condLabel==2,:);
+[~,b] = sort(d.repLabel(d.condLabel==2));
+hr2 = hr2(:,:,:,b,:);
+hr3 = hr(:,:,:,d.condLabel==3,:);
+[~,b] = sort(d.repLabel(d.condLabel==3));
+hr3 = hr3(:,:,:,b,:);
+res.hr = permute(cat(6,hr1,hr2,hr3),[1 2 3  4 6 5]);
+res.info = 'x X y X x X rep X cond X t';
+
+
 
 function res = runFit(d,p,opt)
 %% First exclude
@@ -78,19 +318,22 @@ switch opt.hrf
         error('X')
 end
 
-% %% Mixed-effect
-% disp('Mixed-Effect')
-% fit = fitMixed(d,p,opt);
-% [resp,~] = getBetas(fit,p);
-% figure('WindowStyle','docked');
-% tmp = permute(betas.hr,[4 5 1 2 3]);
-% tmp = mean(tmp(:,:,:),3);
-% plot(tmp')
-% figure('WindowStyle','docked');
-% tmp = mean(betas.sin,4);
-% imagesc(abs(tmp(:,:,10)))
-% imagesc(angle(tmp(:,:,10)))
+%% Mixed-effect
+disp('Mixed-Effect')
+f = fitMixed(d,p,opt);
+info = squeeze(f.full.designInfo(:,:,:,:,:,1))';
+hrInd = all(~cellfun('isempty',info),1);
+info = squeeze(f.full.designInfo(:,:,:,:,:,4))';
+baseInd = ismember(info(1,:),'poly0');
 
+base = nan([p.xyzSz size(f.full.betas,5)]);
+for runInd = 1:size(f.full.betas,5)
+    base(:,:,:,runInd) = f.full.betas(:,:,:,baseInd,runInd);
+end
+hr = repmat(base,[1 1 1 1 p.stimDur*2./p.tr]);
+for runInd = 1:size(f.full.betas,5)
+    hr(:,:,:,runInd,2:end) = hr(:,:,:,runInd,2:end) + permute(f.full.betas(:,:,:,hrInd,runInd),[1 2 3 5 4]);
+end
 
 
 %% Fixed-effect
@@ -331,6 +574,50 @@ switch fitRes.info
         error('X')
 end
 
+function res = fitMixed(d,p,opt)
+if ~exist('opt','var')
+    opt.hrf = 'sin';
+end
+
+% design
+[designFull,designFullInfo] = getDesign(d,p);
+% Polynomial regressors
+[poly,polyInfo] = getPoly(d,p);
+% Extra regressors (e.g. motion)
+if p.doMotion
+    motionInfo = [repmat({''},2,length(motionInfo)); motionInfo; repmat({''},1,length(motionInfo))];
+else
+    motion = cell(size(designFull));
+    motionInfo = {};
+end
+
+modelName = 'full';
+modelLabel = 'full model';
+for runInd = 1:size(d.data,1)
+    design = {cat(2,designFull{runInd},motion{runInd},poly{runInd})};
+    designInfo = cat(2,designFullInfo,motionInfo,polyInfo);
+    
+    ind = any(design{1},1);
+    design{1} = design{1}(:,ind);
+    designInfo = designInfo(:,ind);
+    
+    res.(modelName)(runInd,1) = computeOLS(d.data(runInd),design,designInfo,d.censorPts(runInd));
+    % imagesc(catcell(1,res.(modelName).design))
+end
+for runInd = 1:size(d.data,1)
+    res.(modelName)(1).info = modelLabel;
+end
+betas = cat(5,res.(modelName).betas);
+designInfo = cat(5,res.(modelName).designInfo);
+designInfo = permute(designInfo,[6 7 3 2 5 1 4]);
+res.full = [];
+res.full.betas = betas;
+res.full.design = design{1};
+res.full.designInfo = designInfo;
+
+
+
+
 function res = fitFixed(d,p,opt)
 if ~exist('opt','var')
     opt.hrf = 'sin';
@@ -338,7 +625,7 @@ end
 % design
 [designFull,designFullInfo] = getDesign(d,p);
 % Polynomial regressors
-[poly,polyInfo] = getPoly(d);
+[poly,polyInfo] = getPoly(d,p);
 % Extra regressors (e.g. motion)
 if p.doMotion
     motionInfo = [repmat({''},2,length(motionInfo)); motionInfo; repmat({''},1,length(motionInfo))];
@@ -354,7 +641,7 @@ design = designFull;
 designInfo = designFullInfo;
 design = cat(2,design,motion,poly);
 designInfo = cat(2,designInfo,motionInfo,polyInfo);
-res.(modelName) = computeOLS(d,p,design,designInfo);
+res.(modelName) = computeOLS(d.data,p,design,designInfo);
 res.(modelName).info = modelLabel;
 % imagesc(catcell(1,res.(modelName).design))
 
@@ -365,7 +652,7 @@ designMatrix = cat(2,motion,poly);
 designMatrixInfo = cat(2,motionInfo,polyInfo);
 design = designMatrix;
 designInfo = designMatrixInfo;
-res.(modelName) = computeOLS(d,p,design,designInfo);
+res.(modelName) = computeOLS(d.data,p,design,designInfo);
 res.(modelName).info = modelLabel;
 % imagesc(catcell(1,res.(modelName).design))
 
@@ -377,7 +664,7 @@ condToMergeLabel = {'cond1v2v3'};
 [design,designInfo] = mergeCond(designFull,designFullInfo,condToMerge,condToMergeLabel);
 design = cat(2,design,motion,poly);
 designInfo = cat(2,designInfo,motionInfo,polyInfo);
-res.(modelName) = computeOLS(d,p,design,designInfo);
+res.(modelName) = computeOLS(d.data,p,design,designInfo);
 res.(modelName).info = modelLabel;
 % imagesc(catcell(1,res.(modelName).design))
 
@@ -389,7 +676,7 @@ condToMergeLabel = {'cond1+2'};
 [design,designInfo] = mergeCond(designFull,designFullInfo,condToMerge,condToMergeLabel);
 design = cat(2,design,motion,poly);
 designInfo = cat(2,designInfo,motionInfo,polyInfo);
-res.(modelName) = computeOLS(d,p,design,designInfo);
+res.(modelName) = computeOLS(d.data,p,design,designInfo);
 res.(modelName).info = modelLabel;
 % imagesc(catcell(1,res.(modelName).design))
 
@@ -401,7 +688,7 @@ condToMergeLabel = {'cond1+3'};
 [design,designInfo] = mergeCond(designFull,designFullInfo,condToMerge,condToMergeLabel);
 design = cat(2,design,motion,poly);
 designInfo = cat(2,designInfo,motionInfo,polyInfo);
-res.(modelName) = computeOLS(d,p,design,designInfo);
+res.(modelName) = computeOLS(d.data,p,design,designInfo);
 res.(modelName).info = modelLabel;
 % imagesc(catcell(1,res.(modelName).design))
 
@@ -413,7 +700,7 @@ condToMergeLabel = {'cond2+3'};
 [design,designInfo] = mergeCond(designFull,designFullInfo,condToMerge,condToMergeLabel);
 design = cat(2,design,motion,poly);
 designInfo = cat(2,designInfo,motionInfo,polyInfo);
-res.(modelName) = computeOLS(d,p,design,designInfo);
+res.(modelName) = computeOLS(d.data,p,design,designInfo);
 res.(modelName).info = modelLabel;
 % imagesc(catcell(1,res.(modelName).design))
 
@@ -447,8 +734,9 @@ designInfo1 = repmat(p.designInfo1,[1 size(designInfo,2)]);
 designInfo2 = catcell(2,designInfo);
 designInfo = cat(1,designInfo1,designInfo2); clear designInfo1 designInfo2
 designInfo = cat(1,designInfo,repmat({''},2,length(designInfo)));
+design = mat2cell(design,p.timeSz,size(design,2));
 
-function [poly,polyInfo] = getPoly(d)
+function [poly,polyInfo] = getPoly(d,p)
 %first censor bad points
 for runInd = 1:size(d.poly,1)
     d.poly{runInd}(d.censorPts{runInd},:) = 0;
@@ -458,6 +746,7 @@ poly = blkdiag(d.poly{:});
 polyInfo = catcell(1,d.polyInfo)';
 polyInfo = polyInfo(:)';
 polyInfo = [repmat({''},3,length(polyInfo)); polyInfo; repmat({''},0,length(polyInfo))];
+poly = mat2cell(poly,p.timeSz,size(poly,2));
 
 function [design,designInfo] = mergeCond(design,designInfo,condToMerge,condToMergeLabel)
 regList = unique(designInfo(1,:));
@@ -474,15 +763,15 @@ ind = ~ismember(designInfo(2,:),condToMerge);
 design = cat(2,designTmp,design(:,ind));
 designInfo = cat(2,designInfoTmp,designInfo(:,ind));
 
-function res = computeOLS(d,p,design,designInfo)
+function res = computeOLS(X,design,designInfo,censorPts)
 disp('computing OLS')
-xyzSz = size(d.data{1},1:3);
+xyzSz = size(X{1},[1 2 3]);
 res.betas = ...
     mtimescell(olsmatrix2(design), ...
-    cellfun(@(x) squish(x,3)',d.data,'UniformOutput',0));  % regressors x voxels
-res.betas = permute(reshape(res.betas,[size(design,2) xyzSz]),[2 3 4 1]);
-res.design = mat2cell(design,p.timeSz,size(design,2));
-res.censorPts = d.censorPts;
+    cellfun(@(x) squish(x,3)',X,'UniformOutput',0));  % regressors x voxels
+res.betas = permute(reshape(res.betas,[size(res.betas,1) xyzSz]),[2 3 4 1]);
+res.design = design;
+res.censorPts = censorPts;
 res.designInfo = designInfo;
 
 

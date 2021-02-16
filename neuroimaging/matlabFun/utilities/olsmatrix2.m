@@ -1,4 +1,7 @@
 function f = olsmatrix2(X)
+if iscell(X)
+    X = catcell(1,X);
+end
 
 % function f = olsmatrix2(X)
 %
