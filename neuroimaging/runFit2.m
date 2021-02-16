@@ -361,97 +361,12 @@ for subjInd = 2%1:length(subjList)
     p.stimDur = stimdur;
     p.doMotion = 0;
     
-    sessInd = 1;
-    runGLMs(d.fun(1,sessInd),p)
-    
-    clearvars -except tstart mask subjInd smLevel subjStimList subjList subj funData_folderIN funData_folderOUT labelDir data design extraRegr sessionLabel sessModel splitDesign splitData splitIn splitExtraRegr splitSessionLabel stimdur tr maskLabel repo funDir anatDir stimDir inDir outDir noMovement runInd splitRunInd exclude exclusion d
-    
-    [results] = GLMresp(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'splitedIn',splitIn),splitIn);
-    
-    
-    
-    
-    
-    %% GLMdenoise on all sessions (not split)
-    % - - - - - - - - - -
-    % o x ------------
-    splitIn = 1;
-    display([subj '; split in ' num2str(splitIn)])
-    
-    splitPossible = 10;
-    splitData = data;
-    splitDesign = design;
-    splitExtraRegr = extraRegr;
-    splitSessionLabel = sessionLabel;
-    splitRunInd = num2cell(runInd);
-    
-    splitData = cat(2,splitData(1,:),splitData(2,:),splitData(3,:)); splitData(cellfun('isempty',splitData)) = [];
-    splitDesign = cat(2,splitDesign(1,:),splitDesign(2,:),splitDesign(3,:)); splitDesign(cellfun('isempty',splitDesign)) = [];
-    splitExtraRegr = cat(2,splitExtraRegr(1,:),splitExtraRegr(2,:),splitExtraRegr(3,:)); splitExtraRegr(cellfun('isempty',splitExtraRegr)) = [];
-    splitSessionLabel = cat(2,splitSessionLabel(1,:),splitSessionLabel(2,:),splitSessionLabel(3,:)); splitSessionLabel(cellfun('isempty',splitSessionLabel)) = [];
-    splitRunInd = cat(2,splitRunInd(1,:),splitRunInd(2,:),splitRunInd(3,:)); splitRunInd(cellfun('isempty',splitRunInd)) = [];
-    
-    splitRun_tmp = cell(length(splitData),splitIn);
-    splitInd_tmp = cell(length(splitData),splitIn);
-    splitData_tmp = cell(length(splitData),splitIn);
-    splitDesign_tmp = cell(length(splitData),splitIn);
-    splitExtraRegr_tmp = cell(length(splitData),splitIn);
-    splitSessionLabel_tmp = cell(length(splitData),splitIn);
-    splitRunInd_tmp = cell(length(splitData),splitIn);
-    for i = 1:length(splitData)
-%         %remove another cycle at the begining, keep the end
-%         splitData{i}(:,:,:,1:12) = [];
-%         splitDesign{i}(1:12) = [];
-%         splitExtraRegr{i}(1:12,:) = [];
-        
-        for ii = 1:splitIn
-            splitRun_tmp{i,ii} = i;
-            splitInd_tmp{i,ii} = 1+(ii-1)*(splitPossible/splitIn)*12:(ii)*(splitPossible/splitIn)*12;
-            splitData_tmp{i,ii} = splitData{i}(:,:,:,splitInd_tmp{i,ii});
-            splitDesign_tmp{i,ii} = splitDesign{i}(splitInd_tmp{i,ii});
-            splitExtraRegr_tmp{i,ii} = splitExtraRegr{i}(splitInd_tmp{i,ii},:);
-            splitSessionLabel_tmp{i,ii} = splitSessionLabel{i};
-            splitRunInd_tmp{i,ii} = splitRunInd{i};
-        end
-    end
-    splitRun = cell(1,numel(splitRun_tmp));
-    splitInd = cell(1,numel(splitInd_tmp));
-    splitData = cell(1,numel(splitData_tmp));
-    splitDesign = cell(1,numel(splitDesign_tmp));
-    splitExtraRegr = cell(1,numel(splitExtraRegr_tmp));
-    splitSessionLabel = cell(1,numel(splitSessionLabel_tmp));
-    splitRunInd = cell(1,numel(splitRunInd_tmp));
-    for ii = 1:splitIn
-        splitRun(ii:splitIn:numel(splitRun_tmp)) = splitRun_tmp(:,ii);
-        splitInd(ii:splitIn:numel(splitInd_tmp)) = splitInd_tmp(:,ii);
-        splitData(ii:splitIn:numel(splitData_tmp)) = splitData_tmp(:,ii);
-        splitDesign(ii:splitIn:numel(splitDesign_tmp)) = splitDesign_tmp(:,ii);
-        splitExtraRegr(ii:splitIn:numel(splitExtraRegr_tmp)) = splitExtraRegr_tmp(:,ii);
-        splitSessionLabel(ii:splitIn:length(splitDesign)) = splitSessionLabel_tmp(:,ii);
-        splitRunInd(ii:splitIn:length(splitDesign)) = splitRunInd_tmp(:,ii);
+    for sessInd = 1:2
+        sess = ['sess' num2str(sessInd)];
+        res.(sess) = runGLMs(d.fun(1,sessInd),p);
     end
     
-    
-    
-    
-    clearvars -except tstart mask subjInd smLevel subjStimList subjList subj funData_folderIN funData_folderOUT labelDir data design extraRegr sessionLabel sessModel splitDesign splitData splitIn splitExtraRegr splitSessionLabel stimdur tr maskLabel repo funDir anatDir stimDir inDir outDir noMovement runInd splitRunInd exclude exclusion
-    
-    %hemodynamic response extraction
-    disp('--- Response Time Course Extraction ---')
-    ana = 'resp';
-    [results] = GLMresp(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'splitedIn',splitIn),splitIn);
-    if noMovement
-        outName = fullfile(funData_folderOUT,[maskLabel ana]);
-    else
-        outName = fullfile(funData_folderOUT,[maskLabel ana '_move12']);
-    end
-    if strcmp(outName(end),'_')
-        outName(end) = [];
-    end
-    save([outName '_resp.mat'],'results'); clear results
-    
-    disp('--- Response Sinusoidal Fit ---')
-    %sin mixed(random)-model
+    keyboard
     ana = 'SinCos';
     if noMovement
         outName = fullfile(funData_folderOUT,[maskLabel ana]);
@@ -461,28 +376,145 @@ for subjInd = 2%1:length(subjList)
     if strcmp(outName(end),'_')
         outName(end) = [];
     end
-    [resultsTmp,detrendedData] = GLMsinCos3(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'runLabel',{splitRunInd},'splitedIn',splitIn),splitIn);
-    resultsTmp.OLS.mixed.inputs = resultsTmp.inputs; resultsTmp = rmfield(resultsTmp,'inputs');
-    %sin fixed-model
-    if exclude && ismember(subjList(subjInd),exclusion.subjList(exclusion.subj))
-        exclInd = ismember(exclusion.subjList(exclusion.subj),subjList(subjInd));
-        if length(exclInd)>1
-            error('need adjust the code for multiple exclusion here');
-        end
-        curExclusion.sess = exclusion.sess{exclInd};
-        curExclusion.run = exclusion.run{exclInd};
-        curExclusion.cond = exclusion.cond{exclInd};
-        [results,~] = GLMsinCos5(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'runLabel',{splitRunInd},'splitedIn',splitIn),splitIn,curExclusion);
-    else
-        [results,~] = GLMsinCos5(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'runLabel',{splitRunInd},'splitedIn',splitIn),splitIn);
-    end
-    results.OLS.fixed.inputs = results.inputs; results = rmfield(results,'inputs');
-    %put mixed(random) and mixed models in the same variable
-    results.OLS.mixed = resultsTmp.OLS.mixed; clear resultsTmp
+    
     results.mask = mask;
     save([outName '.mat'],'results','-v7.3');
     save([outName '_detrendedData.mat'],'detrendedData','-v7.3');
     disp([subj ': done'])
-    telapsed = toc;
-    disp(['Whole thing took: ' num2str(telapsed) 'sec'])
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+%     
+%     
+%     
+%     clearvars -except tstart mask subjInd smLevel subjStimList subjList subj funData_folderIN funData_folderOUT labelDir data design extraRegr sessionLabel sessModel splitDesign splitData splitIn splitExtraRegr splitSessionLabel stimdur tr maskLabel repo funDir anatDir stimDir inDir outDir noMovement runInd splitRunInd exclude exclusion d
+%     
+%     [results] = GLMresp(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'splitedIn',splitIn),splitIn);
+%     
+%     
+%     
+%     
+%     
+%     %% GLMdenoise on all sessions (not split)
+%     % - - - - - - - - - -
+%     % o x ------------
+%     splitIn = 1;
+%     display([subj '; split in ' num2str(splitIn)])
+%     
+%     splitPossible = 10;
+%     splitData = data;
+%     splitDesign = design;
+%     splitExtraRegr = extraRegr;
+%     splitSessionLabel = sessionLabel;
+%     splitRunInd = num2cell(runInd);
+%     
+%     splitData = cat(2,splitData(1,:),splitData(2,:),splitData(3,:)); splitData(cellfun('isempty',splitData)) = [];
+%     splitDesign = cat(2,splitDesign(1,:),splitDesign(2,:),splitDesign(3,:)); splitDesign(cellfun('isempty',splitDesign)) = [];
+%     splitExtraRegr = cat(2,splitExtraRegr(1,:),splitExtraRegr(2,:),splitExtraRegr(3,:)); splitExtraRegr(cellfun('isempty',splitExtraRegr)) = [];
+%     splitSessionLabel = cat(2,splitSessionLabel(1,:),splitSessionLabel(2,:),splitSessionLabel(3,:)); splitSessionLabel(cellfun('isempty',splitSessionLabel)) = [];
+%     splitRunInd = cat(2,splitRunInd(1,:),splitRunInd(2,:),splitRunInd(3,:)); splitRunInd(cellfun('isempty',splitRunInd)) = [];
+%     
+%     splitRun_tmp = cell(length(splitData),splitIn);
+%     splitInd_tmp = cell(length(splitData),splitIn);
+%     splitData_tmp = cell(length(splitData),splitIn);
+%     splitDesign_tmp = cell(length(splitData),splitIn);
+%     splitExtraRegr_tmp = cell(length(splitData),splitIn);
+%     splitSessionLabel_tmp = cell(length(splitData),splitIn);
+%     splitRunInd_tmp = cell(length(splitData),splitIn);
+%     for i = 1:length(splitData)
+% %         %remove another cycle at the begining, keep the end
+% %         splitData{i}(:,:,:,1:12) = [];
+% %         splitDesign{i}(1:12) = [];
+% %         splitExtraRegr{i}(1:12,:) = [];
+%         
+%         for ii = 1:splitIn
+%             splitRun_tmp{i,ii} = i;
+%             splitInd_tmp{i,ii} = 1+(ii-1)*(splitPossible/splitIn)*12:(ii)*(splitPossible/splitIn)*12;
+%             splitData_tmp{i,ii} = splitData{i}(:,:,:,splitInd_tmp{i,ii});
+%             splitDesign_tmp{i,ii} = splitDesign{i}(splitInd_tmp{i,ii});
+%             splitExtraRegr_tmp{i,ii} = splitExtraRegr{i}(splitInd_tmp{i,ii},:);
+%             splitSessionLabel_tmp{i,ii} = splitSessionLabel{i};
+%             splitRunInd_tmp{i,ii} = splitRunInd{i};
+%         end
+%     end
+%     splitRun = cell(1,numel(splitRun_tmp));
+%     splitInd = cell(1,numel(splitInd_tmp));
+%     splitData = cell(1,numel(splitData_tmp));
+%     splitDesign = cell(1,numel(splitDesign_tmp));
+%     splitExtraRegr = cell(1,numel(splitExtraRegr_tmp));
+%     splitSessionLabel = cell(1,numel(splitSessionLabel_tmp));
+%     splitRunInd = cell(1,numel(splitRunInd_tmp));
+%     for ii = 1:splitIn
+%         splitRun(ii:splitIn:numel(splitRun_tmp)) = splitRun_tmp(:,ii);
+%         splitInd(ii:splitIn:numel(splitInd_tmp)) = splitInd_tmp(:,ii);
+%         splitData(ii:splitIn:numel(splitData_tmp)) = splitData_tmp(:,ii);
+%         splitDesign(ii:splitIn:numel(splitDesign_tmp)) = splitDesign_tmp(:,ii);
+%         splitExtraRegr(ii:splitIn:numel(splitExtraRegr_tmp)) = splitExtraRegr_tmp(:,ii);
+%         splitSessionLabel(ii:splitIn:length(splitDesign)) = splitSessionLabel_tmp(:,ii);
+%         splitRunInd(ii:splitIn:length(splitDesign)) = splitRunInd_tmp(:,ii);
+%     end
+%     
+%     
+%     
+%     
+%     clearvars -except tstart mask subjInd smLevel subjStimList subjList subj funData_folderIN funData_folderOUT labelDir data design extraRegr sessionLabel sessModel splitDesign splitData splitIn splitExtraRegr splitSessionLabel stimdur tr maskLabel repo funDir anatDir stimDir inDir outDir noMovement runInd splitRunInd exclude exclusion
+%     
+%     %hemodynamic response extraction
+%     disp('--- Response Time Course Extraction ---')
+%     ana = 'resp';
+%     [results] = GLMresp(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'splitedIn',splitIn),splitIn);
+%     if noMovement
+%         outName = fullfile(funData_folderOUT,[maskLabel ana]);
+%     else
+%         outName = fullfile(funData_folderOUT,[maskLabel ana '_move12']);
+%     end
+%     if strcmp(outName(end),'_')
+%         outName(end) = [];
+%     end
+%     save([outName '_resp.mat'],'results'); clear results
+%     
+%     disp('--- Response Sinusoidal Fit ---')
+%     %sin mixed(random)-model
+%     ana = 'SinCos';
+%     if noMovement
+%         outName = fullfile(funData_folderOUT,[maskLabel ana]);
+%     else
+%         outName = fullfile(funData_folderOUT,[maskLabel ana '_move12']);
+%     end
+%     if strcmp(outName(end),'_')
+%         outName(end) = [];
+%     end
+%     [resultsTmp,detrendedData] = GLMsinCos3(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'runLabel',{splitRunInd},'splitedIn',splitIn),splitIn);
+%     resultsTmp.OLS.mixed.inputs = resultsTmp.inputs; resultsTmp = rmfield(resultsTmp,'inputs');
+%     %sin fixed-model
+%     if exclude && ismember(subjList(subjInd),exclusion.subjList(exclusion.subj))
+%         exclInd = ismember(exclusion.subjList(exclusion.subj),subjList(subjInd));
+%         if length(exclInd)>1
+%             error('need adjust the code for multiple exclusion here');
+%         end
+%         curExclusion.sess = exclusion.sess{exclInd};
+%         curExclusion.run = exclusion.run{exclInd};
+%         curExclusion.cond = exclusion.cond{exclInd};
+%         [results,~] = GLMsinCos5(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'runLabel',{splitRunInd},'splitedIn',splitIn),splitIn,curExclusion);
+%     else
+%         [results,~] = GLMsinCos5(splitDesign,splitData,stimdur,tr,ana,[],struct('sessionLabel',{splitSessionLabel},'runLabel',{splitRunInd},'splitedIn',splitIn),splitIn);
+%     end
+%     results.OLS.fixed.inputs = results.inputs; results = rmfield(results,'inputs');
+%     %put mixed(random) and mixed models in the same variable
+%     results.OLS.mixed = resultsTmp.OLS.mixed; clear resultsTmp
+%     results.mask = mask;
+%     save([outName '.mat'],'results','-v7.3');
+%     save([outName '_detrendedData.mat'],'detrendedData','-v7.3');
+%     disp([subj ': done'])
+%     telapsed = toc;
+%     disp(['Whole thing took: ' num2str(telapsed) 'sec'])
 end

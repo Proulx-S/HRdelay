@@ -1,4 +1,4 @@
-function [results] = runGLMs(d,p)
+function res = runGLMs(d,p)
 % function [results] = runGLM(design,data,stimdur,tr,hrfmodel,hrfknobs,opt,splitIn)
 
 
@@ -23,12 +23,42 @@ for runInd = 1:size(d.data,1)
 end
 p.censorPts = d.censorPts;
 
-res = fitSinMixed(d,p);
-res = fitHrMixed(d,p);
+
+%% Percent BOLD
+disp('Detrend, vein map and %BOLD')
+opt.excl = 0;
+opt.extraOutput = 1;
+[~,v.base,v.dataDtrd] = fitSinMixed(d,p,opt); clear opt
+d.dataDtrd = cell(size(d.data));
+v.map = cell(size(d.data));
+for runInd = 1:size(d.data,1)
+    d.data{runInd} = (d.data{runInd}-v.base{runInd}) ./ v.base{runInd} .* 100;
+    d.dataDtrd{runInd} = v.dataDtrd{runInd} ./ v.base{runInd} .* 100;
+    
+    var = std(v.dataDtrd{runInd}(:,:,:,~d.censorPts{runInd}),[],4);
+    mean = v.base{runInd};
+    v.map{runInd} = var./mean; clear var mean
+end
+
+disp('Extract hr')
+res1 = fitHrMixed(d,p);
+disp('Extract sin responses')
+res2 = fitSinMixed(d,p);
+disp('Compute stats')
+res3 = fitSinFixed(d,p);
+
+res.sin = res2.hr; clear res2
+res.hr = res1.hr; clear res1
+res.featSel.F = res3.F; clear res3
+res.featSel.vein.map = cat(5,...
+    cat(4,v.map{d.condLabel==1 & ~d.excl}),...
+    cat(4,v.map{d.condLabel==2 & ~d.excl}),...
+    cat(4,v.map{d.condLabel==3 & ~d.excl}));
+res.dataDtrd = d.dataDtrd(~d.excl);
+res.info = 'x X y X z X rep X cond X t';
 % opt.hrf = 'sin';
 % res = runFit(d,p,opt)
-
-function res = fitSinMixed(d,p)
+function res = fitSinFixed(d,p)
 %% First exclude
 excl = d.excl;
 rep = unique(d.repLabel(excl));
@@ -58,40 +88,196 @@ end
 p.designInfo1 = {'sin' 'cos'};
 p.designInfo2 = cellstr(num2str(sort(unique(d.condLabel)),'cond%d'))';
 
+%% Fixed-effect
+f = fitFixed(d,p);
+% fieldList = fields(f);
+% for fieldInd = 1:length(fieldList)
+%     if isstruct(f.(fieldList{fieldInd}))
+%         figure('WindowStyle','docked');
+%         imagesc(catcell(1,f.(fieldList{fieldInd}).design),[-1 1])
+%         title(f.(fieldList{fieldInd}).info)
+%     end
+% end
 
-%% Mixed-effect
-disp('Mixed-Effect')
-f = fitMixed(d,p);
-info = squeeze(f.full.designInfo(:,:,:,:,:,1))';
-hrInd = all(~cellfun('isempty',info),1);
-info = squeeze(f.full.designInfo(:,:,:,:,:,4))';
-baseInd = ismember(info(1,:),'poly0');
+%% F stats
+f.full = getYhat(f.full,p);
+f.full = getSS(f.full,'yHat');
+f.full = getYerr(f.full,d);
+f.full = getSS(f.full,'yErr');
 
-base = nan([p.xyzSz size(f.full.betas,5)]);
-for runInd = 1:size(f.full.betas,5)
-    base(:,:,:,runInd) = f.full.betas(:,:,:,baseInd,runInd);
+
+testLabel = 'act';
+fullLabel = 'full';
+nullLabel = 'actNull';
+condInd = [1 2 3];
+runInd = ismember(d.condLabel,condInd);
+
+f.(nullLabel) = getYhat(f.(nullLabel),p);
+f.(nullLabel) = getSS(f.(nullLabel),'yHat');
+f.(nullLabel) = getYerr(f.(nullLabel),d);
+f.(nullLabel) = getSS(f.(nullLabel),'yErr');
+
+F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
+f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n' 'yErr' 'yErrSS' 'yErrSS_n'});
+% imagesc(F.(testLabel).F(:,:,10))
+
+testLabel = 'cond1v2v3';
+fullLabel = 'full';
+nullLabel = 'cond1v2v3null';
+condInd = [1 2 3];
+runInd = ismember(d.condLabel,condInd);
+
+f.(nullLabel) = getYhat(f.(nullLabel),p);
+f.(nullLabel) = getSS(f.(nullLabel),'yHat');
+f.(nullLabel) = getYerr(f.(nullLabel),d);
+f.(nullLabel) = getSS(f.(nullLabel),'yErr');
+
+F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
+f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n' 'yErr' 'yErrSS' 'yErrSS_n'});
+% imagesc(F.(testLabel).F(:,:,10))
+
+
+testLabel = 'cond1v2';
+fullLabel = 'full';
+nullLabel = 'cond1v2null';
+condInd = [1 2];
+runInd = ismember(d.condLabel,condInd);
+
+f.(nullLabel) = getYhat(f.(nullLabel),p);
+f.(nullLabel) = getSS(f.(nullLabel),'yHat');
+f.(nullLabel) = getYerr(f.(nullLabel),d);
+f.(nullLabel) = getSS(f.(nullLabel),'yErr');
+
+F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
+f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n' 'yErr' 'yErrSS' 'yErrSS_n'});
+% imagesc(F.(testLabel).F(:,:,10))
+
+testLabel = 'cond1v3';
+fullLabel = 'full';
+nullLabel = 'cond1v3null';
+condInd = [1 3];
+runInd = ismember(d.condLabel,condInd);
+
+f.(nullLabel) = getYhat(f.(nullLabel),p);
+f.(nullLabel) = getSS(f.(nullLabel),'yHat');
+f.(nullLabel) = getYerr(f.(nullLabel),d);
+f.(nullLabel) = getSS(f.(nullLabel),'yErr');
+
+F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
+f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n' 'yErr' 'yErrSS' 'yErrSS_n'});
+
+
+testLabel = 'cond2v3';
+fullLabel = 'full';
+nullLabel = 'cond2v3null';
+condInd = [2 3];
+runInd = ismember(d.condLabel,condInd);
+
+f.(nullLabel) = getYhat(f.(nullLabel),p);
+f.(nullLabel) = getSS(f.(nullLabel),'yHat');
+f.(nullLabel) = getYerr(f.(nullLabel),d);
+f.(nullLabel) = getSS(f.(nullLabel),'yErr');
+
+F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
+f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n' 'yErr' 'yErrSS' 'yErrSS_n'});
+
+res.F = F;
+% res.dataDtrd = f.actNull.yErr;
+
+function [res,baseData,dataDtrd] = fitSinMixed(d,p,opt)
+if ~exist('opt','var')
+    opt.excl = 1;
 end
-hr = nan([p.xyzSz size(f.full.betas,5) 2]);
-for runInd = 1:size(f.full.betas,5)
-    hr(:,:,:,runInd,:) = permute(f.full.betas(:,:,:,hrInd,runInd),[1 2 3 5 4]);
+if ~isfield(opt,'excl')
+    opt.excl = 1;
 end
-hr = complex(hr(:,:,:,:,1),hr(:,:,:,:,2));
+if ~isfield(opt,'extraOutput')
+    opt.extraOutput = 0;
+end
 
-hr1 = hr(:,:,:,d.condLabel==1,:);
-base1 = base(:,:,:,d.condLabel==1,:);
-[~,b] = sort(d.repLabel(d.condLabel==1));
-hr1 = hr1(:,:,:,b,:);
-hr2 = hr(:,:,:,d.condLabel==2,:);
-base2 = base(:,:,:,d.condLabel==2,:);
-[~,b] = sort(d.repLabel(d.condLabel==2));
-hr2 = hr2(:,:,:,b,:);
-hr3 = hr(:,:,:,d.condLabel==3,:);
-base3 = base(:,:,:,d.condLabel==3,:);
-[~,b] = sort(d.repLabel(d.condLabel==3));
-hr3 = hr3(:,:,:,b,:);
-res.hr = permute(cat(6,hr1,hr2,hr3),[1 2 3 4 6 5]);
-res.base = permute(cat(6,base1,base2,base3),[1 2 3 4 6 5]);
-res.info = 'x X y X x X rep X cond X t';
+%% First exclude
+if opt.excl
+    excl = d.excl;
+    rep = unique(d.repLabel(excl));
+    if length(rep)>1
+        error('cannot deal with multiple exclusions')
+    end
+    fieldList = fields(d);
+    for fieldInd = 1:length(fieldList)
+        d.(fieldList{fieldInd})(excl,:,:) = [];
+    end
+    d.repLabel(d.repLabel>rep) = d.repLabel(d.repLabel>rep)-1;
+    d.runInd = (1:size(d.repLabel,1))';
+    fieldList = fields(p);
+    for fieldInd = 1:length(fieldList)
+        if size(p.(fieldList{fieldInd}),1)==p.runSz
+            p.(fieldList{fieldInd})(excl,:,:) = [];
+        end
+    end
+    p.runSz = p.runSz - nnz(excl);
+end
+
+%% Prepare peices of design matrix
+for runInd = 1:size(d.data,1)
+    t = (1:p.tr:p.tr*size(d.design{runInd},1))-1;
+    d.design{runInd}(:,1) = normalizemax(sin(2*pi*1/(p.stimDur*2)*t)');
+    d.design{runInd}(:,2) = normalizemax(cos(2*pi*1/(p.stimDur*2)*t)');
+end
+p.designInfo1 = {'sin' 'cos'};
+p.designInfo2 = cellstr(num2str(sort(unique(d.condLabel)),'cond%d'))';
+
+
+%% Mixed-effect fit
+f = fitMixed(d,p,opt);
+
+if opt.extraOutput
+    modelName = 'full';
+    fTmp = f.(modelName);
+    for runInd = 1:size(fTmp.design,1)
+        ind = ~cellfun('isempty',fTmp.designInfo{runInd}(1,:));
+        fTmp.designInfo{runInd}(:,ind) = [];
+        fTmp.design{runInd}(:,ind) = [];
+        fTmp.betas{runInd}(:,:,:,ind) = [];
+    end
+    fTmp = getYhat(fTmp,p);
+    fTmp = getYerr(fTmp,d);
+    fTmp = rmfield(fTmp,{'yHat'});
+    dataDtrd = fTmp.yErr;
+else
+    dataDtrd = [];
+end
+
+%% Extrac responses
+hr = cell(size(d.data));
+for runInd = 1:size(f.full.betas,1)
+    designInfo = f.full.designInfo{runInd};
+    hrInfo = designInfo(1,:);
+    tmpSin = f.full.betas{runInd}(:,:,:,ismember(hrInfo,'sin'));
+    tmpCos = f.full.betas{runInd}(:,:,:,ismember(hrInfo,'cos'));
+    hr{runInd} = complex(tmpSin,tmpCos);
+end
+res.hr = cat(5,...
+    cat(4,hr{d.condLabel==1}),...
+    cat(4,hr{d.condLabel==2}),...
+    cat(4,hr{d.condLabel==3}));
+
+%% Extract baseline
+if opt.extraOutput
+    baseData = cell(size(d.data));
+    for runInd = 1:size(f.full.betas,1)
+        designInfo = f.full.designInfo{runInd};
+        baseInfo = designInfo(4,:);
+        baseInd = all(ismember(baseInfo,'poly0'),1);
+        baseData{runInd} = f.full.betas{runInd}(:,:,:,baseInd);
+    end
+    res.base = cat(5,...
+        cat(4,baseData{d.condLabel==1}),...
+        cat(4,baseData{d.condLabel==2}),...
+        cat(4,baseData{d.condLabel==3}));
+end
+
+res.info = 'x X y X x X rep X cond';
+
 
 function res = fitHrMixed(d,p)
 %% First exclude
@@ -130,34 +316,40 @@ p.designInfo1 = cellstr(num2str((1:size(hrfknobs,2))','t%d'))';
 p.designInfo2 = cellstr(num2str(sort(unique(d.condLabel)),'cond%d'))';
 
 %% Mixed-effect
-disp('Mixed-Effect')
 f = fitMixed(d,p);
-info = squeeze(f.full.designInfo(:,:,:,:,:,1))';
-hrInd = all(~cellfun('isempty',info),1);
-info = squeeze(f.full.designInfo(:,:,:,:,:,4))';
-baseInd = ismember(info(1,:),'poly0');
 
-base = nan([p.xyzSz size(f.full.betas,5)]);
-for runInd = 1:size(f.full.betas,5)
-    base(:,:,:,runInd) = f.full.betas(:,:,:,baseInd,runInd);
+%% Extrac responses
+hr = cell(size(d.data));
+for runInd = 1:size(f.full.betas,1)
+    designInfo = f.full.designInfo{runInd};
+    hrInfo = designInfo(1,:);
+    hr{runInd} = f.full.betas{runInd}(:,:,:,~cellfun('isempty',hrInfo));
 end
-hr = repmat(base,[1 1 1 1 p.stimDur*2./p.tr]);
-for runInd = 1:size(f.full.betas,5)
-    hr(:,:,:,runInd,2:end) = hr(:,:,:,runInd,2:end) + permute(f.full.betas(:,:,:,hrInd,runInd),[1 2 3 5 4]);
-end
+res.hr = cat(6,...
+    cat(5,hr{d.condLabel==1}),...
+    cat(5,hr{d.condLabel==2}),...
+    cat(5,hr{d.condLabel==3}));
+res.hr = permute(res.hr,[1 2 3 5 6 4]);
+res.hr = cat(6,zeros(size(res.hr,1:5)),res.hr);
 
-hr1 = hr(:,:,:,d.condLabel==1,:);
-[~,b] = sort(d.repLabel(d.condLabel==1));
-hr1 = hr1(:,:,:,b,:);
-hr2 = hr(:,:,:,d.condLabel==2,:);
-[~,b] = sort(d.repLabel(d.condLabel==2));
-hr2 = hr2(:,:,:,b,:);
-hr3 = hr(:,:,:,d.condLabel==3,:);
-[~,b] = sort(d.repLabel(d.condLabel==3));
-hr3 = hr3(:,:,:,b,:);
-res.hr = permute(cat(6,hr1,hr2,hr3),[1 2 3  4 6 5]);
+%% Extract baseline
+baseData = cell(size(d.data));
+for runInd = 1:size(f.full.betas,1)
+    designInfo = f.full.designInfo{runInd};
+    baseInfo = designInfo(4,:);
+    baseInd = all(ismember(baseInfo,'poly0'),1);
+    baseData{runInd} = f.full.betas{runInd}(:,:,:,baseInd);
+end
+baseData = cat(5,...
+    cat(4,baseData{d.condLabel==1}),...
+    cat(4,baseData{d.condLabel==2}),...
+    cat(4,baseData{d.condLabel==3}));
+
+res.hr = res.hr + baseData;
+% tmp = permute(res.hr,[6 4 5 1 2 3]);
+% tmp = mean(tmp(:,:,:,:),4);
+% plot(tmp(:,:))
 res.info = 'x X y X x X rep X cond X t';
-
 
 
 function res = runFit(d,p,opt)
@@ -346,13 +538,24 @@ end
 
 function f = getYhat(f,p)
 f.yHat = cell(size(f.design,1),1);
-betas = permute(f.betas,[4 1 2 3]);
-for runInd = 1:size(f.design,1)
-    f.yHat{runInd} = nan([p.timeSz(runInd) p.xyzSz]);
-    for voxInd = 1:prod(p.xyzSz)
-        f.yHat{runInd}(:,voxInd) = sum(f.design{runInd}.*betas(:,voxInd)',2);
+if iscell(f.betas)
+    for runInd = 1:size(f.design,1)
+        betas = permute(f.betas{runInd},[4 1 2 3]);
+        f.yHat{runInd} = nan([p.timeSz(runInd) p.xyzSz]);
+        for voxInd = 1:prod(p.xyzSz)
+            f.yHat{runInd}(:,voxInd) = sum(f.design{runInd}.*betas(:,voxInd)',2);
+        end
+        f.yHat{runInd} = permute(f.yHat{runInd},[2 3 4 1]);
     end
-    f.yHat{runInd} = permute(f.yHat{runInd},[2 3 4 1]);
+else
+    betas = permute(f.betas,[4 1 2 3]);
+    for runInd = 1:size(f.design,1)
+        f.yHat{runInd} = nan([p.timeSz(runInd) p.xyzSz]);
+        for voxInd = 1:prod(p.xyzSz)
+            f.yHat{runInd}(:,voxInd) = sum(f.design{runInd}.*betas(:,voxInd)',2);
+        end
+        f.yHat{runInd} = permute(f.yHat{runInd},[2 3 4 1]);
+    end
 end
 
 function F = getF(fFull,fRed,runInd)
@@ -465,7 +668,13 @@ switch fitRes.info
         error('X')
 end
 
-function res = fitMixed(d,p)
+function res = fitMixed(d,p,opt)
+if ~exist('opt','var')
+    opt.extraOutput = 0;
+end
+% if ~isfield(opt,'extraOutput')
+%     opt.extraOutput = 0;
+% end
 % design
 [designFull,designFullInfo] = getDesign(d,p);
 % Polynomial regressors
@@ -480,35 +689,56 @@ end
 
 modelName = 'full';
 modelLabel = 'full model';
-for runInd = 1:size(d.data,1)
-    design = {cat(2,designFull{runInd},motion{runInd},poly{runInd})};
-    designInfo = cat(2,designFullInfo,motionInfo,polyInfo);
+design = designFull;
+designInfo = cell(size(design));
+tmpDesign = cat(2,design,motion,poly);
+res.(modelName).betas = cell(size(design));
+res.(modelName).design = cell(size(design));
+res.(modelName).censorPts = cell(size(design));
+res.(modelName).designInfo = cell(size(design));
+for runInd = 1:size(design,1)
+    design{runInd} = cat(2,tmpDesign{runInd,:});
+    ind = any(design{runInd},1);
+    design{runInd} = design{runInd}(:,ind);
+    tmp = cat(2,designFullInfo,motionInfo,polyInfo);
+    designInfo{runInd} = tmp(:,ind);
+    tmp = computeOLS(d.data(runInd),design(runInd),designInfo{runInd},p.censorPts(runInd));
     
-    ind = any(design{1},1);
-    design{1} = design{1}(:,ind);
-    designInfo = designInfo(:,ind);
-    
-    res.(modelName)(runInd,1) = computeOLS(d.data(runInd),design,designInfo,d.censorPts(runInd));
-    % imagesc(catcell(1,res.(modelName).design))
+    res.(modelName).betas{runInd} = tmp.betas;
+    res.(modelName).design(runInd) = tmp.design(1);
+    res.(modelName).censorPts(runInd) = tmp.censorPts(1);
+    res.(modelName).designInfo{runInd} = tmp.designInfo;
 end
-for runInd = 1:size(d.data,1)
-    res.(modelName)(1).info = modelLabel;
-end
-betas = cat(5,res.(modelName).betas);
-designInfo = cat(5,res.(modelName).designInfo);
-designInfo = permute(designInfo,[6 7 3 2 5 1 4]);
-res.full = [];
-res.full.betas = betas;
-res.full.design = design{1};
-res.full.designInfo = designInfo;
+res.(modelName).info = modelLabel;
+
+% if opt.extraOutput
+%     modelName = 'null';
+%     modelLabel = 'null model';
+%     design = designFull;
+%     designInfo = cell(size(design));
+%     tmpDesign = cat(2,motion,poly);
+%     res.(modelName).betas = cell(size(design));
+%     res.(modelName).design = cell(size(design));
+%     res.(modelName).censorPts = cell(size(design));
+%     res.(modelName).designInfo = cell(size(design));
+%     for runInd = 1:size(design,1)
+%         design{runInd} = cat(2,tmpDesign{runInd,:});
+%         ind = any(design{runInd},1);
+%         design{runInd} = design{runInd}(:,ind);
+%         tmp = cat(2,motionInfo,polyInfo);
+%         designInfo{runInd} = tmp(:,ind);
+%         tmp = computeOLS(d.data(runInd),design(runInd),designInfo{runInd},p.censorPts(runInd));
+%         
+%         res.(modelName).betas{runInd} = tmp.betas;
+%         res.(modelName).design(runInd) = tmp.design(1);
+%         res.(modelName).censorPts(runInd) = tmp.censorPts(1);
+%         res.(modelName).designInfo{runInd} = tmp.designInfo;
+%     end
+%     res.(modelName).info = modelLabel;
+% end
 
 
-
-
-function res = fitFixed(d,p,opt)
-if ~exist('opt','var')
-    opt.hrf = 'sin';
-end
+function res = fitFixed(d,p)
 % design
 [designFull,designFullInfo] = getDesign(d,p);
 % Polynomial regressors
@@ -517,7 +747,7 @@ end
 if p.doMotion
     motionInfo = [repmat({''},2,length(motionInfo)); motionInfo; repmat({''},1,length(motionInfo))];
 else
-    motion = nan(sum(p.timeSz),0);
+    motion = cell(size(d.data));
     motionInfo = {};
 end
 
@@ -526,34 +756,47 @@ modelName = 'full';
 modelLabel = 'full model';
 design = designFull;
 designInfo = designFullInfo;
-design = cat(2,design,motion,poly);
+tmp = cat(2,design,motion,poly);
+for runInd = 1:size(design,1)
+    design{runInd} = cat(2,tmp{runInd,:});
+end
+clear tmp
 designInfo = cat(2,designInfo,motionInfo,polyInfo);
-res.(modelName) = computeOLS(d.data,p,design,designInfo);
+res.(modelName) = computeOLS(d.data,design,designInfo,p.censorPts);
 res.(modelName).info = modelLabel;
 % imagesc(catcell(1,res.(modelName).design))
+% res.(modelName).designInfo'
 
 %% Model 2
 modelName = 'actNull';
 modelLabel = 'Activation null model';
-designMatrix = cat(2,motion,poly);
-designMatrixInfo = cat(2,motionInfo,polyInfo);
-design = designMatrix;
-designInfo = designMatrixInfo;
-res.(modelName) = computeOLS(d.data,p,design,designInfo);
+tmp = cat(2,motion,poly);
+for runInd = 1:size(design,1)
+    design{runInd} = cat(2,tmp{runInd,:});
+end
+clear tmp
+designInfo = cat(2,motionInfo,polyInfo);
+res.(modelName) = computeOLS(d.data,design,designInfo,p.censorPts);
 res.(modelName).info = modelLabel;
 % imagesc(catcell(1,res.(modelName).design))
+% res.(modelName).designInfo'
 
 %% Model 3
 modelName = 'cond1v2v3null';
 modelLabel = 'cond1v2v3-null model';
 condToMerge = {'cond1' 'cond2' 'cond3'};
-condToMergeLabel = {'cond1v2v3'};
+condToMergeLabel = {'cond1+2+3'};
 [design,designInfo] = mergeCond(designFull,designFullInfo,condToMerge,condToMergeLabel);
-design = cat(2,design,motion,poly);
+tmp = cat(2,design,motion,poly);
+for runInd = 1:size(design,1)
+    design{runInd} = cat(2,tmp{runInd,:});
+end
+clear tmp
 designInfo = cat(2,designInfo,motionInfo,polyInfo);
-res.(modelName) = computeOLS(d.data,p,design,designInfo);
+res.(modelName) = computeOLS(d.data,design,designInfo,p.censorPts);
 res.(modelName).info = modelLabel;
 % imagesc(catcell(1,res.(modelName).design))
+% res.(modelName).designInfo'
 
 %% Model 4
 modelName = 'cond1v2null';
@@ -561,11 +804,17 @@ modelLabel = 'cond1v2-null model';
 condToMerge = {'cond1' 'cond2'};
 condToMergeLabel = {'cond1+2'};
 [design,designInfo] = mergeCond(designFull,designFullInfo,condToMerge,condToMergeLabel);
-design = cat(2,design,motion,poly);
+tmp = cat(2,design,motion,poly);
+for runInd = 1:size(design,1)
+    design{runInd} = cat(2,tmp{runInd,:});
+end
+clear tmp
 designInfo = cat(2,designInfo,motionInfo,polyInfo);
-res.(modelName) = computeOLS(d.data,p,design,designInfo);
+res.(modelName) = computeOLS(d.data,design,designInfo,p.censorPts);
 res.(modelName).info = modelLabel;
 % imagesc(catcell(1,res.(modelName).design))
+% res.(modelName).designInfo'
+
 
 %% Model 5
 modelName = 'cond1v3null';
@@ -573,11 +822,16 @@ modelLabel = 'cond1v3-null model';
 condToMerge = {'cond1' 'cond3'};
 condToMergeLabel = {'cond1+3'};
 [design,designInfo] = mergeCond(designFull,designFullInfo,condToMerge,condToMergeLabel);
-design = cat(2,design,motion,poly);
+tmp = cat(2,design,motion,poly);
+for runInd = 1:size(design,1)
+    design{runInd} = cat(2,tmp{runInd,:});
+end
+clear tmp
 designInfo = cat(2,designInfo,motionInfo,polyInfo);
-res.(modelName) = computeOLS(d.data,p,design,designInfo);
+res.(modelName) = computeOLS(d.data,design,designInfo,p.censorPts);
 res.(modelName).info = modelLabel;
 % imagesc(catcell(1,res.(modelName).design))
+% res.(modelName).designInfo'
 
 %% Model 6
 modelName = 'cond2v3null';
@@ -585,13 +839,16 @@ modelLabel = 'cond2v3-null model';
 condToMerge = {'cond2' 'cond3'};
 condToMergeLabel = {'cond2+3'};
 [design,designInfo] = mergeCond(designFull,designFullInfo,condToMerge,condToMergeLabel);
-design = cat(2,design,motion,poly);
+tmp = cat(2,design,motion,poly);
+for runInd = 1:size(design,1)
+    design{runInd} = cat(2,tmp{runInd,:});
+end
+clear tmp
 designInfo = cat(2,designInfo,motionInfo,polyInfo);
-res.(modelName) = computeOLS(d.data,p,design,designInfo);
+res.(modelName) = computeOLS(d.data,design,designInfo,p.censorPts);
 res.(modelName).info = modelLabel;
 % imagesc(catcell(1,res.(modelName).design))
-
-res.info = opt.hrf;
+% res.(modelName).designInfo'
 
 function [design,designInfo] = getDesign(d,p)
 %first censor bad points
@@ -636,22 +893,34 @@ polyInfo = [repmat({''},3,length(polyInfo)); polyInfo; repmat({''},0,length(poly
 poly = mat2cell(poly,p.timeSz,size(poly,2));
 
 function [design,designInfo] = mergeCond(design,designInfo,condToMerge,condToMergeLabel)
+% Merge conditions to merge
+condToMergeInd = ismember(designInfo(2,:),condToMerge);
 regList = unique(designInfo(1,:));
-designTmp = nan([size(design,1) size(regList,2)]);
-designInfoTmp = repmat({''},[size(designInfo,1) size(regList,2)]);
-for regInd = 1:length(regList)
-    ind = ismember(designInfo(1,:),regList{regInd});
-    ind = ind & ismember(designInfo(2,:),condToMerge);
-    designTmp(:,regInd) = sum(design(:,ind),2);
-    designInfoTmp(1,regInd) = regList(regInd);
-    designInfoTmp(2,regInd) = condToMergeLabel;
+designMerged = cell(size(design));
+designNonMerged = cell(size(design));
+designTmp = cell(size(design));
+for runInd = 1:size(design,1)
+    designMerged{runInd} = nan([size(design{runInd,1},1) size(regList,2)]);
+    for regInd = 1:length(regList)
+        ind = ismember(designInfo(1,:),regList{regInd});
+        ind = ind & condToMergeInd;
+        designMerged{runInd}(:,regInd) = sum(design{runInd}(:,ind),2);
+    end
+    ind = ~ismember(designInfo(2,:),condToMerge);
+    designNonMerged{runInd} = design{runInd}(:,ind);
+    designTmp{runInd} = cat(2,designMerged{runInd},designNonMerged{runInd});
 end
+design = designTmp; clear designTmp
 ind = ~ismember(designInfo(2,:),condToMerge);
-design = cat(2,designTmp,design(:,ind));
-designInfo = cat(2,designInfoTmp,designInfo(:,ind));
+designInfoNonMerged = designInfo(:,ind);
+designInfoMerged = repmat({''},[size(designInfo,1) size(regList,2)]);
+for regInd = 1:length(regList)
+    designInfoMerged(1,regInd) = regList(regInd);
+    designInfoMerged(2,regInd) = condToMergeLabel;
+end
+designInfo = cat(2,designInfoMerged,designInfoNonMerged); clear designInfoMerged designInfoNonMerged
 
 function res = computeOLS(X,design,designInfo,censorPts)
-disp('computing OLS')
 xyzSz = size(X{1},[1 2 3]);
 res.betas = ...
     mtimescell(olsmatrix2(design), ...
