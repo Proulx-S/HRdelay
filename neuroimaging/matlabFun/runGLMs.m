@@ -23,15 +23,10 @@ for runInd = 1:size(d.data,1)
 end
 p.censorPts = d.censorPts;
 
-%% HRF
-res = fitHrMixed(d,p)
-
-
-opt.hrf = 'hr';
-res = runFit(d,p,opt);
-%% Sin
-opt.hrf = 'sin';
-res = runFit(d,p,opt)
+res = fitSinMixed(d,p);
+res = fitHrMixed(d,p);
+% opt.hrf = 'sin';
+% res = runFit(d,p,opt)
 
 function res = fitSinMixed(d,p)
 %% First exclude
@@ -55,36 +50,18 @@ end
 p.runSz = p.runSz - nnz(excl);
 
 %% Prepare peices of design matrix
-switch opt.hrf
-    case 'sin'
-        for runInd = 1:size(d.data,1)
-            t = (1:p.tr:p.tr*size(d.design{runInd},1))-1;
-            d.design{runInd}(:,1) = normalizemax(sin(2*pi*1/(p.stimDur*2)*t)');
-            d.design{runInd}(:,2) = normalizemax(cos(2*pi*1/(p.stimDur*2)*t)');
-        end
-        p.designInfo1 = {'sin' 'cos'};
-        p.designInfo2 = cellstr(num2str(sort(unique(d.condLabel)),'cond%d'))';
-    case 'hr'
-        for runInd = 1:size(d.data,1)
-            hrfknobs = zeros(p.stimDur/p.tr*2);
-            hrfknobs(logical(eye(size(hrfknobs)))) = 1;
-            hrfknobs(:,1) = [];
-            d.design{runInd} = repmat(d.design{runInd},1,size(hrfknobs,2));
-            tmp = nan(p.timeSz(runInd)+p.stimDur/p.tr*2-1,size(hrfknobs,2));
-            for knobInd = 1:size(hrfknobs,2)
-                tmp(:,knobInd) = conv2(full(d.design{runInd}(:,knobInd)),hrfknobs(:,knobInd));  % convolve
-            end
-            d.design{runInd} = tmp(1:p.timeSz(runInd,1),:); clear tmp
-        end
-        p.designInfo1 = cellstr(num2str((1:size(hrfknobs,2))','t%d'))';
-        p.designInfo2 = cellstr(num2str(sort(unique(d.condLabel)),'cond%d'))';
-    otherwise
-        error('X')
+for runInd = 1:size(d.data,1)
+    t = (1:p.tr:p.tr*size(d.design{runInd},1))-1;
+    d.design{runInd}(:,1) = normalizemax(sin(2*pi*1/(p.stimDur*2)*t)');
+    d.design{runInd}(:,2) = normalizemax(cos(2*pi*1/(p.stimDur*2)*t)');
 end
+p.designInfo1 = {'sin' 'cos'};
+p.designInfo2 = cellstr(num2str(sort(unique(d.condLabel)),'cond%d'))';
+
 
 %% Mixed-effect
 disp('Mixed-Effect')
-f = fitMixed(d,p,opt);
+f = fitMixed(d,p);
 info = squeeze(f.full.designInfo(:,:,:,:,:,1))';
 hrInd = all(~cellfun('isempty',info),1);
 info = squeeze(f.full.designInfo(:,:,:,:,:,4))';
@@ -94,113 +71,27 @@ base = nan([p.xyzSz size(f.full.betas,5)]);
 for runInd = 1:size(f.full.betas,5)
     base(:,:,:,runInd) = f.full.betas(:,:,:,baseInd,runInd);
 end
-hr = repmat(base,[1 1 1 1 p.stimDur*2./p.tr]);
+hr = nan([p.xyzSz size(f.full.betas,5) 2]);
 for runInd = 1:size(f.full.betas,5)
-    hr(:,:,:,runInd,2:end) = hr(:,:,:,runInd,2:end) + permute(f.full.betas(:,:,:,hrInd,runInd),[1 2 3 5 4]);
+    hr(:,:,:,runInd,:) = permute(f.full.betas(:,:,:,hrInd,runInd),[1 2 3 5 4]);
 end
+hr = complex(hr(:,:,:,:,1),hr(:,:,:,:,2));
 
-
-%% Fixed-effect
-disp('Fixed-Effect')
-f = fitFixed(d,p,opt);
-fieldList = fields(f);
-for fieldInd = 1:length(fieldList)
-    if isstruct(f.(fieldList{fieldInd}))
-        figure('WindowStyle','docked');
-        imagesc(catcell(1,f.(fieldList{fieldInd}).design))
-        title(f.(fieldList{fieldInd}).info)
-    end
-end
-
-%% Extract resp and brain
-[resp,~] = getBetas(f,p);
-tmp = permute(resp.hr,[4 5 1 2 3]);
-tmp = mean(tmp(:,:,:),3)';
-plot([0 0 0; tmp])
-
-
-
-%% F stats
-f.full = getYhat(f.full,p);
-f.full = getSS(f.full,'yHat');
-f.full = getYerr(f.full,d);
-f.full = getSS(f.full,'yErr');
-
-
-testLabel = 'act';
-fullLabel = 'full';
-nullLabel = 'actNull';
-condInd = [1 2 3];
-runInd = ismember(d.condLabel,condInd);
-
-f.(nullLabel) = getYhat(f.(nullLabel),p);
-f.(nullLabel) = getSS(f.(nullLabel),'yHat');
-f.(nullLabel) = getYerr(f.(nullLabel),d);
-f.(nullLabel) = getSS(f.(nullLabel),'yErr');
-
-F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
-f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n'});
-
-
-testLabel = 'cond1v2v3';
-fullLabel = 'full';
-nullLabel = 'cond1v2v3null';
-condInd = [1 2 3];
-runInd = ismember(d.condLabel,condInd);
-
-f.(nullLabel) = getYhat(f.(nullLabel),p);
-f.(nullLabel) = getSS(f.(nullLabel),'yHat');
-f.(nullLabel) = getYerr(f.(nullLabel),d);
-f.(nullLabel) = getSS(f.(nullLabel),'yErr');
-
-F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
-f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n'});
-
-
-testLabel = 'cond1v2';
-fullLabel = 'full';
-nullLabel = 'cond1v2null';
-condInd = [1 2];
-runInd = ismember(d.condLabel,condInd);
-
-f.(nullLabel) = getYhat(f.(nullLabel),p);
-f.(nullLabel) = getSS(f.(nullLabel),'yHat');
-f.(nullLabel) = getYerr(f.(nullLabel),d);
-f.(nullLabel) = getSS(f.(nullLabel),'yErr');
-
-F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
-f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n'});
-
-
-testLabel = 'cond1v3';
-fullLabel = 'full';
-nullLabel = 'cond1v3null';
-condInd = [1 3];
-runInd = ismember(d.condLabel,condInd);
-
-f.(nullLabel) = getYhat(f.(nullLabel),p);
-f.(nullLabel) = getSS(f.(nullLabel),'yHat');
-f.(nullLabel) = getYerr(f.(nullLabel),d);
-f.(nullLabel) = getSS(f.(nullLabel),'yErr');
-
-F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
-f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n'});
-
-
-testLabel = 'cond2v3';
-fullLabel = 'full';
-nullLabel = 'cond2v3null';
-condInd = [2 3];
-runInd = ismember(d.condLabel,condInd);
-
-f.(nullLabel) = getYhat(f.(nullLabel),p);
-f.(nullLabel) = getSS(f.(nullLabel),'yHat');
-f.(nullLabel) = getYerr(f.(nullLabel),d);
-f.(nullLabel) = getSS(f.(nullLabel),'yErr');
-
-F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
-f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n'});
-
+hr1 = hr(:,:,:,d.condLabel==1,:);
+base1 = base(:,:,:,d.condLabel==1,:);
+[~,b] = sort(d.repLabel(d.condLabel==1));
+hr1 = hr1(:,:,:,b,:);
+hr2 = hr(:,:,:,d.condLabel==2,:);
+base2 = base(:,:,:,d.condLabel==2,:);
+[~,b] = sort(d.repLabel(d.condLabel==2));
+hr2 = hr2(:,:,:,b,:);
+hr3 = hr(:,:,:,d.condLabel==3,:);
+base3 = base(:,:,:,d.condLabel==3,:);
+[~,b] = sort(d.repLabel(d.condLabel==3));
+hr3 = hr3(:,:,:,b,:);
+res.hr = permute(cat(6,hr1,hr2,hr3),[1 2 3 4 6 5]);
+res.base = permute(cat(6,base1,base2,base3),[1 2 3 4 6 5]);
+res.info = 'x X y X x X rep X cond X t';
 
 function res = fitHrMixed(d,p)
 %% First exclude
@@ -574,11 +465,7 @@ switch fitRes.info
         error('X')
 end
 
-function res = fitMixed(d,p,opt)
-if ~exist('opt','var')
-    opt.hrf = 'sin';
-end
-
+function res = fitMixed(d,p)
 % design
 [designFull,designFullInfo] = getDesign(d,p);
 % Polynomial regressors
