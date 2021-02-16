@@ -22,12 +22,12 @@ for runInd = 1:size(d.data,1)
     d.censorPts{runInd,1}(1:24) = true;
 end
 
-%% Sin
-opt.hrf = 'sin';
-res = runFit(d,p,opt)
 %% HRF
 opt.hrf = 'hr';
 res = runFit(d,p,opt);
+%% Sin
+opt.hrf = 'sin';
+res = runFit(d,p,opt)
 
 function res = runFit(d,p,opt)
 %% First exclude
@@ -64,8 +64,9 @@ switch opt.hrf
         for runInd = 1:size(d.data,1)
             hrfknobs = zeros(p.stimDur/p.tr*2);
             hrfknobs(logical(eye(size(hrfknobs)))) = 1;
+            hrfknobs(:,1) = [];
             d.design{runInd} = repmat(d.design{runInd},1,size(hrfknobs,2));
-            tmp = nan(p.timeSz(runInd)+p.stimDur/p.tr*2-1,p.stimDur/p.tr*2);
+            tmp = nan(p.timeSz(runInd)+p.stimDur/p.tr*2-1,size(hrfknobs,2));
             for knobInd = 1:size(hrfknobs,2)
                 tmp(:,knobInd) = conv2(full(d.design{runInd}(:,knobInd)),hrfknobs(:,knobInd));  % convolve
             end
@@ -91,23 +92,32 @@ end
 % imagesc(angle(tmp(:,:,10)))
 
 
+
 %% Fixed-effect
 disp('Fixed-Effect')
-fit = fitFixed(d,p,opt);
-% fieldList = fields(fixedFitRes);
-% for fieldInd = 1:length(fieldList)
-%     if isstruct(fixedFitRes.(fieldList{fieldInd}))
-%         figure('WindowStyle','docked');
-%         imagesc(fixedFitRes.(fieldList{fieldInd}).design)
-%         title(fixedFitRes.(fieldList{fieldInd}).info)
-%     end
-% end
+f = fitFixed(d,p,opt);
+fieldList = fields(f);
+for fieldInd = 1:length(fieldList)
+    if isstruct(f.(fieldList{fieldInd}))
+        figure('WindowStyle','docked');
+        imagesc(catcell(1,f.(fieldList{fieldInd}).design))
+        title(f.(fieldList{fieldInd}).info)
+    end
+end
+
+%% Extract resp and brain
+[resp,~] = getBetas(f,p);
+tmp = permute(resp.hr,[4 5 1 2 3]);
+tmp = mean(tmp(:,:,:),3)';
+plot([0 0 0; tmp])
+
+
 
 %% F stats
-fit.full = getYhat(fit.full,p);
-fit.full = getSS(fit.full,'yHat');
-fit.full = getYerr(fit.full,d);
-fit.full = getSS(fit.full,'yErr');
+f.full = getYhat(f.full,p);
+f.full = getSS(f.full,'yHat');
+f.full = getYerr(f.full,d);
+f.full = getSS(f.full,'yErr');
 
 
 testLabel = 'act';
@@ -116,13 +126,13 @@ nullLabel = 'actNull';
 condInd = [1 2 3];
 runInd = ismember(d.condLabel,condInd);
 
-fit.(nullLabel) = getYhat(fit.(nullLabel),p);
-fit.(nullLabel) = getSS(fit.(nullLabel),'yHat');
-fit.(nullLabel) = getYerr(fit.(nullLabel),d);
-fit.(nullLabel) = getSS(fit.(nullLabel),'yErr');
+f.(nullLabel) = getYhat(f.(nullLabel),p);
+f.(nullLabel) = getSS(f.(nullLabel),'yHat');
+f.(nullLabel) = getYerr(f.(nullLabel),d);
+f.(nullLabel) = getSS(f.(nullLabel),'yErr');
 
-F.(testLabel) = getF(fit.(fullLabel),fit.(nullLabel),runInd);
-fit.(nullLabel) = rmfield(fit.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n'});
+F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
+f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n'});
 
 
 testLabel = 'cond1v2v3';
@@ -131,13 +141,13 @@ nullLabel = 'cond1v2v3null';
 condInd = [1 2 3];
 runInd = ismember(d.condLabel,condInd);
 
-fit.(nullLabel) = getYhat(fit.(nullLabel),p);
-fit.(nullLabel) = getSS(fit.(nullLabel),'yHat');
-fit.(nullLabel) = getYerr(fit.(nullLabel),d);
-fit.(nullLabel) = getSS(fit.(nullLabel),'yErr');
+f.(nullLabel) = getYhat(f.(nullLabel),p);
+f.(nullLabel) = getSS(f.(nullLabel),'yHat');
+f.(nullLabel) = getYerr(f.(nullLabel),d);
+f.(nullLabel) = getSS(f.(nullLabel),'yErr');
 
-F.(testLabel) = getF(fit.(fullLabel),fit.(nullLabel),runInd);
-fit.(nullLabel) = rmfield(fit.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n'});
+F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
+f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n'});
 
 
 testLabel = 'cond1v2';
@@ -146,13 +156,13 @@ nullLabel = 'cond1v2null';
 condInd = [1 2];
 runInd = ismember(d.condLabel,condInd);
 
-fit.(nullLabel) = getYhat(fit.(nullLabel),p);
-fit.(nullLabel) = getSS(fit.(nullLabel),'yHat');
-fit.(nullLabel) = getYerr(fit.(nullLabel),d);
-fit.(nullLabel) = getSS(fit.(nullLabel),'yErr');
+f.(nullLabel) = getYhat(f.(nullLabel),p);
+f.(nullLabel) = getSS(f.(nullLabel),'yHat');
+f.(nullLabel) = getYerr(f.(nullLabel),d);
+f.(nullLabel) = getSS(f.(nullLabel),'yErr');
 
-F.(testLabel) = getF(fit.(fullLabel),fit.(nullLabel),runInd);
-fit.(nullLabel) = rmfield(fit.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n'});
+F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
+f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n'});
 
 
 testLabel = 'cond1v3';
@@ -161,13 +171,13 @@ nullLabel = 'cond1v3null';
 condInd = [1 3];
 runInd = ismember(d.condLabel,condInd);
 
-fit.(nullLabel) = getYhat(fit.(nullLabel),p);
-fit.(nullLabel) = getSS(fit.(nullLabel),'yHat');
-fit.(nullLabel) = getYerr(fit.(nullLabel),d);
-fit.(nullLabel) = getSS(fit.(nullLabel),'yErr');
+f.(nullLabel) = getYhat(f.(nullLabel),p);
+f.(nullLabel) = getSS(f.(nullLabel),'yHat');
+f.(nullLabel) = getYerr(f.(nullLabel),d);
+f.(nullLabel) = getSS(f.(nullLabel),'yErr');
 
-F.(testLabel) = getF(fit.(fullLabel),fit.(nullLabel),runInd);
-fit.(nullLabel) = rmfield(fit.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n'});
+F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
+f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n'});
 
 
 testLabel = 'cond2v3';
@@ -176,13 +186,13 @@ nullLabel = 'cond2v3null';
 condInd = [2 3];
 runInd = ismember(d.condLabel,condInd);
 
-fit.(nullLabel) = getYhat(fit.(nullLabel),p);
-fit.(nullLabel) = getSS(fit.(nullLabel),'yHat');
-fit.(nullLabel) = getYerr(fit.(nullLabel),d);
-fit.(nullLabel) = getSS(fit.(nullLabel),'yErr');
+f.(nullLabel) = getYhat(f.(nullLabel),p);
+f.(nullLabel) = getSS(f.(nullLabel),'yHat');
+f.(nullLabel) = getYerr(f.(nullLabel),d);
+f.(nullLabel) = getSS(f.(nullLabel),'yErr');
 
-F.(testLabel) = getF(fit.(fullLabel),fit.(nullLabel),runInd);
-fit.(nullLabel) = rmfield(fit.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n'});
+F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
+f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n'});
 
 
 function f = getSS(f,field)
@@ -325,20 +335,10 @@ function res = fitFixed(d,p,opt)
 if ~exist('opt','var')
     opt.hrf = 'sin';
 end
-if ~isfield(opt,'rmPoly0')
-    switch opt.hrf
-        case 'sin'
-            opt.rmPoly0 = 0;
-        case 'hr'
-            opt.rmPoly0 = 1;
-        otherwise
-            error('X')
-    end
-end
 % design
 [designFull,designFullInfo] = getDesign(d,p);
 % Polynomial regressors
-[poly,polyInfo,polyX,polyInfoX] = getPoly(d,p);
+[poly,polyInfo] = getPoly(d);
 % Extra regressors (e.g. motion)
 if p.doMotion
     motionInfo = [repmat({''},2,length(motionInfo)); motionInfo; repmat({''},1,length(motionInfo))];
@@ -348,6 +348,17 @@ else
 end
 
 %% Model 1
+modelName = 'full';
+modelLabel = 'full model';
+design = designFull;
+designInfo = designFullInfo;
+design = cat(2,design,motion,poly);
+designInfo = cat(2,designInfo,motionInfo,polyInfo);
+res.(modelName) = computeOLS(d,p,design,designInfo);
+res.(modelName).info = modelLabel;
+% imagesc(catcell(1,res.(modelName).design))
+
+%% Model 2
 modelName = 'actNull';
 modelLabel = 'Activation null model';
 designMatrix = cat(2,motion,poly);
@@ -356,23 +367,7 @@ design = designMatrix;
 designInfo = designMatrixInfo;
 res.(modelName) = computeOLS(d,p,design,designInfo);
 res.(modelName).info = modelLabel;
-% imagesc(res.(modelName).design)
-
-%% Model 2
-modelName = 'full';
-modelLabel = 'full model';
-design = designFull;
-designInfo = designFullInfo;
-if opt.rmPoly0
-    design = cat(2,design,motion,polyX);
-    designInfo = cat(2,designInfo,motionInfo,polyInfoX);
-else
-    design = cat(2,design,motion,poly);
-    designInfo = cat(2,designInfo,motionInfo,polyInfo);
-end
-res.(modelName) = computeOLS(d,p,design,designInfo);
-res.(modelName).info = modelLabel;
-% imagesc(res.(modelName).design)
+% imagesc(catcell(1,res.(modelName).design))
 
 %% Model 3
 modelName = 'cond1v2v3null';
@@ -380,16 +375,11 @@ modelLabel = 'cond1v2v3-null model';
 condToMerge = {'cond1' 'cond2' 'cond3'};
 condToMergeLabel = {'cond1v2v3'};
 [design,designInfo] = mergeCond(designFull,designFullInfo,condToMerge,condToMergeLabel);
-if opt.rmPoly0
-    design = cat(2,design,motion,polyX);
-    designInfo = cat(2,designInfo,motionInfo,polyInfoX);
-else
-    design = cat(2,design,motion,poly);
-    designInfo = cat(2,designInfo,motionInfo,polyInfo);
-end
+design = cat(2,design,motion,poly);
+designInfo = cat(2,designInfo,motionInfo,polyInfo);
 res.(modelName) = computeOLS(d,p,design,designInfo);
 res.(modelName).info = modelLabel;
-% imagesc(res.(modelName).design)
+% imagesc(catcell(1,res.(modelName).design))
 
 %% Model 4
 modelName = 'cond1v2null';
@@ -397,16 +387,11 @@ modelLabel = 'cond1v2-null model';
 condToMerge = {'cond1' 'cond2'};
 condToMergeLabel = {'cond1+2'};
 [design,designInfo] = mergeCond(designFull,designFullInfo,condToMerge,condToMergeLabel);
-if opt.rmPoly0
-    design = cat(2,design,motion,polyX);
-    designInfo = cat(2,designInfo,motionInfo,polyInfoX);
-else
-    design = cat(2,design,motion,poly);
-    designInfo = cat(2,designInfo,motionInfo,polyInfo);
-end
+design = cat(2,design,motion,poly);
+designInfo = cat(2,designInfo,motionInfo,polyInfo);
 res.(modelName) = computeOLS(d,p,design,designInfo);
 res.(modelName).info = modelLabel;
-% imagesc(res.(modelName).design)
+% imagesc(catcell(1,res.(modelName).design))
 
 %% Model 5
 modelName = 'cond1v3null';
@@ -414,16 +399,11 @@ modelLabel = 'cond1v3-null model';
 condToMerge = {'cond1' 'cond3'};
 condToMergeLabel = {'cond1+3'};
 [design,designInfo] = mergeCond(designFull,designFullInfo,condToMerge,condToMergeLabel);
-if opt.rmPoly0
-    design = cat(2,design,motion,polyX);
-    designInfo = cat(2,designInfo,motionInfo,polyInfoX);
-else
-    design = cat(2,design,motion,poly);
-    designInfo = cat(2,designInfo,motionInfo,polyInfo);
-end
+design = cat(2,design,motion,poly);
+designInfo = cat(2,designInfo,motionInfo,polyInfo);
 res.(modelName) = computeOLS(d,p,design,designInfo);
 res.(modelName).info = modelLabel;
-% imagesc(res.(modelName).design)
+% imagesc(catcell(1,res.(modelName).design))
 
 %% Model 6
 modelName = 'cond2v3null';
@@ -431,16 +411,11 @@ modelLabel = 'cond2v3-null model';
 condToMerge = {'cond2' 'cond3'};
 condToMergeLabel = {'cond2+3'};
 [design,designInfo] = mergeCond(designFull,designFullInfo,condToMerge,condToMergeLabel);
-if opt.rmPoly0
-    design = cat(2,design,motion,polyX);
-    designInfo = cat(2,designInfo,motionInfo,polyInfoX);
-else
-    design = cat(2,design,motion,poly);
-    designInfo = cat(2,designInfo,motionInfo,polyInfo);
-end
+design = cat(2,design,motion,poly);
+designInfo = cat(2,designInfo,motionInfo,polyInfo);
 res.(modelName) = computeOLS(d,p,design,designInfo);
 res.(modelName).info = modelLabel;
-% imagesc(res.(modelName).design)
+% imagesc(catcell(1,res.(modelName).design))
 
 res.info = opt.hrf;
 
@@ -473,7 +448,7 @@ designInfo2 = catcell(2,designInfo);
 designInfo = cat(1,designInfo1,designInfo2); clear designInfo1 designInfo2
 designInfo = cat(1,designInfo,repmat({''},2,length(designInfo)));
 
-function [poly,polyInfo,polyX,polyInfoX] = getPoly(d,p)
+function [poly,polyInfo] = getPoly(d)
 %first censor bad points
 for runInd = 1:size(d.poly,1)
     d.poly{runInd}(d.censorPts{runInd},:) = 0;
@@ -483,11 +458,6 @@ poly = blkdiag(d.poly{:});
 polyInfo = catcell(1,d.polyInfo)';
 polyInfo = polyInfo(:)';
 polyInfo = [repmat({''},3,length(polyInfo)); polyInfo; repmat({''},0,length(polyInfo))];
-
-polyX = poly;
-polyX(:,1:p.polyDeg(1)+1:end) = [];
-polyInfoX = polyInfo;
-polyInfoX(:,1:p.polyDeg(1)+1:end) = [];
 
 function [design,designInfo] = mergeCond(design,designInfo,condToMerge,condToMergeLabel)
 regList = unique(designInfo(1,:));
