@@ -49,12 +49,10 @@ for subjInd = 1:2%length(subjList)
     %% Store exclusion d
     if exclude
         subjIndX = ismember(exclusion.subj,subjInd);
-        if any(subjIndX)
-            sessIndX = exclusion.sess{subjIndX};
-            repeatIndX = exclusion.run{subjIndX};
-            d.fun(1,sessIndX).excl = d.fun(1,sessIndX).repLabel==repeatIndX;
-        else
-            for sessInd = 1:size(d.fun,2)
+        for sessInd = 1:size(d.fun,2)
+            if any(subjIndX) && sessInd==exclusion.sess{subjIndX}
+                d.fun(1,sessInd).excl = d.fun(1,sessInd).repLabel==exclusion.run{subjIndX};
+            else
                 d.fun(1,sessInd).excl = false(size(d.fun(1,sessInd).repLabel));
             end
         end
@@ -89,7 +87,7 @@ for subjInd = 1:2%length(subjList)
     if ~exist(fullfile(funPath,outDir),'dir')
         mkdir(fullfile(funPath,outDir))
     end
-    disp([subj ': saving'])
+    disp([subj ': saving masked data'])
     save(fullfile(funPath,outDir,[subj '.mat']),'d','p')
     disp([subj ': saved'])
     clear d p

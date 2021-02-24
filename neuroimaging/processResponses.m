@@ -50,7 +50,7 @@ if actuallyRun
             res.(sess) = runGLMs(d.fun(1,sessInd),p,0);
         end
         % Save
-        disp([subj ': saving'])
+        disp([subj ': saving responses'])
         if ~exist(fullfile(funPath,outDir),'dir')
             mkdir(fullfile(funPath,outDir))
         end
