@@ -29,7 +29,7 @@ maskLabel = 'v1'; % 'v1v2v3'
 
 
 
-for subjInd = 1:2%1:length(subjList)
+for subjInd = 1:length(subjList)
     %% Get data and design
     clearvars -except tstart mask subjInd smLevel subjStimList subjList maskLabel matFun repo funPath anatPath stimPath inDir outDir noMovement runInd figOption verbose
     subj = subjList{subjInd}; subjStim = subjStimList{subjInd};
@@ -42,7 +42,7 @@ for subjInd = 1:2%1:length(subjList)
             %                     data_folder = fullfile('C:\Users\Sebastien\OneDrive - McGill University\work\projects\170210_HRdecoding\C_processing\',subj,'\run1a_preprocessing');
             %                     labelDir = 'C:\Users\Sebastien\OneDrive - McGill University\work\projects\170210_HRdecoding\B_acquisition\160118_cyclicStim\data';
             funData_folderIN = fullfile(funPath,inDir,subj);
-            funData_folderOUT = fullfile(funPath,outDir,subj);
+            funData_folderOUT = fullfile(funPath,outDir);
             anatData_folder = fullfile(anatPath,subj);
             labelPath = fullfile(stimPath,subjStim);
     end
@@ -202,8 +202,11 @@ for subjInd = 1:2%1:length(subjList)
     p.masks.cropMask = logical(cropMask);
     
     %% Save
-    outName = funData_folderOUT;
     disp([subj ': saving croped data'])
+    if ~exist(funData_folderOUT,'dir')
+        mkdir(funData_folderOUT)
+    end
+    outName = fullfile(funData_folderOUT,subj);
     save([outName '.mat'],'d','p','-v7.3');
     disp([subj ': saved to ''' outName ''''])
 end

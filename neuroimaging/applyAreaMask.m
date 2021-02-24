@@ -41,7 +41,7 @@ exclusion.run = {4};
 exclusion.cond = {2};
 
 %% Loop over subjects
-for subjInd = 1:2%length(subjList)
+for subjInd = 1:length(subjList)
     subj = subjList{subjInd};
     disp([subj ': loading'])
     load(fullfile(funPath,inDir,[subj '.mat']),'d','p')
