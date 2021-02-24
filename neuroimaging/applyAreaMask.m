@@ -4,8 +4,16 @@ if ~actuallyRun
     disp(['skipping ' mfilename])
     return
 end
-if ~exist('figOption','var') || ~isfield(figOption,'subj')
+if exist('figOption','var')
+    if ~isfield(figOption,'subj')
+        figOption.subj = [];
+    end
+    if ~isfield(figOption,'save')
+        figOption.save = 0;
+    end
+else
     figOption.subj = [];
+    figOption.save = 0;
 end
 
 %% Define paths
@@ -15,12 +23,11 @@ if ismac
 else
     repoPath = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
 end
-funDir = 'C-derived\DecodingHR';
-funPath = fullfile(repoPath,funDir,'fun');
-inDir = 'b';
-outDir = 'c';
+        funPath = fullfile(repoPath,'C-derived\DecodingHR\fun');
+            inDir  = 'b';
+            outDir = 'c';
 %make sure everything is forward slash for mac, linux pc compatibility
-for tmp = {'repoPath' 'funDir' 'funPath' 'inDir' 'outDir'}
+for tmp = {'repoPath' 'funPath' 'inDir' 'outDir'}
     eval([char(tmp) '(strfind(' char(tmp) ',''\''))=''/'';']);
 end
 clear tmp

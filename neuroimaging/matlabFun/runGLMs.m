@@ -36,14 +36,17 @@ opt.extraOutput = 1;
 [~,v.base,v.dataDtrd] = fitSinMixed(d,p,opt); clear opt
 d.dataDtrd = cell(size(d.data));
 v.map = cell(size(d.data));
+v.var = cell(size(d.data));
 for runInd = 1:size(d.data,1)
-    d.data{runInd} = (d.data{runInd}-v.base{runInd}) ./ v.base{runInd} .* 100;
+%     d.data{runInd} = (d.data{runInd}-v.base{runInd}) ./ v.base{runInd} .* 100;
     d.dataDtrd{runInd} = v.dataDtrd{runInd} ./ v.base{runInd} .* 100;
     
-    var = std(v.dataDtrd{runInd}(:,:,:,~d.censorPts{runInd}),[],4);
-    mean = v.base{runInd};
-    v.map{runInd} = var./mean; clear var mean
+    v.var{runInd} = std(v.dataDtrd{runInd}(:,:,:,~d.censorPts{runInd}),[],4); v.dataDtrd{runInd} = [];
+    v.map{runInd} = v.var{runInd}./v.base{runInd};
 end
+v = rmfield(v,'dataDtrd');
+
+%% 
 if verbose; disp('Extract hr'); end
 res1 = fitHrMixed(d,p);
 if verbose; disp('Extract sin responses'); end
@@ -60,8 +63,7 @@ res.featSel.vein.map = cat(5,...
     cat(4,v.map{d.condLabel==3 & ~d.excl}));
 res.dataDtrd = d.dataDtrd(~d.excl);
 res.info = 'x X y X z X rep X cond X t';
-% opt.hrf = 'sin';
-% res = runFit(d,p,opt)
+
 function res = fitSinFixed(d,p)
 %% First exclude
 excl = d.excl;
@@ -279,8 +281,13 @@ if opt.extraOutput
     for runInd = 1:size(f.full.betas,1)
         designInfo = f.full.designInfo{runInd};
         baseInfo = designInfo(4,:);
-        baseInd = all(ismember(baseInfo,'poly0'),1);
-        baseData{runInd} = f.full.betas{runInd}(:,:,:,baseInd);
+        baseLabel = cellstr(num2str((0:p.polyDeg(runInd))','poly%d'))';
+        baseInd = ismember(baseInfo,baseLabel);
+        betas = permute(f.full.betas{runInd}(:,:,:,baseInd),[4 1 2 3]);
+        baseData{runInd} = nan(p.xyzSz);
+        for voxInd = 1:prod(p.xyzSz)
+            baseData{runInd}(voxInd) = mean(d.poly{runInd}*betas(:,voxInd),1);
+        end
     end
     res.base = cat(5,...
         cat(4,baseData{d.condLabel==1}),...

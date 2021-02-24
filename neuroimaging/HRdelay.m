@@ -22,6 +22,8 @@ figOption.subj = 1; % subjInd-> plots participants subjInd; +inf-> plots all par
 
 importData(verbose)
 applyAreaMask(figOption)
+processResponses(figOption,verbose)
+return
 
 % runFit(verbose,figOption)
 runFit2(verbose,figOption)

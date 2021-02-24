@@ -12,44 +12,43 @@ end
 subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'};
 subjStimList = {'jp' 'sk' 'sp' 'bm' 'sb' 'bj'};
 if ismac
-    repo = '/Users/sebastienproulx/OneDrive - McGill University/dataBig';
+    repoPath = '/Users/sebastienproulx/OneDrive - McGill University/dataBig';
 else
-    repo = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
+    repoPath = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
 end
-    funDir = 'C-derived\DecodingHR\fun';
-        inDir = 'a';
+    funPath = fullfile(repoPath,'C-derived\DecodingHR\fun');
+        inDir  = 'a';
         outDir = 'b';
-    anatDir = 'C-derived\DecodingHR\anat\z';
-    stimDir = 'B-clean\DecodingHR\stim\160118_cyclicStim\data';
+    anatPath = fullfile(repoPath,'C-derived\DecodingHR\anat\z');
+    stimPath = fullfile(repoPath,'B-clean\DecodingHR\stim\160118_cyclicStim\data');
 %make sure everything is forward slash for mac, linux pc compatibility
-for tmpPath = {'repo' 'funDir' 'anatDir' 'stimDir'}
+for tmpPath = {'repoPath' 'funPath' 'anatPath' 'stimPath' 'inDir' 'outDir'}
     eval([char(tmpPath) '(strfind(' char(tmpPath) ',''\''))=''/'';']);
 end
-% maskLabel = 'v1v2v3';
-maskLabel = 'v1';
+maskLabel = 'v1'; % 'v1v2v3'
 
 
 
 for subjInd = 1:2%1:length(subjList)
     %% Get data and design
-    clearvars -except tstart mask subjInd smLevel subjStimList subjList maskLabel matFun repo funDir anatDir stimDir inDir outDir noMovement runInd figOption verbose
+    clearvars -except tstart mask subjInd smLevel subjStimList subjList maskLabel matFun repo funPath anatPath stimPath inDir outDir noMovement runInd figOption verbose
     subj = subjList{subjInd}; subjStim = subjStimList{subjInd};
     
     switch getenv('OS')
         case 'Linux'
             funData_folderIN = fullfile('/mnt/hgfs/work/projects/160707_HRdecodingGLMdenoise/C_processing_smooth/',subj,'/run1a_preprocessing');
-            labelDir = '/mnt/hgfs/work/projects/160707_HRdecodingGLMdenoise/B_acquisition/160118_cyclicStim/data';
+            labelPath = '/mnt/hgfs/work/projects/160707_HRdecodingGLMdenoise/B_acquisition/160118_cyclicStim/data';
         otherwise
             %                     data_folder = fullfile('C:\Users\Sebastien\OneDrive - McGill University\work\projects\170210_HRdecoding\C_processing\',subj,'\run1a_preprocessing');
             %                     labelDir = 'C:\Users\Sebastien\OneDrive - McGill University\work\projects\170210_HRdecoding\B_acquisition\160118_cyclicStim\data';
-            funData_folderIN = fullfile(repo,funDir,inDir,subj);
-            funData_folderOUT = fullfile(repo,funDir,outDir,subj);
+            funData_folderIN = fullfile(funPath,inDir,subj);
+            funData_folderOUT = fullfile(funPath,outDir,subj);
             if ~exist(funData_folderOUT,'dir'); mkdir(funData_folderOUT); end
-            anatData_folder = fullfile(repo,anatDir,subj);
-            labelDir = fullfile(repo,stimDir);
+            anatData_folder = fullfile(anatPath,subj);
+            labelPath = fullfile(stimPath,subjStim);
     end
     if verbose
-        disp([subj ': importing from ' funData_folderIN])
+        disp([subj ': importing from ''' funData_folderIN ''''])
     else
         disp([subj ': importing'])
     end
@@ -64,7 +63,7 @@ for subjInd = 1:2%1:length(subjList)
     
     
     %Get run labels
-    runList = dir(fullfile(labelDir,subjStim,'*.mat'));
+    runList = dir(fullfile(labelPath,'*.mat'));
     label = [];
     i=1;
     while i <= length(runList)
@@ -95,10 +94,13 @@ for subjInd = 1:2%1:length(subjList)
         mask = load_nii(maskFile);
         mask = double(flipdim(permute(mask.img,[3 1 2 4]),1));
     end
+    % Censor first and last slices
+    mask(:,:,[1 end]) = false;
     any3 = repmat(any(mask,3),[           1            1 size(mask,3)]);
     any2 = repmat(any(any3,2),[           1 size(any3,2)            1]);
     any1 = repmat(any(any3,1),[size(any3,1)            1            1]);
     cropMask = any1&any2; clear any1 any2 any3
+    cropMask(:,:,[1 end]) = false;
     
     %% Process for all conditions
     sessionLabel = cell(3,length(files)/3);
@@ -109,7 +111,7 @@ for subjInd = 1:2%1:length(subjList)
     labelList = [45 135 999];
     condCount = zeros(1,3);
     for cond = 1:3
-        clearvars -except tstart mask cropMask subjInd subjList subjStimList smLevel subj funData_folderIN funData_folderOUT labelDir files label labelList cond sessionLabel data design extraRegr labelList curLabel condCount sessionLabel maskLabel matFun repo funDir anatDir stimDir inDir outDir noMovement runInd figOption verbose
+        clearvars -except tstart mask cropMask subjInd subjList subjStimList smLevel subj funData_folderIN funData_folderOUT labelDir files label labelList cond sessionLabel data design extraRegr labelList curLabel condCount sessionLabel maskLabel matFun repo funPath anatPath stimPath inDir outDir noMovement runInd figOption verbose
         close all
         curLabel = labelList(cond);
         
@@ -166,7 +168,7 @@ for subjInd = 1:2%1:length(subjList)
         fprintf('The sampling rate (TR) is %.6f seconds.\n',tr);
     end
     
-    clearvars -except tstart mask cropMask subjInd smLevel subjStimList subjList subj funData_folderIN funData_folderOUT labelDir data design extraRegr sessionLabel sessModel stimdur tr maskLabel repo funDir anatDir stimDir inDir outDir noMovement runInd figOption verbose
+    clearvars -except tstart mask cropMask subjInd smLevel subjStimList subjList subj funData_folderIN funData_folderOUT labelDir data design extraRegr sessionLabel sessModel stimdur tr maskLabel repo funPath anatPath stimPath inDir outDir noMovement runInd figOption verbose
     
     
     %% Rorganize data
@@ -197,37 +199,12 @@ for subjInd = 1:2%1:length(subjList)
     p.tr = 1;
     p.stimDur = stimdur;
     p.doMotion = 0;
-    p.masks.roiMasks.(maskLabel) = mask;
-    p.masks.cropMask = cropMask;
+    p.masks.roiMasks.(maskLabel) = logical(mask);
+    p.masks.cropMask = logical(cropMask);
     
     %% Save
     outName = funData_folderOUT;
-    disp([subj ': saving'])
+    disp([subj ': saving croped data'])
     save([outName '.mat'],'d','p','-v7.3');
     disp([subj ': saved'])
 end
-    
-    
-    
-    
-%     for sessInd = 1:2
-%         sess = ['sess' num2str(sessInd)];
-%         res.(sess) = runGLMs(d.fun(1,sessInd),p);
-%     end
-%     
-%     keyboard
-%     ana = 'SinCos';
-%     if noMovement
-%         outName = fullfile(funData_folderOUT,[maskLabel ana]);
-%     else
-%         outName = fullfile(funData_folderOUT,[maskLabel ana '_move12']);
-%     end
-%     if strcmp(outName(end),'_')
-%         outName(end) = [];
-%     end
-%     
-%     results.mask = mask;
-%     save([outName '.mat'],'results','-v7.3');
-%     save([outName '_detrendedData.mat'],'detrendedData','-v7.3');
-%     disp([subj ': done'])
-%     
