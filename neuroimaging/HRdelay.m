@@ -1,7 +1,7 @@
 clear all
 %% Dependencies
 addpath(genpath(fullfile(pwd,'matlabFun')));
-verbose = 0; % prints more info
+verbose = 1; % prints more info
 
 %% Between-session feature selection parameters
 % Activated voxels
@@ -19,6 +19,9 @@ featSel_bSess.discrim.percentile = 20;
 %% Display parameters
 figOption.save = 0; % save all figures
 figOption.subj = 1; % subjInd-> plots participants subjInd; +inf-> plots all participant (if verbose==0, will only plot subjInd==1 but still produce and save all the other figures)
+
+importData(verbose)
+applyAreaMask(figOption)
 
 % runFit(verbose,figOption)
 runFit2(verbose,figOption)

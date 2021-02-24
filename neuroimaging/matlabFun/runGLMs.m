@@ -1,4 +1,7 @@
-function res = runGLMs(d,p)
+function res = runGLMs(d,p,verbose)
+if ~exist('verbose','var')
+    verbose = 1;
+end
 % function [results] = runGLM(design,data,stimdur,tr,hrfmodel,hrfknobs,opt,splitIn)
 
 
@@ -25,7 +28,9 @@ p.censorPts = d.censorPts;
 
 
 %% Percent BOLD
-disp('Detrend, vein map and %BOLD')
+if verbose
+    disp('Detrend, map veins and convert to %BOLD')
+end
 opt.excl = 0;
 opt.extraOutput = 1;
 [~,v.base,v.dataDtrd] = fitSinMixed(d,p,opt); clear opt
@@ -39,12 +44,11 @@ for runInd = 1:size(d.data,1)
     mean = v.base{runInd};
     v.map{runInd} = var./mean; clear var mean
 end
-
-disp('Extract hr')
+if verbose; disp('Extract hr'); end
 res1 = fitHrMixed(d,p);
-disp('Extract sin responses')
+if verbose; disp('Extract sin responses'); end
 res2 = fitSinMixed(d,p);
-disp('Compute stats')
+if verbose; disp('Compute stats'); end
 res3 = fitSinFixed(d,p);
 
 res.sin = res2.hr; clear res2
@@ -61,23 +65,27 @@ res.info = 'x X y X z X rep X cond X t';
 function res = fitSinFixed(d,p)
 %% First exclude
 excl = d.excl;
-rep = unique(d.repLabel(excl));
-if length(rep)>1
-    error('cannot deal with multiple exclusions')
-end
-fieldList = fields(d);
-for fieldInd = 1:length(fieldList)
-    d.(fieldList{fieldInd})(excl,:,:) = [];
-end
-d.repLabel(d.repLabel>rep) = d.repLabel(d.repLabel>rep)-1;
-d.runInd = (1:size(d.repLabel,1))';
-fieldList = fields(p);
-for fieldInd = 1:length(fieldList)
-    if size(p.(fieldList{fieldInd}),1)==p.runSz
-        p.(fieldList{fieldInd})(excl,:,:) = [];
+if any(excl)
+    rep = unique(d.repLabel(excl));
+    if length(rep)>1
+        error('cannot deal with multiple exclusions')
     end
+    fieldList = fields(d);
+    for fieldInd = 1:length(fieldList)
+        d.(fieldList{fieldInd})(excl,:,:) = [];
+    end
+    d.repLabel(d.repLabel>rep) = d.repLabel(d.repLabel>rep)-1;
+    d.runInd = (1:size(d.repLabel,1))';
+    fieldList = fields(p);
+    for fieldInd = 1:length(fieldList)
+        if size(p.(fieldList{fieldInd}),1)==p.runSz
+            p.(fieldList{fieldInd})(excl,:,:) = [];
+        end
+    end
+    p.runSz = p.runSz - nnz(excl);
+else
+    d.runInd = (1:size(d.repLabel,1))';
 end
-p.runSz = p.runSz - nnz(excl);
 
 %% Prepare peices of design matrix
 for runInd = 1:size(d.data,1)
@@ -198,23 +206,27 @@ end
 %% First exclude
 if opt.excl
     excl = d.excl;
-    rep = unique(d.repLabel(excl));
-    if length(rep)>1
-        error('cannot deal with multiple exclusions')
-    end
-    fieldList = fields(d);
-    for fieldInd = 1:length(fieldList)
-        d.(fieldList{fieldInd})(excl,:,:) = [];
-    end
-    d.repLabel(d.repLabel>rep) = d.repLabel(d.repLabel>rep)-1;
-    d.runInd = (1:size(d.repLabel,1))';
-    fieldList = fields(p);
-    for fieldInd = 1:length(fieldList)
-        if size(p.(fieldList{fieldInd}),1)==p.runSz
-            p.(fieldList{fieldInd})(excl,:,:) = [];
+    if any(excl)
+        rep = unique(d.repLabel(excl));
+        if length(rep)>1
+            error('cannot deal with multiple exclusions')
         end
+        fieldList = fields(d);
+        for fieldInd = 1:length(fieldList)
+            d.(fieldList{fieldInd})(excl,:,:) = [];
+        end
+        d.repLabel(d.repLabel>rep) = d.repLabel(d.repLabel>rep)-1;
+        d.runInd = (1:size(d.repLabel,1))';
+        fieldList = fields(p);
+        for fieldInd = 1:length(fieldList)
+            if size(p.(fieldList{fieldInd}),1)==p.runSz
+                p.(fieldList{fieldInd})(excl,:,:) = [];
+            end
+        end
+        p.runSz = p.runSz - nnz(excl);
+    else
+        d.runInd = (1:size(d.repLabel,1))';
     end
-    p.runSz = p.runSz - nnz(excl);
 end
 
 %% Prepare peices of design matrix
@@ -282,23 +294,27 @@ res.info = 'x X y X x X rep X cond';
 function res = fitHrMixed(d,p)
 %% First exclude
 excl = d.excl;
-rep = unique(d.repLabel(excl));
-if length(rep)>1
-    error('cannot deal with multiple exclusions')
-end
-fieldList = fields(d);
-for fieldInd = 1:length(fieldList)
-    d.(fieldList{fieldInd})(excl,:,:) = [];
-end
-d.repLabel(d.repLabel>rep) = d.repLabel(d.repLabel>rep)-1;
-d.runInd = (1:size(d.repLabel,1))';
-fieldList = fields(p);
-for fieldInd = 1:length(fieldList)
-    if size(p.(fieldList{fieldInd}),1)==p.runSz
-        p.(fieldList{fieldInd})(excl,:,:) = [];
+if any(excl)
+    rep = unique(d.repLabel(excl));
+    if length(rep)>1
+        error('cannot deal with multiple exclusions')
     end
+    fieldList = fields(d);
+    for fieldInd = 1:length(fieldList)
+        d.(fieldList{fieldInd})(excl,:,:) = [];
+    end
+    d.repLabel(d.repLabel>rep) = d.repLabel(d.repLabel>rep)-1;
+    d.runInd = (1:size(d.repLabel,1))';
+    fieldList = fields(p);
+    for fieldInd = 1:length(fieldList)
+        if size(p.(fieldList{fieldInd}),1)==p.runSz
+            p.(fieldList{fieldInd})(excl,:,:) = [];
+        end
+    end
+    p.runSz = p.runSz - nnz(excl);
+else
+    d.runInd = (1:size(d.repLabel,1))';
 end
-p.runSz = p.runSz - nnz(excl);
 
 %% Prepare peices of design matrix
 for runInd = 1:size(d.data,1)
