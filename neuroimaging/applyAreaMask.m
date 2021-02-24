@@ -89,6 +89,6 @@ for subjInd = 1:2%length(subjList)
     end
     disp([subj ': saving masked data'])
     save(fullfile(funPath,outDir,[subj '.mat']),'d','p')
-    disp([subj ': saved'])
+    disp([subj ': saved to ''' fullfile(funPath,outDir) ''''])
     clear d p
 end

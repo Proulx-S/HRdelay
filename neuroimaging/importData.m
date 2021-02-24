@@ -43,7 +43,6 @@ for subjInd = 1:2%1:length(subjList)
             %                     labelDir = 'C:\Users\Sebastien\OneDrive - McGill University\work\projects\170210_HRdecoding\B_acquisition\160118_cyclicStim\data';
             funData_folderIN = fullfile(funPath,inDir,subj);
             funData_folderOUT = fullfile(funPath,outDir,subj);
-            if ~exist(funData_folderOUT,'dir'); mkdir(funData_folderOUT); end
             anatData_folder = fullfile(anatPath,subj);
             labelPath = fullfile(stimPath,subjStim);
     end
@@ -206,5 +205,5 @@ for subjInd = 1:2%1:length(subjList)
     outName = funData_folderOUT;
     disp([subj ': saving croped data'])
     save([outName '.mat'],'d','p','-v7.3');
-    disp([subj ': saved'])
+    disp([subj ': saved to ''' outName ''''])
 end
