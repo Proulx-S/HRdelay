@@ -619,7 +619,7 @@ yErrSSred = sum(catcell(4,fRed.yErrSS(runInd)),4);
 F.F  = ( (yErrSSred-yErrSSfull)./ (pFull-pRed) ) ./ ( yErrSSfull./(n-pFull) );
 % F.F = ( (yHatSSfull-yHatSSred)./ (pFull-pRed) ) ./ ( yErrSSfull./(n-pFull) );
 
-F.p = fcdf(F.F,pFull-pRed,n-pFull);
+F.p = fcdf(F.F,pFull-pRed,n-pFull,'upper');
 F.df.pFull = pFull;
 F.df.pRed = pRed;
 F.df.n = n;
