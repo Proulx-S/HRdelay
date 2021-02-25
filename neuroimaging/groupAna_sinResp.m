@@ -1,4 +1,4 @@
-function runGroupAnalysis_sin(figOption,verbose)
+function groupAna_sinResp(p,figOption,verbose)
 if ~exist('verbose','var')
     verbose = 1;
 end
@@ -20,7 +20,6 @@ else
 end
         funPath = fullfile(repoPath,'C-derived\DecodingHR\fun');
             inDir  = 'd';
-%             outDir = 'd';
 %make sure everything is forward slash for mac, linux pc compatibility
 for tmp = {'repoPath' 'funPath' 'inDir'}
     eval([char(tmp) '(strfind(' char(tmp) ',''\''))=''/'';']);
@@ -28,48 +27,16 @@ end
 clear tmp
 
 
-if ismac
-    repoPath = '/Users/sebastienproulx/OneDrive - McGill University/dataBig';
-else
-    repoPath = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
-end
-dataDir = 'C-derived\DecodingHR';
-funPath = fullfile(repoPath,dataDir,'fun');
-funLevel = 'z';
-fileSuffix = '_preprocAndShowMasks.mat';
-
-%make sure everything is forward slash for mac, linux pc compatibility
-for tmpPath = {'repoPath' 'dataDir' 'funPath'}
-    eval([char(tmpPath) '(strfind(' char(tmpPath) ',''\''))=''/'';']);
-end
-%
-%% Preload param
-tmp = dir(fullfile(funPath,funLevel,'*.mat'));
-for i = 1:length(tmp)
-    load(fullfile(funPath,funLevel,tmp(i).name),'param')
-    if exist('param','var')
-        break
-    end
-end
-if ~exist('param','var')
-    error('Analysis parameters not found!')
-end
-subjList = param.subjList;
-
-
-
 %% Load data
-dAll = cell(size(subjList,1),1);
-paramAll = cell(size(subjList,1),1);
-for subjInd = 1:size(subjList,1)
-    curFile = fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]);
+dAll = cell(size(subjList,2),1);
+for subjInd = 1:size(subjList,2)
+    subj = subjList{subjInd};
+    curFile = fullfile(funPath,inDir,[subj '.mat']);
     if verbose; disp(['loading: ' curFile]); end
-    load(curFile,'d','param');
-    dAll{subjInd} = d;
-    paramAll{subjInd} = param;
+    load(curFile,'res')
+    dAll{subjInd} = res; clear res
 end
 d = dAll; clear dAll
-param = paramAll; clear paramAll
 
 % Average voxels
 for subjInd = 1:length(subjList)
@@ -77,8 +44,11 @@ for subjInd = 1:length(subjList)
         % Between-session feature selection
         sess = ['sess' num2str(sessInd)];
         sessFeat = ['sess' num2str(~(sessInd-1)+1)];
-        ind = true(1,size(d{subjInd}.(sess).sin,2));
-        ind = ind & d{subjInd}.(sessFeat).anyCondActivation_mask;
+        ind = true(size(d{subjInd}.(sess).sin,1),1);
+        %activated voxels
+        ind = ind & d{subjInd}.(sessFeat).featSel.F.act.p < p.act.threshVal;
+        %non vein voxels
+        d{subjInd}.(sessFeat).featSel.vein.map(ind,:,:,:,:);
         ind = ind & ~d{subjInd}.(sessFeat).vein_mask;
 
         d{subjInd}.(sess).sin = mean(d{subjInd}.(sess).sin(:,ind,:),2);
