@@ -38,41 +38,32 @@ for subjInd = 1:size(subjList,2)
 end
 d = dAll; clear dAll
 
-% Average voxels
+x.sin = nan(length(subjList),3,1,2);
+x.hr = nan(length(subjList),3,12,2);
 for subjInd = 1:length(subjList)
     for sessInd = 1:2
+        %% Average voxels
         % Between-session feature selection
         sess = ['sess' num2str(sessInd)];
         sessFeat = ['sess' num2str(~(sessInd-1)+1)];
         ind = true(size(d{subjInd}.(sess).sin,1),1);
-        %activated voxels
+        % activated voxels
         ind = ind & d{subjInd}.(sessFeat).featSel.F.act.p < p.act.threshVal;
-        %non vein voxels
-        d{subjInd}.(sessFeat).featSel.vein.map(ind,:,:,:,:);
-        ind = ind & ~d{subjInd}.(sessFeat).vein_mask;
-
-        d{subjInd}.(sess).sin = mean(d{subjInd}.(sess).sin(:,ind,:),2);
-        d{subjInd}.(sess).hr = mean(d{subjInd}.(sess).hr(:,ind,:,:),2);
+        % non vein activated voxels
+        veinMap = mean(d{subjInd}.(sessFeat).featSel.vein.map(:,:),2);
+        ind = ind & veinMap<prctile(veinMap(ind),100-p.vein.percentile);
+        
+        xSin = mean(d{subjInd}.(sess).sin(ind,:,:,:,:,:),1);
+        xHr = mean(d{subjInd}.(sess).hr(ind,:,:,:,:,:),1);
+        
+        %% Average runs
+        x.sin(subjInd,:,:,sessInd) = mean(xSin,4);
+        x.hr(subjInd,:,:,sessInd) = mean(xHr,4);
     end
 end
+x.info = 'subj x cond[grat1,grat2,plaid] x time x sess';
 
-% Average runs in cartesian space
-condList = {'ori1' 'ori2' 'plaid'};
-xData = nan(length(subjList),length(condList),2);
-for subjInd = 1:length(subjList)
-    xData(subjInd,:,:) = permute(cat(1,mean(d{subjInd}.sess1.sin,1),mean(d{subjInd}.sess2.sin,1)),[2 3 1]);
-end
-xDataInfo = 'subj x cond[or1, ori2, plaid] x sess';
-
-% Average ori cartesian space
-xData = cat(2,xData,mean(xData(:,1:2,:),2));
-xDataInfo = 'subj x cond[or1, ori2, plaid, ori] x sess';
-
-% Average sessions in cartesian space
-xData = mean(xData,3);
-xDataInfo = 'subj x cond[or1, ori2, plaid, ori]';
-
-
+error('not finished')
 %% Plot results
 % Cartesian space
 xDataNorm = xData - mean(xData(:,1:3),2) + mean(mean(xData(:,1:3),2),1);
