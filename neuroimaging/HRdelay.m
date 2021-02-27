@@ -17,9 +17,11 @@ p.discrim.percentile = 20;
 figOption.save = 0; % save all figures
 figOption.subj = 1; % subjInd-> plots participants subjInd; +inf-> plots all participant (if verbose==0, will only plot subjInd==1 but still produce and save all the other figures)
 
-importData(verbose)
-applyAreaMask(figOption)
-processResponses(figOption,verbose)
+if 0
+    importData(verbose)
+    applyAreaMask(figOption)
+    processResponses(figOption,verbose)
+end
 
 groupAna_sinResp(p,figOption,verbose)
 
