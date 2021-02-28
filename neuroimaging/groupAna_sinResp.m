@@ -72,7 +72,10 @@ x.info = 'subj x cond[grat1,grat2,plaid,grat1+2/2] x time x sess';
 x.sin = mean(x.sin,4);
 x.hr = mean(x.hr,4);
 
+hr = x.hr;
 %% Normalize
+function hr = normHr(hr)
+hr
 
 error('not finished')
 %% Plot results

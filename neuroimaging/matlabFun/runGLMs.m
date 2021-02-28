@@ -27,24 +27,27 @@ end
 p.censorPts = d.censorPts;
 
 
-%% Percent BOLD
+%% Vein map
 if verbose
     disp('Detrend, map veins and convert to %BOLD')
 end
 opt.excl = 0;
 opt.extraOutput = 1;
-[~,v.base,v.dataDtrd] = fitSinMixed(d,p,opt); clear opt
-d.dataDtrd = cell(size(d.data));
+% Detrend
+[~,d.base,d.dataDtrd] = fitSinMixed(d,p,opt); clear opt
 v.map = cell(size(d.data));
 v.var = cell(size(d.data));
+v.base = cell(size(d.data));
 for runInd = 1:size(d.data,1)
-%     d.data{runInd} = (d.data{runInd}-v.base{runInd}) ./ v.base{runInd} .* 100;
-    d.dataDtrd{runInd} = v.dataDtrd{runInd} ./ v.base{runInd} .* 100;
-    
-    v.var{runInd} = std(v.dataDtrd{runInd}(:,:,:,~d.censorPts{runInd}),[],4); v.dataDtrd{runInd} = [];
+    % Vein map
+    v.var{runInd} = std(d.dataDtrd{runInd}(:,:,:,~d.censorPts{runInd}),[],4);
+    v.base{runInd} = d.base{runInd};
     v.map{runInd} = v.var{runInd}./v.base{runInd};
+    
+    % Percent BOLD
+    d.data{runInd} = (d.data{runInd}-d.base{runInd}) ./ d.base{runInd} .* 100;
+    d.dataDtrd{runInd} = d.dataDtrd{runInd} ./ d.base{runInd} .* 100;
 end
-v = rmfield(v,'dataDtrd');
 
 %% 
 if verbose; disp('Extract hr'); end
