@@ -1,4 +1,4 @@
-function groupAna_sinResp(p,figOption,verbose)
+function groupAna(p,figOption,verbose)
 if ~exist('verbose','var')
     verbose = 1;
 end
@@ -53,6 +53,9 @@ for subjInd = 1:length(subjList)
         xSin = mean(d{subjInd}.(sess).sin(ind,:,:,:,:,:),1);
         xHr = mean(d{subjInd}.(sess).hr(ind,:,:,:,:,:),1);
         
+        %% Subtract base from hr
+        xHr = xHr - mean(xHr,6);
+        
         %% Average runs
         x.sin(subjInd,:,:,sessInd) = mean(xSin,4);
         x.hr(subjInd,:,:,sessInd) = mean(xHr,4);
@@ -64,13 +67,40 @@ x.info = 'subj x cond[grat1,grat2,plaid] x time x sess';
 sinRespPlot(x,figOption);
 
 %% Plot response time courses
-error('stopped coding here')
 hrPlot(x,figOption)
 
 %% Stats
 sinRespStats(x);
 
 function hrPlot(x,figOption)
+% Average sessions
+x.hr = mean(x.hr,4);
+% Remove random subject effet
+[x.hr] = normHr(x);
+
+t = (1:size(x.hr,3))-1;
+% offset = mean(x.hr(:));
+figure('WindowStyle','docked');
+for condInd = 1:size(x.hr,2)
+    y = squeeze(x.hr(:,condInd,:));
+%     y = y-yBase;
+%     h1 = plot(t,y); hold on
+%     h2 = plot(t,repmat(yBase,size(t))); hold on
+%     for i = 1:length(h1)
+%         h2(i).Color = h1(i).Color;
+%     end
+    yMean = mean(y,1);
+    yErr = std(y,[],1)./sqrt(size(y,1));
+    hErr(condInd) = errorbar(t,yMean,yErr); hold on
+end
+set(hErr,'CapSize',0)
+xlabel('time from stimulus onset (sec)')
+ylabel('%BOLD change')
+hLeg = legend({'grat1' 'grat2' 'plaid'});
+hLeg.Box = 'off';
+grid on
+
+
 
 function sinRespPlot(x,figOption)
 colors = [  0         0.4470    0.7410
@@ -311,7 +341,7 @@ end
 
 
 
-function hr = normHr(x)
+function [hr,thetaShift,rhoScale] = normHr(x)
 interpMethod = 'cubic'; % cubic convolution as implemented in Matlab2020b
 rhoGroup = abs(mean(x.sin(:)));
 thetaGroup = angle(mean(x.sin(:)));
@@ -334,19 +364,21 @@ indPreppend2 = size(tSec2,2)/2:size(tSec2,2);
 indAppend2 = 1:size(tSec2,2)/2;
 tSecPreppend2 = -length(indPreppend2)*deltaSec2:deltaSec2:tSec2(1)-deltaSec2;
 tSecAppend2 = tSec2(end)+deltaSec2:deltaSec2:tSec2(end)+length(indAppend2)*deltaSec2;
+thetaShift = nan(size(x.sin,1),1);
+rhoScale = nan(size(x.sin,1),1);
 for subjInd = 1:size(x.sin,1)
-    curSin = permute(x.sin(subjInd,:,:,:),[3 2 4 1]);
-    curSin = mean(curSin(:,:),2);
+    curSin = x.sin(subjInd,:,:,:);
+    curSin = mean(curSin,4);
     curHr = permute(x.hr(subjInd,:,:,:),[3 2 4 1]);
+    thetaShift(subjInd) = -( thetaGroup-angle(mean(curSin,2)) );
+    rhoScale(subjInd) = abs(mean(curSin,2)) .*rhoGroup;
     for i = 1:prod(size(curHr,[2 3]))
         % Upsample
         tmp2 = interp1([tSecPreppend tSec tSecAppend],curHr([indPreppend ind indAppend],i),[tSecPreppend2 tSec2 tSecAppend2],interpMethod);
-%         tmp = tmp(length(tSecPreppend2)+1:length([tSecPreppend2 tSec2]));
         % Rotate
-        thetaDiff = thetaGroup-angle(curSin);
-        tmp2 = circshift(tmp2,-round(thetaDiff/deltaRad2));
+        tmp2 = circshift(tmp2,round(thetaShift(subjInd)./deltaRad2));
         % Scale
-        tmp2 = tmp2./abs(curSin).*rhoGroup;
+        tmp2 = tmp2./rhoScale(subjInd);
         % Downsample
         tmp = interp1([tSecPreppend2 tSec2 tSecAppend2],tmp2,[tSecPreppend tSec tSecAppend],interpMethod);
         curHr(:,i) = tmp(length(tSecPreppend)+1:length([tSecPreppend tSec]));

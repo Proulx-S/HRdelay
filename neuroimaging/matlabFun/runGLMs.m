@@ -57,15 +57,20 @@ res2 = fitSinMixed(d,p);
 if verbose; disp('Compute stats'); end
 res3 = fitSinFixed(d,p);
 
-res.sin = res2.hr; clear res2
-res.hr = res1.hr; clear res1
+res.sin = res2.hr; res2.hr = [];
+res.sinBase = res2.base; res2.base = [];
+res.hr = res1.hr; res1.hr = [];
+res.hrBase = res1.base; res1.base = [];
+res.info = 'x X y X z X rep X cond X t';
+res.sinDesign = res2.design; clear res2
+res.hrDesign = res1.design; clear res1
+res.infoDesign = 't X regressor';
 res.featSel.F = res3.F; clear res3
 res.featSel.vein.map = cat(5,...
     cat(4,v.map{d.condLabel==1 & ~d.excl}),...
     cat(4,v.map{d.condLabel==2 & ~d.excl}),...
-    cat(4,v.map{d.condLabel==3 & ~d.excl}));
-res.dataDtrd = d.dataDtrd(~d.excl);
-res.info = 'x X y X z X rep X cond X t';
+    cat(4,v.map{d.condLabel==3 & ~d.excl})); clear v
+res.dataDtrd = d.dataDtrd(~d.excl); clear d
 
 function res = fitSinFixed(d,p)
 %% First exclude
@@ -279,26 +284,25 @@ res.hr = cat(5,...
     cat(4,hr{d.condLabel==3}));
 
 %% Extract baseline
-if opt.extraOutput
-    baseData = cell(size(d.data));
-    for runInd = 1:size(f.full.betas,1)
-        designInfo = f.full.designInfo{runInd};
-        baseInfo = designInfo(4,:);
-        baseLabel = cellstr(num2str((0:p.polyDeg(runInd))','poly%d'))';
-        baseInd = ismember(baseInfo,baseLabel);
-        betas = permute(f.full.betas{runInd}(:,:,:,baseInd),[4 1 2 3]);
-        baseData{runInd} = nan(p.xyzSz);
-        for voxInd = 1:prod(p.xyzSz)
-            baseData{runInd}(voxInd) = mean(d.poly{runInd}*betas(:,voxInd),1);
-        end
+baseData = cell(size(d.data));
+for runInd = 1:size(f.full.betas,1)
+    designInfo = f.full.designInfo{runInd};
+    baseInfo = designInfo(4,:);
+    baseLabel = cellstr(num2str((0:p.polyDeg(runInd))','poly%d'))';
+    baseInd = ismember(baseInfo,baseLabel);
+    betas = permute(f.full.betas{runInd}(:,:,:,baseInd),[4 1 2 3]);
+    baseData{runInd} = nan(p.xyzSz);
+    for voxInd = 1:prod(p.xyzSz)
+        baseData{runInd}(voxInd) = mean(d.poly{runInd}*betas(:,voxInd),1);
     end
-    res.base = cat(5,...
-        cat(4,baseData{d.condLabel==1}),...
-        cat(4,baseData{d.condLabel==2}),...
-        cat(4,baseData{d.condLabel==3}));
 end
+res.base = cat(5,...
+    cat(4,baseData{d.condLabel==1}),...
+    cat(4,baseData{d.condLabel==2}),...
+    cat(4,baseData{d.condLabel==3}));
 
 res.info = 'x X y X x X rep X cond';
+res.design = f.full.design{1};
 
 
 function res = fitHrMixed(d,p)
@@ -372,10 +376,12 @@ baseData = cat(5,...
     cat(4,baseData{d.condLabel==3}));
 
 res.hr = res.hr + baseData;
+res.base = baseData;
+res.info = 'x X y X x X rep X cond X t';
+res.design = f.full.design{1};
 % tmp = permute(res.hr,[6 4 5 1 2 3]);
 % tmp = mean(tmp(:,:,:,:),4);
 % plot(tmp(:,:))
-res.info = 'x X y X x X rep X cond X t';
 
 
 function res = runFit(d,p,opt)
