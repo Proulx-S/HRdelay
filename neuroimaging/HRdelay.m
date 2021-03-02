@@ -23,7 +23,7 @@ if 0
     processResponses(figOption,verbose)
 end
 
-groupAna_sinResp(p,figOption,verbose)
+groupAna(p,figOption,verbose)
 
 
 return
