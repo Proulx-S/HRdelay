@@ -65,18 +65,7 @@ x.info = 'subj x cond[grat1,grat2,plaid] x time x sess';
 
 
 %% Normalize rmeove random effect of subjects
-hr = normHr(x);
-tmpBefore = permute(x.hr,[3 1 2 4]);
-tmpBefore = mean(tmpBefore(:,:,:),3);
-tmpAfter = permute(hr,[3 1 2 4]);
-tmpAfter = mean(tmpAfter(:,:,:),3);
-plot(tmpBefore)
-plot(tmpAfter)
-error('grrrr, something wrong')
-
-tmp = permute(x.hr(5,:,:,:),[3 1 2 4]);
-plot(tmp(:,:))
-
+x.hr = normHr(x);
 
 %% Average orientations
 x.sin = cat(2,x.sin,mean(x.sin(:,1:2,:,:),2));
@@ -87,8 +76,9 @@ x.info = 'subj x cond[grat1,grat2,plaid,grat1+2/2] x time x sess';
 x.sin = mean(x.sin,4);
 x.hr = mean(x.hr,4);
 
+error('stopped coding here')
 
-%% Normalize
+
 function hr = normHr(x)
 interpMethod = 'cubic'; % cubic convolution as implemented in Matlab2020b
 rhoGroup = abs(mean(x.sin(:)));
@@ -103,23 +93,19 @@ tSec2 = linspace(0,(tPts2-1)*deltaSec2,tPts2);
 deltaRad2 = deltaSec2/(tPts2*deltaSec2)*2*pi;
 
 hr = nan(size(x.hr));
+ind = 1:size(tSec,2);
+indPreppend = size(tSec,2)/2:size(tSec,2);
+indAppend = 1:size(tSec,2)/2;
+tSecPreppend = -length(indPreppend)*deltaSec:deltaSec:tSec(1)-deltaSec;
+tSecAppend = tSec(end)+deltaSec:deltaSec:tSec(end)+length(indAppend)*deltaSec;
+indPreppend2 = size(tSec2,2)/2:size(tSec2,2);
+indAppend2 = 1:size(tSec2,2)/2;
+tSecPreppend2 = -length(indPreppend2)*deltaSec2:deltaSec2:tSec2(1)-deltaSec2;
+tSecAppend2 = tSec2(end)+deltaSec2:deltaSec2:tSec2(end)+length(indAppend2)*deltaSec2;
 for subjInd = 1:size(x.sin,1)
     curSin = permute(x.sin(subjInd,:,:,:),[3 2 4 1]);
-    curHr = permute(x.hr(subjInd,:,:,:),[3 2 4 1]);
-    
-    ind = 1:size(tSec,2);
-    indPreppend = 1:size(tSec,2)/2;
-    indAppend = size(tSec,2)/2:size(tSec,2);
-    tSecPreppend = -length(indPreppend)*deltaSec:deltaSec:tSec(1)-deltaSec;
-    tSecAppend = tSec(end)+deltaSec:deltaSec:tSec(end)+length(indAppend)*deltaSec;
-    
-    indPreppend2 = 1:size(tSec2,2)/2;
-    indAppend2 = size(tSec2,2)/2:size(tSec2,2);
-    tSecPreppend2 = -length(indPreppend2)*deltaSec2:deltaSec2:tSec2(1)-deltaSec2;
-    tSecAppend2 = tSec2(end)+deltaSec2:deltaSec2:tSec2(end)+length(indAppend2)*deltaSec2;
-    
-    
     curSin = mean(curSin(:,:),2);
+    curHr = permute(x.hr(subjInd,:,:,:),[3 2 4 1]);
     for i = 1:prod(size(curHr,[2 3]))
         % Upsample
         tmp2 = interp1([tSecPreppend tSec tSecAppend],curHr([indPreppend ind indAppend],i),[tSecPreppend2 tSec2 tSecAppend2],interpMethod);
