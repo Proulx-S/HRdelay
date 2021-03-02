@@ -60,11 +60,17 @@ for subjInd = 1:length(subjList)
 end
 x.info = 'subj x cond[grat1,grat2,plaid] x time x sess';
 
-%% Plot Response vectors
+%% Plot response vectors
 sinRespPlot(x,figOption);
+
+%% Plot response time courses
+error('stopped coding here')
+hrPlot(x,figOption)
 
 %% Stats
 sinRespStats(x);
+
+function hrPlot(x,figOption)
 
 function sinRespPlot(x,figOption)
 colors = [  0         0.4470    0.7410
@@ -77,7 +83,7 @@ theta = wrapToPi(angle(x.sin) - angle(mean(x.sin(:,:),2)) + angle(mean(x.sin(:))
 rho = abs(x.sin) ./ abs(mean(x.sin(:,:),2)) .* abs(mean(x.sin(:)));
 [u,v] = pol2cart(theta,rho);
 x.sin = complex(u,v);
-error('need to deal with phase wrap for errorbars')
+
 % Scatters
 fGroup(1) = figure('WindowStyle','docked');
 subplot(2,1,1)
@@ -140,50 +146,53 @@ if figOption.save
 end
 
 % Bars
-fGroup(2) = figure('WindowStyle','docked');
-hb = bar(abs(mean(x.sin,1))); hold on
-hEr = errorbar(hb.XData,abs(mean(x.sin,1)),std(abs(x.sin),[],1)); hold on
-hEr.LineStyle = 'none';
-hEr.Marker = 'none';
-
-fGroup(3) = figure('WindowStyle','docked');
-hb = barh(angle(mean(x.sin,1))); hold on
-hEr = errorbar(angle(mean(x.sin,1)),hb.XData,[],[],std(angle(x.sin),[],1),std(angle(x.sin),[],1)); hold on
-hEr.LineStyle = 'none';
-hEr.Marker = 'none';
-
-
-[ax, pos] = tight_subplot(1,2);
-spInd = 1;
-axes(ax(spInd));
-hb = bar(xData_rhoMean(:,[4 3])); hold on
-hb1 = bar(hb.XData(1),hb.YData(1),'FaceColor','k');
-hb2 = bar(hb.XData(2),hb.YData(2),'FaceColor',colors(3,:));
-hp = plot(hb.XData,xData_rho(:,[4 3])','color',[1 1 1].*0.5);
-set(hp,'LineWidth',lw);
-delete(hb)
-xlim([0.25 2.75])
+fGroup(2) = figure('WindowStyle','docked'); clear hB hErr
+for condInd = 1:3
+    hB(condInd) = bar(condInd,abs(mean(x.sin(:,condInd),1))); hold on
+    hB(condInd).FaceColor = colors(condInd,:);
+    hErr(condInd) = errorbar(condInd,abs(mean(x.sin(:,condInd),1)),std(abs(x.sin(:,condInd)),[],1)); hold on
+    hErr(condInd).LineStyle = 'none';
+    hErr(condInd).Marker = 'none';
+    hErr(condInd).Color = 'k';
+end
+ax = gca;
 ylabel({'Response amplitude' '(%BOLD)'})
-ax(spInd).XTickLabel = {'ori' 'plaid'};
-ylim([0 max(xData_rho(:)).*1.1])
-ax(spInd).PlotBoxAspectRatio = [0.2 1 1];
+ax.XTick = 1:3;
+ax.XTickLabel = {'grat1' 'grat2' 'plaid'};
+f = gcf;
+f.Color = 'w';
 box off
-spInd = 2;
-axes(ax(spInd));
-hb = bar(xData_rhoMean(:,[1 2])); hold on
-hb1 = bar(hb.XData(1),hb.YData(1),'FaceColor',colors(1,:));
-hb2 = bar(hb.XData(2),hb.YData(2),'FaceColor',colors(2,:));
-hp = plot(hb.XData,xData_rho(:,[1 2])','color',[1 1 1].*0.5);
-set(hp,'LineWidth',lw);
-delete(hb)
-xlim([0.25 2.75])
-ylabel({'Response amplitude' '(%BOLD)'})
-ax(spInd).XTickLabel = {'ori1' 'ori2'};
-ylim([0 max(xData_rho(:)).*1.1])
-ax(spInd).PlotBoxAspectRatio = [0.2 1 1];
+amp = [hB.YData];
+disp('***')
+disp(['amp (plaid-grat) = ' num2str(amp(3)-mean(amp(1:2)),'%0.3f%%BOLD')])
+disp(['amp (grat2-grat1) = ' num2str(amp(2)-amp(1),'%0.3f%%BOLD')])
+disp('***')
+
+fGroup(3) = figure('WindowStyle','docked'); clear hB hErr
+for condInd = 1:3
+    hB(condInd) = barh(condInd,mean(rad2sec(angle(x.sin(:,condInd))),1)); hold on
+    hB(condInd).FaceColor = colors(condInd,:);
+    hErr(condInd) = errorbar(mean(rad2sec(angle(x.sin(:,condInd))),1),condInd,[],[],std(rad2sec(angle(x.sin(:,condInd))),[],1),std(rad2sec(angle(x.sin(:,condInd))),[],1)); hold on
+    hErr(condInd).LineStyle = 'none';
+    hErr(condInd).Marker = 'none';
+    hErr(condInd).Color = 'k';
+end
+ax = gca;
+xlabel({'Response delay' '(sec)'})
+ax.YTick = 1:3;
+ax.YTickLabel = {'grat1' 'grat2' 'plaid'};
+f = gcf;
+f.Color = 'w';
 box off
+delay = [hB.YData];
+hTxt = text(0,hB(3).XData+hB(3).BarWidth/2,['plaid-grat = ' num2str(delay(3)-mean(delay(1:2)),'%0.3fsec')],'VerticalAlignment','bottom');
+disp('***')
+disp(['delay (plaid-grat) = ' num2str(delay(3)-mean(delay(1:2)),'%0.3fs')])
+disp(['delay (ori2-ori1) = ' num2str(delay(2)-delay(1),'%0.3fs')])
+disp('***')
 
 if figOption.save
+    error('double-check that')
     filename = fullfile(pwd,mfilename);
     if ~exist(filename,'dir'); mkdir(filename); end
     filename = fullfile(filename,'amp');
@@ -199,65 +208,8 @@ if figOption.save
     saveas(fGroup(2),[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
 end
 
-fGroup(3) = figure('WindowStyle','docked');
-[ax, pos] = tight_subplot(2, 1,[0],[0.1 0],[0.1 0]);
-spInd = 1;
-axes(ax(spInd));
-hb = barh(xData_thetaMean(:,[4 3])); hold on
-hb1 = barh(hb.XData(1),hb.YData(1),'FaceColor','k');
-hb2 = barh(hb.XData(2),hb.YData(2),'FaceColor',colors(3,:));
-hp = plot(xData_theta(:,[4 3])',hb.XData,'color',[1 1 1].*0.5);
-set(hp,'LineWidth',lw);
-delete(hb)
-ylim([0.25 2.75]);
-xlabel({'Response Delay' '(sec)'})
-ax(spInd).YTickLabel = {'ori' 'plaid'};
-xlim([0 max(xData_theta(:)).*1.1])
-ax(spInd).PlotBoxAspectRatio = [1 0.2 1];
-box off
-hTxt = text(0,hb2.XData+hb2.BarWidth/2,['diff=' num2str(diff(xData_thetaMean(:,[4 3])),'%0.3fsec')],'VerticalAlignment','bottom');
-
-spInd = 2;
-axes(ax(spInd));
-hb = barh(xData_thetaMean(:,[1 2])); hold on
-hb1 = barh(hb.XData(1),hb.YData(1),'FaceColor',colors(1,:));
-hb2 = barh(hb.XData(2),hb.YData(2),'FaceColor',colors(2,:));
-hp = plot(xData_theta(:,[1 2])',hb.XData,'color',[1 1 1].*0.5);
-set(hp,'LineWidth',lw);
-delete(hb)
-ylim([0.25 2.75]);
-xlabel({'Response Delay' '(sec)'})
-ax(spInd).YTickLabel = {'ori1' 'ori2'};
-xlim([0 max(xData_theta(:)).*1.1])
-ax(spInd).PlotBoxAspectRatio = [1 0.2 1];
-box off
-hTxt = text(0,hb2.XData+hb2.BarWidth/2,['diff=' num2str(diff(xData_thetaMean(:,[1 2])),'%0.3fsec')],'VerticalAlignment','bottom');
-
-
-disp('***')
-disp(['delay (plaid-ori) = ' num2str(diff(xData_thetaMean(:,[4 3])),'%0.3fs')])
-disp(['delay (ori2-ori1) = ' num2str(diff(xData_thetaMean(:,[1 2])),'%0.3fs')])
-disp(['amp (plaid-ori) = ' num2str(diff(xData_rhoMean(:,[4 3])),'%0.3f%%BOLD')])
-disp(['amp (ori2-ori1) = ' num2str(diff(xData_rhoMean(:,[1 2])),'%0.3f%%BOLD')])
-disp('***')
-
-if figOption.save
-    filename = fullfile(pwd,mfilename);
-    if ~exist(filename,'dir'); mkdir(filename); end
-    filename = fullfile(filename,'delay');
-    fGroup(3).Color = 'none';
-    set(findobj(fGroup(3).Children,'type','Axes'),'color','none')
-    curFile = filename;
-    curExt = 'svg';
-    saveas(fGroup(3),[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
-    fGroup(3).Color = 'w';
-    curExt = 'fig';
-    saveas(fGroup(3),[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
-    curExt = 'jpg';
-    saveas(fGroup(3),[curFile '.' curExt]); if verbose; disp([curFile '.' curExt]); end
-end
-
-
+function thetaSec = rad2sec(thetaRad)
+thetaSec = -thetaRad/pi*6;
 
 function sinRespStats(x)
 % Average sessions
