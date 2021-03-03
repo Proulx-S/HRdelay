@@ -1,4 +1,4 @@
-function [resBS,resWS] = runDecoding(SVMspace,dataType,verbose,nPerm,figOption)
+function [resBS,resWS] = runDecoding(p,verbose,nPerm,figOption)
 if ~exist('verbose','var')
     verbose = 1;
 end
@@ -6,7 +6,9 @@ if ~exist('figOption','var') || isempty(figOption)
     figOption.save = 0;
     figOption.subj = 1; % 'all' or subjInd
 end
-if ~exist('SVMspace','var') || isempty(SVMspace)
+if isfield(p,'svmSpace') && ~isempty(p.svmSpace)
+    SVMspace = p.svmSpace;
+else
     SVMspace = 'cart'; % 'cart_HTbSess' 'cartNoAmp_HTbSess' 'cartNoDelay_HTbSess'
     % 'hr' 'hrNoAmp' 'cart' 'cartNoAmp' cartNoAmp_HT 'cartReal', 'cartImag', 'pol', 'polMag' 'polMag_T' or 'polDelay'
 end
@@ -20,8 +22,32 @@ if isstruct(SVMspace)
 else
     doPerm = 0;
 end
+if isfield(p,'dataType') && ~isempty(p.dataType)
+    dataType = p.dataType;
+else
+    dataType = 'sin';
+end
+ 
+
+
+%% Define paths
+subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'};
+if ismac
+    repoPath = '/Users/sebastienproulx/OneDrive - McGill University/dataBig';
+else
+    repoPath = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
+end
+        funPath = fullfile(repoPath,'C-derived\DecodingHR\fun');
+            inDir  = 'd';
+%make sure everything is forward slash for mac, linux pc compatibility
+for tmp = {'repoPath' 'funPath' 'inDir'}
+    eval([char(tmp) '(strfind(' char(tmp) ',''\''))=''/'';']);
+end
+clear tmp
+
 
 if doPerm
+    error('double-check that')
     filename = fullfile(pwd,mfilename);
     filename = fullfile(filename,[SVMspace '_' num2str(nPerm) 'perm']);
     if exist([filename '.mat'],'file')
@@ -41,45 +67,14 @@ if doPerm
     end
 end
 
-if ismac
-    repoPath = '/Users/sebastienproulx/OneDrive - McGill University/dataBig';
-else
-    repoPath = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
-end
-dataDir = 'C-derived\DecodingHR';
-funPath = fullfile(repoPath,dataDir,'fun');
-funLevel = 'z';
-fileSuffix = '_preprocAndShowMasks.mat';
-
-%make sure everything is forward slash for mac, linux pc compatibility
-for tmpPath = {'repoPath' 'dataDir' 'funPath'}
-    eval([char(tmpPath) '(strfind(' char(tmpPath) ',''\''))=''/'';']);
-end
-
-
-%% Preload param
-tmp = dir(fullfile(funPath,funLevel,'*.mat'));
-for i = 1:length(tmp)
-    curFile = fullfile(funPath,funLevel,tmp(i).name);
-    load(curFile,'param')
-    if exist('param','var')
-        break
-    end
-end
-if ~exist('param','var')
-    error('Analysis parameters not found!')
-end
-subjList = param.subjList;
-
 
 %% Load data
 dAll = cell(size(subjList,1),1);
-for subjInd = 1:size(subjList,1)
-    curFile = fullfile(funPath,funLevel,[subjList{subjInd} fileSuffix]);
+for subjInd = 1:size(subjList,2)
+    curFile = fullfile(funPath,inDir,[subjList{subjInd} '.mat']);
     if verbose; disp(['loading: ' curFile]); end
-    
-    load(curFile,'d');
-    dAll{subjInd} = d;
+    load(curFile,'res');
+    dAll{subjInd} = res;
 end
 d = dAll; clear dAll
 sessList = fields(d{1});
@@ -90,7 +85,7 @@ if verbose
 end
 
 %% Reorganize
-dP = cell(size(d));
+dP = cell(size(d,2),length(sessList));
 for subjInd = 1:length(d)
     for sessInd = 1:length(sessList)
         sess = ['sess' num2str(sessInd)];
@@ -98,39 +93,84 @@ for subjInd = 1:length(d)
         d{subjInd}.(sessList{sessInd}) = [];
     end
 end
-clear d
+d = dP; clear dP
+
 
 % figure('WindowStyle','docked');
 % scatter(dP{1}.discrim_T2,dP{1}.waveDiscrim_T2)
 
 %% Feature selection
-featSel = cell(size(dP));
-for i = 1:numel(dP)
-    featSel{i}.ind = true(1,size(dP{i}.sin,2));
-    featSel{i}.info = 'V1';
-    % Select non-vein voxels
-    featSel{i}.ind = featSel{i}.ind & ~dP{i}.vein_mask;
-    featSel{i}.info = strjoin({featSel{i}.info 'nonVein'},' & ');
-    % Select active voxels
-    featSel{i}.ind = featSel{i}.ind & dP{i}.anyCondActivation_mask;
-    featSel{i}.info = strjoin({featSel{i}.info 'active'},' & ');
-    % Select most discrimant voxels
-    switch dataType
-        case {'wave' 'waveFull' 'waveRun' 'waveTrialSparse' 'waveTrialSparseCat2' 'waveTrialSparseRep'}
-            featSel{i}.ind = featSel{i}.ind & dP{i}.waveDiscrim_mask;
-        case 'sin'
-            featSel{i}.ind = featSel{i}.ind & dP{i}.discrim_mask;
-        otherwise
-            error('X')
+switch p.condPair
+    case 'grat1VSgrat2'
+        condInd = [1 2];
+    case 'grat1VSplaid'
+        condInd = [1 3];
+    case 'grat2VSplaid'
+        condInd = [2 3];
+end
+featSel = cell(size(d));
+for subjInd = 1:size(d,1)
+    for sessInd = 1:size(d,2)
+        % Between-session feature selection
+        ind = true(size(d{subjInd,sessInd}.sin,1),1);
+        info = 'V1';
+        % activated voxels
+        ind = ind & d{subjInd,sessInd}.featSel.F.act.p < p.act.threshVal;
+        info = strjoin({info 'active'},' & ');
+        % non vein activated voxels
+        veinMap = mean(d{subjInd,sessInd}.featSel.vein.map(:,:),2);
+        ind = ind & veinMap<prctile(veinMap(ind),100-p.vein.percentile);
+        info = strjoin({info 'nonVein'},' & ');
+        % Select most discrimant voxels
+        switch dataType
+            case {'wave' 'waveFull' 'waveRun' 'waveTrialSparse' 'waveTrialSparseCat2' 'waveTrialSparseRep'}
+                error('double-check that')
+                ind = ind & d{i}.waveDiscrim_mask;
+            case 'sin'
+                featDiscrimMethod = 'Hotelling';
+                switch featDiscrimMethod
+                    case 'Hotelling'
+                        featMap = nan(size(ind));
+                        voxIndList = find(ind);
+                        [x,y,~] = getXYK(d{subjInd,sessInd},p);
+                        [x,~] = polarSpaceNormalization(x,SVMspace);
+                        [x,~] = cartSpaceNormalization(x,SVMspace);
+                        switch p.svmSpace
+                            case {'cart' 'cartNoAmp'}
+                                for voxInd = 1:length(voxIndList)
+                                    tmp = cat(1,...
+                                        cat(2,real(x(y==1,voxIndList(voxInd))),imag(x(y==1,voxIndList(voxInd)))),...
+                                        cat(2,real(x(y==2,voxIndList(voxInd))),imag(x(y==2,voxIndList(voxInd))))...
+                                        );
+                                    stats = T2Hot2d(tmp);
+                                    featMap(voxIndList(voxInd)) = stats.T2;
+                                end
+                            case {'cartReal' 'cartNoDelay'}
+                                [~,~,~,STATS] = ttest(real(x(y==1,ind)),real(x(y==2,ind)));
+                                featMap(ind) = STATS.tstat;
+                            otherwise
+                                error('X')
+                        end
+                    case 'F'
+                        featMap = d{subjInd,sessInd}.featSel.F.cond1v2.F;
+                end
+                ind = ind & featMap>prctile(featMap(ind),p.discrim.percentile);
+            otherwise
+                error('X')
+        end
+        info = strjoin({info 'mostDisciminant'},' & ');
+        
+        featSel{subjInd,sessInd}.ind = ind;
+        featSel{subjInd,sessInd}.info = info;
     end
-    featSel{i}.info = strjoin({featSel{i}.info 'mostDisciminant'},' & ');
 end
 
 
 %% Example plot of trigonometric (polar) representation
 i = 1;
-f = plotNorm(dP{i},featSel{i},SVMspace,dataType);
+f = plotNorm(d{i},p,featSel{i});
 if figOption.save
+    error('code that')
     filename = fullfile(pwd,mfilename);
     if ~exist(filename,'dir'); mkdir(filename); end
     filename = fullfile(filename,SVMspace);
@@ -146,19 +186,19 @@ if figOption.save
 end
 
 %% Within-session SVM cross-validation (with cross-session feature selection)
-svmModelK = cell(size(dP));
-nrmlzK = cell(size(dP));
-yHatK = cell(size(dP));
-yHatK_tr = cell(size(dP));
-Y = cell(size(dP));
-K = cell(size(dP));
+svmModelK = cell(size(d));
+nrmlzK = cell(size(d));
+yHatK = cell(size(d));
+yHatK_tr = cell(size(d));
+Y = cell(size(d));
+K = cell(size(d));
 
 disp('Within-session SVM cross-validation')
-for i = 1:numel(dP)
+for i = 1:numel(d)
     if verbose
-        disp(['Taining and testing sess ' num2str(i) '/' num2str(numel(dP))])
+        disp(['Taining and testing sess ' num2str(i) '/' num2str(numel(d))])
     end
-    [subjInd,sessInd] = ind2sub(size(dP),i);
+    [subjInd,sessInd] = ind2sub(size(d),i);
     switch sessInd
         case 1
             sessIndCross = 2;
@@ -170,27 +210,33 @@ for i = 1:numel(dP)
     
     if doPerm
         error('code that')
-        disp(['for sess ' num2str(i) ' of ' num2str(numel(dP))])
+        disp(['for sess ' num2str(i) ' of ' num2str(numel(d))])
         tic
     end
     
     switch dataType
         case 'sin'
-            [X,y,k] = getXYK(dP{subjInd,sessInd},SVMspace);
+            [X,y,k] = getXYK(d{subjInd,sessInd},p);
         case 'waveTrialSparse' % do not average and use 1 tPts out of 12 in each stimulus cycle
-            [X,y,k,~] = getXYK_wave(dP{subjInd,sessInd},SVMspace,'trialSparse');
+            error('code that')
+            [X,y,k,~] = getXYK_wave(d{subjInd,sessInd},SVMspace,'trialSparse');
         case 'waveTrialSparseCat2' % do not average and use 1 tPts out of 12 in each stimulus cycle, concatenating each tPts in the feature (vox) dimension
-            [X,y,k,~] = getXYK_wave(dP{subjInd,sessInd},SVMspace,'trialSparseCat2');
+            error('code that')
+            [X,y,k,~] = getXYK_wave(d{subjInd,sessInd},SVMspace,'trialSparseCat2');
         case 'waveTrialSparseRep' % do not average and use 1 tPts out of 12 in each stimulus cycle, repeating svm training for each time points and averaging only the end model
-            [X,y,k,t] = getXYK_wave(dP{subjInd,sessInd},SVMspace,'full');
+            error('code that')
+            [X,y,k,t] = getXYK_wave(d{subjInd,sessInd},SVMspace,'full');
             tmp = repmat(1:12,[length(t)/12 1])';
             t = tmp(:);
         case 'waveRun' % average within runs
-            [X,y,k,~] = getXYK_wave(dP{subjInd,sessInd},SVMspace,'run');
+            error('code that')
+            [X,y,k,~] = getXYK_wave(d{subjInd,sessInd},SVMspace,'run');
         case 'wave' % average within trials
-            [X,y,k,~] = getXYK_wave(dP{subjInd,sessInd},SVMspace,'trial');
+            error('code that')
+            [X,y,k,~] = getXYK_wave(d{subjInd,sessInd},SVMspace,'trial');
         case 'waveFull' % do not average and use all tPts
-            [X,y,k,~] = getXYK_wave(dP{subjInd,sessInd},SVMspace,'full');
+            error('code that')
+            [X,y,k,~] = getXYK_wave(d{subjInd,sessInd},SVMspace,'full');
         otherwise
             error('X')
     end
@@ -218,39 +264,45 @@ end
 
 %% Within-session SVM training (and feature selection) + Cross-session SVM testing
 disp('Between-session SVM cross-validation')
-svmModel = cell(size(dP));
-nrmlz = cell(size(dP));
-yHat_tr = cell(size(dP));
-yHat = cell(size(dP));
+svmModel = cell(size(d));
+nrmlz = cell(size(d));
+yHat_tr = cell(size(d));
+yHat = cell(size(d));
 % Training
-for i = 1:numel(dP)
+for i = 1:numel(d)
     if verbose
-        disp(['Training sess ' num2str(i) '/' num2str(numel(dP))])
+        disp(['Training sess ' num2str(i) '/' num2str(numel(d))])
     end
-    [subjInd,trainInd] = ind2sub(size(dP),i);
+    [subjInd,trainInd] = ind2sub(size(d),i);
     if doPerm
         error('code that')
-        disp(['for sess ' num2str(i) ' of ' num2str(numel(dP))])
+        disp(['for sess ' num2str(i) ' of ' num2str(numel(d))])
         tic
     end
     % get training data
     switch dataType
         case 'sin'
-            [X,y,~] = getXYK(dP{subjInd,trainInd},SVMspace);
+            [X,y,~] = getXYK(d{subjInd,trainInd},p);
         case 'waveTrialSparse' % do not average and use 1 tPts out of 12 in each stimulus cycle
-            [X,y,~,~] = getXYK_wave(dP{subjInd,trainInd},SVMspace,'trialSparse');
+            error('code that')
+            [X,y,~,~] = getXYK_wave(d{subjInd,trainInd},SVMspace,'trialSparse');
         case 'waveTrialSparseCat2' % do not average and use 1 tPts out of 12 in each stimulus cycle, concatenating each tPts in the feature (vox) dimension
-            [X,y,~,~] = getXYK_wave(dP{subjInd,trainInd},SVMspace,'trialSparseCat2');
+            error('code that')
+            [X,y,~,~] = getXYK_wave(d{subjInd,trainInd},SVMspace,'trialSparseCat2');
         case 'waveTrialSparseRep' % do not average and use 1 tPts out of 12 in each stimulus cycle, repeating svm training for each time points and averaging only the end model
-            [X,y,~,t] = getXYK_wave(dP{subjInd,trainInd},SVMspace,'full');
+            error('code that')
+            [X,y,~,t] = getXYK_wave(d{subjInd,trainInd},SVMspace,'full');
             tmp = repmat(1:12,[length(t)/12 1])';
             t = tmp(:);
         case 'waveRun' % average within runs
-            [X,y,~,~] = getXYK_wave(dP{subjInd,trainInd},SVMspace,'run');
+            error('code that')
+            [X,y,~,~] = getXYK_wave(d{subjInd,trainInd},SVMspace,'run');
         case 'wave' % average within trials
-            [X,y,~,~] = getXYK_wave(dP{subjInd,trainInd},SVMspace,'trial');
+            error('code that')
+            [X,y,~,~] = getXYK_wave(d{subjInd,trainInd},SVMspace,'trial');
         case 'waveFull' % do not average and use all tPts
-            [X,y,~,~] = getXYK_wave(dP{subjInd,trainInd},SVMspace,'full');
+            error('code that')
+            [X,y,~,~] = getXYK_wave(d{subjInd,trainInd},SVMspace,'full');
         otherwise
             error('X')
     end
@@ -270,11 +322,11 @@ for i = 1:numel(dP)
     [yHat_tr{subjInd,trainInd},~] = SVMtest(y,x,svmModel{subjInd,trainInd},nrmlz{subjInd,trainInd});
 end
 % Testing
-for i = 1:numel(dP)
+for i = 1:numel(d)
     if verbose
-        disp(['Testing sess ' num2str(i) '/' num2str(numel(dP))])
+        disp(['Testing sess ' num2str(i) '/' num2str(numel(d))])
     end
-    [subjInd,testInd] = ind2sub(size(dP),i);
+    [subjInd,testInd] = ind2sub(size(d),i);
     switch testInd
         case 1
             trainInd = 2;
@@ -286,21 +338,27 @@ for i = 1:numel(dP)
     % get test data
     switch dataType
         case 'sin'
-            [X,y,~] = getXYK(dP{subjInd,testInd},SVMspace);
+            [X,y,~] = getXYK(d{subjInd,testInd},p);
         case 'waveTrialSparse' % do not average and use 1 tPts out of 12 in each stimulus cycle
-            [X,y,~,~] = getXYK_wave(dP{subjInd,testInd},SVMspace,'trialSparse');
+            error('code that')
+            [X,y,~,~] = getXYK_wave(d{subjInd,testInd},SVMspace,'trialSparse');
         case 'waveTrialSparseCat2' % do not average and use 1 tPts out of 12 in each stimulus cycle
-            [X,y,~,~] = getXYK_wave(dP{subjInd,testInd},SVMspace,'trialSparseCat2');
+            error('code that')
+            [X,y,~,~] = getXYK_wave(d{subjInd,testInd},SVMspace,'trialSparseCat2');
         case 'waveTrialSparseRep' % do not average and use 1 tPts out of 12 in each stimulus cycle, repeating svm training for each time points and averaging only the end model
-            [X,y,~,t] = getXYK_wave(dP{subjInd,testInd},SVMspace,'full');
+            error('code that')
+            [X,y,~,t] = getXYK_wave(d{subjInd,testInd},SVMspace,'full');
             tmp = repmat(1:12,[length(t)/12 1])';
             t = tmp(:);
         case 'waveRun' % average within runs
-            [X,y,~,~] = getXYK_wave(dP{subjInd,testInd},SVMspace,'run');
+            error('code that')
+            [X,y,~,~] = getXYK_wave(d{subjInd,testInd},SVMspace,'run');
         case 'wave' % average within trials
-            [X,y,~,~] = getXYK_wave(dP{subjInd,testInd},SVMspace,'trial');
+            error('code that')
+            [X,y,~,~] = getXYK_wave(d{subjInd,testInd},SVMspace,'trial');
         case 'waveFull' % do not average and use all tPts
-            [X,y,~,~] = getXYK_wave(dP{subjInd,testInd},SVMspace,'full');
+            error('code that')
+            [X,y,~,~] = getXYK_wave(d{subjInd,testInd},SVMspace,'full');
         otherwise
             error('X')
     end
@@ -316,27 +374,27 @@ end
 
 %% Compute performance metrics
 % Between-sess
-resBS_sess = repmat(perfMetric,[size(dP,1) size(dP,2)]);
-for i = 1:numel(dP)
+resBS_sess = repmat(perfMetric,[size(d,1) size(d,2)]);
+for i = 1:numel(d)
     resBS_sess(i) = perfMetric(Y{i},yHat{i},K{i});
 end
 acc_fdr = mafdr([resBS_sess.acc_p],'BHFDR',true);
-for i = 1:numel(dP)
+for i = 1:numel(d)
     resBS_sess(i).acc_fdr = acc_fdr(i);
-    resBS_sess(i).nVoxOrig = size(dP{i}.sin,2);
+    resBS_sess(i).nVoxOrig = size(d{i}.sin,2);
     resBS_sess(i).nVox = sum(featSel{i}.ind);
     resBS_sess(i).SVMspace = SVMspace;
 end
 resBS_sess = orderfields(resBS_sess,[1 2 3 4 5 6 7 8 9 13 10 11 12 14 15 16]);
 % Within-sess
-resWS_sess = repmat(perfMetric,[size(dP,1) size(dP,2)]);
-for i = 1:numel(dP)
+resWS_sess = repmat(perfMetric,[size(d,1) size(d,2)]);
+for i = 1:numel(d)
     resWS_sess(i) = perfMetric(Y{i},yHatK{i},K{i});
 end
 acc_fdr = mafdr([resWS_sess.acc_p],'BHFDR',true);
-for i = 1:numel(dP)
+for i = 1:numel(d)
     resWS_sess(i).acc_fdr = acc_fdr(i);
-    resWS_sess(i).nVoxOrig = size(dP{i}.sin,2);
+    resWS_sess(i).nVoxOrig = size(d{i}.sin,2);
     resWS_sess(i).nVox = sum(featSel{i}.ind);
     resWS_sess(i).SVMspace = SVMspace;
 end
@@ -345,17 +403,36 @@ resWS_sess = orderfields(resWS_sess,[1 2 3 4 5 6 7 8 9 13 10 11 12 14 15 16]);
 %% Summarize group performances
 [resBSsess,resBSsubj,resBSgroup] = summarizePerf(resBS_sess);
 [resWSsess,resWSsubj,resWSgroup] = summarizePerf(resWS_sess);
+fieldList = fields(resBSsubj);
+for i = 1:length(fieldList)
+    if isnumeric(resBSsubj.(fieldList{i}))
+        resSubj.(fieldList{i}) = mean(cat(3,resWSsubj.(fieldList{i}),resBSsubj.(fieldList{i})),3);
+    end
+end
+[~,P,~,STATS] = ttest(resSubj.acc,0.5,'tail','right');
+resGroup.acc_T = STATS.tstat;
+resGroup.acc_P = P;
+[~,P,~,STATS] = ttest(resSubj.auc,0.5,'tail','right');
+resGroup.auc_T = STATS.tstat;
+resGroup.auc_P = P;
+[P,~,STATS] = signrank(resSubj.acc,0.5,'tail','right');
+resGroup.acc_wilcoxonSignedrank = STATS.signedrank;
+resGroup.acc_wilcoxonP = P;
+[P,~,STATS] = signrank(resSubj.auc,0.5,'tail','right');
+resGroup.auc_wilcoxonSignedrank = STATS.signedrank;
+resGroup.auc_wilcoxonP = P;
 
 %% Print info and output
 if verbose
     disp('-----------------')
     disp('*Between-session*')
-%     printRes(resBSsess,resBSsubj,resBSgroup)
     printRes2(resBSgroup)
     disp(' ')
     disp('*Within-session*')
-%     printRes(resWSsess,resWSsubj,resWSgroup)
     printRes2(resWSgroup)
+    disp(' ')
+    disp('*Within+Between*')
+    printRes2(resGroup)
     disp('-----------------')
 end
 resBS.sess = resBSsess;
@@ -394,65 +471,40 @@ if verbose
 end
 
 
-
-
-
-% %% Add info
-% if ~doPerm
-%     
-% else
-%     res.perm.info = 'subj x sess x perm';
-%     nObs = permute(repmat(res.nObs,[1 1 nPerm]),[3 1 2]);
-%     res.perm.summary.hit = sum(res.perm.acc(:,:).*nObs(:,:),2);
-%     res.perm.summary.nObs = sum(nObs(:,:),2);
-%     res.perm.summary.acc = res.perm.summary.hit./res.perm.summary.nObs;
-%     res.perm.summary.accThresh = prctile(res.perm.summary.acc,95);
-%     res.perm.summary.p = sum(res.perm.summary.acc>res.summary.acc)./nPerm;
-% 
-%     res.perm.acc = permute(res.perm.acc,[2 3 1]);
-%     res.perm.auc = permute(res.perm.auc,[2 3 1]);
-%     res.perm.distT = permute(res.perm.distT,[2 3 1]);
-% 
-%     if verbose
-%         disp('Group results:')
-%         disp(['  hit    =' num2str(res.summary.hit) '/' num2str(res.summary.nObs)])
-%         disp(['  acc    =' num2str(res.summary.acc*100,'%0.2f%%')])
-%         disp(' permutation test stats')
-%         disp(['  thresh =' num2str(res.perm.summary.accThresh*100,'%0.2f%%')])
-%         disp(['  p      =' num2str(res.perm.summary.p,'%0.3f')])
-%     end
-% 
-%     filename = fullfile(pwd,mfilename);
-%     if ~exist(filename,'dir'); mkdir(filename); end
-%     filename = fullfile(filename,[SVMspace '_' num2str(nPerm) 'perm']);
-%     save(filename,'res')
-%     if verbose; disp([filename '.mat']); end
-% end
-
-function [x,y,k] = getXYK(dP,SVMspace)
+function [x,y,k] = getXYK(d,p)
+switch p.condPair
+    case 'grat1VSgrat2'
+        condInd = [1 2];
+    case 'grat1VSplaid'
+        condInd = [1 3];
+    case 'grat2VSplaid'
+        condInd = [2 3];
+    otherwise
+        error('code that')
+end
 % Define x(data), y(label) and k(xValFolds)
-switch SVMspace
+switch p.svmSpace
     case {'hr' 'hrNoAmp'}
         error('double-check that')
-        nSamplePaire = size(dP.hr,1);
-        x1 = dP.hr(:,:,1,:); x1 = x1(:,:);
-        x2 = dP.hr(:,:,2,:); x2 = x2(:,:);
+        nSamplePair = size(d.hr,1);
+        x1 = d.hr(:,:,1,:); x1 = x1(:,:);
+        x2 = d.hr(:,:,2,:); x2 = x2(:,:);
     case {'cart' 'cart_HT' 'cart_HTbSess'...
             'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'...
             'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'...
             'cartReal' 'cartReal_T'...
             'polMag' 'polMag_T'...
             'polDelay'}
-        nSamplePaire = size(dP.sin,1);
-        x1 = dP.sin(:,:,1);
-        x2 = dP.sin(:,:,2);
+        nSamplePair = size(d.sin(:,:,:,:,condInd,:),4);
+        x1 = permute(d.sin(:,:,:,:,condInd(1),:),[4 1 2 3]);
+        x2 = permute(d.sin(:,:,:,:,condInd(2),:),[4 1 2 3]);        
     otherwise
         error('X')
 end
-y1 = 1.*ones(nSamplePaire,1);
-k1 = (1:nSamplePaire)';
-y2 = 2.*ones(nSamplePaire,1);
-k2 = (1:nSamplePaire)';
+y1 = 1.*ones(nSamplePair,1);
+k1 = (1:nSamplePair)';
+y2 = 2.*ones(nSamplePair,1);
+k2 = (1:nSamplePair)';
 
 x = cat(1,x1,x2); clear x1 x2
 y = cat(1,y1,y2); clear y1 y2
@@ -969,24 +1021,28 @@ switch SVMspace
         error('X')
 end
 
-function f0 = plotNorm(d,featSel,SVMspace,dataType)
-switch dataType
+function f0 = plotNorm(d,p,featSel)
+switch p.dataType
     case 'sin'
-        [X,y,~] = getXYK(d,SVMspace);
+        [X,y,~] = getXYK(d,p);
     case 'waveTrialSparse' % do not average and use 1 tPts out of 12 in each stimulus cycle
+        error('double-check that')
         [X,y,~,~] = getXYK_wave(d,SVMspace,'trialSparse');
     case 'waveRun' % average within runs
+        error('double-check that')
         [X,y,~,~] = getXYK_wave(d,SVMspace,'run');
     case {'wave' 'waveTrialSparseCat2' 'waveTrialSparseRep'} % average within trials
+        error('double-check that')
         [X,y,~,~] = getXYK_wave(d,SVMspace,'trial');
     case 'waveFull' % do not average and use all tPts
+        error('double-check that')
         [X,y,~,~] = getXYK_wave(d,SVMspace,'full');
     otherwise
         error('X')
 end
-[~,b] = sort(d.anyCondActivation_F,'descend');
+[~,b] = sort(d.featSel.F.act.F,'descend');
 b = b(featSel.ind);
-f0 = plotPolNormExample(X,y,SVMspace,b(1));
+f0 = plotPolNormExample(X,y,p.svmSpace,b(1));
 % f1 = plotPolNormExampleVox(X,SVMspace,b(1));
 % f2 = plotPolNormExampleRep(X,y,SVMspace,b(1));
 
@@ -999,45 +1055,53 @@ f = figure('WindowStyle','docked');
 %% Polar Normalization
 % Plot before
 subplot(2,2,1); clear hPP
-% polarplot(angle(mean(x,1)),abs(mean(x,1)),'.k'); hold on
 hPP1 = polarplot(angle(x(y==1,b)),abs(x(y==1,b)),'.'); hold on
 hPP2 = polarplot(angle(x(y==2,b)),abs(x(y==2,b)),'.'); hold on
-hPP3 = polarplot(angle(x(:)),abs(x(:)),'.k'); hold on
+hPP3 = polarplot(angle(mean(x([1 end/2+1],:),1)),abs(mean(x([1 end/2+1],:),1)),'.k'); hold on
 uistack(hPP3,'bottom');
 hPP1.MarkerSize = hPP1.MarkerSize*2;
 hPP2.MarkerSize = hPP2.MarkerSize*2;
 hPP3.MarkerSize = eps;
 hPP3.Color = [1 1 1].*0;
 drawnow
+hLeg = legend([hPP1 hPP2 hPP3],{'1vox; Areps' '1vox; Breps' 'allVox; 1rep'},'box','on');
+hLeg.Location = 'southeast';
+title('before polarNorm')
+drawnow
+
 % Normalize
 x = polarSpaceNormalization(x,SVMspace);
+
 % Plot after
 subplot(2,2,2);
-% polarplot(angle(mean(x,1)),abs(mean(x,1)),'.k'); hold on
 hPP1 = polarplot(angle(x(y==1,b)),abs(x(y==1,b)),'.'); hold on
 hPP2 = polarplot(angle(x(y==2,b)),abs(x(y==2,b)),'.'); hold on
-hPP3 = polarplot(angle(x(:)),abs(x(:)),'.k'); hold on
+hPP3 = polarplot(angle(mean(x([1 end/2+1],:),1)),abs(mean(x([1 end/2+1],:),1)),'.k'); hold on
 uistack(hPP3,'bottom');
 hPP1.MarkerSize = hPP1.MarkerSize*2;
 hPP2.MarkerSize = hPP2.MarkerSize*2;
 hPP3.MarkerSize = eps;
 hPP3.Color = [1 1 1].*0;
+title('after polarNorm')
 drawnow
+
 
 %% Cartesian Normalization
 % Plot before
 subplot(2,2,3);
-% hScat = scatter(real(mean(x,1)),imag(mean(x,1)),'ko','filled'); hold on
 hScat1 = scatter(real(x(y==1,b)),imag(x(y==1,b)),'o','filled'); hold on
 hScat2 = scatter(real(x(y==2,b)),imag(x(y==2,b)),'o','filled'); hold on
-hScat3 = scatter(real(x(:)),imag(x(:)),'ko','filled'); hold on
+hScat3 = scatter(real(mean(x([1 end/2+1],:),1)),imag(mean(x([1 end/2+1],:),1)),'ko','filled'); hold on
 uistack(hScat3,'bottom')
 hScat3.SizeData = hScat3.SizeData./8;
 hScat1.MarkerEdgeColor = 'w';
 hScat2.MarkerEdgeColor = 'w';
 ax = gca;
-ax.DataAspectRatio = [1 1 1];
 ax.PlotBoxAspectRatio = [1 1 1];
+lim = prctile(abs([real(mean(x([1 end/2+1],:),1)) imag(mean(x([1 end/2+1],:)))]),95);
+lim = [-lim lim];
+xlim(lim);
+ylim(lim);
 xLim = xlim;
 delta = abs(diff(xLim)).*0.1;
 if ~(xLim(1)<0)
@@ -1063,6 +1127,9 @@ grid on
 title('before cartNorm')
 xlabel('real')
 ylabel('imag')
+drawnow
+hLeg = legend([hScat1 hScat2 hScat3],{'1vox; Breps' '1vox; Breps' 'allVox; 1rep'},'box','on');
+hLeg.Location = 'northwest';
 drawnow
 
 % Normalize
@@ -1072,7 +1139,7 @@ x = cartSpaceNormalization(x,SVMspace);
 subplot(2,2,4);
 hScat1 = scatter(real(x(y==1,b)),imag(x(y==1,b)),'o','filled'); hold on
 hScat2 = scatter(real(x(y==2,b)),imag(x(y==2,b)),'o','filled'); hold on
-hScat3 = scatter(real(x(:)),imag(x(:)),'ko','filled'); hold on
+hScat3 = scatter(real(mean(x([1 end/2+1],:),1)),imag(mean(x([1 end/2+1],:),1)),'ko','filled'); hold on
 uistack(hScat3,'bottom')
 hScat3.SizeData = hScat3.SizeData./8;
 hScat1.MarkerEdgeColor = 'w';
@@ -1102,11 +1169,10 @@ ylim(yLim)
 uistack(plot([0 0],ylim,'-k'),'bottom');
 uistack(plot(xlim,[0 0],'-k'),'bottom');
 grid on
-title('before cartNorm')
+title('after cartNorm')
 xlabel('real')
 ylabel('imag')
 drawnow
-suptitle('voxels (repetitions averaged)')
 
 
 function f = plotPolNormExampleVox(x,SVMspace,b)
@@ -1605,12 +1671,26 @@ disp(['   sRank=' num2str(resGroup.acc_wilcoxonSignedrank,'%0.2f') '; P=' num2st
 
 function printRes2(resGroup)
 disp(['FixedEffect'])
-disp([' -auc    =' num2str(resGroup.auc*100,'%0.2f') '; 90%CI=' num2str(resGroup.auc_CI,'%0.3f ')])
+if isfield(resGroup,'auc')
+    disp([' -auc    =' num2str(resGroup.auc*100,'%0.2f') '; 90%CI=' num2str(resGroup.auc_CI,'%0.3f ')])
+end
 disp(['RandomEffect'])
-disp([' -student'])
-disp(['  T=' num2str(resGroup.acc_T,'%0.2f') '; P=' num2str(resGroup.acc_P,'%0.3f')])
-disp([' -wilcoxon'])
-disp(['  sRank=' num2str(resGroup.acc_wilcoxonSignedrank,'%0.2f') '; P=' num2str(resGroup.acc_wilcoxonP,'%0.3f')])
+if isfield(resGroup,'auc_T')
+    disp([' -student on auc'])
+    disp(['  T=' num2str(resGroup.auc_T,'%0.2f') '; ones-sided P=' num2str(resGroup.auc_P,'%0.3f')])
+end
+if isfield(resGroup,'acc_T')
+    disp([' -student on acc'])
+    disp(['  T=' num2str(resGroup.acc_T,'%0.2f') '; ones-sided P=' num2str(resGroup.acc_P,'%0.3f')])
+end
+if isfield(resGroup,'auc_wilcoxonSignedrank')
+    disp([' -wilcoxon on auc'])
+    disp(['  sRank=' num2str(resGroup.auc_wilcoxonSignedrank,'%0.2f') '; ones-sided P=' num2str(resGroup.auc_wilcoxonP,'%0.3f')])
+end
+if isfield(resGroup,'acc_wilcoxonSignedrank')
+    disp([' -wilcoxon on acc'])
+    disp(['  sRank=' num2str(resGroup.acc_wilcoxonSignedrank,'%0.2f') '; ones-sided P=' num2str(resGroup.acc_wilcoxonP,'%0.3f')])
+end
 
 
 function [x,sz] = reDim1(x)

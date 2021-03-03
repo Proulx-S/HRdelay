@@ -1,4 +1,4 @@
-function res = runAllDecoding(figOption,verbose)
+function res = runAllDecoding(p,figOption,verbose)
 if ~exist('verbose','var')
     verbose = 1;
 end
@@ -8,9 +8,18 @@ if ~exist('figOption','var') || isempty(figOption)
     figOption.subj = 1; % 'all' or subjInd
 end
 clear resBS resWS
-dataType = 'wave';
-svmSpace = 'cart';
-[resBS.polRoi_cartRoi,resWS.polRoi_cartRoi] = runDecoding(svmSpace,dataType,verbose);
+p.dataType = 'sin';
+p.svmSpace = 'cart';
+p.svmSpace = 'cartNoAmp';
+p.svmSpace = 'cartNoDelay';
+p.svmSpace = 'cartReal';
+p.condPair = 'grat1VSgrat2';
+p.condPair = 'grat1VSplaid';
+p.condPair = 'grat2VSplaid';
+[resBS.x,resWS.x] = runDecoding(p,verbose);
+
+
+[resBS.polRoi_cartRoi,resWS.polRoi_cartRoi] = runDecoding(p,verbose);
 [resBS.polRoi_cartVox,resWS.polRoi_cartVox] = runDecoding(svmSpace,dataType,verbose);
 [resBS.polRhoVoxThetaRoi_cartVox,resWS.polRhoVoxThetaRoi_cartVox] = runDecoding(svmSpace,dataType,verbose);
 [resBS.polVox_cartVox,resWS.polVox_cartVox] = runDecoding(svmSpace,dataType,verbose);
