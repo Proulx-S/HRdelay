@@ -6,7 +6,7 @@ verbose = 1; % prints more info
 %% Between-session feature selection parameters
 % Activated voxels
 p.act.doIt = 1;
-p.act.threshVal = 0.05;
+p.act.threshVal = 0.00000001;
 % Vein voxels
 p.vein.doIt = 1;
 p.vein.percentile = 20;
@@ -23,7 +23,8 @@ if 0
     processResponses(figOption,verbose)
 end
 
-res = runAllDecoding(p,figOption,verbose);
+[resBS,resWS] = runAllDecoding(p,figOption,verbose);
+return
 groupAna(p,figOption,verbose)
 
 

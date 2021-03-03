@@ -1,4 +1,4 @@
-function res = runAllDecoding(p,figOption,verbose)
+function [resBS,resWS] = runAllDecoding(p,figOption,verbose)
 if ~exist('verbose','var')
     verbose = 1;
 end
@@ -9,6 +9,12 @@ if ~exist('figOption','var') || isempty(figOption)
 end
 clear resBS resWS
 p.dataType = 'sin';
+p.svmSpace = 'cartNoAmp';
+p.condPair = 'grat1VSgrat2';
+[resBS,resWS] = runDecoding(p,verbose);
+return
+
+p.dataType = 'sin';
 p.svmSpace = 'cart';
 p.svmSpace = 'cartNoAmp';
 p.svmSpace = 'cartNoDelay';
@@ -16,8 +22,6 @@ p.svmSpace = 'cartReal';
 p.condPair = 'grat1VSgrat2';
 p.condPair = 'grat1VSplaid';
 p.condPair = 'grat2VSplaid';
-p.act.threshVal = 0.01;
-p.discrim.percentile = 0.40;
 [resBS.x,resWS.x] = runDecoding(p,verbose);
 
 [resBS.polRoi_cartRoi,resWS.polRoi_cartRoi] = runDecoding(p,verbose);

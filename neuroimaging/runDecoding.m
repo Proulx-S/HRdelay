@@ -113,15 +113,18 @@ for subjInd = 1:size(d,1)
     for sessInd = 1:size(d,2)
         % Between-session feature selection
         ind = true(size(d{subjInd,sessInd}.sin,1),1);
+        n = nnz(ind);
         info = 'V1';
         % activated voxels
-        ind = ind & mafdr(d{subjInd,sessInd}.featSel.F.act.p,'BHFDR',true) < p.act.threshVal;
+        ind = ind & mafdr(d{subjInd,sessInd}.featSel.F.act.p,'BHFDR',true) <= p.act.threshVal;
 %         ind = ind & d{subjInd,sessInd}.featSel.F.act.p < p.act.threshVal;
-        info = strjoin({info 'active'},' & ');
+        n = [n nnz(ind)];
+        info = strjoin({info ['active (FDR<' num2str(p.act.threshVal) ')']},' & ');
         % non vein voxels
         veinMap = mean(d{subjInd,sessInd}.featSel.vein.map(:,:),2);
-        ind = ind & veinMap<prctile(veinMap(ind),100-p.vein.percentile);
-        info = strjoin({info 'nonVein'},' & ');
+        ind = ind & veinMap<=prctile(veinMap(ind),100-p.vein.percentile);
+        n = [n nnz(ind)];
+        info = strjoin({info ['nonVein (score<' num2str(100-p.vein.percentile) '%ile)']},' & ');
         % most discrimant voxels
         switch dataType
             case {'wave' 'waveFull' 'waveRun' 'waveTrialSparse' 'waveTrialSparseCat2' 'waveTrialSparseRep'}
@@ -135,10 +138,10 @@ for subjInd = 1:size(d,1)
                         featMap = nan(size(ind));
                         voxIndList = find(ind);
                         [x,y,~] = getXYK(d{subjInd,sessInd},p);
-                        [x,~] = polarSpaceNormalization(x,p.svmSpace);
+%                         [x,~] = polarSpaceNormalization(x,p.svmSpace);
                         switch p.svmSpace
-                            case {'cart' 'cartNoAmp'}
-%                             case {'cart' 'cartNoAmp' 'cartReal' 'cartNoDelay'}
+%                             case {'cart' 'cartNoAmp'}
+                            case {'cart' 'cartNoAmp' 'cartReal' 'cartNoDelay'}
                                 for voxInd = 1:length(voxIndList)
                                     tmp = cat(1,...
                                         cat(2,real(x(y==1,voxIndList(voxInd))),imag(x(y==1,voxIndList(voxInd)))),...
@@ -147,22 +150,24 @@ for subjInd = 1:size(d,1)
                                     stats = T2Hot2d(tmp);
                                     featMap(voxIndList(voxInd)) = stats.T2;
                                 end
-                            case {'cartReal' 'cartNoDelay'}
-                                [~,~,~,STATS] = ttest(real(x(y==1,ind)),real(x(y==2,ind)));
-                                featMap(ind) = abs(STATS.tstat);
+%                             case {'cartReal' 'cartNoDelay'}
+%                                 [~,~,~,STATS] = ttest(real(x(y==1,ind)),real(x(y==2,ind)));
+%                                 featMap(ind) = abs(STATS.tstat);
                             otherwise
                                 error('X')
                         end
                     case 'F'
                         featMap = d{subjInd,sessInd}.featSel.F.cond1v2.F;
                 end
-                ind = ind & featMap>prctile(featMap(ind),p.discrim.percentile);
+                ind = ind & featMap>=prctile(featMap(ind),p.discrim.percentile);
             otherwise
                 error('X')
         end
-        info = strjoin({info 'mostDisciminant'},' & ');
+        n = [n nnz(ind)];
+        info = strjoin({info ['mostDisciminant (>)' num2str(p.discrim.percentile) '%ile']},' & ');
         
         featSel{subjInd,sessInd}.ind = ind;
+        featSel{subjInd,sessInd}.n = n;
         featSel{subjInd,sessInd}.info = info;
     end
 end
@@ -389,7 +394,8 @@ for i = 1:numel(d)
     resBS_sess(i).nVox = sum(featSel{i}.ind);
     resBS_sess(i).SVMspace = SVMspace;
 end
-resBS_sess = orderfields(resBS_sess,[1 2 3 4 5 6 7 8 9 13 10 11 12 14 15 16]);
+resBS_sess = orderfields(resBS_sess,[1 2 3 4 5 6 7 8 9 15 10 11 12 13 14 16 17 18]);
+                                    
 % Within-sess
 resWS_sess = repmat(perfMetric,[size(d,1) size(d,2)]);
 for i = 1:numel(d)
@@ -402,7 +408,7 @@ for i = 1:numel(d)
     resWS_sess(i).nVox = sum(featSel{i}.ind);
     resWS_sess(i).SVMspace = SVMspace;
 end
-resWS_sess = orderfields(resWS_sess,[1 2 3 4 5 6 7 8 9 13 10 11 12 14 15 16]);
+resWS_sess = orderfields(resWS_sess,[1 2 3 4 5 6 7 8 9 15 10 11 12 13 14 16 17 18]);
 
 %% Summarize group performances
 [resBSsess,resBSsubj,resBSgroup] = summarizePerf(resBS_sess);
@@ -429,14 +435,14 @@ resGroup.auc_wilcoxonP = P;
 %% Print info and output
 if verbose
     disp('-----------------')
-    disp('*Between-session*')
-    printRes2(resBSgroup)
-    disp(' ')
     disp('*Within-session*')
     printRes2(resWSgroup)
     disp(' ')
     disp('*Within+Between*')
     printRes2(resGroup)
+    disp(' ')
+    disp('*Between-session*')
+    printRes2(resBSgroup)
     disp('-----------------')
 end
 resBS.sess = resBSsess;
@@ -470,7 +476,10 @@ if verbose
     compareRes(resBS,resWS)
     xlabel('between-session')
     ylabel('within-session')
-    title([SVMspace '; ' dataType])
+    textLine1 = [SVMspace '; ' dataType];
+    textLine2 = featSel{1}.info;
+    textLine3 = num2str(featSel{1}.n,'%d & '); textLine3(end-1:end) = [];
+    title([textLine1 newline textLine2 newline textLine3])
     uistack(patch([0 0 0.5 0.5 0],[0.5 0 0 0.5 0.5],[1 1 1].*0.7),'bottom')
 end
 
@@ -1534,6 +1543,7 @@ suptitle('voxels (repetitions averaged)')
 
 
 function res = perfMetric(y,yHat,k)
+warning('off','stats:perfcurve:SubSampleWithMissingClasses')
 averageWR = 1;
 if ~exist('y','var')
     res = struct(...
@@ -1547,6 +1557,8 @@ if ~exist('y','var')
         'acc_thresh',[],...
         'acc_p',[],...);
         'auc',[],...
+        'auc_CI5',[],...
+        'auc_CI95',[],...
         'distT',[],...
         'distT_p',[]);
     return
@@ -1571,7 +1583,10 @@ res.acc_CI95 = pci(2);
 res.acc_thresh = pci(2);
 res.acc_p = binocdf(res.hit,res.nObs,0.5,'upper');
 % auc
-[~,~,~,res.auc] = perfcurve(y,yHat,1);
+[~,~,~,auc] = perfcurve(y,yHat,1,'NBOOT',2^10);
+res.auc = auc(1);
+res.auc_CI5 = auc(2);
+res.auc_CI95 = auc(3);
 % distT
 [~,P,~,STATS] = ttest(yHat(y==1),yHat(y==2));
 res.distT = STATS.tstat;
@@ -1597,7 +1612,8 @@ end
 resSess.info = 'subj x sess';
 resSess.distT_fdr = resSess.distT_p;
 resSess.distT_fdr(:) = mafdr(resSess.distT_p(:),'BHFDR',true);
-resSess = orderfields(resSess,[1 2 3 4 5 6 7 8 9 10 11 12 13 18 14 15 16 17]);
+resSess = orderfields(resSess,[1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 20 16 17 18 19]);
+                              
 
 resSubj.y = cell(size(resSess.y,1),1);
 resSubj.yHat = cell(size(resSess.yHat,1),1);
@@ -1619,7 +1635,15 @@ resSubj.auc = nan(size(resSubj.y));
 resSubj.distT = nan(size(resSubj.y));
 resSubj.distT_p = nan(size(resSubj.y));
 for subjInd = 1:size(resSubj.y,1)
-    [~,~,~,resSubj.auc(subjInd)] = perfcurve(resSubj.y{subjInd},resSubj.yHat{subjInd},1);
+    [~,~,~,auc] = perfcurve(resSubj.y{subjInd},resSubj.yHat{subjInd},1);
+    resSubj.auc(subjInd) = auc(1);
+    resSubj.auc_CI5(subjInd) = nan;
+    resSubj.auc_CI95(subjInd) = nan;
+%     [~,~,~,auc] = perfcurve(resSubj.y{subjInd},resSubj.yHat{subjInd},1,'NBOOT',2^10);
+%     resSubj.auc(subjInd) = auc(1);
+%     resSubj.auc_CI5(subjInd) = auc(2);
+%     resSubj.auc_CI95(subjInd) = auc(3);
+    
     [~,P,~,STATS] = ttest(resSubj.yHat{subjInd}(resSubj.y{subjInd}==1),resSubj.yHat{subjInd}(resSubj.y{subjInd}==2));
     resSubj.distT(subjInd) = STATS.tstat;
     resSubj.distT_p(subjInd) = P;
@@ -1647,9 +1671,10 @@ resGroup.acc_P = P;
 resGroup.acc_wilcoxonSignedrank = STATS.signedrank;
 resGroup.acc_wilcoxonP = P;
 
-[~,~,~,auc] = perfcurve(resGroup.y,resGroup.yHat,1,'NBOOT',1000);
+[~,~,~,auc] = perfcurve(resGroup.y,resGroup.yHat,1,'NBOOT',2^11);
 resGroup.auc = auc(1);
-resGroup.auc_CI = auc(2:3);
+resGroup.auc_CI5 = auc(2);
+resGroup.auc_CI95 = auc(3);
 [~,P,~,STATS] = ttest(resSubj.auc,0.5,'tail','right');
 resGroup.auc_T = STATS.tstat;
 resGroup.auc_P = P;
@@ -1680,7 +1705,7 @@ disp(['Group results:'])
 disp(['hit    =' num2str(resGroup.hit) '/' num2str(resGroup.nObs)])
 disp([' -fixedEffect'])
 disp(['  acc    =' num2str(resGroup.acc*100,'%0.2f%%') '; p=' num2str(resGroup.acc_p,'%0.3f') '; thresh=' num2str(resGroup.acc_thresh,'%0.2f')])
-disp(['  auc    =' num2str(resGroup.auc*100,'%0.2f') '; 90%CI=' num2str(resGroup.auc_CI,'%0.3f ')])
+disp(['  auc    =' num2str(resGroup.auc*100,'%0.2f') '; 90%CI=' num2str([resGroup.auc_CI5 resGroup.auc_CI95],'%0.3f ')])
 disp(['  distT  =' num2str(resGroup.distT,'%0.2f') '; p=' num2str(resGroup.distT_p,'%0.3f ')])
 disp([' -randomEffect'])
 disp(['  acc=' num2str(mean(resSubj.acc)*100,'%0.2f%%')])
@@ -1692,7 +1717,7 @@ disp(['   sRank=' num2str(resGroup.acc_wilcoxonSignedrank,'%0.2f') '; P=' num2st
 function printRes2(resGroup)
 disp(['FixedEffect'])
 if isfield(resGroup,'auc')
-    disp([' -auc    =' num2str(resGroup.auc*100,'%0.2f') '; 90%CI=' num2str(resGroup.auc_CI,'%0.3f ')])
+    disp([' -auc    =' num2str(resGroup.auc*100,'%0.2f') '; 90%CI=' num2str([resGroup.auc_CI5 resGroup.auc_CI95],'%0.3f ')])
 end
 if isfield(resGroup,'acc')
     disp([' -acc    =' num2str(resGroup.acc*100,'%0.2f') '; 90%CI=' num2str([resGroup.acc_CI5 resGroup.acc_CI95],'%0.3f ')])

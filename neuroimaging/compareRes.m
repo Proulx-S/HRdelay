@@ -1,8 +1,11 @@
 function compareRes(X,Y)
 
-metric = 'acc';
-metric_lowCI = 'acc_CI5';
-metric_highCI = 'acc_CI95';
+% metric = 'acc';
+% metric_lowCI = 'acc_CI5';
+% metric_highCI = 'acc_CI95';
+metric = 'auc';
+metric_lowCI = 'auc_CI5';
+metric_highCI = 'auc_CI95';
 x = X.sess.(metric)';
 y = Y.sess.(metric)';
 yNeg = y - Y.sess.(metric_lowCI)';
