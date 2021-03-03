@@ -16,8 +16,9 @@ p.svmSpace = 'cartReal';
 p.condPair = 'grat1VSgrat2';
 p.condPair = 'grat1VSplaid';
 p.condPair = 'grat2VSplaid';
+p.act.threshVal = 0.01;
+p.discrim.percentile = 0.40;
 [resBS.x,resWS.x] = runDecoding(p,verbose);
-
 
 [resBS.polRoi_cartRoi,resWS.polRoi_cartRoi] = runDecoding(p,verbose);
 [resBS.polRoi_cartVox,resWS.polRoi_cartVox] = runDecoding(svmSpace,dataType,verbose);

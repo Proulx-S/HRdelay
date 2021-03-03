@@ -115,28 +115,30 @@ for subjInd = 1:size(d,1)
         ind = true(size(d{subjInd,sessInd}.sin,1),1);
         info = 'V1';
         % activated voxels
-        ind = ind & d{subjInd,sessInd}.featSel.F.act.p < p.act.threshVal;
+        ind = ind & mafdr(d{subjInd,sessInd}.featSel.F.act.p,'BHFDR',true) < p.act.threshVal;
+%         ind = ind & d{subjInd,sessInd}.featSel.F.act.p < p.act.threshVal;
         info = strjoin({info 'active'},' & ');
-        % non vein activated voxels
+        % non vein voxels
         veinMap = mean(d{subjInd,sessInd}.featSel.vein.map(:,:),2);
         ind = ind & veinMap<prctile(veinMap(ind),100-p.vein.percentile);
         info = strjoin({info 'nonVein'},' & ');
-        % Select most discrimant voxels
+        % most discrimant voxels
         switch dataType
             case {'wave' 'waveFull' 'waveRun' 'waveTrialSparse' 'waveTrialSparseCat2' 'waveTrialSparseRep'}
                 error('double-check that')
                 ind = ind & d{i}.waveDiscrim_mask;
             case 'sin'
                 featDiscrimMethod = 'Hotelling';
+%                 featDiscrimMethod = 'F';
                 switch featDiscrimMethod
                     case 'Hotelling'
                         featMap = nan(size(ind));
                         voxIndList = find(ind);
                         [x,y,~] = getXYK(d{subjInd,sessInd},p);
-                        [x,~] = polarSpaceNormalization(x,SVMspace);
-                        [x,~] = cartSpaceNormalization(x,SVMspace);
+                        [x,~] = polarSpaceNormalization(x,p.svmSpace);
                         switch p.svmSpace
                             case {'cart' 'cartNoAmp'}
+%                             case {'cart' 'cartNoAmp' 'cartReal' 'cartNoDelay'}
                                 for voxInd = 1:length(voxIndList)
                                     tmp = cat(1,...
                                         cat(2,real(x(y==1,voxIndList(voxInd))),imag(x(y==1,voxIndList(voxInd)))),...
@@ -147,7 +149,7 @@ for subjInd = 1:size(d,1)
                                 end
                             case {'cartReal' 'cartNoDelay'}
                                 [~,~,~,STATS] = ttest(real(x(y==1,ind)),real(x(y==2,ind)));
-                                featMap(ind) = STATS.tstat;
+                                featMap(ind) = abs(STATS.tstat);
                             otherwise
                                 error('X')
                         end
@@ -194,9 +196,10 @@ Y = cell(size(d));
 K = cell(size(d));
 
 disp('Within-session SVM cross-validation')
+disp('with between-session feature selection')
 for i = 1:numel(d)
     if verbose
-        disp(['Taining and testing sess ' num2str(i) '/' num2str(numel(d))])
+        disp(['-training and testing sess ' num2str(i) '/' num2str(numel(d))])
     end
     [subjInd,sessInd] = ind2sub(size(d),i);
     switch sessInd
@@ -264,6 +267,7 @@ end
 
 %% Within-session SVM training (and feature selection) + Cross-session SVM testing
 disp('Between-session SVM cross-validation')
+disp('with feature selection from the training session')
 svmModel = cell(size(d));
 nrmlz = cell(size(d));
 yHat_tr = cell(size(d));
@@ -271,7 +275,7 @@ yHat = cell(size(d));
 % Training
 for i = 1:numel(d)
     if verbose
-        disp(['Training sess ' num2str(i) '/' num2str(numel(d))])
+        disp(['-training sess ' num2str(i) '/' num2str(numel(d))])
     end
     [subjInd,trainInd] = ind2sub(size(d),i);
     if doPerm
@@ -324,7 +328,7 @@ end
 % Testing
 for i = 1:numel(d)
     if verbose
-        disp(['Testing sess ' num2str(i) '/' num2str(numel(d))])
+        disp(['-testing sess ' num2str(i) '/' num2str(numel(d))])
     end
     [subjInd,testInd] = ind2sub(size(d),i);
     switch testInd
@@ -816,7 +820,7 @@ end
 %theta shift
 switch normSpace.thetaShift
     case {'vox' 'roi'}
-        theta = angle(x) - polNorm.thetaShift;
+        theta = wrapToPi(angle(x) - polNorm.thetaShift);
     case 'none'
         theta = angle(x);
     case 'rm'
@@ -1040,9 +1044,8 @@ switch p.dataType
     otherwise
         error('X')
 end
-[~,b] = sort(d.featSel.F.act.F,'descend');
-b = b(featSel.ind);
-f0 = plotPolNormExample(X,y,p.svmSpace,b(1));
+[~,b] = sort(d.featSel.F.act.F(featSel.ind),'descend');
+f0 = plotPolNormExample(X(:,featSel.ind),y,p.svmSpace,b(1));
 % f1 = plotPolNormExampleVox(X,SVMspace,b(1));
 % f2 = plotPolNormExampleRep(X,y,SVMspace,b(1));
 
@@ -1057,7 +1060,8 @@ f = figure('WindowStyle','docked');
 subplot(2,2,1); clear hPP
 hPP1 = polarplot(angle(x(y==1,b)),abs(x(y==1,b)),'.'); hold on
 hPP2 = polarplot(angle(x(y==2,b)),abs(x(y==2,b)),'.'); hold on
-hPP3 = polarplot(angle(mean(x([1 end/2+1],:),1)),abs(mean(x([1 end/2+1],:),1)),'.k'); hold on
+hPP3 = polarplot(angle(x(1,:)),abs(x(1,:)),'.k'); hold on
+% hPP3 = polarplot(angle(x(:)),abs(x(:)),'.k'); hold on
 uistack(hPP3,'bottom');
 hPP1.MarkerSize = hPP1.MarkerSize*2;
 hPP2.MarkerSize = hPP2.MarkerSize*2;
@@ -1076,13 +1080,16 @@ x = polarSpaceNormalization(x,SVMspace);
 subplot(2,2,2);
 hPP1 = polarplot(angle(x(y==1,b)),abs(x(y==1,b)),'.'); hold on
 hPP2 = polarplot(angle(x(y==2,b)),abs(x(y==2,b)),'.'); hold on
-hPP3 = polarplot(angle(mean(x([1 end/2+1],:),1)),abs(mean(x([1 end/2+1],:),1)),'.k'); hold on
+hPP3 = polarplot(angle(x(1,:)),abs(x(1,:)),'.k'); hold on
+% hPP3 = polarplot(angle(x(:)),abs(x(:)),'.k'); hold on
 uistack(hPP3,'bottom');
 hPP1.MarkerSize = hPP1.MarkerSize*2;
 hPP2.MarkerSize = hPP2.MarkerSize*2;
 hPP3.MarkerSize = eps;
 hPP3.Color = [1 1 1].*0;
 title('after polarNorm')
+ax = gca;
+ax.RLim = [0 prctile(hPP3.RData,95)];
 drawnow
 
 
@@ -1091,17 +1098,28 @@ drawnow
 subplot(2,2,3);
 hScat1 = scatter(real(x(y==1,b)),imag(x(y==1,b)),'o','filled'); hold on
 hScat2 = scatter(real(x(y==2,b)),imag(x(y==2,b)),'o','filled'); hold on
-hScat3 = scatter(real(mean(x([1 end/2+1],:),1)),imag(mean(x([1 end/2+1],:),1)),'ko','filled'); hold on
+hScat3 = scatter(real(x(1,:)),imag(x(1,:)),'ko','filled'); hold on
+% hScat3 = scatter(real(x(:)),imag(x(:)),'ko','filled'); hold on
+% hScat3 = scatter(real(x(1,:)),imag(x(1,:)),'ko','filled'); hold on
 uistack(hScat3,'bottom')
 hScat3.SizeData = hScat3.SizeData./8;
 hScat1.MarkerEdgeColor = 'w';
 hScat2.MarkerEdgeColor = 'w';
 ax = gca;
 ax.PlotBoxAspectRatio = [1 1 1];
-lim = prctile(abs([real(mean(x([1 end/2+1],:),1)) imag(mean(x([1 end/2+1],:)))]),95);
+lim = prctile(abs([real(x(1,:)) imag(x(1,:))]),95);
+% lim = prctile(abs([real(x(:)) imag(x(:))]),95);
 lim = [-lim lim];
-xlim(lim);
-ylim(lim);
+switch SVMspace
+    case {'cart' 'cartReal'}
+        xlim(lim);
+        ylim(lim);
+    case 'cartNoAmp'
+    case 'cartNoDelay'
+        xlim([0 lim(2)]);
+    otherwise
+        error('X')
+end
 xLim = xlim;
 delta = abs(diff(xLim)).*0.1;
 if ~(xLim(1)<0)
@@ -1139,7 +1157,9 @@ x = cartSpaceNormalization(x,SVMspace);
 subplot(2,2,4);
 hScat1 = scatter(real(x(y==1,b)),imag(x(y==1,b)),'o','filled'); hold on
 hScat2 = scatter(real(x(y==2,b)),imag(x(y==2,b)),'o','filled'); hold on
-hScat3 = scatter(real(mean(x([1 end/2+1],:),1)),imag(mean(x([1 end/2+1],:),1)),'ko','filled'); hold on
+hScat3 = scatter(real(x(1,:)),imag(x(1,:)),'ko','filled'); hold on
+% hScat3 = scatter(real(x(:)),imag(x(:)),'ko','filled'); hold on
+% hScat3 = scatter(real(x(1,:)),imag(x(1,:)),'ko','filled'); hold on
 uistack(hScat3,'bottom')
 hScat3.SizeData = hScat3.SizeData./8;
 hScat1.MarkerEdgeColor = 'w';
@@ -1673,6 +1693,9 @@ function printRes2(resGroup)
 disp(['FixedEffect'])
 if isfield(resGroup,'auc')
     disp([' -auc    =' num2str(resGroup.auc*100,'%0.2f') '; 90%CI=' num2str(resGroup.auc_CI,'%0.3f ')])
+end
+if isfield(resGroup,'acc')
+    disp([' -acc    =' num2str(resGroup.acc*100,'%0.2f') '; 90%CI=' num2str([resGroup.acc_CI5 resGroup.acc_CI95],'%0.3f ')])
 end
 disp(['RandomEffect'])
 if isfield(resGroup,'auc_T')
