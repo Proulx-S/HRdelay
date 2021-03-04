@@ -255,12 +255,14 @@ f = fitMixed(d,p,opt);
 if opt.extraOutput
     modelName = 'full';
     fTmp = f.(modelName);
+    %remove regressors of interest
     for runInd = 1:size(fTmp.design,1)
         ind = ~cellfun('isempty',fTmp.designInfo{runInd}(1,:));
         fTmp.designInfo{runInd}(:,ind) = [];
         fTmp.design{runInd}(:,ind) = [];
         fTmp.betas{runInd}(:,:,:,ind) = [];
     end
+    %get detrended data from the residual of the reduced full model
     fTmp = getYhat(fTmp,p);
     fTmp = getYerr(fTmp,d);
     fTmp = rmfield(fTmp,{'yHat'});
@@ -293,7 +295,7 @@ for runInd = 1:size(f.full.betas,1)
     betas = permute(f.full.betas{runInd}(:,:,:,baseInd),[4 1 2 3]);
     baseData{runInd} = nan(p.xyzSz);
     for voxInd = 1:prod(p.xyzSz)
-        baseData{runInd}(voxInd) = mean(d.poly{runInd}*betas(:,voxInd),1);
+        baseData{runInd}(voxInd) = mean(d.poly{runInd}(~d.censorPts{runInd},:)*betas(:,voxInd),1);
     end
 end
 res.base = cat(5,...

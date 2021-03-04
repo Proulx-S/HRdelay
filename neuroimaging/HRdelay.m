@@ -4,15 +4,16 @@ addpath(genpath(fullfile(pwd,'matlabFun')));
 verbose = 1; % prints more info
 
 %% Between-session feature selection parameters
-% Activated voxels
+% Most activated voxels
 p.act.doIt = 1;
 p.act.threshVal = 0.00000001;
-% Vein voxels
+p.act.percentile = 50;
+% Less likely-to-be-vein voxels
 p.vein.doIt = 1;
-p.vein.percentile = 20;
-% Discriminant voxels
+p.vein.percentile = 0;
+% Most discriminant voxels
 p.discrim.doIt = 1;
-p.discrim.percentile = 20;
+p.discrim.percentile = 0;
 %% Display parameters
 figOption.save = 0; % save all figures
 figOption.subj = 1; % subjInd-> plots participants subjInd; +inf-> plots all participant (if verbose==0, will only plot subjInd==1 but still produce and save all the other figures)
@@ -20,8 +21,9 @@ figOption.subj = 1; % subjInd-> plots participants subjInd; +inf-> plots all par
 if 0
     importData(verbose)
     applyAreaMask(figOption)
-    processResponses(figOption,verbose)
 end
+processResponses(figOption,verbose)
+return
 
 [resBS,resWS] = runAllDecoding(p,figOption,verbose);
 return

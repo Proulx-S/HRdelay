@@ -100,31 +100,45 @@ d = dP; clear dP
 % scatter(dP{1}.discrim_T2,dP{1}.waveDiscrim_T2)
 
 %% Feature selection
-switch p.condPair
-    case 'grat1VSgrat2'
-        condInd = [1 2];
-    case 'grat1VSplaid'
-        condInd = [1 3];
-    case 'grat2VSplaid'
-        condInd = [2 3];
-end
 featSel = cell(size(d));
 for subjInd = 1:size(d,1)
     for sessInd = 1:size(d,2)
         % Between-session feature selection
         ind = true(size(d{subjInd,sessInd}.sin,1),1);
-        n = nnz(ind);
         info = 'V1';
+        threshInfo = {'V1'};
+        n = nnz(ind);
+        
         % activated voxels
-        ind = ind & mafdr(d{subjInd,sessInd}.featSel.F.act.p,'BHFDR',true) <= p.act.threshVal;
-%         ind = ind & d{subjInd,sessInd}.featSel.F.act.p < p.act.threshVal;
+        F = d{subjInd,sessInd}.featSel.F.act.F;
+        P = d{subjInd,sessInd}.featSel.F.act.p;
+        FDR = nan(size(P)); FDR(ind) = mafdr(P(ind),'BHFDR',true);
+        curThresh = prctile(F(ind),p.act.percentile);
+        ind = ind & F>=curThresh;
+        info = strjoin({info ['active (F<' num2str(p.act.percentile) '%ile)']},' & ');
+        thresh = ['F>' num2str(curThresh,'%0.2f') ',p<' num2str(max(P(ind)),'%0.3f') ',fdr<' num2str(max(FDR(ind)),'%0.3f')];
+        threshInfo = strjoin([threshInfo {thresh}],' & ');
+%         curThresh = p.act.threshVal;
+%         ind = ind & FDR<=curThresh;
+%         info = strjoin({info ['active (FDR<' num2str(curThresh) ')']},' & ');
+%         thresh = ['FDR<' num2str(curThresh,'%0.3f')];
+%         threshInfo = strjoin([threshInfo {thresh}],' & ');
+%         curThresh = p.act.threshVal;
+%         ind = ind & P<=curThresh;
+%         info = strjoin({info ['active (P<' num2str(curThresh) ')']},' & ');
+%         thresh = ['F>' num2str(min(F(ind)),'%0.2f') 'FDR<' num2str(max(FDR(ind)))];
+%         threshInfo = strjoin([threshInfo {thresh}],' & ');
+        
         n = [n nnz(ind)];
-        info = strjoin({info ['active (FDR<' num2str(p.act.threshVal) ')']},' & ');
+        
         % non vein voxels
         veinMap = mean(d{subjInd,sessInd}.featSel.vein.map(:,:),2);
-        ind = ind & veinMap<=prctile(veinMap(ind),100-p.vein.percentile);
-        n = [n nnz(ind)];
+        curThresh = prctile(veinMap(ind),100-p.vein.percentile);
+        ind = ind & veinMap<=curThresh;
         info = strjoin({info ['nonVein (score<' num2str(100-p.vein.percentile) '%ile)']},' & ');
+        thresh = ['veinScore<' num2str(curThresh,'%0.3f')];
+        threshInfo = strjoin([threshInfo {thresh}],' & ');
+        n = [n nnz(ind)];
         % most discrimant voxels
         switch dataType
             case {'wave' 'waveFull' 'waveRun' 'waveTrialSparse' 'waveTrialSparseCat2' 'waveTrialSparseRep'}
@@ -136,6 +150,7 @@ for subjInd = 1:size(d,1)
                 switch featDiscrimMethod
                     case 'Hotelling'
                         featMap = nan(size(ind));
+                        P = nan(size(ind));
                         voxIndList = find(ind);
                         [x,y,~] = getXYK(d{subjInd,sessInd},p);
 %                         [x,~] = polarSpaceNormalization(x,p.svmSpace);
@@ -149,6 +164,7 @@ for subjInd = 1:size(d,1)
                                         );
                                     stats = T2Hot2d(tmp);
                                     featMap(voxIndList(voxInd)) = stats.T2;
+                                    P(voxIndList(voxInd)) = stats.P;
                                 end
 %                             case {'cartReal' 'cartNoDelay'}
 %                                 [~,~,~,STATS] = ttest(real(x(y==1,ind)),real(x(y==2,ind)));
@@ -159,14 +175,19 @@ for subjInd = 1:size(d,1)
                     case 'F'
                         featMap = d{subjInd,sessInd}.featSel.F.cond1v2.F;
                 end
-                ind = ind & featMap>=prctile(featMap(ind),p.discrim.percentile);
+                FDR = nan(size(P)); FDR(ind) = mafdr(P(ind),'BHFDR',true);
+                curThresh = prctile(featMap(ind),p.discrim.percentile);
+                ind = ind & featMap>=curThresh;
             otherwise
                 error('X')
         end
+        info = strjoin({info ['mostDisciminant (>' num2str(p.discrim.percentile) '%ile)']},' & ');
+        thresh = ['p<' num2str(max(P(ind)),'%0.3f') '; fdr<' num2str(max(FDR(ind)),'%0.3f')];
+        threshInfo = strjoin([threshInfo {thresh}],' & ');
         n = [n nnz(ind)];
-        info = strjoin({info ['mostDisciminant (>)' num2str(p.discrim.percentile) '%ile']},' & ');
         
         featSel{subjInd,sessInd}.ind = ind;
+        featSel{subjInd,sessInd}.thresh = threshInfo;
         featSel{subjInd,sessInd}.n = n;
         featSel{subjInd,sessInd}.info = info;
     end
@@ -478,8 +499,11 @@ if verbose
     ylabel('within-session')
     textLine1 = [SVMspace '; ' dataType];
     textLine2 = featSel{1}.info;
-    textLine3 = num2str(featSel{1}.n,'%d & '); textLine3(end-1:end) = [];
-    title([textLine1 newline textLine2 newline textLine3])
+    textLine3 = featSel{1}.thresh;
+    textLine4 = num2str(featSel{1}.n,'%d & ');
+    textLine = [textLine1 newline textLine2 newline textLine3 newline textLine4];
+    textLine(end-1:end) = [];
+    title(textLine);
     uistack(patch([0 0 0.5 0.5 0],[0.5 0 0 0.5 0.5],[1 1 1].*0.7),'bottom')
 end
 
