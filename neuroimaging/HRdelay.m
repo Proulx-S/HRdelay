@@ -9,7 +9,7 @@ p.vein.doIt = 1;
 p.vein.percentile = 20;
 % Most activated voxels
 p.act.doIt = 1;
-p.act.threshVal = 0.00000005;
+p.act.threshVal = 0.000005;
 p.act.percentile = 0;
 % Most discriminant voxels
 p.discrim.doIt = 1;

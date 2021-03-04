@@ -79,6 +79,10 @@ if actuallyRun
         load(fullfile(funPath,inDir,[subj '.mat']),'res')
         for sessInd = 1:2
             sess = ['sess' num2str(sessInd)];
+            res.(sess) = rmfield(res.(sess),{'sin' 'hr' 'sinDesign' 'hrDesign' 'infoDesign'});
+        end
+        for sessInd = 1:2
+            sess = ['sess' num2str(sessInd)];
             res.(sess).waveResp = cat(5,...
                 resWave.(sess).waveResp(:,:,:, condLabel.(sess)==1 & ~excl.(sess) ,:,:),...
                 resWave.(sess).waveResp(:,:,:, condLabel.(sess)==2 & ~excl.(sess) ,:,:),...
@@ -88,9 +92,10 @@ if actuallyRun
             res.(sess).wave = resWave.(sess).wave; resWave.(sess).wave = [];
             res.(sess).wave_t = resWave.(sess).wave_t; resWave.(sess).wave_t = [];
             resWave.(sess) = [];
+            res.(sess) = orderfields(res.(sess),[5 6 7 1 2 3 4]);
         end
-        save(fullfile(funPath,outDir,[subj '.mat']),'res')
-        disp([subj ': saved to ''' fullfile(funPath,outDir,[subj '.mat']) ''''])
+        save(fullfile(funPath,outDir,[subj '_wave.mat']),'res')
+        disp([subj ': saved to ''' fullfile(funPath,outDir,[subj '_wave.mat']) ''''])
     end
 end
 
