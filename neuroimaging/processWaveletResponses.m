@@ -48,20 +48,24 @@ if actuallyRun
         load(fullfile(funPath,inDir,[subj '_dDtrd.mat']),'dDtrd')
         d = dDtrd;
         % Run wave
-        for sessInd = 1:size(d.fun,2)
-            disp([subj ': processing wavelet (sess' num2str(sessInd) '/' num2str(size(d.fun,2)) ')'])
+        for sessInd = 1:2
             sess = ['sess' num2str(sessInd)];
+            disp([subj ': processing wavelet (sess' num2str(sessInd) '/2)'])
+            
+            
             error('code wavelet');
             
             
             
-            sz = size(detrendedData{1});
+            sz = size(d.(sess).data{1});
             frqInd = 1;
-            cfs = nan([sz(1:3) length(detrendedData) sz(end)]);
-            for i = 1:length(detrendedData)
-                disp(['Run' num2str(i) '/' num2str(length(detrendedData))])
+            cfs = nan([sz(1:3) length(d.(sess).data) sz(end)]);
+            for i = 1:length(d.(sess).data)
+                disp(['Run' num2str(i) '/' num2str(length(d.(sess).data))])
                 showFig = (figOption.subj==subjInd || figOption.subj == inf) && i == 1;
-                [cfsTmp,t,good,wave,wave_t,frq,waveEnergy] = getWaves(detrendedData{i},showFig); detrendedData{i} = [];
+                tic
+                [cfsTmp,t,good,wave,wave_t,frq,waveEnergy] = getWaves(d.(sess).data{i},showFig); d.(sess).data{i} = [];
+                toc
                 cfs(:,:,:,i,:) = cfsTmp(:,:,:,:,frqInd);
             end
             t = permute(t,[1 2 3 5 4]);

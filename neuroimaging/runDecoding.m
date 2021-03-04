@@ -109,28 +109,6 @@ for subjInd = 1:size(d,1)
         threshInfo = {'V1'};
         n = nnz(ind);
         
-        % activated voxels
-        F = d{subjInd,sessInd}.featSel.F.act.F;
-        P = d{subjInd,sessInd}.featSel.F.act.p;
-        FDR = nan(size(P)); FDR(ind) = mafdr(P(ind),'BHFDR',true);
-        curThresh = prctile(F(ind),p.act.percentile);
-        ind = ind & F>=curThresh;
-        info = strjoin({info ['active (F<' num2str(p.act.percentile) '%ile)']},' & ');
-        thresh = ['F>' num2str(curThresh,'%0.2f') ',p<' num2str(max(P(ind)),'%0.3f') ',fdr<' num2str(max(FDR(ind)),'%0.3f')];
-        threshInfo = strjoin([threshInfo {thresh}],' & ');
-%         curThresh = p.act.threshVal;
-%         ind = ind & FDR<=curThresh;
-%         info = strjoin({info ['active (FDR<' num2str(curThresh) ')']},' & ');
-%         thresh = ['FDR<' num2str(curThresh,'%0.3f')];
-%         threshInfo = strjoin([threshInfo {thresh}],' & ');
-%         curThresh = p.act.threshVal;
-%         ind = ind & P<=curThresh;
-%         info = strjoin({info ['active (P<' num2str(curThresh) ')']},' & ');
-%         thresh = ['F>' num2str(min(F(ind)),'%0.2f') 'FDR<' num2str(max(FDR(ind)))];
-%         threshInfo = strjoin([threshInfo {thresh}],' & ');
-        
-        n = [n nnz(ind)];
-        
         % non vein voxels
         veinMap = mean(d{subjInd,sessInd}.featSel.vein.map(:,:),2);
         curThresh = prctile(veinMap(ind),100-p.vein.percentile);
@@ -139,6 +117,29 @@ for subjInd = 1:size(d,1)
         thresh = ['veinScore<' num2str(curThresh,'%0.3f')];
         threshInfo = strjoin([threshInfo {thresh}],' & ');
         n = [n nnz(ind)];
+        
+        % activated voxels
+        F = d{subjInd,sessInd}.featSel.F.act.F;
+        P = d{subjInd,sessInd}.featSel.F.act.p;
+        FDR = nan(size(P)); FDR(ind) = mafdr(P(ind),'BHFDR',true);
+%         curThresh = prctile(F(ind),p.act.percentile);
+%         ind = ind & F>=curThresh;
+%         info = strjoin({info ['active (F<' num2str(p.act.percentile) '%ile)']},' & ');
+%         thresh = ['F>' num2str(curThresh,'%0.2f') ',p<' num2str(max(P(ind)),'%0.3f') ',fdr<' num2str(max(FDR(ind)),'%0.3f')];
+%         threshInfo = strjoin([threshInfo {thresh}],' & ');
+        curThresh = p.act.threshVal;
+        ind = ind & FDR<=curThresh;
+        info = strjoin({info ['active (FDR<' num2str(curThresh) ')']},' & ');
+        thresh = ['FDR<' num2str(curThresh,'%0.3f')];
+        threshInfo = strjoin([threshInfo {thresh}],' & ');
+%         curThresh = p.act.threshVal;
+%         ind = ind & P<=curThresh;
+%         info = strjoin({info ['active (P<' num2str(curThresh) ')']},' & ');
+%         thresh = ['F>' num2str(min(F(ind)),'%0.2f') 'FDR<' num2str(max(FDR(ind)))];
+%         threshInfo = strjoin([threshInfo {thresh}],' & ');
+        
+        n = [n nnz(ind)];
+        
         % most discrimant voxels
         switch dataType
             case {'wave' 'waveFull' 'waveRun' 'waveTrialSparse' 'waveTrialSparseCat2' 'waveTrialSparseRep'}
@@ -1747,6 +1748,10 @@ if isfield(resGroup,'acc')
     disp([' -acc    =' num2str(resGroup.acc*100,'%0.2f') '; 90%CI=' num2str([resGroup.acc_CI5 resGroup.acc_CI95],'%0.3f ')])
 end
 disp(['RandomEffect'])
+if isfield(resGroup,'distT_T')
+    disp([' -student on distT'])
+    disp(['  T=' num2str(resGroup.distT_T,'%0.2f') '; ones-sided P=' num2str(resGroup.distT_P,'%0.3f')])
+end
 if isfield(resGroup,'auc_T')
     disp([' -student on auc'])
     disp(['  T=' num2str(resGroup.auc_T,'%0.2f') '; ones-sided P=' num2str(resGroup.auc_P,'%0.3f')])
