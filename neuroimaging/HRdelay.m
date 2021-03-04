@@ -21,10 +21,10 @@ figOption.subj = 1; % subjInd-> plots participants subjInd; +inf-> plots all par
 if 0
     importData(verbose)
     applyAreaMask(figOption)
-    processResponses(figOption,verbose)
 end
-processWaveletResponses(figOption,verbose)
+processResponses(figOption,verbose)
 return
+processWaveletResponses(figOption,verbose)
 
 [resBS,resWS] = runAllDecoding(p,figOption,verbose);
 return

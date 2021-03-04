@@ -266,7 +266,7 @@ if opt.extraOutput
     fTmp = getYhat(fTmp,p);
     fTmp = getYerr(fTmp,d);
     fTmp = rmfield(fTmp,{'yHat'});
-    dataDtrd = fTmp.yErr;
+    dataDtrd = fTmp.yErr; clear fTmp
 else
     dataDtrd = [];
 end
@@ -702,7 +702,7 @@ switch fitRes.info
         error('X')
 end
 
-function res = fitMixed(d,p,opt)
+function [res,poly2] = fitMixed(d,p,opt)
 if ~exist('opt','var')
     opt.extraOutput = 0;
 end
@@ -885,10 +885,6 @@ res.(modelName).info = modelLabel;
 % res.(modelName).designInfo'
 
 function [design,designInfo] = getDesign(d,p)
-%first censor bad points
-for runInd = 1:size(d.poly,1)
-    d.design{runInd}(d.censorPts{runInd},:) = 0;
-end
 
 condList = sort(unique(d.condLabel));
 tmp1 = d.design;
@@ -915,10 +911,6 @@ designInfo = cat(1,designInfo,repmat({''},2,length(designInfo)));
 design = mat2cell(design,p.timeSz,size(design,2));
 
 function [poly,polyInfo] = getPoly(d,p)
-%first censor bad points
-for runInd = 1:size(d.poly,1)
-    d.poly{runInd}(d.censorPts{runInd},:) = 0;
-end
 
 poly = blkdiag(d.poly{:});
 polyInfo = catcell(1,d.polyInfo)';
@@ -955,12 +947,18 @@ end
 designInfo = cat(2,designInfoMerged,designInfoNonMerged); clear designInfoMerged designInfoNonMerged
 
 function res = computeOLS(X,design,designInfo,censorPts)
+% censor
+designUncensored = design;
+for runInd = 1:length(X)
+    X{runInd}(:,:,:,censorPts{runInd}) = [];
+    design{runInd}(censorPts{runInd},:) = [];
+end
 xyzSz = size(X{1},[1 2 3]);
 res.betas = ...
     mtimescell(olsmatrix2(design), ...
     cellfun(@(x) squish(x,3)',X,'UniformOutput',0));  % regressors x voxels
 res.betas = permute(reshape(res.betas,[size(res.betas,1) xyzSz]),[2 3 4 1]);
-res.design = design;
+res.design = designUncensored;
 res.censorPts = censorPts;
 res.designInfo = designInfo;
 
