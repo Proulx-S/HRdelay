@@ -6,16 +6,14 @@ if ~exist('figOption','var') || isempty(figOption)
     figOption.save = 0;
     figOption.subj = 1; % 'all' or subjInd
 end
-if isfield(p,'svmSpace') && ~isempty(p.svmSpace)
-    SVMspace = p.svmSpace;
-else
-    SVMspace = 'cart'; % 'cart_HTbSess' 'cartNoAmp_HTbSess' 'cartNoDelay_HTbSess'
+if ~isfield(p,'svmSpace') || isempty(p.svmSpace)
+    p.svmSpace = 'cart'; % 'cart_HTbSess' 'cartNoAmp_HTbSess' 'cartNoDelay_HTbSess'
     % 'hr' 'hrNoAmp' 'cart' 'cartNoAmp' cartNoAmp_HT 'cartReal', 'cartImag', 'pol', 'polMag' 'polMag_T' or 'polDelay'
 end
-if isstruct(SVMspace)
+if isstruct(p.svmSpace)
     doPerm = 1;
-    res = SVMspace;
-    SVMspace = res.summary.SVMspace;
+    res = p.svmSpace;
+    p.svmSpace = res.summary.svmSpace;
     if ~exist('nPerm','var') || isempty(nPerm)
         nPerm = 100;
     end
@@ -49,7 +47,7 @@ clear tmp
 if doPerm
     error('double-check that')
     filename = fullfile(pwd,mfilename);
-    filename = fullfile(filename,[SVMspace '_' num2str(nPerm) 'perm']);
+    filename = fullfile(filename,[p.svmSpace '_' num2str(nPerm) 'perm']);
     if exist([filename '.mat'],'file')
         load(filename)
         if verbose
@@ -81,7 +79,7 @@ sessList = fields(d{1});
 
 if verbose
     disp('---');
-    disp(['SVM space: ' SVMspace '; on ' dataType]);
+    disp(['SVM space: ' p.svmSpace '; on ' dataType]);
 end
 
 %% Reorganize
@@ -202,7 +200,7 @@ if figOption.save
     error('code that')
     filename = fullfile(pwd,mfilename);
     if ~exist(filename,'dir'); mkdir(filename); end
-    filename = fullfile(filename,SVMspace);
+    filename = fullfile(filename,p.svmSpace);
     f.Color = 'none';
     set(findobj(f.Children,'type','Axes'),'color','none')
     set(findobj(f.Children,'type','PolarAxes'),'color','none')
@@ -279,9 +277,9 @@ for i = 1:numel(d)
     x = X(:,featSelInd);
     % k-fold training
     if ~strcmp(dataType,'waveTrialSparseRep')
-        [svmModelK{i},nrmlzK{i}] = SVMtrain(y,x,SVMspace,k);
+        [svmModelK{i},nrmlzK{i}] = SVMtrain(y,x,p,k);
     else
-        [svmModelK{i},nrmlzK{i}] = SVMtrain(y,x,SVMspace,k,t);
+        [svmModelK{i},nrmlzK{i}] = SVMtrain(y,x,p,k,t);
     end
     % k-fold testing
     [yHatK{i},yHatK_tr{i}] = SVMtest(y,x,svmModelK{i},nrmlzK{i},k);
@@ -345,9 +343,9 @@ for i = 1:numel(d)
     x = X(:,featSelInd);
     % training
     if ~strcmp(dataType,'waveTrialSparseRep')
-        [svmModel{subjInd,trainInd},nrmlz{subjInd,trainInd}] = SVMtrain(y,x,SVMspace);
+        [svmModel{subjInd,trainInd},nrmlz{subjInd,trainInd}] = SVMtrain(y,x,p);
     else
-        [svmModel{subjInd,trainInd},nrmlz{subjInd,trainInd}] = SVMtrain(y,x,SVMspace,[],t);
+        [svmModel{subjInd,trainInd},nrmlz{subjInd,trainInd}] = SVMtrain(y,x,p,[],t);
     end
     % same session testing (not crossvalidated)
     [yHat_tr{subjInd,trainInd},~] = SVMtest(y,x,svmModel{subjInd,trainInd},nrmlz{subjInd,trainInd});
@@ -414,9 +412,10 @@ for i = 1:numel(d)
     resBS_sess(i).acc_fdr = acc_fdr(i);
     resBS_sess(i).nVoxOrig = size(d{i}.sin,2);
     resBS_sess(i).nVox = sum(featSel{i}.ind);
-    resBS_sess(i).SVMspace = SVMspace;
+    resBS_sess(i).svmSpace = p.svmSpace;
+    resBS_sess(i).norm = p.norm;
 end
-resBS_sess = orderfields(resBS_sess,[1 2 3 4 5 6 7 8 9 15 10 11 12 13 14 16 17 18]);
+resBS_sess = orderfields(resBS_sess,[1 2 3 4 5 6 7 8 9 15 10 11 12 13 14 16 17 18 19]);
                                     
 % Within-sess
 resWS_sess = repmat(perfMetric,[size(d,1) size(d,2)]);
@@ -428,9 +427,10 @@ for i = 1:numel(d)
     resWS_sess(i).acc_fdr = acc_fdr(i);
     resWS_sess(i).nVoxOrig = size(d{i}.sin,2);
     resWS_sess(i).nVox = sum(featSel{i}.ind);
-    resWS_sess(i).SVMspace = SVMspace;
+    resWS_sess(i).svmSpace = p.svmSpace;
+    resWS_sess(i).norm = p.norm;
 end
-resWS_sess = orderfields(resWS_sess,[1 2 3 4 5 6 7 8 9 15 10 11 12 13 14 16 17 18]);
+resWS_sess = orderfields(resWS_sess,[1 2 3 4 5 6 7 8 9 15 10 11 12 13 14 16 17 18 19]);
 
 %% Summarize group performances
 [resBSsess,resBSsubj,resBSgroup] = summarizePerf(resBS_sess);
@@ -498,7 +498,11 @@ if verbose
     compareRes(resBS,resWS)
     xlabel('between-session')
     ylabel('within-session')
-    textLine1 = [SVMspace '; ' dataType];
+    if p.norm.doCartSpaceScale
+        textLine1 = [p.svmSpace '; ' dataType];
+    else
+        textLine1 = [p.svmSpace '(noCartScale); ' dataType];
+    end
     textLine2 = featSel{1}.info;
     textLine3 = featSel{1}.thresh;
     textLine4 = num2str(featSel{1}.n,'%d & ');
@@ -548,9 +552,9 @@ x = cat(1,x1,x2); clear x1 x2
 y = cat(1,y1,y2); clear y1 y2
 k = cat(1,k1,k2); clear k1 k2
 
-function [x,y,k,t] = getXYK_wave(dP,SVMspace,opt)
+function [x,y,k,t] = getXYK_wave(dP,p,opt)
 % Define x(data), y(label) and k(xValFolds)
-switch SVMspace
+switch p.svmSpace
     case {'cart' 'cart_HT' 'cart_HTbSess'...
             'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'...
             'cartNoAmpImag'...
@@ -603,7 +607,7 @@ switch SVMspace
 end
 
 
-function [svmModel,normTr] = SVMtrain(Y,X,SVMspace,K,T)
+function [svmModel,normTr] = SVMtrain(Y,X,p,K,T)
 if exist('T','var')
     tList = unique(T);
     for i = 1:length(tList)
@@ -615,7 +619,7 @@ if exist('T','var')
         else
             k = K(ind,:);
         end
-        [svmModel(:,:,:,i),normTr(:,:,:,i)] = SVMtrain(y,x,SVMspace,k);
+        [svmModel(:,:,:,i),normTr(:,:,:,i)] = SVMtrain(y,x,p,k);
     end
     for i = 1:size(svmModel,3)
         svmModel(:,:,i,1).w = mean(cat(1,svmModel(:,:,i,:).w),1);
@@ -644,7 +648,7 @@ normTr.svmSpace = '';
 normTr.pol = struct('rhoScale',[],'thetaShift',[]);
 normTr.svm = struct('scale',[],'shift',[]);
 normTr = repmat(normTr,[1 1 length(kList)]);
-svmModel = repmat(struct('k',[],'svmSpace',[],'w',[],'b',[],'Paramters',[],'info',[]),[1 1 length(kList)]);
+svmModel = repmat(struct('k',[],'svmSpace',[],'norm',[],'w',[],'b',[],'Paramters',[],'info',[]),[1 1 length(kList)]);
 for kInd = 1:length(kList)
     % Split train and test
     te = K==kList(kInd);
@@ -652,11 +656,11 @@ for kInd = 1:length(kList)
     x = X(~te,:);
     
     % Normalize
-    [x,normTr(:,:,kInd).pol] = polarSpaceNormalization(x,SVMspace);
-    [x,normTr(:,:,kInd).svm] = cartSpaceNormalization(x,SVMspace);
-    [x,~,~] = complex2svm(x,SVMspace);
+    [x,normTr(:,:,kInd).pol] = polarSpaceNormalization(x,p.svmSpace);
+    [x,normTr(:,:,kInd).svm] = cartSpaceNormalization(x,p.svmSpace,[],p.norm.doCartSpaceScale);
+    [x,~,~] = complex2svm(x,p.svmSpace);
     normTr(:,:,kInd).k = kList(kInd);
-    normTr(:,:,kInd).svmSpace = SVMspace;
+    normTr(:,:,kInd).svmSpace = p.svmSpace;
     
     % Train
     model = svmtrain(y,x,'-t 0 -q');
@@ -672,7 +676,8 @@ for kInd = 1:length(kList)
     svmModel(:,:,kInd).b = b;
     svmModel(:,:,kInd).Paramters = model.Parameters;
     svmModel(:,:,kInd).info = '   yHat = x*w''-b   ';
-    svmModel(:,:,kInd).svmSpace = SVMspace;
+    svmModel(:,:,kInd).svmSpace = p.svmSpace;
+    svmModel(:,:,kInd).norm = p.norm;
 end
 
 function [yHat,yHatTr] = SVMtest(Y,X,svmModel,nrmlz,K)
@@ -686,6 +691,7 @@ yHatTr = nan([size(Y,1) length(kList)]);
 for kInd = 1:length(kList)
     x = X;
     SVMspace = svmModel(kInd).svmSpace;
+    norm = svmModel(kInd).norm;
     % Split train and test
     if kList(kInd)==0
         te = true(size(Y));
@@ -696,7 +702,7 @@ for kInd = 1:length(kList)
     % Normalize
     if ~exist('nrmlz','var') || isempty(nrmlz)
         [x,~] = polarSpaceNormalization(x,svmModel(kInd).svmSpace);
-        [x,~] = cartSpaceNormalization(x,svmModel(kInd).svmSpace);
+        [x,~] = cartSpaceNormalization(x,svmModel(kInd).svmSpace,[],norm.doCartSpaceScale);
     else
         [x,~] = polarSpaceNormalization(x,nrmlz(kInd),te);
         [x,~] = cartSpaceNormalization(x,nrmlz(kInd),te);
@@ -711,77 +717,77 @@ end
     
 
 
-function [yTe,d,yHatTe] = xValSVM(x,y,k,SVMspace)
-X = x;
-kList = unique(k);
-% yTr = nan(length(y),length(kList));
-yTe = nan(length(y),1);
-% yHatTr = nan(length(y),length(kList));
-yHatTe = nan(length(y),1);
-d = nan(length(kList),1);
-for kInd = 1:length(kList)
-    % Split train and test
-    te = k==kList(kInd);
-
-    % Polar space normalization
-    x = polarSpaceNormalization(X,SVMspace,te);
-
-%     % Within-session feature selection
-%     % get feature selection stats
-%     featStat = getFeatStat_ws(x,y,te,SVMspace);
-%     
-%     % apply feature selection
+% function [yTe,d,yHatTe] = xValSVM(x,y,k,SVMspace)
+% X = x;
+% kList = unique(k);
+% % yTr = nan(length(y),length(kList));
+% yTe = nan(length(y),1);
+% % yHatTr = nan(length(y),length(kList));
+% yHatTe = nan(length(y),1);
+% d = nan(length(kList),1);
+% for kInd = 1:length(kList)
+%     % Split train and test
+%     te = k==kList(kInd);
+% 
+%     % Polar space normalization
+%     x = polarSpaceNormalization(X,SVMspace,te);
+% 
+% %     % Within-session feature selection
+% %     % get feature selection stats
+% %     featStat = getFeatStat_ws(x,y,te,SVMspace);
+% %     
+% %     % apply feature selection
+% %     switch SVMspace
+% %         case {'cart_HT' 'cartNoAmp_HT' 'cartNoDelay_HT'...
+% %                 'cartReal_T'...
+% %                 'polMag_T'}
+% %             featStat = abs(featStat);
+% %             x = x(:,featStat>prctile(featStat,10));
+% %         case {'cart' 'cartNoAmp' 'cartNoDelay'...
+% %                 'cart_HTbSess' 'cartNoAmp_HTbSess' 'cartNoDelay_HTbSess'...
+% %                 'polMag'}
+% %         otherwise
+% %             error('X')
+% %     end
+% 
+%     % Cocktail bank normalization
 %     switch SVMspace
-%         case {'cart_HT' 'cartNoAmp_HT' 'cartNoDelay_HT'...
-%                 'cartReal_T'...
-%                 'polMag_T'}
-%             featStat = abs(featStat);
-%             x = x(:,featStat>prctile(featStat,10));
-%         case {'cart' 'cartNoAmp' 'cartNoDelay'...
-%                 'cart_HTbSess' 'cartNoAmp_HTbSess' 'cartNoDelay_HTbSess'...
-%                 'polMag'}
+%         case {'hr' 'hrNoAmp'}
+%             x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
+%         case {'cart' 'cart_HT' 'cart_HTbSess'...
+%                 'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'}
+%             x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
+%             x = cat(2,real(x),imag(x));
+%         case {'cartReal' 'cartReal_T'}
+%             x = real(x);
+%             x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
+%         case 'cartImag'
+%             x = imag(x);
+%             x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
+%         case 'pol'
+%             x = cat(2,angle(x),abs(x));
+%             x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
+%         case {'polMag' 'polMag_T' 'cartNoDelay' 'cartNoDelay_HT'  'cartNoDelay_HTbSess'}
+%             x = abs(x);
+%             x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
+%         case 'polDelay'
+%             x = angle(x);
+%             x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
 %         otherwise
-%             error('X')
+%             error('x')
 %     end
-
-    % Cocktail bank normalization
-    switch SVMspace
-        case {'hr' 'hrNoAmp'}
-            x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
-        case {'cart' 'cart_HT' 'cart_HTbSess'...
-                'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'}
-            x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
-            x = cat(2,real(x),imag(x));
-        case {'cartReal' 'cartReal_T'}
-            x = real(x);
-            x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
-        case 'cartImag'
-            x = imag(x);
-            x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
-        case 'pol'
-            x = cat(2,angle(x),abs(x));
-            x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
-        case {'polMag' 'polMag_T' 'cartNoDelay' 'cartNoDelay_HT'  'cartNoDelay_HTbSess'}
-            x = abs(x);
-            x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
-        case 'polDelay'
-            x = angle(x);
-            x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
-        otherwise
-            error('x')
-    end
-
-    % Train SVM
-    model = svmtrain(y(~te,:),x(~te,:),'-t 0 -q');
-%     w = model.sv_coef'*model.SVs;
-%     b = model.rho;
-%     yHat = cat(2,real(x(~te,:)),imag(x(~te,:)))*w';
-    
-    % Test SVM
-%     [yTr(~te,kInd), ~, yHatTr(~te,kInd)] = svmpredict(y(~te,:),x(~te,:),model,'-q');
-    [yTe(te,1), ~, yHatTe(te,1)] = svmpredict(y(te,:),x(te,:),model,'-q');
-    d(kInd) = size(x,2);
-end
+% 
+%     % Train SVM
+%     model = svmtrain(y(~te,:),x(~te,:),'-t 0 -q');
+% %     w = model.sv_coef'*model.SVs;
+% %     b = model.rho;
+% %     yHat = cat(2,real(x(~te,:)),imag(x(~te,:)))*w';
+%     
+%     % Test SVM
+% %     [yTr(~te,kInd), ~, yHatTr(~te,kInd)] = svmpredict(y(~te,:),x(~te,:),model,'-q');
+%     [yTe(te,1), ~, yHatTe(te,1)] = svmpredict(y(te,:),x(te,:),model,'-q');
+%     d(kInd) = size(x,2);
+% end
 
 function [x,polNorm] = polarSpaceNormalization(x,SVMspace,te)
 [x,sz] = reDim1(x);
@@ -867,7 +873,7 @@ x = complex(u,v); clear u v
 
 x = reDim2(x,sz);
 
-function [x,cartNorm] = cartSpaceNormalization(x,SVMspace,te)
+function [x,cartNorm] = cartSpaceNormalization(x,SVMspace,te,doCartSpaceScale)
 [x,sz] = reDim1(x);
 if ~exist('te','var') || isempty(te)
     te = false(size(x,1),1);
@@ -880,29 +886,52 @@ else
     computeNorm = true;
 end
 
-switch SVMspace
-    case {'cart' 'cartNoAmp'}
-        normSpace.realShift = 'vox';
-        normSpace.imagShift = 'vox';
-        normSpace.realScale = 'vox';
-        normSpace.imagScale = 'vox';
-    case {'cartNoDelay' 'cartReal'}
-        normSpace.realShift = 'vox';
-        normSpace.imagShift = 'rm';
-        normSpace.realScale = 'vox';
-        normSpace.imagScale = 'rm';
-    case {'cartNoAmpImag' 'cartImag'}
-        normSpace.realShift = 'rm';
-        normSpace.imagShift = 'vox';
-        normSpace.realScale = 'rm';
-        normSpace.imagScale = 'vox';
-    otherwise
-        error('X')
-end
-
-
-% Compute norm
 if computeNorm
+    % Specify norm
+    switch SVMspace
+        case {'cart' 'cartNoAmp'}
+            if doCartSpaceScale
+                normSpace.realShift = 'vox';
+                normSpace.imagShift = 'vox';
+                normSpace.realScale = 'vox';
+                normSpace.imagScale = 'vox';
+            else
+                normSpace.realShift = 'roi';
+                normSpace.imagShift = 'roi';
+                normSpace.realScale = 'none';
+                normSpace.imagScale = 'none';
+            end
+        case {'cartNoDelay' 'cartReal'}
+            normSpace.realShift = 'vox';
+            normSpace.imagShift = 'rm';
+            if doCartSpaceScale
+                normSpace.realShift = 'vox';
+                normSpace.imagShift = 'rm';
+                normSpace.realScale = 'vox';
+                normSpace.imagScale = 'rm';
+            else
+                normSpace.realShift = 'roi';
+                normSpace.imagShift = 'roi';
+                normSpace.realScale = 'none';
+                normSpace.imagScale = 'rm';
+            end
+        case {'cartNoAmpImag' 'cartImag'}
+            if doCartSpaceScale
+                normSpace.realShift = 'rm';
+                normSpace.imagShift = 'vox';
+                normSpace.realScale = 'rm';
+                normSpace.imagScale = 'vox';
+            else
+                normSpace.realShift = 'roi';
+                normSpace.imagShift = 'roi';
+                normSpace.realScale = 'rm';
+                normSpace.imagScale = 'none';
+            end
+        otherwise
+            error('X')
+    end
+    
+    % Compute norm
     u = real(x(~te,:));
     v = imag(x(~te,:));
     %real shift
@@ -963,41 +992,61 @@ end
 u = real(x);
 v = imag(x);
 %real shift
-switch normSpace.realShift
-    case {'roi' 'vox' 'none'}
-        u = u - cartNorm.realShift;
-    case 'rm'
-        u = 0;
-    otherwise
-        error('X')
+if ~isnan(cartNorm.realShift)
+    u = u - cartNorm.realShift;
+else
+    u = 0;
 end
+% switch normSpace.realShift
+%     case {'roi' 'vox' 'none'}
+%         u = u - cartNorm.realShift;
+%     case 'rm'
+%         u = 0;
+%     otherwise
+%         error('X')
+% end
 %imag shift
-switch normSpace.imagShift
-    case {'roi' 'vox' 'none'}
-        v = v - cartNorm.imagShift;
-    case 'rm'
-        v = 0;
-    otherwise
-        error('X')
+if ~isnan(cartNorm.imagShift)
+    v = v - cartNorm.imagShift;
+else
+    v = 0;
 end
+% switch normSpace.imagShift
+%     case {'roi' 'vox' 'none'}
+%         v = v - cartNorm.imagShift;
+%     case 'rm'
+%         v = 0;
+%     otherwise
+%         error('X')
+% end
 %real scale
-switch normSpace.realScale
-    case {'roi' 'vox' 'none'}
-        u = u ./ cartNorm.realScale;
-    case 'rm'
-        u = 0;
-    otherwise
-        error('X')
+if ~isnan(cartNorm.realScale)
+    u = u ./ cartNorm.realScale;
+else
+    u = 0;
 end
+% switch normSpace.realScale
+%     case {'roi' 'vox' 'none'}
+%         u = u ./ cartNorm.realScale;
+%     case 'rm'
+%         u = 0;
+%     otherwise
+%         error('X')
+% end
 %imag scale
-switch normSpace.imagScale
-    case {'roi' 'vox' 'none'}
-        v = v ./ cartNorm.imagScale;
-    case 'rm'
-        v = 0;
-    otherwise
-        error('X')
+if ~isnan(cartNorm.imagScale)
+    v = v ./ cartNorm.imagScale;
+else
+    v = 0;
 end
+% switch normSpace.imagScale
+%     case {'roi' 'vox' 'none'}
+%         v = v ./ cartNorm.imagScale;
+%     case 'rm'
+%         v = 0;
+%     otherwise
+%         error('X')
+% end
 x = complex(u,v);
 
 x = reDim2(x,sz);
@@ -1022,42 +1071,42 @@ nDim = size(x,2);
 
 
 
-function featStat = getFeatStat_ws(x,y,te,SVMspace)
-nVox = size(x,2);
-switch SVMspace
-    case 'cart_HT'
-        x = [real(x) imag(x)];
-        
-        featStat = nan(1,nVox);
-        x = cat(1,x(~te & y==1,:),x(~te & y==2,:));
-        for voxInd = 1:nVox
-            stats = T2Hot2d(x(:,[0 nVox]+voxInd));
-            featStat(voxInd) = stats.T2;
-        end
-    case 'cartNoAmp_HT'
-        x = angle(x);
-        
-        featStat = nan(1,size(x,2));
-        for voxInd = 1:size(x,2)
-            [~, F] = circ_htest(x(~te & y==1,voxInd), x(~te & y==2,voxInd));
-            featStat(voxInd) = F;
-        end
-    case {'polMag_T' 'cartNoDelay_HT'}
-        x = abs(x);
-        
-        [~,~,~,STATS] = ttest(x(~te & y==1,:),x(~te & y==2,:));
-        featStat = STATS.tstat;
-    case 'cartReal_T'
-        x = real(x);
-        
-        [~,~,~,STATS] = ttest(x(~te & y==1,:),x(~te & y==2,:));
-        featStat = STATS.tstat;
-    case {'cart' 'cartNoAmp' 'cartNoDelay'...
-            'cart_HTbSess' 'cartNoAmp_HTbSess' 'cartNoDelay_HTbSess'...
-            'polMag'}
-    otherwise
-        error('X')
-end
+% function featStat = getFeatStat_ws(x,y,te,SVMspace)
+% nVox = size(x,2);
+% switch SVMspace
+%     case 'cart_HT'
+%         x = [real(x) imag(x)];
+%         
+%         featStat = nan(1,nVox);
+%         x = cat(1,x(~te & y==1,:),x(~te & y==2,:));
+%         for voxInd = 1:nVox
+%             stats = T2Hot2d(x(:,[0 nVox]+voxInd));
+%             featStat(voxInd) = stats.T2;
+%         end
+%     case 'cartNoAmp_HT'
+%         x = angle(x);
+%         
+%         featStat = nan(1,size(x,2));
+%         for voxInd = 1:size(x,2)
+%             [~, F] = circ_htest(x(~te & y==1,voxInd), x(~te & y==2,voxInd));
+%             featStat(voxInd) = F;
+%         end
+%     case {'polMag_T' 'cartNoDelay_HT'}
+%         x = abs(x);
+%         
+%         [~,~,~,STATS] = ttest(x(~te & y==1,:),x(~te & y==2,:));
+%         featStat = STATS.tstat;
+%     case 'cartReal_T'
+%         x = real(x);
+%         
+%         [~,~,~,STATS] = ttest(x(~te & y==1,:),x(~te & y==2,:));
+%         featStat = STATS.tstat;
+%     case {'cart' 'cartNoAmp' 'cartNoDelay'...
+%             'cart_HTbSess' 'cartNoAmp_HTbSess' 'cartNoDelay_HTbSess'...
+%             'polMag'}
+%     otherwise
+%         error('X')
+% end
 
 function f0 = plotNorm(d,p,featSel)
 switch p.dataType
@@ -1079,14 +1128,14 @@ switch p.dataType
         error('X')
 end
 [~,b] = sort(d.featSel.F.act.F(featSel.ind),'descend');
-f0 = plotPolNormExample(X(:,featSel.ind),y,p.svmSpace,b(1));
+f0 = plotPolNormExample(X(:,featSel.ind),y,p,b(1));
 % f1 = plotPolNormExampleVox(X,SVMspace,b(1));
 % f2 = plotPolNormExampleRep(X,y,SVMspace,b(1));
 
 % x = cat(3,X(y==1,b(1)),X(y==2,b(1)));
 % f2 = plotPolNormExample(x,SVMspace);
 
-function f = plotPolNormExample(x,y,SVMspace,b)
+function f = plotPolNormExample(x,y,p,b)
 f = figure('WindowStyle','docked');
 
 %% Polar Normalization
@@ -1108,7 +1157,7 @@ title('before polarNorm')
 drawnow
 
 % Normalize
-x = polarSpaceNormalization(x,SVMspace);
+x = polarSpaceNormalization(x,p.svmSpace);
 
 % Plot after
 subplot(2,2,2);
@@ -1141,20 +1190,23 @@ hScat1.MarkerEdgeColor = 'w';
 hScat2.MarkerEdgeColor = 'w';
 ax = gca;
 ax.PlotBoxAspectRatio = [1 1 1];
-lim = prctile(abs([real(x(1,:)) imag(x(1,:))]),95);
-% lim = prctile(abs([real(x(:)) imag(x(:))]),95);
-lim = [-lim lim];
-switch SVMspace
-    case {'cart' 'cartReal'}
-        xlim(lim);
-        ylim(lim);
-    case 'cartNoAmp'
-    case 'cartNoDelay'
-        xlim([0 lim(2)]);
-    otherwise
-        error('X')
-end
-xLim = xlim;
+% lim = prctile(abs([real(x(1,:)) imag(x(1,:))]),95);
+xLim = prctile(real(x(1,:)),[2.5 97.5]);
+yLim = prctile(imag(x(1,:)),[2.5 97.5]);
+% lim = [-lim lim];
+xlim(xLim);
+ylim(yLim);
+% switch p.svmSpace
+%     case {'cart' 'cartReal'}
+%         xlim(lim);
+%         ylim(lim);
+%     case 'cartNoAmp'
+%     case 'cartNoDelay'
+%         xlim([0 lim(2)]);
+%     otherwise
+%         error('X')
+% end
+% xLim = xlim;
 delta = abs(diff(xLim)).*0.1;
 if ~(xLim(1)<0)
     xLim(1) = -delta;
@@ -1185,7 +1237,7 @@ hLeg.Location = 'northwest';
 drawnow
 
 % Normalize
-x = cartSpaceNormalization(x,SVMspace);
+x = cartSpaceNormalization(x,p.svmSpace,[],p.norm.doCartSpaceScale);
 
 %Plot after
 subplot(2,2,4);
@@ -1201,7 +1253,21 @@ hScat2.MarkerEdgeColor = 'w';
 ax = gca;
 ax.DataAspectRatio = [1 1 1];
 ax.PlotBoxAspectRatio = [1 1 1];
-xLim = xlim;
+xLim = prctile(real(x(1,:)),[2.5 97.5]);
+yLim = prctile(imag(x(1,:)),[2.5 97.5]);
+% lim = prctile(abs([real(x(:)) imag(x(:))]),95);
+% lim = [-lim lim];
+xlim(xLim);
+ylim(yLim);
+% switch p.svmSpace
+%     case {'cart' 'cartReal'}
+%     case 'cartNoAmp'
+%     case 'cartNoDelay'
+%         xlim([0 lim(2)]);
+%     otherwise
+%         error('X')
+% end
+% xLim = xlim;
 delta = abs(diff(xLim)).*0.1;
 if ~(xLim(1)<0)
     xLim(1) = -delta;
@@ -1630,6 +1696,9 @@ for i = 1:length(allField)
     elseif ischar(res_sess(1).(allField{i}))
         resSess.(allField{i}) = cell(size(res_sess));
         resSess.(allField{i})(:) = {res_sess.(allField{i})};
+    elseif isstruct(res_sess(1).(allField{i}))
+        resSess.(allField{i}) = cell(size(res_sess));
+        resSess.(allField{i})(:) = {res_sess.(allField{i})};
     else
         error('code that')
     end
@@ -1637,7 +1706,7 @@ end
 resSess.info = 'subj x sess';
 resSess.distT_fdr = resSess.distT_p;
 resSess.distT_fdr(:) = mafdr(resSess.distT_p(:),'BHFDR',true);
-resSess = orderfields(resSess,[1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 20 16 17 18 19]);
+resSess = orderfields(resSess,[1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 21 16 17 18 19 20]);
                               
 
 resSubj.y = cell(size(resSess.y,1),1);
@@ -1675,7 +1744,7 @@ for subjInd = 1:size(resSubj.y,1)
 end
 resSubj.nVoxOrig = round(mean(resSess.nVoxOrig,2));
 resSubj.nVox = round(mean(resSess.nVox,2));
-resSubj.SVMspace = resSess.SVMspace(:,1);
+resSubj.svmSpace = resSess.svmSpace(:,1);
 
 resGroup.y = cell2mat(resSubj.y);
 resGroup.yHat = cell2mat(resSubj.yHat);
@@ -1715,7 +1784,7 @@ resGroup.distT_T = STATS.tstat;
 resGroup.distT_P = P;
 resGroup.nVoxOrig = round(mean(resSubj.nVoxOrig,1));
 resGroup.nVox = round(mean(resSubj.nVox,1));
-resGroup.SVMspace = resSubj.SVMspace{1};
+resGroup.svmSpace = resSubj.svmSpace{1};
 
 function printRes(resSess,resSubj,resGroup)
 disp(['Session results:'])
