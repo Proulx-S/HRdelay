@@ -21,11 +21,12 @@ figOption.subj = 1; % subjInd-> plots participants subjInd; +inf-> plots all par
 if 0
     importData(verbose)
     applyAreaMask(figOption)
-    processResponses(figOption,verbose)
-    processWaveletResponses(figOption,verbose)
 end
-[resBS,resWS] = runAllDecoding(p,figOption,verbose);
+processResponses(figOption,verbose)
+processWaveletResponses(figOption,verbose)
+
 return
+[resBS,resWS] = runAllDecoding(p,figOption,verbose);
 groupAna(p,figOption,verbose)
 
 

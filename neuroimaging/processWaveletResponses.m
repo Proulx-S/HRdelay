@@ -43,7 +43,6 @@ if actuallyRun
         % Load data
         subj = subjList{subjInd};
         disp([subj ': loading'])
-%         load(fullfile(funPath,inDir,[subj '.mat']))
         load(fullfile(funPath,inDirPrev,[subj '.mat']),'p')
         load(fullfile(funPath,inDir,[subj '_dDtrd.mat']),'dDtrd')
         d = dDtrd;
@@ -52,50 +51,46 @@ if actuallyRun
             sess = ['sess' num2str(sessInd)];
             disp([subj ': processing wavelet (sess' num2str(sessInd) '/2)'])
             
-            
-            error('code wavelet');
-            
-            
-            
             sz = size(d.(sess).data{1});
             frqInd = 1;
             cfs = nan([sz(1:3) length(d.(sess).data) sz(end)]);
             for i = 1:length(d.(sess).data)
                 disp(['Run' num2str(i) '/' num2str(length(d.(sess).data))])
                 showFig = (figOption.subj==subjInd || figOption.subj == inf) && i == 1;
-                tic
-                [cfsTmp,t,good,wave,wave_t,frq,waveEnergy] = getWaves(d.(sess).data{i},showFig); d.(sess).data{i} = [];
-                toc
-                cfs(:,:,:,i,:) = cfsTmp(:,:,:,:,frqInd);
+                [cfsTmp,t,good,wave,wave_t,frq,~] = getWaves(d.(sess).data{i},showFig);
+                d.(sess).data{i} = [];
+                cfs(:,:,:,i,:) = cfsTmp(:,:,:,:,frqInd); clear cfsTmp
             end
-            t = permute(t,[1 2 3 5 4]);
-            good = permute(good(:,:,:,:,frqInd),[1 2 3 5 4]);
-            wave = permute(wave,[1 2 3 5 4]);
-            wave_t = permute(wave_t,[1 2 3 5 4]);
-            frq = permute(frq(:,:,:,:,frqInd),[1 2 3 5 4]);
-            
-            
-            
-            
-            res.(sess) = runGLMs(d.fun(1,sessInd),p,0);
-%             dDtrd.(sess) = rmfield(d.fun(sessInd),{'data' 'design' 'extraRegr'});
-%             dDtrd.(sess).data = res.(sess).dataDtrd;
-%             res.(sess) = rmfield(res.(sess),'dataDtrd');
+            resWave.(sess).waveResp = permute(cfs,[1 2 3 4 6 5]); clear cfs
+            resWave.(sess).waveResp_t = permute(t,[1 2 3 5 6 4]); clear t
+            resWave.(sess).wave = permute(wave,[1 2 3 5 6 4]); clear wave
+            resWave.(sess).wave_t = permute(wave_t,[1 2 3 5 6 4]); clear wave_t
+            resWave.(sess).frq = permute(frq(:,:,:,:,frqInd),[1 2 3 4 6 7 5]); clear frq
         end
         % Save
-        disp([subj ': saving responses'])
-        if ~exist(fullfile(funPath,outDir),'dir')
-            mkdir(fullfile(funPath,outDir))
+        disp([subj ': saving wave responses'])
+        for sessInd = 1:2
+            sess = ['sess' num2str(sessInd)];
+            excl.(sess) = d.(sess).excl;
+            condLabel.(sess) = d.(sess).condLabel;
+            d.(sess) = [];
+        end
+        clear d
+        load(fullfile(funPath,inDir,[subj '.mat']),'res')
+        for sessInd = 1:2
+            sess = ['sess' num2str(sessInd)];
+            res.(sess).waveResp = cat(5,...
+                resWave.(sess).waveResp(:,:,:, condLabel.(sess)==1 & ~excl.(sess) ,:,:),...
+                resWave.(sess).waveResp(:,:,:, condLabel.(sess)==2 & ~excl.(sess) ,:,:),...
+                resWave.(sess).waveResp(:,:,:, condLabel.(sess)==3 & ~excl.(sess) ,:,:)...
+                );
+            resWave.(sess).waveResp = [];
+            res.(sess).wave = resWave.(sess).wave; resWave.(sess).wave = [];
+            res.(sess).wave_t = resWave.(sess).wave_t; resWave.(sess).wave_t = [];
+            resWave.(sess) = [];
         end
         save(fullfile(funPath,outDir,[subj '.mat']),'res')
-        clear res
-        disp([subj ': saving detrended data'])
-        if ~exist(fullfile(funPath,outDir),'dir')
-            mkdir(fullfile(funPath,outDir))
-        end
-        save(fullfile(funPath,outDir,[subj '_dDtrd.mat']),'dDtrd')
-        clear dDtrd
-        disp([subj ': saved to ''' fullfile(funPath,outDir) ''''])
+        disp([subj ': saved to ''' fullfile(funPath,outDir,[subj '.mat']) ''''])
     end
 end
 
@@ -147,7 +142,6 @@ if verbose
     plot(t,abs(mean(cfs(1,:,:),3))); hold on
     ylabel('amplitude (BOLD)')
     xlabel('time (sec)')
-    legend({'raw' 'rotated'})
 end
 theta = wrapToPi(angle(cfs) - (t/stimPeriod*2*pi)');
 rho = abs(cfs);
@@ -158,6 +152,7 @@ if verbose
     plot(t,angle(mean(cfs(1,:,:),3))); hold on
     subplot(2,1,2)
     plot(t,abs(mean(cfs(1,:,:),3))); hold on
+    legend({'raw' 'rotated'})
 end
 
 

@@ -38,6 +38,7 @@ opt.extraOutput = 1;
 v.map = cell(size(d.data));
 v.var = cell(size(d.data));
 v.base = cell(size(d.data));
+v.excl = d.excl;
 for runInd = 1:size(d.data,1)
     % Vein map
     v.var{runInd} = std(d.dataDtrd{runInd}(:,:,:,~d.censorPts{runInd}),[],4);
@@ -70,7 +71,7 @@ res.featSel.vein.map = cat(5,...
     cat(4,v.map{d.condLabel==1 & ~d.excl}),...
     cat(4,v.map{d.condLabel==2 & ~d.excl}),...
     cat(4,v.map{d.condLabel==3 & ~d.excl})); clear v
-res.dataDtrd = d.dataDtrd(~d.excl); clear d
+res.dataDtrd = d.dataDtrd; clear d
 
 function res = fitSinFixed(d,p)
 %% First exclude
