@@ -9,7 +9,7 @@ if ~exist('figOption','var') || isempty(figOption)
 end
 clear resBS resWS
 p.dataType = 'sin';
-p.svmSpace = 'cart';
+p.svmSpace = 'cartNoAmp';
 p.condPair = 'grat1VSgrat2';
 [resBS,resWS] = runDecoding(p,verbose);
 return

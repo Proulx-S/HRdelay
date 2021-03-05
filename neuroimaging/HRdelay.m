@@ -1,19 +1,31 @@
 clear all
 %% Dependencies
+dependencyPath = '/Users/sebastienproulx/Documents/GitHub/utilities';
+addpath(genpath(fullfile(dependencyPath,'circstat-matlab')));
 addpath(genpath(fullfile(pwd,'matlabFun')));
 verbose = 1; % prints more info
 
-%% Between-session feature selection parameters
+%% Feature selection parameters
 % Less likely-to-be-vein voxels
-p.vein.doIt = 1;
-p.vein.percentile = 20;
+p.featSel.vein.doIt = 1;
+p.featSel.vein.threshMethod = '%ile'; % '%ile' 'p' 'fdr'
+p.featSel.vein.threshVal = 0.001;
+p.featSel.vein.percentile = 80;
 % Most activated voxels
-p.act.doIt = 1;
-p.act.threshVal = 0.000005;
-p.act.percentile = 0;
+p.featSel.act.doIt = 1;
+p.featSel.act.threshMethod = 'fdr';
+p.featSel.act.threshVal = 0.001;
+p.featSel.act.percentile = 20;
+% Most significant response vectors
+p.featSel.respVectSig.doIt = 1;
+p.featSel.respVectSig.threshMethod = 'fdr';
+p.featSel.respVectSig.threshVal = 0.001;
+p.featSel.respVectSig.percentile = 20;
 % Most discriminant voxels
-p.discrim.doIt = 1;
-p.discrim.percentile = 20;
+p.featSel.discrim.doIt = 1;
+p.featSel.discrim.threshMethod = '%ile';
+p.featSel.discrim.threshVal = 0.001;
+p.featSel.discrim.percentile = 20;
 %% Normalization parameters
 p.norm.doCartSpaceScale = 1;
 %% Display parameters

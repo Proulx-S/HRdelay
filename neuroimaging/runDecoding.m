@@ -99,99 +99,9 @@ d = dP; clear dP
 
 %% Feature selection
 featSel = cell(size(d));
-for subjInd = 1:size(d,1)
-    for sessInd = 1:size(d,2)
-        % Between-session feature selection
-        ind = true(size(d{subjInd,sessInd}.sin,1),1);
-        info = 'V1';
-        threshInfo = {'V1'};
-        n = nnz(ind);
-        
-        % non vein voxels
-        veinMap = mean(d{subjInd,sessInd}.featSel.vein.map(:,:),2);
-        curThresh = prctile(veinMap(ind),100-p.vein.percentile);
-        ind = ind & veinMap<=curThresh;
-        info = strjoin({info ['nonVein (score<' num2str(100-p.vein.percentile) '%ile)']},' & ');
-        thresh = ['veinScore<' num2str(curThresh,'%0.3f')];
-        threshInfo = strjoin([threshInfo {thresh}],' & ');
-        n = [n nnz(ind)];
-        
-        % activated voxels
-        F = d{subjInd,sessInd}.featSel.F.act.F;
-        P = d{subjInd,sessInd}.featSel.F.act.p;
-        FDR = nan(size(P)); FDR(ind) = mafdr(P(ind),'BHFDR',true);
-%         curThresh = prctile(F(ind),p.act.percentile);
-%         ind = ind & F>=curThresh;
-%         info = strjoin({info ['active (F<' num2str(p.act.percentile) '%ile)']},' & ');
-%         thresh = ['F>' num2str(curThresh,'%0.2f') ',p<' num2str(max(P(ind)),'%0.3f') ',fdr<' num2str(max(FDR(ind)),'%0.3f')];
-%         threshInfo = strjoin([threshInfo {thresh}],' & ');
-        curThresh = p.act.threshVal;
-        ind = ind & FDR<=curThresh;
-        info = strjoin({info ['active (FDR<' num2str(curThresh) ')']},' & ');
-        thresh = ['FDR<' num2str(curThresh,'%0.3f')];
-        threshInfo = strjoin([threshInfo {thresh}],' & ');
-%         curThresh = p.act.threshVal;
-%         ind = ind & P<=curThresh;
-%         info = strjoin({info ['active (P<' num2str(curThresh) ')']},' & ');
-%         thresh = ['F>' num2str(min(F(ind)),'%0.2f') 'FDR<' num2str(max(FDR(ind)))];
-%         threshInfo = strjoin([threshInfo {thresh}],' & ');
-        
-        n = [n nnz(ind)];
-        
-        % most discrimant voxels
-        switch dataType
-            case {'wave' 'waveFull' 'waveRun' 'waveTrialSparse' 'waveTrialSparseCat2' 'waveTrialSparseRep'}
-                error('double-check that')
-                ind = ind & d{i}.waveDiscrim_mask;
-            case 'sin'
-                featDiscrimMethod = 'Hotelling';
-%                 featDiscrimMethod = 'F';
-                switch featDiscrimMethod
-                    case 'Hotelling'
-                        featMap = nan(size(ind));
-                        P = nan(size(ind));
-                        voxIndList = find(ind);
-                        [x,y,~] = getXYK(d{subjInd,sessInd},p);
-%                         [x,~] = polarSpaceNormalization(x,p.svmSpace);
-                        switch p.svmSpace
-%                             case {'cart' 'cartNoAmp'}
-                            case {'cart' 'cartNoAmp' 'cartReal' 'cartNoDelay'}
-                                for voxInd = 1:length(voxIndList)
-                                    tmp = cat(1,...
-                                        cat(2,real(x(y==1,voxIndList(voxInd))),imag(x(y==1,voxIndList(voxInd)))),...
-                                        cat(2,real(x(y==2,voxIndList(voxInd))),imag(x(y==2,voxIndList(voxInd))))...
-                                        );
-                                    stats = T2Hot2d(tmp);
-                                    featMap(voxIndList(voxInd)) = stats.T2;
-                                    P(voxIndList(voxInd)) = stats.P;
-                                end
-%                             case {'cartReal' 'cartNoDelay'}
-%                                 [~,~,~,STATS] = ttest(real(x(y==1,ind)),real(x(y==2,ind)));
-%                                 featMap(ind) = abs(STATS.tstat);
-                            otherwise
-                                error('X')
-                        end
-                    case 'F'
-                        featMap = d{subjInd,sessInd}.featSel.F.cond1v2.F;
-                end
-                FDR = nan(size(P)); FDR(ind) = mafdr(P(ind),'BHFDR',true);
-                curThresh = prctile(featMap(ind),p.discrim.percentile);
-                ind = ind & featMap>=curThresh;
-            otherwise
-                error('X')
-        end
-        info = strjoin({info ['mostDisciminant (>' num2str(p.discrim.percentile) '%ile)']},' & ');
-        thresh = ['p<' num2str(max(P(ind)),'%0.3f') '; fdr<' num2str(max(FDR(ind)),'%0.3f')];
-        threshInfo = strjoin([threshInfo {thresh}],' & ');
-        n = [n nnz(ind)];
-        
-        featSel{subjInd,sessInd}.ind = ind;
-        featSel{subjInd,sessInd}.thresh = threshInfo;
-        featSel{subjInd,sessInd}.n = n;
-        featSel{subjInd,sessInd}.info = info;
-    end
+parfor i = 1:numel(d)
+    featSel{i} = getFeatSel(d{i},p);
 end
-
 
 %% Example plot of trigonometric (polar) representation
 i = 1;
@@ -498,19 +408,169 @@ if verbose
     compareRes(resBS,resWS)
     xlabel('between-session')
     ylabel('within-session')
+    textLine = {};
     if p.norm.doCartSpaceScale
-        textLine1 = [p.svmSpace '; ' dataType];
+        textLine = [textLine {[p.svmSpace '; ' dataType]}];
     else
-        textLine1 = [p.svmSpace '(noCartScale); ' dataType];
+        textLine = [textLine {[p.svmSpace '(noCartScale); ' dataType]}];
     end
-    textLine2 = featSel{1}.info;
-    textLine3 = featSel{1}.thresh;
-    textLine4 = num2str(featSel{1}.n,'%d & ');
-    textLine = [textLine1 newline textLine2 newline textLine3 newline textLine4];
-    textLine(end-1:end) = [];
+    textLine = [textLine {featSel{figOption.subj,1}.info1}];
+    textLine = [textLine {featSel{figOption.subj,1}.info2}];
+    textLine = [textLine {featSel{figOption.subj,1}.info3}];
+    textLine = strjoin(textLine,newline);
     title(textLine);
     uistack(patch([0 0 0.5 0.5 0],[0.5 0 0 0.5 0.5],[1 1 1].*0.7),'bottom')
 end
+
+function [ind2,info] = getFeatInd(featMap,featSelInfo,method,ind,dir)
+switch method
+    case '%ile'
+        thresh = prctile(featMap(ind),featSelInfo.(method));
+        info = ['prctile' dir num2str(featSelInfo.(method))];
+    case 'p'
+    case 'fdr'
+end
+switch dir
+    case '<'
+        ind2 = featMap<=thresh;
+    case '>'
+        ind2 = featMap>=thresh;
+end
+info = [method dir num2str(featSelInfo.(method))];
+
+function featSel = getFeatSel(d,p)
+ind = true(size(d.sin,1),1);
+info1 = {'V1'};
+info2 = {'V1'};
+n = nnz(ind);
+
+%% Non vein voxels
+if p.featSel.vein.doIt
+    featVal = mean(d.featSel.vein.map(:,:),2);
+    switch p.featSel.vein.threshMethod
+        case '%ile'
+            thresh = p.featSel.vein.percentile;
+            curInfo1 = {'veinScore'};
+            curInfo2 = {['%ile<' num2str(thresh)]};
+            thresh = prctile(featVal(ind),thresh);
+            ind = ind & featVal<=thresh;
+        otherwise
+            error('X')
+    end
+    info1 = strjoin([info1 curInfo1],' -> ');
+    info2 = strjoin([info2 curInfo2],' -> ');
+    n = [n nnz(ind)];
+end
+
+%% Activated voxels (fixed-effect sinusoidal fit)
+if p.featSel.act.doIt
+    switch p.featSel.act.threshMethod
+        case 'fdr'
+            P = d.featSel.F.act.p;
+            FDR = nan(size(P)); FDR(ind) = mafdr(P(ind),'BHFDR',true);
+            featVal = FDR;
+            thresh = p.featSel.act.threshVal;
+            curInfo1 = {'act'};
+            curInfo2 = {['FDR<' num2str(thresh)]};
+            ind = ind & featVal<=thresh;
+        otherwise
+            error('X')
+    end
+    info1 = strjoin([info1 curInfo1],' -> ');
+    info2 = strjoin([info2 curInfo2],' -> ');
+    n = [n nnz(ind)];
+end
+if p.featSel.respVectSig.doIt
+    %% Most significant response vectors
+    pTmp = p;
+    pTmp.condPair = 'all';
+    [x,y,~] = getXYK(d,pTmp); clear pTmp
+    %remove condition differences
+    yList = unique(y);
+    xMean = mean(x,1);
+    for i = 1:length(yList)
+        x(y==yList(i),:) = x(y==yList(i),:) - mean(x(y==yList(i),:),1);
+    end
+    x = x + xMean; clear xMean
+    %get stats for H0: vector length=0
+    featVal = nan(size(ind));
+    P = nan(size(ind));
+    voxIndList = find(ind);
+    for voxInd = 1:length(voxIndList)
+        tmp = cat(2,real(x(:,voxIndList(voxInd))),imag(x(:,voxIndList(voxInd))));
+        [~,~,featVal(voxIndList(voxInd)),~,~,~,P(voxIndList(voxInd))] = T2Hot1(tmp);
+    end
+    %threshold
+    switch p.featSel.respVectSig.threshMethod
+        case 'fdr'
+            FDR = nan(size(P)); FDR(ind) = mafdr(P(ind),'BHFDR',true);
+            featVal = FDR;
+            thresh = p.featSel.respVectSig.threshVal;
+            curInfo1 = {'vecSig'};
+            curInfo2 = {['FDR<' num2str(thresh)]};
+            ind = ind & featVal<=thresh;
+        otherwise
+            error('X')
+    end
+    info1 = strjoin([info1 curInfo1],' -> ');
+    info2 = strjoin([info2 curInfo2],' -> ');
+    n = [n nnz(ind)];
+end
+
+%% Most discrimant voxels
+if p.featSel.discrim.doIt
+    featVal = nan(size(ind));
+    P = nan(size(ind));
+    voxIndList = find(ind);
+    [x,y,~] = getXYK(d,p);
+    %             [x,~] = polarSpaceNormalization(x,p.svmSpace);
+    %             [~,~,~,STATS] = ttest(real(x(y==1,ind)),real(x(y==2,ind)));
+    %             featVal(ind) = abs(STATS.tstat);
+    % Get stats for H0: no difference between conditions
+    switch p.svmSpace
+        case {'cart' 'cartNoAmp' 'cartReal' 'cartNoDelay'}
+            for voxInd = 1:length(voxIndList)
+                tmp = cat(1,...
+                    cat(2,real(x(y==1,voxIndList(voxInd))),imag(x(y==1,voxIndList(voxInd)))),...
+                    cat(2,real(x(y==2,voxIndList(voxInd))),imag(x(y==2,voxIndList(voxInd))))...
+                    );
+                stats = T2Hot2d(tmp);
+                featVal(voxIndList(voxInd)) = stats.T2;
+                P(voxIndList(voxInd)) = stats.P;
+            end
+        otherwise
+            error('X')
+    end
+    % Threshold
+    switch p.featSel.discrim.threshMethod
+        case '%ile'
+            thresh = p.featSel.discrim.percentile;
+            curInfo1 = {'discrim'};
+            curInfo2 = {['%ile>' num2str(thresh)]};
+            thresh = prctile(featVal(ind),thresh);
+            ind = ind & featVal>=thresh;
+        case 'fdr'
+            FDR = nan(size(P)); FDR(ind) = mafdr(P(ind),'BHFDR',true);
+            featVal = FDR;
+            thresh = p.featSel.discrim.threshVal;
+            curInfo1 = {'discrim'};
+            curInfo2 = {['FDR<' num2str(thresh)]};
+            ind = ind & featVal<=thresh;
+        otherwise
+            error('X')
+    end
+    info1 = strjoin([info1 curInfo1],' -> ');
+    info2 = strjoin([info2 curInfo2],' -> ');
+    n = [n nnz(ind)];
+end
+
+%% Output
+featSel.ind = ind;
+featSel.info1 = info1;
+featSel.info2 = info2;
+featSel.info3 = strjoin(cellstr(num2str(n'))',' -> ');
+featSel.n = n;
+
 
 
 function [x,y,k] = getXYK(d,p)
@@ -521,10 +581,15 @@ switch p.condPair
         condInd = [1 3];
     case 'grat2VSplaid'
         condInd = [2 3];
+    case 'all'
+        condInd = [1 2 3];
     otherwise
         error('code that')
 end
 % Define x(data), y(label) and k(xValFolds)
+x = cell(size(condInd));
+y = cell(size(condInd));
+k = cell(size(condInd));
 switch p.svmSpace
     case {'hr' 'hrNoAmp'}
         error('double-check that')
@@ -538,19 +603,22 @@ switch p.svmSpace
             'polMag' 'polMag_T'...
             'polDelay'}
         nSamplePair = size(d.sin(:,:,:,:,condInd,:),4);
-        x1 = permute(d.sin(:,:,:,:,condInd(1),:),[4 1 2 3]);
-        x2 = permute(d.sin(:,:,:,:,condInd(2),:),[4 1 2 3]);        
+        for i = 1:length(condInd)
+            x{i} = permute(d.sin(:,:,:,:,condInd(i),:),[4 1 2 3]);
+        end
+%         x1 = permute(d.sin(:,:,:,:,condInd(1),:),[4 1 2 3]);
+%         x2 = permute(d.sin(:,:,:,:,condInd(2),:),[4 1 2 3]);        
     otherwise
         error('X')
 end
-y1 = 1.*ones(nSamplePair,1);
-k1 = (1:nSamplePair)';
-y2 = 2.*ones(nSamplePair,1);
-k2 = (1:nSamplePair)';
+for i = 1:length(condInd)
+    y{i} = i.*ones(nSamplePair,1);
+    k{i} = (1:nSamplePair)';
+end
+x = catcell(1,x);
+y = catcell(1,y);
+k = catcell(1,k);
 
-x = cat(1,x1,x2); clear x1 x2
-y = cat(1,y1,y2); clear y1 y2
-k = cat(1,k1,k2); clear k1 k2
 
 function [x,y,k,t] = getXYK_wave(dP,p,opt)
 % Define x(data), y(label) and k(xValFolds)

@@ -1,4 +1,4 @@
-function [T2Hot1] = T2Hot1(X,alpha)
+function [n,q,T2,F,v1,v2,P] = T2Hot1(X,alpha,mu)
 %Hotelling's T-Squared test for one multivariate sample. 
 %
 %   Syntax: function [T2Hot1] = T2Hot1(X,alpha) 
@@ -81,6 +81,8 @@ function [T2Hot1] = T2Hot1(X,alpha)
 %              3rd. ed. New-Jersey:Prentice Hall. pp. 180-181,199-200.
 %
 
+% Modified by Sebastien Proulx 2021-03-04
+
 if nargin < 1, 
     error('Requires at least one input argument.'); 
 end;
@@ -94,16 +96,13 @@ if (alpha <= 0 | alpha >= 1)
    return;
 end;
 
-[n,p]=size(X);
+[n,q]=size(X);
 
-ask=input('Do you have an expected mean vector? (y/n): ','s');
-if ask=='y'
-   mu=input('Give me the expected mean vector: ');
-else
-   mu=zeros([1,p]);
+if ~exist('mu','var')
+   mu=zeros([1,q]);
 end;
     
-if n <= p,
+if n <= q,
    error('Warning: requires that sample-size (n) must be greater than the number of variables (p).');
    return;
 else
@@ -114,13 +113,13 @@ else
    
    if n >= 50 %Chi-square approximation.    
       X2=T2;
-      v=p; %Degrees of freedom.
+      v=q; %Degrees of freedom.
       P=1-chi2cdf(X2,v); %Probability that null Ho: is true.
       disp(' ')
       fprintf('----------------------------------------------------------------------------\n');
       disp(' Sample-size    Variables      T2          Chi-sqr.         df          P')
       fprintf('----------------------------------------------------------------------------\n');
-      fprintf('%8.i%13.i%15.4f%14.4f%11.i%14.4f\n\n',n,p,T2,X2,v,P);
+      fprintf('%8.i%13.i%15.4f%14.4f%11.i%14.4f\n\n',n,q,T2,X2,v,P);
       fprintf('----------------------------------------------------------------------------\n');
       if P >= alpha;
          disp('Mean vectors results not significant.');
@@ -128,21 +127,21 @@ else
          disp('Mean vectors results significant.');
       end;
    else  %F approximation.
-      F=(n-p)/((n-1)*p)*T2;  
-      v1=p;  %Numerator degrees of freedom.
-      v2=n-p;  %Denominator degrees of freedom.
+      F=(n-q)/((n-1)*q)*T2;  
+      v1=q;  %Numerator degrees of freedom.
+      v2=n-q;  %Denominator degrees of freedom.
       P=1-fcdf(F,v1,v2);  %Probability that null Ho: is true.
-      disp(' ')
-      fprintf('-------------------------------------------------------------------------------------\n');
-      disp(' Sample-size    Variables      T2          F           df1          df2          P')
-      fprintf('-------------------------------------------------------------------------------------\n');
-      fprintf('%8.i%13.i%15.4f%11.4f%9.i%14.i%14.4f\n\n',n,p,T2,F,v1,v2,P);
-      fprintf('-------------------------------------------------------------------------------------\n');
-      if P >= alpha;
-         disp('Mean vectors results not significant.');
-      else
-         disp('Mean vectors results significant.');
-      end;
+%       disp(' ')
+%       fprintf('-------------------------------------------------------------------------------------\n');
+%       disp(' Sample-size    Variables      T2          F           df1          df2          P')
+%       fprintf('-------------------------------------------------------------------------------------\n');
+%       fprintf('%8.i%13.i%15.4f%11.4f%9.i%14.i%14.4f\n\n',n,q,T2,F,v1,v2,P);
+%       fprintf('-------------------------------------------------------------------------------------\n');
+%       if P >= alpha;
+%          disp('Mean vectors results not significant.');
+%       else
+%          disp('Mean vectors results significant.');
+%       end;
    end;
 end;
 
