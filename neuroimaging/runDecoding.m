@@ -99,7 +99,7 @@ d = dP; clear dP
 
 %% Feature selection
 featSel = cell(size(d));
-parfor i = 1:numel(d)
+for i = 1:numel(d)
     featSel{i} = getFeatSel(d{i},p);
 end
 
@@ -414,9 +414,26 @@ if verbose
     else
         textLine = [textLine {[p.svmSpace '(noCartScale); ' dataType]}];
     end
-    textLine = [textLine {featSel{figOption.subj,1}.info1}];
-    textLine = [textLine {featSel{figOption.subj,1}.info2}];
-    textLine = [textLine {featSel{figOption.subj,1}.info3}];
+    
+    
+    textLine = [textLine {strjoin(featSel{figOption.subj,1}.info1,'; ')}];
+    textLine = [textLine {strjoin(featSel{figOption.subj,1}.info2,'; ')}];
+    
+    n = nan([length(featSel{1}.n) size(featSel)]);
+    for sessInd = 1:numel(featSel)
+        n(:,sessInd) = featSel{sessInd}.n;
+    end
+    nMin = min(n(:,:),[],2)';
+    nMin = cellstr(num2str(nMin'))';
+    nMean = round(mean(n(:,:),2)');
+    nMean = cellstr(num2str(nMean'))';
+    nMax = max(n(:,:),[],2)';
+    nMax = cellstr(num2str(nMax'))';
+    
+    textLine = [textLine {['min: ' strjoin(nMin,'; ')]}];
+    textLine = [textLine {['mean: ' strjoin(nMean,'; ')]}];
+    textLine = [textLine {['max: ' strjoin(nMax,'; ')]}];
+    
     textLine = strjoin(textLine,newline);
     title(textLine);
     uistack(patch([0 0 0.5 0.5 0],[0.5 0 0 0.5 0.5],[1 1 1].*0.7),'bottom')
@@ -444,44 +461,73 @@ info1 = {'V1'};
 info2 = {'V1'};
 n = nnz(ind);
 
+allFeatVal = cell(0);
+allFeatDir = cell(0);
+allFeatPerc = cell(0);
+
 %% Non vein voxels
 if p.featSel.vein.doIt
     featVal = mean(d.featSel.vein.map(:,:),2);
-    switch p.featSel.vein.threshMethod
+    thresh = p.featSel.vein;
+    curInfo1 = {'veinScore'};
+    curInfo2 = {thresh.threshMethod};
+    switch thresh.threshMethod
         case '%ile'
-            thresh = p.featSel.vein.percentile;
-            curInfo1 = {'veinScore'};
-            curInfo2 = {['%ile<' num2str(thresh)]};
-            thresh = prctile(featVal(ind),thresh);
-            ind = ind & featVal<=thresh;
+            featVal;
+            thresh = thresh.percentile;
+            curInfo2 = {[curInfo2{1} '<' num2str(thresh)]};
+            
+            ind = ind & featVal<=prctile(featVal(ind),thresh);
+            
+            allFeatVal(end+1) = {featVal};
+            allFeatDir(end+1) = {'<'};
+            allFeatPerc(end+1) = {thresh};
         otherwise
             error('X')
     end
-    info1 = strjoin([info1 curInfo1],' -> ');
-    info2 = strjoin([info2 curInfo2],' -> ');
-    n = [n nnz(ind)];
+    info1(end+1) = curInfo1;
+    info2(end+1) = curInfo2;
+    n(end+1) = nnz(ind);
 end
 
 %% Activated voxels (fixed-effect sinusoidal fit)
 if p.featSel.act.doIt
-    switch p.featSel.act.threshMethod
+    featVal = d.featSel.F.act;
+    thresh = p.featSel.act;
+    curInfo1 = {'act'};
+    curInfo2 = {thresh.threshMethod};
+    switch thresh.threshMethod
         case 'fdr'
-            P = d.featSel.F.act.p;
+            error('double-check that')
+            P = featVal.p;
             FDR = nan(size(P)); FDR(ind) = mafdr(P(ind),'BHFDR',true);
+            
             featVal = FDR;
-            thresh = p.featSel.act.threshVal;
-            curInfo1 = {'act'};
-            curInfo2 = {['FDR<' num2str(thresh)]};
+            thresh = thresh.threshVal;
+            curInfo2 = {[curInfo2{1} num2str(thresh)]};
+            
             ind = ind & featVal<=thresh;
+        case '%ile'
+            featVal = featVal.F;
+            thresh = thresh.percentile;
+            curInfo2 = {[curInfo2{1} '>' num2str(thresh)]};
+            
+            ind = ind & featVal>=prctile(featVal(ind),thresh);
+
+            allFeatVal(end+1) = {featVal};
+            allFeatDir(end+1) = {'>'};
+            allFeatPerc(end+1) = {thresh};
         otherwise
             error('X')
     end
-    info1 = strjoin([info1 curInfo1],' -> ');
-    info2 = strjoin([info2 curInfo2],' -> ');
-    n = [n nnz(ind)];
+    info1(end+1) = curInfo1;
+    info2(end+1) = curInfo2;
+    n(end+1) = nnz(ind);
 end
+
+%% Most significant response vectors
 if p.featSel.respVectSig.doIt
-    %% Most significant response vectors
+    % Compute stats
     pTmp = p;
     pTmp.condPair = 'all';
     [x,y,~] = getXYK(d,pTmp); clear pTmp
@@ -495,33 +541,50 @@ if p.featSel.respVectSig.doIt
     %get stats for H0: vector length=0
     featVal = nan(size(ind));
     P = nan(size(ind));
-    voxIndList = find(ind);
+%     voxIndList = find(ind);
+    voxIndList = 1:length(ind);
     for voxInd = 1:length(voxIndList)
         tmp = cat(2,real(x(:,voxIndList(voxInd))),imag(x(:,voxIndList(voxInd))));
         [~,~,featVal(voxIndList(voxInd)),~,~,~,P(voxIndList(voxInd))] = T2Hot1(tmp);
     end
-    %threshold
-    switch p.featSel.respVectSig.threshMethod
+    thresh = p.featSel.respVectSig;
+    curInfo1 = {'sigVec'};
+    curInfo2 = {thresh.threshMethod};
+    % Threshold
+    switch thresh.threshMethod
         case 'fdr'
+            error('double-check that')
             FDR = nan(size(P)); FDR(ind) = mafdr(P(ind),'BHFDR',true);
             featVal = FDR;
             thresh = p.featSel.respVectSig.threshVal;
             curInfo1 = {'vecSig'};
             curInfo2 = {['FDR<' num2str(thresh)]};
             ind = ind & featVal<=thresh;
+        case '%ile'
+            featVal;
+            thresh = thresh.percentile;
+            curInfo2 = {[curInfo2{1} '>' num2str(thresh)]};
+            
+            ind = ind & featVal>=prctile(featVal(ind),thresh);
+
+            allFeatVal(end+1) = {featVal};
+            allFeatDir(end+1) = {'>'};
+            allFeatPerc(end+1) = {thresh};
         otherwise
             error('X')
     end
-    info1 = strjoin([info1 curInfo1],' -> ');
-    info2 = strjoin([info2 curInfo2],' -> ');
-    n = [n nnz(ind)];
+    info1(end+1) = curInfo1;
+    info2(end+1) = curInfo2;
+    n(end+1) = nnz(ind);
 end
 
 %% Most discrimant voxels
 if p.featSel.discrim.doIt
+    % Compute stats
     featVal = nan(size(ind));
     P = nan(size(ind));
-    voxIndList = find(ind);
+%     voxIndList = find(ind);
+    voxIndList = 1:length(ind);
     [x,y,~] = getXYK(d,p);
     %             [x,~] = polarSpaceNormalization(x,p.svmSpace);
     %             [~,~,~,STATS] = ttest(real(x(y==1,ind)),real(x(y==2,ind)));
@@ -542,14 +605,22 @@ if p.featSel.discrim.doIt
             error('X')
     end
     % Threshold
-    switch p.featSel.discrim.threshMethod
+    thresh = p.featSel.discrim;
+    curInfo1 = {'discrim'};
+    curInfo2 = {thresh.threshMethod};
+    switch thresh.threshMethod
         case '%ile'
-            thresh = p.featSel.discrim.percentile;
-            curInfo1 = {'discrim'};
-            curInfo2 = {['%ile>' num2str(thresh)]};
-            thresh = prctile(featVal(ind),thresh);
-            ind = ind & featVal>=thresh;
+            featVal;
+            thresh = thresh.percentile;
+            curInfo2 = {[curInfo2{1} '>' num2str(thresh)]};
+            
+            ind = ind & featVal>=prctile(featVal(ind),thresh);
+
+            allFeatVal(end+1) = {featVal};
+            allFeatDir(end+1) = {'>'};
+            allFeatPerc(end+1) = {thresh};
         case 'fdr'
+            error('double-check that')
             FDR = nan(size(P)); FDR(ind) = mafdr(P(ind),'BHFDR',true);
             featVal = FDR;
             thresh = p.featSel.discrim.threshVal;
@@ -559,16 +630,229 @@ if p.featSel.discrim.doIt
         otherwise
             error('X')
     end
-    info1 = strjoin([info1 curInfo1],' -> ');
-    info2 = strjoin([info2 curInfo2],' -> ');
-    n = [n nnz(ind)];
+    info1(end+1) = curInfo1;
+    info2(end+1) = curInfo2;
+    n(end+1) = nnz(ind);
 end
+
+
+allFeatVal = catcell(2,allFeatVal);
+x = zscore(-log(allFeatVal(:,1)));
+y = zscore(log(allFeatVal(:,2)));
+z = zscore(log(allFeatVal(:,3)));
+
+
+[fx,x2] = ecdf(x);
+x2 = x2(2:end); fx = fx(2:end);
+[~,b] = ismember(x,x2);
+fx = fx(b); clear x2
+
+[fy,y2] = ecdf(y);
+y2 = y2(2:end); fy = fy(2:end);
+[~,b] = ismember(y,y2);
+fy = fy(b); clear y2
+
+[fz,z2] = ecdf(z);
+z2 = z2(2:end); fz = fz(2:end);
+[~,b] = ismember(z,z2);
+fz = fz(b); clear z2
+
+fyz = fy.*fz;
+fyz = fyz - min(fyz);
+fyz = fyz./max(fyz);
+
+for iii = [10]
+figure('WindowStyle','docked');
+% scatter(x,y,'k.'); hold on
+scatter3(x,y,z,'k.'); hold on
+% ind2 = fyz<prctile(fyz,iii);
+ind2 = fyz<prctile(fyz,iii) | fx<prctile(fx,iii);
+% scatter(x(ind2),y(ind2),'r.'); hold on
+scatter3(x(ind2),y(ind2),z(ind2),'r.'); hold on
+ax = gca;
+ax.CameraPosition = camPos;
+xlabel(['zscore(-log(' info1{1+1} '))'])
+ylabel(['zscore(log(' info1{1+2} '))'])
+% zlabel(['zscore(log(' info1{1+3} '))'])
+end
+% ax = gca;
+% camPos = ax.CameraPosition;
+% 
+% 
+% 
+% [fy,y2] = ecdf(y);
+% y2 = y2(2:end); fy = fy(2:end);
+% [fz,z2] = ecdf(z);
+% z2 = z2(2:end); fz = fz(2:end);
+% x2
+% 
+% 
+% close all
+% delta = 10;
+% [fx,x2] = ecdf(x);
+% x2 = sort(x2);
+% max(abs(sort(x)-x2(2:end)))
+% fx = fx([1:delta:end end]); x2 = x2([1:delta:end end]);
+% [fy,y2] = ecdf(y);
+% fy = fy([1:delta:end end]); y2 = y2([1:delta:end end]);
+% [fz,z2] = ecdf(z);
+% fz = fz([1:delta:end end]); z2 = z2([1:delta:end end]);
+% 
+% figure('WindowStyle','docked');
+% cdf = fx;
+% plot(x2,cdf,'k')
+% 
+% tmp = repmat(nan(size(cdf)),[1 size(cdf,1)]);
+% tmp(:) = cdf(:)*fy';
+% cdf = tmp; clear tmp
+% figure('WindowStyle','docked');
+% imagesc(y2,x2,cdf)
+% colorbar
+% 
+% tmp = repmat(nan(size(cdf)),[1 1 size(cdf,1)]);
+% tmp(:) = cdf(:)*fy';
+% cdf = tmp; clear tmp
+% figure('WindowStyle','docked');
+% imagesc(cdf(:,:,round(1)),[0 1])
+% imagesc(cdf(:,:,round(end*0.2)),[0 1])
+% imagesc(cdf(:,:,round(end*0.4)),[0 1])
+% imagesc(cdf(:,:,round(end*0.6)),[0 1])
+% imagesc(cdf(:,:,round(end*0.8)),[0 1])
+% imagesc(cdf(:,:,round(end*1)),[0 1])
+% 
+% [X2,Y2,Z2] = meshgrid(x2,y2,z2);
+% 
+% 
+% cdf>0.8
+% 
+% 
+% 
+% contour3(cdf)
+% min(cdf(:))
+% max(cdf(:))
+% 
+% imagesc(y2,x2,cdf)
+% 
+% 
+% 
+% 
+% figure('WindowStyle','docked');
+% imagesc(fx*fy')
+% colorbar
+% (fx*fy')*permute(fz,[2 3 1])
+% 
+% figure('WindowStyle','docked');
+% histogram(y)
+% yyaxis right
+% plot(y2,fy); hold on
+% 
+% fx
+% 
+% 
+% 
+% close all
+% shift = [2 2 2];
+% scale = [1 1 1];
+% x = zscore(-log(allFeatVal(:,1)))-shift(1);
+% y = zscore(log(allFeatVal(:,2)))-shift(2);
+% z = zscore(log(allFeatVal(:,3)))-shift(3);
+% for iii = 10:10:90
+% figure('WindowStyle','docked');
+% hScat = scatter3(x,y,z,'k.'); hold on
+% % xyz = mean([x y z].*scale,2);
+% xyz = sqrt(mean(([x y z].*scale).^2,2));
+% ind2 = xyz>prctile(xyz,iii);
+% 
+% hScat = scatter3(x(ind2),y(ind2),z(ind2),'r.'); hold on
+% ax = gca;
+% ax.CameraPosition = camPos;
+% xlabel(['zscore(-log(' info1{1+1} '))'])
+% ylabel(['zscore(log(' info1{1+2} '))'])
+% zlabel(['zscore(log(' info1{1+3} '))'])
+% end
+% camPos = ax.CameraPosition;
+% 
+% 
+% 
+% 
+% allFeatVal = catcell(2,allFeatVal);
+% 
+% for iii = [20 40 60 80]
+% figure('WindowStyle','docked');
+% x = allFeatVal(:,1);
+% y = allFeatVal(:,2);
+% z = allFeatVal(:,3);
+% hScat = scatter3(x,y,z,'k.'); hold on
+% ax = gca; ax.XScale = 'log'; ax.YScale = 'log'; ax.ZScale = 'log';
+% xlabel(info1{1+1})
+% ylabel(info1{1+2})
+% zlabel(info1{1+3})
+% 
+% ind2 = true(size(allFeatVal));
+% ind3 = true(size(allFeatVal));
+% allVal = nan(size(allFeatVal));
+% for i = 1:length(allFeatPerc)
+%     val = allFeatVal(:,i);
+%     thresh = prctile(val,allFeatPerc{i});
+%     ind2(:,i) = eval(['val' allFeatDir{i} '=thresh']);
+%     switch allFeatDir{i}
+%         case '>'
+%             val = sort(allFeatVal(:,i),'ascend');
+%         case '<'
+%             val = sort(allFeatVal(:,i),'descend');
+%     end
+%     [~,val] = ismember(allFeatVal(:,i),val);
+%     val = val./length(val)*100;
+%     allVal(:,i) = val;
+%     ind3(:,i) = val>=20;
+% end
+% % val = mean(allVal.*[1 1 1],2);
+% val = sum(sqrt(allVal.^2),2);
+% [~,val] = ismember(val,sort(val,'descend'));
+% val = val./length(val)*100;
+% ind4 = val<=iii;
+% 
+% % ind4 = all(ind3,2);
+% featInd = 1;
+% x = allFeatVal(~ind4(:,featInd),1);
+% y = allFeatVal(~ind4(:,featInd),2);
+% z = allFeatVal(~ind4(:,featInd),3);
+% hScat = scatter3(x,y,z,'b.');
+% end
+% 
+% 
+% 
+% ind2 = all(ind2,2);
+% x = log(allFeatVal(~ind2,1));
+% y = log(allFeatVal(~ind2,2));
+% z = log(allFeatVal(~ind2,3));
+% hScat = scatter3(x,y,z,'r.');
+% 
+% 
+% 
+% 
+% 
+% figure('WindowStyle','docked');
+% x = log(allFeatVal(:,1));
+% y = log(allFeatVal(:,2));
+% z = log(allFeatVal(:,3));
+% hScat = scatter3(x,y,z,'k.'); hold on
+% xlabel(info1{1+1})
+% ylabel(info1{1+2})
+% zlabel(info1{1+3})
+% 
+% x = log(allFeatVal(~ind,1));
+% y = log(allFeatVal(~ind,2));
+% z = log(allFeatVal(~ind,3));
+% hScat = scatter3(x,y,z,'r.');
+
+
 
 %% Output
 featSel.ind = ind;
 featSel.info1 = info1;
 featSel.info2 = info2;
-featSel.info3 = strjoin(cellstr(num2str(n'))',' -> ');
+featSel.info3 = cellstr(num2str(n'));
 featSel.n = n;
 
 

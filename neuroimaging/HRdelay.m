@@ -9,22 +9,22 @@ verbose = 1; % prints more info
 % Less likely-to-be-vein voxels
 p.featSel.vein.doIt = 1;
 p.featSel.vein.threshMethod = '%ile'; % '%ile' 'p' 'fdr'
-p.featSel.vein.threshVal = 0.001;
+p.featSel.vein.threshVal = 0.01;
 p.featSel.vein.percentile = 80;
 % Most activated voxels
 p.featSel.act.doIt = 1;
-p.featSel.act.threshMethod = 'fdr';
-p.featSel.act.threshVal = 0.001;
+p.featSel.act.threshMethod = '%ile';
+p.featSel.act.threshVal = 0.01;
 p.featSel.act.percentile = 20;
 % Most significant response vectors
-p.featSel.respVectSig.doIt = 1;
-p.featSel.respVectSig.threshMethod = 'fdr';
-p.featSel.respVectSig.threshVal = 0.001;
+p.featSel.respVectSig.doIt = 0;
+p.featSel.respVectSig.threshMethod = '%ile';
+p.featSel.respVectSig.threshVal = 0.01;
 p.featSel.respVectSig.percentile = 20;
 % Most discriminant voxels
 p.featSel.discrim.doIt = 1;
 p.featSel.discrim.threshMethod = '%ile';
-p.featSel.discrim.threshVal = 0.001;
+p.featSel.discrim.threshVal = 0.01;
 p.featSel.discrim.percentile = 20;
 %% Normalization parameters
 p.norm.doCartSpaceScale = 1;
