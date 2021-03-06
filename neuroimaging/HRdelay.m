@@ -6,6 +6,8 @@ addpath(genpath(fullfile(pwd,'matlabFun')));
 verbose = 1; % prints more info
 
 %% Feature selection parameters
+p.featSel.global.doIt = 1;
+p.featSel.global.percentile = 30;
 % Less likely-to-be-vein voxels
 p.featSel.vein.doIt = 1;
 p.featSel.vein.threshMethod = '%ile'; % '%ile' 'p' 'fdr'
@@ -31,6 +33,9 @@ p.norm.doCartSpaceScale = 1;
 %% Display parameters
 figOption.save = 0; % save all figures
 figOption.subj = 1; % subjInd-> plots participants subjInd; +inf-> plots all participant (if verbose==0, will only plot subjInd==1 but still produce and save all the other figures)
+p.figOption.verbose = 1;
+p.figOption.subjInd = figOption.subj;
+p.figOption.sessInd = 1;
 
 if 0
     importData(verbose)

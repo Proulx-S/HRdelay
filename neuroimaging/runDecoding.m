@@ -100,7 +100,11 @@ d = dP; clear dP
 %% Feature selection
 featSel = cell(size(d));
 for i = 1:numel(d)
-    featSel{i} = getFeatSel(d{i},p);
+        [subjInd,sessInd] = ind2sub(size(d),i);
+        featSel{subjInd,sessInd} = getFeatSel(d{subjInd,sessInd},p,subjInd,sessInd);
+%         resBS = [];
+%         resWS = [];
+%         return
 end
 
 %% Example plot of trigonometric (polar) representation
@@ -129,6 +133,8 @@ yHatK = cell(size(d));
 yHatK_tr = cell(size(d));
 Y = cell(size(d));
 K = cell(size(d));
+nOrig = nan(size(d));
+n = nan(size(d));
 
 disp('Within-session SVM cross-validation')
 disp('with between-session feature selection')
@@ -185,6 +191,7 @@ for i = 1:numel(d)
         featSelInd = repmat(featSelInd,[1 12]);
     end
     x = X(:,featSelInd);
+    
     % k-fold training
     if ~strcmp(dataType,'waveTrialSparseRep')
         [svmModelK{i},nrmlzK{i}] = SVMtrain(y,x,p,k);
@@ -197,6 +204,8 @@ for i = 1:numel(d)
     % output
     Y{i} = y;
     K{i} = k;
+    nOrig(i) = length(featSelInd);
+    n(i) = nnz(featSelInd);
 end
 
 
@@ -388,6 +397,10 @@ resWS.subj = resWSsubj;
 resWS.subj.subjList = subjList;
 resWS.group = resWSgroup;
 
+resBS.sess.nVoxOrig = nOrig;
+resWS.sess.nVoxOrig = n;
+resBS.sess.nVox = n;
+resWS.sess.nVox = n;
 
 %% Plot between-session vs within-session
 if verbose
@@ -455,7 +468,7 @@ switch dir
 end
 info = [method dir num2str(featSelInfo.(method))];
 
-function featSel = getFeatSel(d,p)
+function featSel = getFeatSel(d,p,subjInd,sessInd)
 ind = true(size(d.sin,1),1);
 info1 = {'V1'};
 info2 = {'V1'};
@@ -635,227 +648,71 @@ if p.featSel.discrim.doIt
     n(end+1) = nnz(ind);
 end
 
-
-allFeatVal = catcell(2,allFeatVal);
-x = zscore(-log(allFeatVal(:,1)));
-y = zscore(log(allFeatVal(:,2)));
-z = zscore(log(allFeatVal(:,3)));
-
-
-[fx,x2] = ecdf(x);
-x2 = x2(2:end); fx = fx(2:end);
-[~,b] = ismember(x,x2);
-fx = fx(b); clear x2
-
-[fy,y2] = ecdf(y);
-y2 = y2(2:end); fy = fy(2:end);
-[~,b] = ismember(y,y2);
-fy = fy(b); clear y2
-
-[fz,z2] = ecdf(z);
-z2 = z2(2:end); fz = fz(2:end);
-[~,b] = ismember(z,z2);
-fz = fz(b); clear z2
-
-fyz = fy.*fz;
-fyz = fyz - min(fyz);
-fyz = fyz./max(fyz);
-
-for iii = 10:10:90
-figure('WindowStyle','docked');
-% scatter(x,y,'k.'); hold on
-scatter3(x,y,z,'k.'); hold on
-% ind2 = fyz<prctile(fyz,iii);
-ind2 = fyz<prctile(fyz,iii) | fx<prctile(fx,iii);
-% scatter(x(ind2),y(ind2),'r.'); hold on
-scatter3(x(ind2),y(ind2),z(ind2),'r.'); hold on
-% ax = gca;
-% ax.CameraPosition = camPos;
-xlabel(['zscore(-log(' info1{1+1} '))'])
-ylabel(['zscore(log(' info1{1+2} '))'])
-% zlabel(['zscore(log(' info1{1+3} '))'])
+%% Multivariate feature selection
+if p.featSel.global.doIt
+    allFeatVal = catcell(2,allFeatVal);
+    x = zscore(-log(allFeatVal(:,1)));
+    y = zscore(log(allFeatVal(:,2)));
+    z = zscore(log(allFeatVal(:,3)));
+    
+    
+    [fx,x2] = ecdf(x);
+    x2 = x2(2:end); fx = fx(2:end);
+    [~,b] = ismember(x,x2);
+    fx = fx(b); clear x2
+    
+    [fy,y2] = ecdf(y);
+    y2 = y2(2:end); fy = fy(2:end);
+    [~,b] = ismember(y,y2);
+    fy = fy(b); clear y2
+    
+    [fz,z2] = ecdf(z);
+    z2 = z2(2:end); fz = fz(2:end);
+    [~,b] = ismember(z,z2);
+    fz = fz(b); clear z2
+    
+%     fyz = fy.*fz;
+%     fyz = fyz - min(fyz);
+%     fyz = fyz./max(fyz);
+    fxyz = fx.*fy.*fz;
+    fxyz = fxyz - min(fxyz);
+    fxyz = fxyz./max(fxyz);
+    
+    perc = p.featSel.global.percentile;
+%     ind2 = fyz>prctile(fyz,perc) & fx>prctile(fx,perc);
+    ind2 = fxyz>prctile(fxyz,perc) & fx>prctile(fx,perc);
+    
+    if p.figOption.verbose>=1 && subjInd==p.figOption.subjInd && sessInd==p.figOption.sessInd
+        figure('WindowStyle','docked');
+        scatter3(x(ind2),y(ind2),z(ind2),'k.'); hold on
+        scatter3(x(~ind2),y(~ind2),z(~ind2),'r.');
+        % ax = gca;
+        % ax.CameraPosition = camPos;
+        xlabel(['zscore(-log(' info1{1+1} '))'])
+        ylabel(['zscore(log(' info1{1+2} '))'])
+        zlabel(['zscore(log(' info1{1+3} '))'])
+        legend({'include' 'exclude'})
+        % ax = gca; camPos = ax.CameraPosition;
+        % ax = gca; ax.CameraPosition = camPos;
+    end
+    
+    ind = ind2;
+    n = [length(ind) nnz(ind)];
+    n = round(n(2)/n(1)*100);
+    info2 = {''};
+    if p.figOption.verbose>=1 && subjInd==p.figOption.subjInd && sessInd==p.figOption.sessInd
+        title(['perc=' num2str(p.featSel.global.percentile) '; ' num2str(n) '% of V1 included'])
+        drawnow
+    end
 end
-% ax = gca;
-% camPos = ax.CameraPosition;
-% 
-% 
-% 
-% [fy,y2] = ecdf(y);
-% y2 = y2(2:end); fy = fy(2:end);
-% [fz,z2] = ecdf(z);
-% z2 = z2(2:end); fz = fz(2:end);
-% x2
-% 
-% 
-% close all
-% delta = 10;
-% [fx,x2] = ecdf(x);
-% x2 = sort(x2);
-% max(abs(sort(x)-x2(2:end)))
-% fx = fx([1:delta:end end]); x2 = x2([1:delta:end end]);
-% [fy,y2] = ecdf(y);
-% fy = fy([1:delta:end end]); y2 = y2([1:delta:end end]);
-% [fz,z2] = ecdf(z);
-% fz = fz([1:delta:end end]); z2 = z2([1:delta:end end]);
-% 
-% figure('WindowStyle','docked');
-% cdf = fx;
-% plot(x2,cdf,'k')
-% 
-% tmp = repmat(nan(size(cdf)),[1 size(cdf,1)]);
-% tmp(:) = cdf(:)*fy';
-% cdf = tmp; clear tmp
-% figure('WindowStyle','docked');
-% imagesc(y2,x2,cdf)
-% colorbar
-% 
-% tmp = repmat(nan(size(cdf)),[1 1 size(cdf,1)]);
-% tmp(:) = cdf(:)*fy';
-% cdf = tmp; clear tmp
-% figure('WindowStyle','docked');
-% imagesc(cdf(:,:,round(1)),[0 1])
-% imagesc(cdf(:,:,round(end*0.2)),[0 1])
-% imagesc(cdf(:,:,round(end*0.4)),[0 1])
-% imagesc(cdf(:,:,round(end*0.6)),[0 1])
-% imagesc(cdf(:,:,round(end*0.8)),[0 1])
-% imagesc(cdf(:,:,round(end*1)),[0 1])
-% 
-% [X2,Y2,Z2] = meshgrid(x2,y2,z2);
-% 
-% 
-% cdf>0.8
-% 
-% 
-% 
-% contour3(cdf)
-% min(cdf(:))
-% max(cdf(:))
-% 
-% imagesc(y2,x2,cdf)
-% 
-% 
-% 
-% 
-% figure('WindowStyle','docked');
-% imagesc(fx*fy')
-% colorbar
-% (fx*fy')*permute(fz,[2 3 1])
-% 
-% figure('WindowStyle','docked');
-% histogram(y)
-% yyaxis right
-% plot(y2,fy); hold on
-% 
-% fx
-% 
-% 
-% 
-% close all
-% shift = [2 2 2];
-% scale = [1 1 1];
-% x = zscore(-log(allFeatVal(:,1)))-shift(1);
-% y = zscore(log(allFeatVal(:,2)))-shift(2);
-% z = zscore(log(allFeatVal(:,3)))-shift(3);
-% for iii = 10:10:90
-% figure('WindowStyle','docked');
-% hScat = scatter3(x,y,z,'k.'); hold on
-% % xyz = mean([x y z].*scale,2);
-% xyz = sqrt(mean(([x y z].*scale).^2,2));
-% ind2 = xyz>prctile(xyz,iii);
-% 
-% hScat = scatter3(x(ind2),y(ind2),z(ind2),'r.'); hold on
-% ax = gca;
-% ax.CameraPosition = camPos;
-% xlabel(['zscore(-log(' info1{1+1} '))'])
-% ylabel(['zscore(log(' info1{1+2} '))'])
-% zlabel(['zscore(log(' info1{1+3} '))'])
-% end
-% camPos = ax.CameraPosition;
-% 
-% 
-% 
-% 
-% allFeatVal = catcell(2,allFeatVal);
-% 
-% for iii = [20 40 60 80]
-% figure('WindowStyle','docked');
-% x = allFeatVal(:,1);
-% y = allFeatVal(:,2);
-% z = allFeatVal(:,3);
-% hScat = scatter3(x,y,z,'k.'); hold on
-% ax = gca; ax.XScale = 'log'; ax.YScale = 'log'; ax.ZScale = 'log';
-% xlabel(info1{1+1})
-% ylabel(info1{1+2})
-% zlabel(info1{1+3})
-% 
-% ind2 = true(size(allFeatVal));
-% ind3 = true(size(allFeatVal));
-% allVal = nan(size(allFeatVal));
-% for i = 1:length(allFeatPerc)
-%     val = allFeatVal(:,i);
-%     thresh = prctile(val,allFeatPerc{i});
-%     ind2(:,i) = eval(['val' allFeatDir{i} '=thresh']);
-%     switch allFeatDir{i}
-%         case '>'
-%             val = sort(allFeatVal(:,i),'ascend');
-%         case '<'
-%             val = sort(allFeatVal(:,i),'descend');
-%     end
-%     [~,val] = ismember(allFeatVal(:,i),val);
-%     val = val./length(val)*100;
-%     allVal(:,i) = val;
-%     ind3(:,i) = val>=20;
-% end
-% % val = mean(allVal.*[1 1 1],2);
-% val = sum(sqrt(allVal.^2),2);
-% [~,val] = ismember(val,sort(val,'descend'));
-% val = val./length(val)*100;
-% ind4 = val<=iii;
-% 
-% % ind4 = all(ind3,2);
-% featInd = 1;
-% x = allFeatVal(~ind4(:,featInd),1);
-% y = allFeatVal(~ind4(:,featInd),2);
-% z = allFeatVal(~ind4(:,featInd),3);
-% hScat = scatter3(x,y,z,'b.');
-% end
-% 
-% 
-% 
-% ind2 = all(ind2,2);
-% x = log(allFeatVal(~ind2,1));
-% y = log(allFeatVal(~ind2,2));
-% z = log(allFeatVal(~ind2,3));
-% hScat = scatter3(x,y,z,'r.');
-% 
-% 
-% 
-% 
-% 
-% figure('WindowStyle','docked');
-% x = log(allFeatVal(:,1));
-% y = log(allFeatVal(:,2));
-% z = log(allFeatVal(:,3));
-% hScat = scatter3(x,y,z,'k.'); hold on
-% xlabel(info1{1+1})
-% ylabel(info1{1+2})
-% zlabel(info1{1+3})
-% 
-% x = log(allFeatVal(~ind,1));
-% y = log(allFeatVal(~ind,2));
-% z = log(allFeatVal(~ind,3));
-% hScat = scatter3(x,y,z,'r.');
-
-
 
 %% Output
-ind = ind2;
-n = [length(ind) nnz(ind)];
 featSel.ind = ind;
 featSel.info1 = info1;
-featSel.info2 = {''};
+featSel.info2 = info2;
 featSel.info3 = cellstr(num2str(n'));
 featSel.n = n;
+
 
 % featSel.ind = ind;
 % featSel.info1 = info1;
