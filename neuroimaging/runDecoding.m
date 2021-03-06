@@ -661,7 +661,7 @@ fyz = fy.*fz;
 fyz = fyz - min(fyz);
 fyz = fyz./max(fyz);
 
-for iii = [10]
+for iii = 10:10:90
 figure('WindowStyle','docked');
 % scatter(x,y,'k.'); hold on
 scatter3(x,y,z,'k.'); hold on
@@ -669,8 +669,8 @@ scatter3(x,y,z,'k.'); hold on
 ind2 = fyz<prctile(fyz,iii) | fx<prctile(fx,iii);
 % scatter(x(ind2),y(ind2),'r.'); hold on
 scatter3(x(ind2),y(ind2),z(ind2),'r.'); hold on
-ax = gca;
-ax.CameraPosition = camPos;
+% ax = gca;
+% ax.CameraPosition = camPos;
 xlabel(['zscore(-log(' info1{1+1} '))'])
 ylabel(['zscore(log(' info1{1+2} '))'])
 % zlabel(['zscore(log(' info1{1+3} '))'])
@@ -849,11 +849,19 @@ end
 
 
 %% Output
+ind = ind2;
+n = [length(ind) nnz(ind)];
 featSel.ind = ind;
 featSel.info1 = info1;
-featSel.info2 = info2;
+featSel.info2 = {''};
 featSel.info3 = cellstr(num2str(n'));
 featSel.n = n;
+
+% featSel.ind = ind;
+% featSel.info1 = info1;
+% featSel.info2 = info2;
+% featSel.info3 = cellstr(num2str(n'));
+% featSel.n = n;
 
 
 
