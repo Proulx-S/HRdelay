@@ -1,31 +1,12 @@
-function [resBS,resWS] = runDecoding(p,verbose,nPerm,figOption)
+function processFeatSel(p,verbose)
 if ~exist('verbose','var')
     verbose = 1;
 end
-if ~exist('figOption','var') || isempty(figOption)
-    figOption.save = 0;
-    figOption.subj = 1; % 'all' or subjInd
+if ~isfield(p,'figOption') || isempty(p.figOption)
+    p.figOption.verbose = 1;
+    p.figOption.subjInd = 1;
+    p.figOption.sessInd = 1;
 end
-if ~isfield(p,'svmSpace') || isempty(p.svmSpace)
-    p.svmSpace = 'cart'; % 'cart_HTbSess' 'cartNoAmp_HTbSess' 'cartNoDelay_HTbSess'
-    % 'hr' 'hrNoAmp' 'cart' 'cartNoAmp' cartNoAmp_HT 'cartReal', 'cartImag', 'pol', 'polMag' 'polMag_T' or 'polDelay'
-end
-if isstruct(p.svmSpace)
-    doPerm = 1;
-    res = p.svmSpace;
-    p.svmSpace = res.summary.svmSpace;
-    if ~exist('nPerm','var') || isempty(nPerm)
-        nPerm = 100;
-    end
-else
-    doPerm = 0;
-end
-if isfield(p,'dataType') && ~isempty(p.dataType)
-    dataType = p.dataType;
-else
-    dataType = 'sin';
-end
- 
 
 
 %% Define paths
@@ -43,29 +24,6 @@ for tmp = {'repoPath' 'funPath' 'inDir'}
 end
 clear tmp
 
-
-if doPerm
-    error('double-check that')
-    filename = fullfile(pwd,mfilename);
-    filename = fullfile(filename,[p.svmSpace '_' num2str(nPerm) 'perm']);
-    if exist([filename '.mat'],'file')
-        load(filename)
-        if verbose
-            disp('permutation found on disk, skipping')
-            disp('Group results:')
-            disp(['  hit    =' num2str(res.summary.hit) '/' num2str(res.summary.nObs)])
-            disp(['  acc    =' num2str(res.summary.acc*100,'%0.2f%%')])
-            disp(' permutation test stats')
-            disp(['  thresh =' num2str(res.perm.summary.accThresh*100,'%0.2f%%')])
-            disp(['  p      =' num2str(res.perm.summary.p,'%0.3f')])
-        end
-        return
-    else
-        disp(['running ' num2str(nPerm) ' permutations']);
-    end
-end
-
-
 %% Load data
 dAll = cell(size(subjList,1),1);
 for subjInd = 1:size(subjList,2)
@@ -77,10 +35,6 @@ end
 d = dAll; clear dAll
 sessList = fields(d{1});
 
-if verbose
-    disp('---');
-    disp(['SVM space: ' p.svmSpace '; on ' dataType]);
-end
 
 %% Reorganize
 dP = cell(size(d,2),length(sessList));
@@ -94,17 +48,12 @@ end
 d = dP; clear dP
 
 
-% figure('WindowStyle','docked');
-% scatter(dP{1}.discrim_T2,dP{1}.waveDiscrim_T2)
-
 %% Feature selection
 featSel = cell(size(d));
 for i = 1:numel(d)
         [subjInd,sessInd] = ind2sub(size(d),i);
         featSel{subjInd,sessInd} = getFeatSel(d{subjInd,sessInd},p,subjInd,sessInd);
-%         resBS = [];
-%         resWS = [];
-%         return
+        error('define proper output for getFeatSel')
 end
 
 %% Example plot of trigonometric (polar) representation
@@ -469,6 +418,52 @@ end
 info = [method dir num2str(featSelInfo.(method))];
 
 
+
+function [x,y,k] = getXYK(d,p)
+switch p.condPair
+    case 'grat1VSgrat2'
+        condInd = [1 2];
+    case 'grat1VSplaid'
+        condInd = [1 3];
+    case 'grat2VSplaid'
+        condInd = [2 3];
+    case 'all'
+        condInd = [1 2 3];
+    otherwise
+        error('code that')
+end
+% Define x(data), y(label) and k(xValFolds)
+x = cell(size(condInd));
+y = cell(size(condInd));
+k = cell(size(condInd));
+switch p.svmSpace
+    case {'hr' 'hrNoAmp'}
+        error('double-check that')
+        nSamplePair = size(d.hr,1);
+        x1 = d.hr(:,:,1,:); x1 = x1(:,:);
+        x2 = d.hr(:,:,2,:); x2 = x2(:,:);
+    case {'cart' 'cart_HT' 'cart_HTbSess'...
+            'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'...
+            'cartNoDelay' 'cartNoDelay_HT' 'cartNoDelay_HTbSess'...
+            'cartReal' 'cartReal_T'...
+            'polMag' 'polMag_T'...
+            'polDelay'}
+        nSamplePair = size(d.sin(:,:,:,:,condInd,:),4);
+        for i = 1:length(condInd)
+            x{i} = permute(d.sin(:,:,:,:,condInd(i),:),[4 1 2 3]);
+        end
+%         x1 = permute(d.sin(:,:,:,:,condInd(1),:),[4 1 2 3]);
+%         x2 = permute(d.sin(:,:,:,:,condInd(2),:),[4 1 2 3]);        
+    otherwise
+        error('X')
+end
+for i = 1:length(condInd)
+    y{i} = i.*ones(nSamplePair,1);
+    k{i} = (1:nSamplePair)';
+end
+x = catcell(1,x);
+y = catcell(1,y);
+k = catcell(1,k);
 
 
 function [x,y,k,t] = getXYK_wave(dP,p,opt)

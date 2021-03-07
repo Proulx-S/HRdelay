@@ -43,6 +43,7 @@ if 0
     processResponses(figOption,verbose)
     processWaveletResponses(figOption,verbose)
 end
+processFeatSel(p,verbose)
 
 [resBS,resWS] = runAllDecoding(p,figOption,verbose);
 return
