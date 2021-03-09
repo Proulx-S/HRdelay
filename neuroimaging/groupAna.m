@@ -34,24 +34,37 @@ for subjInd = 1:size(subjList,2)
     dAll{subjInd} = res; clear res
 end
 d = dAll; clear dAll
+% load featSel2
+curFile = fullfile(funPath,inDir,'featSel.mat');
+load(curFile,'featSel2');
+for subjInd = 1:size(subjList,2)
+    for sessInd = 1:2
+        sess = ['sess' num2str(sessInd)];
+        d{subjInd}.(sess).featSel2 = featSel2{subjInd,sessInd}; featSel2{subjInd,sessInd} = {};
+    end
+end
+clear featSel2
+
+
 
 x.sin = nan(length(subjList),3,1,2);
 x.hr = nan(length(subjList),3,12,2);
 for subjInd = 1:length(subjList)
     for sessInd = 1:2
-        %% Average voxels
-        % Between-session feature selection
+        %% Average "feature-"selected voxels
         sess = ['sess' num2str(sessInd)];
         sessFeat = ['sess' num2str(~(sessInd-1)+1)];
-        ind = true(size(d{subjInd}.(sess).sin,1),1);
-        % activated voxels
-        ind = ind & d{subjInd}.(sessFeat).featSel.F.act.p < p.act.threshVal;
-        % non vein activated voxels
-        veinMap = mean(d{subjInd}.(sessFeat).featSel.vein.map(:,:),2);
-        ind = ind & veinMap<prctile(veinMap(ind),100-p.vein.percentile);
+        indIn = d{subjInd}.(sessFeat).featSel2.indIn;
         
-        xSin = mean(d{subjInd}.(sess).sin(ind,:,:,:,:,:),1);
-        xHr = mean(d{subjInd}.(sess).hr(ind,:,:,:,:,:),1);
+%         ind = true(size(d{subjInd}.(sess).sin,1),1);
+%         % activated voxels
+%         ind = ind & d{subjInd}.(sessFeat).featSel.F.act.p < p.act.threshVal;
+%         % non vein activated voxels
+%         veinMap = mean(d{subjInd}.(sessFeat).featSel.vein.map(:,:),2);
+%         ind = ind & veinMap<prctile(veinMap(ind),100-p.vein.percentile);
+        
+        xSin = mean(d{subjInd}.(sess).sin(indIn,:,:,:,:,:),1);
+        xHr = mean(d{subjInd}.(sess).hr(indIn,:,:,:,:,:),1);
         
         %% Subtract base from hr
         xHr = xHr - mean(xHr,6);

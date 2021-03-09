@@ -44,10 +44,10 @@ if 0
     processWaveletResponses(figOption,verbose)
     processFeatSel(p,verbose)
 end
+groupAna(p,figOption,verbose)
+return
 
 [resBS,resWS] = runAllDecoding(p,figOption,verbose);
-return
-groupAna(p,figOption,verbose)
 
 
 return
