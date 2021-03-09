@@ -1,4 +1,4 @@
-function featSel = getFeatSel(d,p,subjInd,sessInd)
+function [featSel,featSel2] = getFeatSel(d,p,subjInd,sessInd)
 ind = true(size(d.sin,1),1);
 info1 = {'V1'};
 info2 = {'V1'};
@@ -208,28 +208,28 @@ if p.featSel.global.doIt
 %     ind2 = fyz>prctile(fyz,perc) & fx>prctile(fx,perc);
     ind2 = fxyz>prctile(fxyz,perc) & fx>prctile(fx,perc);
     
-    if p.figOption.verbose>=1 && subjInd==p.figOption.subjInd && sessInd==p.figOption.sessInd
-        figure('WindowStyle','docked');
-        scatter3(x(ind2),y(ind2),z(ind2),'k.'); hold on
-        scatter3(x(~ind2),y(~ind2),z(~ind2),'r.');
-        % ax = gca;
-        % ax.CameraPosition = camPos;
-        xlabel(['zscore(-log(' info1{1+1} '))'])
-        ylabel(['zscore(log(' info1{1+2} '))'])
-        zlabel(['zscore(log(' info1{1+3} '))'])
-        legend({'include' 'exclude'})
-        % ax = gca; camPos = ax.CameraPosition;
-        % ax = gca; ax.CameraPosition = camPos;
-    end
+%     if p.figOption.verbose>=1 && subjInd==p.figOption.subjInd && sessInd==p.figOption.sessInd
+%         figure('WindowStyle','docked');
+%         scatter3(x(ind2),y(ind2),z(ind2),'k.'); hold on
+%         scatter3(x(~ind2),y(~ind2),z(~ind2),'r.');
+%         % ax = gca;
+%         % ax.CameraPosition = camPos;
+%         xlabel(['zscore(-log(' info1{1+1} '))'])
+%         ylabel(['zscore(log(' info1{1+2} '))'])
+%         zlabel(['zscore(log(' info1{1+3} '))'])
+%         legend({'include' 'exclude'})
+%         % ax = gca; camPos = ax.CameraPosition;
+%         % ax = gca; ax.CameraPosition = camPos;
+%     end
     
     ind = ind2;
     n = [length(ind) nnz(ind)];
     n = round(n(2)/n(1)*100);
     info2 = {''};
-    if p.figOption.verbose>=1 && subjInd==p.figOption.subjInd && sessInd==p.figOption.sessInd
-        title(['perc=' num2str(p.featSel.global.percentile) '; ' num2str(n) '% of V1 included'])
-        drawnow
-    end
+%     if p.figOption.verbose>=1 && subjInd==p.figOption.subjInd && sessInd==p.figOption.sessInd
+%         title(['perc=' num2str(p.featSel.global.percentile) '; ' num2str(n) '% of V1 included'])
+%         drawnow
+%     end
 end
 
 %% Output
@@ -239,6 +239,12 @@ featSel.info2 = info2;
 featSel.info3 = cellstr(num2str(n'));
 featSel.n = n;
 
+%% Output2
+featSel2.indIn = ind2;
+featSel2.perc = fxyz;
+featSel2.percAll = allFeatVal;
+featSel2.featLabel = info1(2:end);
+featSel2.info = 'vox X featSel';
 
 % featSel.ind = ind;
 % featSel.info1 = info1;
