@@ -43,12 +43,12 @@ if 0
     processResponses(figOption,verbose)
     processWaveletResponses(figOption,verbose)
     processFeatSel(p,verbose)
+    visualizeFeatSel(p)
 end
-visualizeFeatSel(p)
+[resBS,resWS] = runAllDecoding(p,figOption,verbose);
 return
 groupAna(p,figOption,verbose)
 
-[resBS,resWS] = runAllDecoding(p,figOption,verbose);
 
 
 return

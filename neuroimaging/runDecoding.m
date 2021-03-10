@@ -76,7 +76,8 @@ for subjInd = 1:size(subjList,2)
 end
 d = dAll; clear dAll
 sessList = fields(d{1});
-
+% Load feature slection
+load(fullfile(funPath,inDir,'featSel.mat'));
 if verbose
     disp('---');
     disp(['SVM space: ' p.svmSpace '; on ' dataType]);
@@ -89,6 +90,7 @@ for subjInd = 1:length(d)
         sess = ['sess' num2str(sessInd)];
         dP{subjInd,sessInd} = d{subjInd}.(sessList{sessInd});
         d{subjInd}.(sessList{sessInd}) = [];
+        dP{subjInd,sessInd}.featSel = featSel2{subjInd,sessInd};
     end
 end
 d = dP; clear dP
@@ -97,19 +99,19 @@ d = dP; clear dP
 % figure('WindowStyle','docked');
 % scatter(dP{1}.discrim_T2,dP{1}.waveDiscrim_T2)
 
-%% Feature selection
-featSel = cell(size(d));
-for i = 1:numel(d)
-        [subjInd,sessInd] = ind2sub(size(d),i);
-        featSel{subjInd,sessInd} = getFeatSel(d{subjInd,sessInd},p,subjInd,sessInd);
-%         resBS = [];
-%         resWS = [];
-%         return
-end
+% %% Feature selection
+% featSel = cell(size(d));
+% for i = 1:numel(d)
+%         [subjInd,sessInd] = ind2sub(size(d),i);
+%         featSel{subjInd,sessInd} = getFeatSel(d{subjInd,sessInd},p,subjInd,sessInd);
+% %         resBS = [];
+% %         resWS = [];
+% %         return
+% end
 
 %% Example plot of trigonometric (polar) representation
 i = 1;
-f = plotNorm(d{i},p,featSel{i});
+f = plotNorm(d{i},p,featSel{i},featSel2{i});
 if figOption.save
     error('code that')
     filename = fullfile(pwd,mfilename);
@@ -186,7 +188,7 @@ for i = 1:numel(d)
     end
     
     % cross-session feature selection
-    featSelInd = featSel{subjInd,sessIndCross}.ind;
+    featSelInd = featSel2{subjInd,sessIndCross}.indIn;
     if strcmp(dataType,'waveTrialSparseCat2')
         featSelInd = repmat(featSelInd,[1 12]);
     end
@@ -255,7 +257,7 @@ for i = 1:numel(d)
             error('X')
     end
     % same-session feature-selection
-    featSelInd = featSel{subjInd,trainInd}.ind;
+    featSelInd = featSel2{subjInd,trainInd}.indIn;
     if strcmp(dataType,'waveTrialSparseCat2')
         featSelInd = repmat(featSelInd,[1 12]);
     end
@@ -311,7 +313,7 @@ for i = 1:numel(d)
             error('X')
     end
     % cross-session feature selection
-    featSelInd = featSel{subjInd,trainInd}.ind;
+    featSelInd = featSel2{subjInd,trainInd}.indIn;
     if strcmp(dataType,'waveTrialSparseCat2')
         featSelInd = repmat(featSelInd,[1 12]);
     end
@@ -1027,7 +1029,7 @@ nDim = size(x,2);
 %         error('X')
 % end
 
-function f0 = plotNorm(d,p,featSel)
+function f0 = plotNorm(d,p,featSel,featSel2)
 switch p.dataType
     case 'sin'
         [X,y,~] = getXYK(d,p);
@@ -1046,8 +1048,9 @@ switch p.dataType
     otherwise
         error('X')
 end
-[~,b] = sort(d.featSel.F.act.F(featSel.ind),'descend');
-f0 = plotPolNormExample(X(:,featSel.ind),y,p,b(1));
+featInd = ismember(featSel2.featLabel,'act');
+[~,b] = sort(featSel2.featVal(featSel2.indIn,featInd),'descend');
+f0 = plotPolNormExample(X(:,featSel2.indIn),y,p,b(1));
 % f1 = plotPolNormExampleVox(X,SVMspace,b(1));
 % f2 = plotPolNormExampleRep(X,y,SVMspace,b(1));
 
