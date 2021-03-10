@@ -22,29 +22,43 @@ if exist('cBar','var') && ~isempty(cBar)
     
     switch cBar
         case 'log'
-            i = 0;
-            done = 0;
-            YTicks = [];
-            YTickLabel = [];
-            while ~done
-                YTicks = [YTicks (0:0.1:1)*(10^i)];
-                YTickLabel = [YTickLabel (10^i)];
-                i = i+1;
-                done = YTicks(end)>exp(ax.CLim(2));
+            delta = 0.1;
+            [YTicks,YTickLabel] = logTicks(ax,delta);
+            if length(YTicks)<=2
+                delta = 0.01;
+                [YTicks,YTickLabel] = logTicks(ax,delta);
+                tmp = round(YTicks./delta/10)==YTicks./delta/10;
+                YTickLabel = YTicks(tmp);
             end
-%             imMin = min(hIm.CData(:));
-%             imMax = max(hIm.CData(:));
+            
+%             YTicks = [];
+%             YTickLabel = [];
+%             while ~done
+%                 YTicks = [YTicks (0:0.1:1)*(10^i)];
+%                 YTickLabel = [YTickLabel (10^i)];
+%                 i = i+1;
+%                 done = YTicks(end)>exp(ax.CLim(2));
+%             end
+%             imMin = ax.CLim(1);
+%             imMax = ax.CLim(2);
+%             YTicks = sort(unique(YTicks));
+%             YTicks = YTicks(YTicks>exp(imMin) & YTicks<exp(imMax));
+            
+            
             imMin = ax.CLim(1);
             imMax = ax.CLim(2);
-            YTicks = sort(unique(YTicks));
-            YTicks = YTicks(YTicks>exp(imMin) & YTicks<exp(imMax));
             ax.YTick = interp1([imMin imMax],[1 size(hIm.CData,1)],log(YTicks));
             ax.YTickLabel = cellstr(num2str(YTicks'));
+            
+%             tmp = ax.YTickLabel;
+%             tmp(~tickLabelInd) = {''};
+%             ax.YTickLabel = tmp;
+            
             tmp = ax.YTickLabel;
             tmp(~ismember(YTicks,YTickLabel)) = {''};
             ax.YTickLabel = tmp;
-            ax.YTickLabel(1) = {num2str(YTicks(1))};
-            ax.YTickLabel(end) = {num2str(YTicks(end))};
+%             ax.YTickLabel(1) = {num2str(YTicks(1))};
+%             ax.YTickLabel(end) = {num2str(YTicks(end))};
             ax.TickDir = 'out';
         case 'lin'
             a = cLim./(abs(cLim) .* 10 .^ (-floor(log10(abs(cLim)))));
@@ -67,3 +81,19 @@ if exist('cBar','var') && ~isempty(cBar)
     end
 end
 
+function [YTicks,YTickLabel] = logTicks(ax,delta)
+YTicks = [];
+YTickLabel = [];
+i = 0;
+done = 0;
+while ~done
+    YTicks = [YTicks (0:delta:1)*(10^i)];
+%     YTickLabel = [YTickLabel ((delta*100)^i)];
+    YTickLabel = [YTickLabel (10^i)];
+    i = i+1;
+    done = YTicks(end)>exp(ax.CLim(2));
+end
+imMin = ax.CLim(1);
+imMax = ax.CLim(2);
+YTicks = sort(unique(YTicks));
+YTicks = YTicks(YTicks>exp(imMin) & YTicks<exp(imMax));

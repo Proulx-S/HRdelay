@@ -44,8 +44,9 @@ if 0
     processWaveletResponses(figOption,verbose)
     processFeatSel(p,verbose)
 end
-groupAna(p,figOption,verbose)
+visualizeFeatSel(p)
 return
+groupAna(p,figOption,verbose)
 
 [resBS,resWS] = runAllDecoding(p,figOption,verbose);
 

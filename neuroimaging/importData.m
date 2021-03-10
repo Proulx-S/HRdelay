@@ -104,13 +104,15 @@ for subjInd = 1:length(subjList)
     %% Process for all conditions
     sessionLabel = cell(3,length(files)/3);
     data = cell(3,length(files)/3);
+    data1 = cell(3,length(files)/3);
+    dataMean = cell(3,length(files)/3);
     design = cell(3,length(files)/3);
     extraRegr = cell(3,length(files)/3);
     runInd = nan(3,length(files)/3);
     labelList = [45 135 999];
     condCount = zeros(1,3);
     for cond = 1:3
-        clearvars -except tstart mask cropMask subjInd subjList subjStimList smLevel subj funData_folderIN funData_folderOUT labelDir files label labelList cond sessionLabel data design extraRegr labelList curLabel condCount sessionLabel maskLabel matFun repo funPath anatPath stimPath inDir outDir noMovement runInd figOption verbose
+        clearvars -except tstart mask cropMask subjInd subjList subjStimList smLevel subj funData_folderIN funData_folderOUT labelDir files label labelList cond sessionLabel data design extraRegr labelList curLabel condCount sessionLabel maskLabel matFun repo funPath anatPath stimPath inDir outDir noMovement runInd figOption verbose data1 dataMean
         close all
         curLabel = labelList(cond);
         
@@ -130,6 +132,8 @@ for subjInd = 1:length(subjList)
                 curRun = load_nii(fullfile(funData_folderIN,files{i}));
                 allTr(i) = curRun.original.hdr.dime.pixdim(5);
                 data{curInd1,curInd2} = double(flipdim(permute(curRun.img(:,:,:,(1+nDataPtsToCensor):end),[3 1 2 4]),1));
+                data1{curInd1,curInd2} = data{curInd1,curInd2}(:,:,:,1);
+                dataMean{curInd1,curInd2} = mean(data{curInd1,curInd2},4);
                 %Crop data
                 data{curInd1,curInd2} = data{curInd1,curInd2}(:,:,squeeze(any(any(cropMask,1),2)),:);
                 data{curInd1,curInd2} = data{curInd1,curInd2}(:,squeeze(any(any(cropMask,1),3)),:,:);
@@ -167,14 +171,15 @@ for subjInd = 1:length(subjList)
         fprintf('The sampling rate (TR) is %.6f seconds.\n',tr);
     end
     
-    clearvars -except tstart mask cropMask subjInd smLevel subjStimList subjList subj funData_folderIN funData_folderOUT labelDir data design extraRegr sessionLabel sessModel stimdur tr maskLabel repo funPath anatPath stimPath inDir outDir noMovement runInd figOption verbose
+    clearvars -except tstart mask cropMask subjInd smLevel subjStimList subjList subj funData_folderIN funData_folderOUT labelDir data design extraRegr sessionLabel sessModel stimdur tr maskLabel repo funPath anatPath stimPath inDir outDir noMovement runInd figOption verbose data1 dataMean
     
     
     %% Rorganize data
     d.runInd = runInd';
     d.repLabel = (1:size(d.runInd,1))'*ones(1,size(d.runInd,2));
     d.condLabel = ones(size(d.runInd,1),1)*[1 2 3];
-    d.sessLabel = cell2mat(sessionLabel)';
+    sessionLabel = cell2mat(sessionLabel);
+    d.sessLabel = sessionLabel';
     d.data = data'; clear data
     d.design = design'; clear design
     d.extraRegr = extraRegr'; clear extraRegr
@@ -198,6 +203,8 @@ for subjInd = 1:length(subjList)
     p.tr = 1;
     p.stimDur = stimdur;
     p.doMotion = 0;
+    p.brain.tr1 = cat(4,mean(cat(4,data1{sessionLabel==1}),4),mean(cat(4,data1{sessionLabel==2}),4));
+    p.brain.mean = cat(4,mean(cat(4,dataMean{sessionLabel==1}),4),mean(cat(4,dataMean{sessionLabel==2}),4));
     p.masks.roiMasks.(maskLabel) = logical(mask);
     p.masks.cropMask = logical(cropMask);
     
