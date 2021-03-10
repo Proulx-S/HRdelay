@@ -5,6 +5,7 @@ info2 = {'V1'};
 n = nnz(ind);
 
 allFeatVal = cell(0);
+allFeatP = cell(0);
 allFeatDir = cell(0);
 allFeatPerc = cell(0);
 
@@ -16,6 +17,7 @@ if p.featSel.vein.doIt
     curInfo2 = {thresh.threshMethod};
     switch thresh.threshMethod
         case '%ile'
+            pVal = nan(size(featVal));
             featVal;
             thresh = thresh.percentile;
             curInfo2 = {[curInfo2{1} '<' num2str(thresh)]};
@@ -23,6 +25,7 @@ if p.featSel.vein.doIt
             ind = ind & featVal<=prctile(featVal(ind),thresh);
             
             allFeatVal(end+1) = {featVal};
+            allFeatP(end+1) = {pVal};
             allFeatDir(end+1) = {'<'};
             allFeatPerc(end+1) = {thresh};
         otherwise
@@ -51,6 +54,7 @@ if p.featSel.act.doIt
             
             ind = ind & featVal<=thresh;
         case '%ile'
+            pVal = featVal.p;
             featVal = featVal.F;
             thresh = thresh.percentile;
             curInfo2 = {[curInfo2{1} '>' num2str(thresh)]};
@@ -58,6 +62,7 @@ if p.featSel.act.doIt
             ind = ind & featVal>=prctile(featVal(ind),thresh);
 
             allFeatVal(end+1) = {featVal};
+            allFeatP(end+1) = {pVal};
             allFeatDir(end+1) = {'>'};
             allFeatPerc(end+1) = {thresh};
         otherwise
@@ -104,6 +109,7 @@ if p.featSel.respVectSig.doIt
             curInfo2 = {['FDR<' num2str(thresh)]};
             ind = ind & featVal<=thresh;
         case '%ile'
+            pVal = P;
             featVal;
             thresh = thresh.percentile;
             curInfo2 = {[curInfo2{1} '>' num2str(thresh)]};
@@ -111,6 +117,7 @@ if p.featSel.respVectSig.doIt
             ind = ind & featVal>=prctile(featVal(ind),thresh);
 
             allFeatVal(end+1) = {featVal};
+            allFeatP(end+1) = {pVal};
             allFeatDir(end+1) = {'>'};
             allFeatPerc(end+1) = {thresh};
         otherwise
@@ -149,6 +156,7 @@ if p.featSel.discrim.doIt
     curInfo2 = {thresh.threshMethod};
     switch thresh.threshMethod
         case '%ile'
+            pVal = P;
             featVal;
             thresh = thresh.percentile;
             curInfo2 = {[curInfo2{1} '>' num2str(thresh)]};
@@ -156,6 +164,7 @@ if p.featSel.discrim.doIt
             ind = ind & featVal>=prctile(featVal(ind),thresh);
 
             allFeatVal(end+1) = {featVal};
+            allFeatP(end+1) = {pVal};
             allFeatDir(end+1) = {'>'};
             allFeatPerc(end+1) = {thresh};
         case 'fdr'
@@ -242,7 +251,8 @@ featSel.n = n;
 %% Output2
 featSel2.indIn = ind2;
 featSel2.perc = fxyz;
-featSel2.percAll = allFeatVal;
+featSel2.featVal = allFeatVal;
+featSel2.featP = allFeatP;
 featSel2.featLabel = info1(2:end);
 featSel2.info = 'vox X featSel';
 

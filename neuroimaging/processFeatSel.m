@@ -53,37 +53,11 @@ d = dP; clear dP
 featSel = cell(size(d));
 featSel2 = cell(size(d));
 tic
-parfor i = 1:numel(d)
+for i = 1:numel(d)
         [subjInd,sessInd] = ind2sub(size(d),i);
         [featSel{i},featSel2{i}] = getFeatSel(d{subjInd,sessInd},p,subjInd,sessInd);
 end
 toc
-if p.figOption.verbose>=1
-    subjInd = p.figOption.subjInd;
-    sessInd = p.figOption.sessInd;
-    x = featSel2{subjInd,sessInd}.percAll(:,1);
-    y = featSel2{subjInd,sessInd}.percAll(:,2);
-    z = featSel2{subjInd,sessInd}.percAll(:,3);
-    indIn = featSel2{subjInd,sessInd}.indIn;
-    featLabel = featSel2{subjInd,sessInd}.featLabel;
-    
-    figure('WindowStyle','docked');
-    scatter3(x(indIn),y(indIn),z(indIn),'k.'); hold on
-    scatter3(x(~indIn),y(~indIn),z(~indIn),'r.');
-    % ax = gca;
-    % ax.CameraPosition = camPos;
-    xlabel(['' featLabel{1} ''])
-    ylabel(['' featLabel{2} ''])
-    zlabel(['' featLabel{3} ''])
-    ax = gca;
-    ax.XAxis.Scale = 'log';
-    ax.YAxis.Scale = 'log';
-    ax.ZAxis.Scale = 'log';
-%     xlabel(['zscore(-log(' info1{1+1} '))'])
-%     ylabel(['zscore(log(' info1{1+2} '))'])
-%     zlabel(['zscore(log(' info1{1+3} '))'])
-    legend({'include' 'exclude'})
-end
 
 
 %% Save
