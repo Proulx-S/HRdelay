@@ -6,28 +6,31 @@ addpath(genpath(fullfile(pwd,'matlabFun')));
 verbose = 1; % prints more info
 
 %% Feature selection parameters
-p.featSel.global.doIt = 1;
-p.featSel.global.percentile = 30;
 % Less likely-to-be-vein voxels
 p.featSel.vein.doIt = 1;
 p.featSel.vein.threshMethod = '%ile'; % '%ile' 'p' 'fdr'
 p.featSel.vein.threshVal = 0.01;
-p.featSel.vein.percentile = 80;
+p.featSel.vein.percentile = 20;
 % Most activated voxels
 p.featSel.act.doIt = 1;
-p.featSel.act.threshMethod = '%ile';
-p.featSel.act.threshVal = 0.01;
+p.featSel.act.threshMethod = 'fdr'; % '%ile' 'p' 'fdr'
+p.featSel.act.threshVal = 0.05;
 p.featSel.act.percentile = 20;
 % Most significant response vectors
-p.featSel.respVectSig.doIt = 0;
-p.featSel.respVectSig.threshMethod = '%ile';
-p.featSel.respVectSig.threshVal = 0.01;
-p.featSel.respVectSig.percentile = 20;
+p.featSel.respVecSig.doIt = 1;
+p.featSel.respVecSig.threshMethod = 'fdr'; % '%ile' 'p' 'fdr'
+p.featSel.respVecSig.threshVal = 0.05;
+p.featSel.respVecSig.percentile = 20;
 % Most discriminant voxels
 p.featSel.discrim.doIt = 1;
-p.featSel.discrim.threshMethod = '%ile';
-p.featSel.discrim.threshVal = 0.01;
+p.featSel.discrim.threshMethod = '%ile'; % '%ile' 'p' 'fdr'
+p.featSel.discrim.threshVal = 0.03;
 p.featSel.discrim.percentile = 20;
+% Feature Combination
+p.featSel.global.doIt = 1;
+p.featSel.global.method = 'all';
+% p.featSel.global.percentile = 30;
+
 %% Normalization parameters
 p.norm.doCartSpaceScale = 1;
 %% Display parameters
@@ -42,9 +45,9 @@ if 0
     applyAreaMask(figOption)
     processResponses(figOption,verbose)
     processWaveletResponses(figOption,verbose)
-    processFeatSel(p,verbose)
-    visualizeFeatSel(p)
 end
+processFeatSel(p,verbose)
+visualizeFeatSel(p)
 [resBS,resWS] = runAllDecoding(p,figOption,verbose);
 return
 groupAna(p,figOption,verbose)
