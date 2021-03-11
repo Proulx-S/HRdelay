@@ -38,7 +38,7 @@ load(fullfile(funPath,inDir,'featSel.mat'));
 
 
 
-pAll
+pAll{1}
 featSel{1}
 featSel2{1}
 
@@ -48,11 +48,15 @@ brain = pAll{subjInd}.brain.mean(:,:,:,sessInd);
 v1 = pAll{subjInd}.masks.roiMasks.v1;
 featSelIn = false(size(brain));
 featSelIn(pAll{subjInd}.masks.roiMasks.v1) = featSel2{subjInd,sessInd}.indIn;
-featSelVal = nan([size(featSel2{subjInd,sessInd}.featVal,2) size(brain)]);
-featSelValThresholded = nan([size(featSel2{subjInd,sessInd}.featVal,2) size(brain)]);
-for i = 1:size(featSel2{subjInd,sessInd}.featVal,2)
-    featSelVal(i,pAll{subjInd}.masks.roiMasks.v1) = featSel2{subjInd,sessInd}.featVal(:,i);
-    featSelValThresholded(i,pAll{subjInd}.masks.roiMasks.v1) = featSel2{subjInd,sessInd}.featVal(:,i);
+featSelVal = nan([size(featSel2{subjInd,sessInd}.featSeq.featVal,2) size(brain)]);
+featSelValThresholded = nan([size(featSel2{subjInd,sessInd}.featSeq.featVal,2) size(brain)]);
+featInfo = featSel2{subjInd,sessInd}.featSeq.featInfo;
+featLabel = cell(size(featInfo));
+for i = 1:size(featInfo,2)
+    tmp = strsplit(featInfo{i},': ');
+    featLabel(i) = tmp(1);
+    featSelVal(i,pAll{subjInd}.masks.roiMasks.v1) = featSel2{subjInd,sessInd}.featSeq.featVal(:,i);
+    featSelValThresholded(i,pAll{subjInd}.masks.roiMasks.v1) = featSel2{subjInd,sessInd}.featSeq.featVal(:,i);
     featSelValThresholded(i,~featSelIn) = nan;
 end
 featSelVal = permute(featSelVal,[2 3 4 1]);
@@ -89,28 +93,37 @@ axBak = plotIm(axes,brain(:,:,slice));
 title('BOLD image (1 TR)')
 
 % Unthresholded maps
-doIt = true(size(featSel2{subjInd,sessInd}.featLabel));
-doIt(3) = false;
-for featInd = 1:size(featSel2{subjInd,sessInd}.featLabel,2)
+doIt = true(size(featInfo));
+% doIt(3) = false;
+for featInd = 1:size(featInfo,2)
     if doIt(featInd)
         f{end+1} = figure('WindowStyle','docked','color','w','visible',visibility);
         axBak = plotIm(axes,brain(:,:,slice));
         im = featSelVal(:,:,slice,featInd);
-        switch featSel2{subjInd,sessInd}.featLabel{featInd}
-            case 'veinScore'
-                ylabel({'Vein score' 'BOLD var / BOLD mean'})
+        switch featLabel{featInd}
+            case 'vein'
+                yLabel = {'Vein score' '(BOLD var / BOLD mean)'};
                 cMap = cMap_vein;
                 scale = 'log';
-                im = log(im);
             case 'act'
-                ylabel('Activation Level (F value)');
+                yLabel = {'Activation' 'Level (F value)'};
                 cMap = cMap_F;
                 scale = 'log';
-                im = log(im);
-            case 'discrim'
-                ylabel('Discriminativeness (Hotelling''s T^2)');
+            case 'respVecSig'
+                yLabel = {'Response Vector Strength' '(Hotelling''s T^2)'};
                 cMap = cMap_F;
-                scale = 'lin';
+                scale = 'log';
+            case 'discrim'
+                yLabel = {'Response Vector Stimulus Preference' '(Hotelling''s T^2)'};
+                cMap = cMap_F;
+                scale = 'log';
+            otherwise
+                error('X')
+        end
+        switch scale
+            case 'lin'
+            case 'log'
+                im = log(im);
             otherwise
                 error('X')
         end
@@ -120,32 +133,41 @@ for featInd = 1:size(featSel2{subjInd,sessInd}.featLabel,2)
         axOver = plotIm(axes,im,cLim);
         alphaData = ~isnan(im);
         makeOverlay(axBak,axOver,alphaData,cMap,scale,cLim)
+        ylabel(yLabel);
     end
 end
 
 % Thresholded maps
-doIt = false(size(featSel2{subjInd,sessInd}.featLabel));
-doIt(2) = true;
-for featInd = 1:size(featSel2{subjInd,sessInd}.featLabel,2)
+doIt = true(size(featInfo));
+% doIt(2) = true;
+for featInd = 1:size(featInfo,2)
     if doIt(featInd)
         f{end+1} = figure('WindowStyle','docked','color','w','visible',visibility);
         axBak = plotIm(axes,brain(:,:,slice));
         im = featSelValThresholded(:,:,slice,featInd);
-        switch featSel2{subjInd,sessInd}.featLabel{featInd}
-            case 'veinScore'
-                ylabel({'Thresholded Vein score' 'BOLD var / BOLD mean'})
+        switch featLabel{featInd}
+            case 'vein'
+                yLabel = {'Thresholded Vein score' 'BOLD var / BOLD mean'};
                 cMap = cMap_vein;
                 scale = 'log';
-                im = log(im);
             case 'act'
-                ylabel({'Thresholded Activation Level' '(F value)'});
+                yLabel = {'Thresholded Activation Level' '(F value)'};
                 cMap = cMap_F;
                 scale = 'log';
-                im = log(im);
-            case 'discrim'
-                ylabel({'Thresholded Discriminativeness' '(Hotelling''s T^2)'});
+            case 'respVecSig'
+                yLabel = {'Thresholded Response Vector Strength' '(Hotelling''s T^2)'};
                 cMap = cMap_F;
-                scale = 'lin';
+                scale = 'log';
+            case 'discrim'
+                yLabel = {'Thresholded Discriminativeness' '(Hotelling''s T^2)'};
+                cMap = cMap_F;
+            otherwise
+                error('X')
+        end
+        switch scale
+            case 'lin'
+            case 'log'
+                im = log(im);
             otherwise
                 error('X')
         end
@@ -155,22 +177,57 @@ for featInd = 1:size(featSel2{subjInd,sessInd}.featLabel,2)
         axOver = plotIm(axes,im,cLim);
         alphaData = ~isnan(im);
         makeOverlay(axBak,axOver,alphaData,cMap,scale,cLim)
+        ylabel(yLabel)
     end
 end
 
 
 % Histograms
-doIt = true(size(featSel2{subjInd,sessInd}.featLabel));
-for featInd = 1:size(featSel2{subjInd,sessInd}.featLabel,2)
+doIt = true(size(featInfo));
+for featInd = 1:size(featInfo,2)
     if doIt(featInd)
+        thresh = p.featSel.(featLabel{featInd});
+        switch featLabel{featInd}
+            case 'vein'
+                xLabel = {'Vein score' 'log( BOLD var / BOLD mean )'};
+                qtile = 1-thresh.percentile/100;
+                scale = 'log';
+%                 xlabel({'Vein score' 'BOLD var / BOLD mean'})
+            case 'act'
+                xLabel = {'Activation Level' 'log(F value)'};
+                qtile = thresh.percentile/100;
+                scale = 'log';
+            case 'respVecSig'
+                xLabel = {'Response Vector Strenght' '(Hotelling''s T^2)'};
+                qtile = thresh.percentile/100;
+                scale = 'log';
+            case 'discrim'
+                xLabel = {'Discriminativeness' '(Hotelling''s T^2)'};
+                qtile = thresh.percentile/100;
+                scale = 'log';
+            otherwise
+                error('X')
+        end
         f{end+1} = figure('WindowStyle','docked','color','w','visible',visibility);
-        tmp = log(featSelVal(:,:,:,featInd));
+        tmp = featSelVal(:,:,:,featInd);
+        switch scale
+            case 'log'
+                tmp = log(tmp);
+            case 'lin'
+            otherwise
+                error('X')
+        end
         [N,edges] = histcounts(tmp(v1));
         Nout = histcounts(tmp(v1 & ~featSelIn),edges);
         Nin = histcounts(tmp(v1 & featSelIn),edges);
         ctrs = (edges(1:end-1)+edges(2:end))/2; % Calculate the bin centers
-        bar(ctrs, [Nout' Nin'],'stacked','FaceAlpha',0.6); hold on
-        legend({'exlcuded voxels' 'included voxels'},'box','off');
+        hBar = bar(ctrs, [Nin' Nout'],1,'stacked','FaceAlpha',0.6); hold on
+        hBar(1).FaceColor = 'w';
+        hBar(1).EdgeColor = 'none';
+        hBar(2).FaceColor = 'r';
+        hBar(2).EdgeColor = 'none';
+        stairs(ctrs-mode(diff(edges)/2),Nin,'k')
+        
         ax = gca;
         ax.Box = 'off';
 %         delta = diff(exp(edges([1 end])));
@@ -180,20 +237,82 @@ for featInd = 1:size(featSel2{subjInd,sessInd}.featLabel,2)
 %         XTickLabel = cellstr(ax.XTickLabel);
 %         XTickLabel(~ismember(ax.XTick,log(floor(exp(edges(1))./delta):delta:ceil(exp(edges(1))./delta)))) = {''};
 %         ax.XTickLabel = XTickLabel;
-        ax.TickDir = 'out';
-        switch featSel2{subjInd,sessInd}.featLabel{featInd}
-            case 'veinScore'
-                xlabel({'Vein score' 'BOLD var / BOLD mean'})
-            case 'act'
-                xlabel({'Activation Level' 'log(F value)'});
-%                 max(featSel2{subjInd,sessInd}.featP{featInd}(featSel2{subjInd,sessInd}.indIn))
-                [~,b] = min(abs(featSel2{subjInd,sessInd}.featP{featInd}-0.05));
-                tmpF = log(featSel2{subjInd,sessInd}.featVal(b,featInd));
-                plot([1 1].*tmpF,ylim,'k')
-            case 'discrim'
-                xlabel({'Discriminativeness' '(Hotelling''s T^2)'});
+        
+        featVals = featSel2{subjInd,sessInd}.featSeq.featVal(:,featInd);
+        qtiles = featSel2{subjInd,sessInd}.featSeq.featQtile(:,featInd);
+        ps = featSel2{subjInd,sessInd}.featSeq.featP(:,featInd);
+        fdrs = nan(size(ps));
+        fdrInds = featSel2{subjInd,sessInd}.featSeq.featFdrInd(:,featInd);
+        switch thresh.threshMethod
+            case '%ile'
+                featVal = interp1(qtiles,featVals,qtile);
+            case 'p'
+                featVal = interp1(ps,featVals,thresh.threshVal);
+            case 'fdr'
+                fdrs(fdrInds) = mafdr(ps(fdrInds),'BHFDR',true);
+                [~,b] = sort(abs(fdrs-thresh.threshVal));
+                featVal = mean(featVals(b(1:2)));
             otherwise
                 error('X')
+        end
+        switch scale
+            case 'log'
+                featVal = log(featVal);
+            case 'lin'
+        end
+        hThresh = plot([1 1].*featVal,ylim,':k');
+        switch thresh.threshMethod
+            case {'p' 'fdr'}
+                legend([hBar hThresh],{'included voxels' 'exlcuded voxels' [thresh.threshMethod '=' num2str(thresh.threshVal)]},'box','off');
+            case '%ile'
+                legend([hBar hThresh],{'included voxels' 'exlcuded voxels' [thresh.threshMethod '=' num2str(thresh.percentile)]},'box','off');
+            otherwise
+                error('X')
+        end
+        ax.TickDir = 'out';
+        xlabel(xLabel)
+        
+        
+        
+        
+        if 0
+            switch featLabel{featInd}
+                case 'vein'
+                    switch thresh.threshMethod
+                        case '%ile'
+                            featVals = featSel2{subjInd,sessInd}.featSeq.featVal(:,featInd);
+                            qtiles = featSel2{subjInd,sessInd}.featSeq.featQtile(:,featInd);
+                            featVal = interp1(qtiles,featVals,qtile);
+                            switch scale
+                                case 'log'
+                                    featVal = log(featVal);
+                                case 'lin'
+                            end
+                            plot([1 1].*featVal,ylim,'r');
+                        case 'p'
+                            error('code that')
+                        case 'fdr'
+                            error('code that')
+                        otherwise
+                            error('X')
+                    end
+                case 'act'
+                    xlabel({'Activation Level' 'log(F value)'});
+                    %                 max(featSel2{subjInd,sessInd}.featP{featInd}(featSel2{subjInd,sessInd}.indIn))
+                    [~,b] = min(abs(featSel2{subjInd,sessInd}.featP{featInd}-0.05));
+                    tmpF = log(featSel2{subjInd,sessInd}.featVal(b,featInd));
+                    plot([1 1].*tmpF,ylim,'k')
+                case 'respVecSig'
+                    xlabel({'Response Vector Strenght' '(Hotelling''s T^2)'});
+                    %                 max(featSel2{subjInd,sessInd}.featP{featInd}(featSel2{subjInd,sessInd}.indIn))
+                    [~,b] = min(abs(featSel2{subjInd,sessInd}.featP{featInd}-0.05));
+                    tmpF = log(featSel2{subjInd,sessInd}.featVal(b,featInd));
+                    plot([1 1].*tmpF,ylim,'k')
+                case 'discrim'
+                    xlabel({'Discriminativeness' '(Hotelling''s T^2)'});
+                otherwise
+                    error('X')
+            end
         end
     end
 end
@@ -238,7 +357,7 @@ end
 % % Activation overlay
 % f{end+1} = figure('WindowStyle','docked','color','w','visible',visibility);
 % axBak = plotIm(axes,brain(:,:,slice));
-% featInd = ismember(featSel2{subjInd,sessInd}.featLabel,'act');
+% featInd = ismember(featInfo,'act');
 % im = featSelVal(:,:,slice,featInd);
 % % im = featSel.(sess).anyCondActivation_F(:,:,slice);
 % im = log(im);
@@ -314,7 +433,7 @@ end
 % % Vein overlay
 % f{end+1} = figure('WindowStyle','docked','color','w','visible',visibility);
 % axBak = plotIm(axes,brain(:,:,slice));
-% featInd = ismember(featSel2{subjInd,sessInd}.featLabel,'veinScore');
+% featInd = ismember(featInfo,'veinScore');
 % im = log(featSelVal(:,:,slice,featInd));
 % axOver = plotIm(axes,im);
 % alphaData = v1(:,:,slice);
@@ -369,7 +488,7 @@ end
 % y = featSel2{subjInd,sessInd}.featVal(:,2);
 % z = featSel2{subjInd,sessInd}.featVal(:,3);
 % indIn = featSel2{subjInd,sessInd}.indIn;
-% featLabel = featSel2{subjInd,sessInd}.featLabel;
+% featLabel = featInfo;
 % 
 % figure('WindowStyle','docked');
 % scatter3(x(indIn),y(indIn),z(indIn),'k.'); hold on

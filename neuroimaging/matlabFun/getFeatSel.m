@@ -7,6 +7,7 @@ n = nnz(ind);
 
 allFeatVal = cell(0);
 allFeatP = cell(0);
+allFeatFdrInd = cell(0);
 allFeatMethod = cell(0);
 allFeatIndIn = cell(0);
 % allFeatVal = cell(0);
@@ -28,11 +29,13 @@ if p.featSel.vein.doIt
             curThresh = 100-thresh.percentile;
             curInfo2 = {[curInfo2{1} '<' num2str(curThresh)]};
             
+            fdrInd = false(size(featVal));
             curIndIn = featVal<=prctile(featVal(ind),curThresh);
             ind = ind & curIndIn;
             
             allFeatVal(end+1) = {featVal};
             allFeatP(end+1) = {pVal};
+            allFeatFdrInd(end+1) = {fdrInd};
             allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
             allFeatIndIn(end+1) = {curIndIn};
             
@@ -64,9 +67,11 @@ if p.featSel.act.doIt
             
             if strcmp(thresh.threshMethod,'fdr')
                 fdr = nan(size(pVal));
-                fdr(ind) = mafdr(pVal(ind),'BHFDR',true);
+                fdrInd = ind;
+                fdr(fdrInd) = mafdr(pVal(fdrInd),'BHFDR',true);
                 curIndIn = fdr<=curThresh;
             else
+                fdrInd = false(size(featVal));
                 curIndIn = pVal<=curThresh;
             end
             ind = ind & curIndIn;
@@ -79,6 +84,7 @@ if p.featSel.act.doIt
             curThresh = thresh.percentile;
             curInfo2 = {[curInfo2{1} '>' num2str(curThresh)]};
             
+            fdrInd = false(size(featVal));
             curIndIn = featVal>=prctile(featVal(ind),curThresh);
             ind = ind & curIndIn;
 
@@ -92,6 +98,7 @@ if p.featSel.act.doIt
     end
     allFeatVal(end+1) = {featVal};
     allFeatP(end+1) = {pVal};
+    allFeatFdrInd(end+1) = {fdrInd};
     allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
     allFeatIndIn(end+1) = {curIndIn};
 
@@ -137,9 +144,11 @@ if p.featSel.respVecSig.doIt
             
             if strcmp(thresh.threshMethod,'fdr')
                 fdr = nan(size(pVal));
-                fdr(ind) = mafdr(pVal(ind),'BHFDR',true);
+                fdrInd = ind;
+                fdr(fdrInd) = mafdr(pVal(fdrInd),'BHFDR',true);
                 curIndIn = fdr<=curThresh;
             else
+                fdrInd = false(size(featVal));
                 curIndIn = pVal<=curThresh;
             end
             ind = ind & curIndIn;
@@ -149,9 +158,10 @@ if p.featSel.respVecSig.doIt
         case '%ile'
             pVal;
             featVal;
-            thresh = thresh.percentile;
+            curThresh = thresh.percentile;
             curInfo2 = {[curInfo2{1} '>' num2str(curThresh)]};
             
+            fdrInd = false(size(featVal));
             curIndIn = featVal>=prctile(featVal(ind),curThresh);
             ind = ind & curIndIn;
 
@@ -166,6 +176,7 @@ if p.featSel.respVecSig.doIt
     end
     allFeatVal(end+1) = {featVal};
     allFeatP(end+1) = {pVal};
+    allFeatFdrInd(end+1) = {fdrInd};
     allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
     allFeatIndIn(end+1) = {curIndIn};
     
@@ -211,9 +222,11 @@ if p.featSel.discrim.doIt
             
             if strcmp(thresh.threshMethod,'fdr')
                 fdr = nan(size(pVal));
-                fdr(ind) = mafdr(pVal(ind),'BHFDR',true);
+                fdrInd = ind;
+                fdr(fdrInd) = mafdr(pVal(fdrInd),'BHFDR',true);
                 curIndIn = fdr<=curThresh;
             else
+                fdrInd = false(size(featVal));
                 curIndIn = pVal<=curThresh;
             end
             ind = ind & curIndIn;
@@ -223,9 +236,10 @@ if p.featSel.discrim.doIt
         case '%ile'
             pVal;
             featVal;
-            thresh = thresh.percentile;
+            curThresh = thresh.percentile;
             curInfo2 = {[curInfo2{1} '>' num2str(curThresh)]};
             
+            fdrInd = false(size(featVal));
             curIndIn = featVal>=prctile(featVal(ind),curThresh);
             ind = ind & curIndIn;
 
@@ -240,6 +254,7 @@ if p.featSel.discrim.doIt
     end
     allFeatVal(end+1) = {featVal};
     allFeatP(end+1) = {pVal};
+    allFeatFdrInd(end+1) = {fdrInd};
     allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
     allFeatIndIn(end+1) = {curIndIn};
     
@@ -252,18 +267,27 @@ end
 if p.featSel.global.doIt
     featSel2.featSeq.featVal = catcell(2,allFeatVal);
     featSel2.featSeq.featP = catcell(2,allFeatP);
-    featSel2.featSeq.featInfo = allFeatMethod;
+    featSel2.featSeq.featFdrInd = catcell(2,allFeatFdrInd);
+    featSel2.featSeq.featQtile = nan(size(featSel2.featSeq.featVal));
     featSel2.featSeq.featIndIn = catcell(2,allFeatIndIn);
+    featSel2.featSeq.featInfo = allFeatMethod;
     featSel2.featSeq.info = 'vox X featSel';
     
     switch p.featSel.global.method
         case 'all'
             indIn = all(featSel2.featSeq.featIndIn,2);
+            for featInd = 1:size(featSel2.featSeq.featVal,2)
+                x = featSel2.featSeq.featVal(:,featInd);
+                [fx,x2] = ecdf(x);
+                x2 = x2(2:end); fx = fx(2:end);
+                [~,b] = ismember(x,x2);
+                featSel2.featSeq.featQtile(:,featInd) = fx(b); clear x2 x
+            end
+            
             
             %% Output2
             featSel2.indIn = indIn;
             featSel2.info = 'vox X featSel';
-            featSel2.featSeq = featSel2;
         otherwise
             error('code that')
             

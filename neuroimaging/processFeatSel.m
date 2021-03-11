@@ -52,12 +52,10 @@ d = dP; clear dP
 %% Feature selection
 featSel = cell(size(d));
 featSel2 = cell(size(d));
-tic
 for i = 1:numel(d)
         [subjInd,sessInd] = ind2sub(size(d),i);
         [featSel{i},featSel2{i}] = getFeatSel(d{subjInd,sessInd},p,subjInd,sessInd);
 end
-toc
 
 
 %% Save
