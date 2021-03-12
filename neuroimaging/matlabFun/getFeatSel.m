@@ -1,4 +1,4 @@
-function [featSel,featSel2] = getFeatSel(d,p,subjInd,sessInd)
+function [featSel,featSel2] = getFeatSel(d,p,condPair)
 ind = true(size(d.sin,1),1);
 info1 = {'V1'};
 info2 = {'V1'};
@@ -9,6 +9,7 @@ allFeatVal = cell(0);
 allFeatP = cell(0);
 allFeatFdrInd = cell(0);
 allFeatMethod = cell(0);
+% allFeatCondPair = cell(0);
 allFeatIndIn = cell(0);
 % allFeatVal = cell(0);
 % allFeatP = cell(0);
@@ -188,106 +189,123 @@ end
 %% Most discrimant voxels
 if p.featSel.discrim.doIt
     curInfo1 = {'discrim'};
-    % Compute stats
-    featVal = nan(size(ind));
-    pVal = nan(size(ind));
-%     voxIndList = find(ind);
-    voxIndList = 1:length(ind);
-    [x,y,k] = getXYK(d,p);
-    %             [x,~] = polarSpaceNormalization(x,p.svmSpace);
-    
-    %             [~,~,~,STATS] = ttest(real(x(y==1,ind)),real(x(y==2,ind)));
-    %             featVal(ind) = abs(STATS.tstat);
-    % Get stats for H0: no difference between conditions
-    for voxInd = 1:length(voxIndList)
-        tmp = cat(1,...
-            cat(2,real(x(y==1,voxIndList(voxInd))),imag(x(y==1,voxIndList(voxInd)))),...
-            cat(2,real(x(y==2,voxIndList(voxInd))),imag(x(y==2,voxIndList(voxInd))))...
-            );
-        stats = T2Hot2d(tmp);
-        featVal(voxIndList(voxInd)) = stats.T2;
-        pVal(voxIndList(voxInd)) = stats.P;
-    end
-    
-    % Threshold
-    featVal;
-    thresh = p.featSel.(char(curInfo1));
-    curInfo2 = {thresh.threshMethod};
-    switch thresh.threshMethod
-        case {'p' 'fdr'}
-            pVal;
-            featVal;
-            curThresh = thresh.threshVal;
-            curInfo2 = {[curInfo2{1} '<' num2str(curThresh)]};
-            
-            if strcmp(thresh.threshMethod,'fdr')
-                fdr = nan(size(pVal));
-                fdrInd = ind;
-                fdr(fdrInd) = mafdr(pVal(fdrInd),'BHFDR',true);
-                curIndIn = fdr<=curThresh;
-            else
+    condIndPairList = [{[1 2]} {[1 3]} {[2 3]} {[1 2 3]}];
+    curFeatVal = nan(size(ind,1),1,length(condIndPairList));
+    curFeatP = nan(size(ind,1),1,length(condIndPairList));
+    curFeatFdrInd = false(size(ind,1),1,length(condIndPairList));
+%     curFeatMethod = cell(1,1,length(condIndPairList));
+%     curFeatCondPair = cell(1,1,length(condIndPairList));
+    curFeatIndIn = false(size(ind,1),1,length(condIndPairList));
+    for condIndPairInd = 1:length(condIndPairList)
+        tic
+        [featVal,pVal,extra] = getDiscrimStats(d,p,condIndPairList{condIndPairInd});
+        toc
+        % Threshold
+        featVal;
+        thresh = p.featSel.(char(curInfo1));
+        curInfo2 = {thresh.threshMethod};
+        switch thresh.threshMethod
+            case {'p' 'fdr'}
+                pVal;
+                featVal;
+                curThresh = thresh.threshVal;
+                curInfo2 = {[curInfo2{1} '<' num2str(curThresh)]};
+                
+                if strcmp(thresh.threshMethod,'fdr')
+                    fdr = nan(size(pVal));
+                    fdrInd = ind;
+                    fdr(fdrInd) = mafdr(pVal(fdrInd),'BHFDR',true);
+                    curIndIn = fdr<=curThresh;
+                else
+                    fdrInd = false(size(featVal));
+                    curIndIn = pVal<=curThresh;
+                end
+%                 ind = ind & curIndIn;
+            case '%ile'
+                pVal;
+                featVal;
+                curThresh = thresh.percentile;
+                curInfo2 = {[curInfo2{1} '>' num2str(curThresh)]};
+                
                 fdrInd = false(size(featVal));
-                curIndIn = pVal<=curThresh;
-            end
-            ind = ind & curIndIn;
-
-%             allFeatDir(end+1) = {'<'};
-%             allFeatPerc(end+1) = {thresh};
-        case '%ile'
-            pVal;
-            featVal;
-            curThresh = thresh.percentile;
-            curInfo2 = {[curInfo2{1} '>' num2str(curThresh)]};
-            
-            fdrInd = false(size(featVal));
-            curIndIn = featVal>=prctile(featVal(ind),curThresh);
-            ind = ind & curIndIn;
-
-%             allFeatVal(end+1) = {featVal};
-%             allFeatP(end+1) = {pVal};
-%             allFeatMethod(end+1) = curInfo2;
-%             allFeatIndIn(end+1) = {curIndIn};
-% %             allFeatDir(end+1) = {'>'};
-% %             allFeatPerc(end+1) = {thresh};
-        otherwise
-            error('X')
+                curIndIn = featVal>=prctile(featVal(ind),curThresh);
+%                 ind = ind & curIndIn;
+            otherwise
+                error('X')
+        end
+        
+        curFeatVal(:,:,condIndPairInd) = featVal;
+        curFeatP(:,:,condIndPairInd) = pVal;
+        curFeatFdrInd(:,:,condIndPairInd) = fdrInd;
+%         curFeatCondPair(:,:,condIndPairInd) = condIndPairList(condIndPairInd);
+        curFeatIndIn(:,:,condIndPairInd) = curIndIn;
     end
-    allFeatVal(end+1) = {featVal};
-    allFeatP(end+1) = {pVal};
-    allFeatFdrInd(end+1) = {fdrInd};
-    allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
-    allFeatIndIn(end+1) = {curIndIn};
     
-    info1(end+1) = curInfo1;
-    info2(end+1) = curInfo2;
-    n(end+1) = nnz(ind);
+    
+    allFeatVal(end+1) = {curFeatVal};
+    allFeatP(end+1) = {curFeatP};
+    allFeatFdrInd(end+1) = {curFeatFdrInd};
+    allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
+%     allFeatCondPair(end+1) = {curFeatCondPair};
+    allFeatIndIn(end+1) = {curFeatIndIn};
+    
+%     info1(end+1) = curInfo1;
+%     info2(end+1) = curInfo2;
+%     n(end+1) = nnz(ind);
+else
+    condIndPairList = [];
 end
 
 %% Multivariate (combined) feature selection
+sz = size(allFeatVal{1},[1 2 3]);
+for i = 1:size(allFeatVal,2)
+    if size(allFeatVal{i},3)>sz(3)
+        sz(3) = size(allFeatVal{i},3);
+    end
+end
+sz(2) = size(allFeatVal,2);
+
+featSel2.featSeq.featVal = nan(sz);
+featSel2.featSeq.featP = nan(sz);
+featSel2.featSeq.featFdrInd = false(sz);
+featSel2.featSeq.featQtile = nan(sz);
+featSel2.featSeq.featIndIn = false(sz);
+featSel2.featSeq.featSelList = allFeatMethod;
+featSel2.featSeq.condPairList = permute(condIndPairList,[1 3 2]);
+featSel2.featSeq.info = 'vox X featSel X condPair';
+for i = 1:size(allFeatVal,2)
+    if size(allFeatVal{i},3)==1
+        allFeatVal{i} = repmat(allFeatVal{i},[1 1 sz(3)]);
+        allFeatP{i} = repmat(allFeatP{i},[1 1 sz(3)]);
+        allFeatFdrInd{i} = repmat(allFeatFdrInd{i},[1 1 sz(3)]);
+        allFeatIndIn{i} = repmat(allFeatIndIn{i},[1 1 sz(3)]);
+    end 
+end
 if p.featSel.global.doIt
     featSel2.featSeq.featVal = catcell(2,allFeatVal);
     featSel2.featSeq.featP = catcell(2,allFeatP);
     featSel2.featSeq.featFdrInd = catcell(2,allFeatFdrInd);
     featSel2.featSeq.featQtile = nan(size(featSel2.featSeq.featVal));
     featSel2.featSeq.featIndIn = catcell(2,allFeatIndIn);
-    featSel2.featSeq.featInfo = allFeatMethod;
-    featSel2.featSeq.info = 'vox X featSel';
     
     switch p.featSel.global.method
         case 'all'
             indIn = all(featSel2.featSeq.featIndIn,2);
-            for featInd = 1:size(featSel2.featSeq.featVal,2)
-                x = featSel2.featSeq.featVal(:,featInd);
-                [fx,x2] = ecdf(x);
-                x2 = x2(2:end); fx = fx(2:end);
-                [~,b] = ismember(x,x2);
-                featSel2.featSeq.featQtile(:,featInd) = fx(b); clear x2 x
+            % Compute quantile
+            for featInd = 1:sz(2)
+                for condIndPairInd = 1:sz(3)
+                    x = featSel2.featSeq.featVal(:,featInd,condIndPairInd);
+                    [fx,x2] = ecdf(x);
+                    x2 = x2(2:end); fx = fx(2:end);
+                    [~,b] = ismember(x,x2);
+                    featSel2.featSeq.featQtile(:,featInd,condIndPairInd) = fx(b);
+                end
             end
             
             
             %% Output2
             featSel2.indIn = indIn;
-            featSel2.info = 'vox X featSel';
+            featSel2.info = 'vox X featSel X condPair';
         otherwise
             error('code that')
             
@@ -361,3 +379,67 @@ featSel.n = n;
 % featSel.info2 = info2;
 % featSel.info3 = cellstr(num2str(n'));
 % featSel.n = n;
+
+
+function [featVal,pVal,extra] = getDiscrimStats(d,p,condIndPair)
+% Compute stats
+extra = nan(size(d.sin,1),1);
+featVal = nan(size(d.sin,1),1);
+pVal = nan(size(d.sin,1),1);
+%     voxIndList = find(ind);
+voxIndList = 1:size(d.sin,1);
+[x,y,~] = getXYK(d,p);
+%             [x,~] = polarSpaceNormalization(x,p.svmSpace);
+
+%             [~,~,~,STATS] = ttest(real(x(y==1,ind)),real(x(y==2,ind)));
+%             featVal(ind) = abs(STATS.tstat);
+% Get stats for H0: no difference between conditions
+for voxInd = 1:length(voxIndList)
+    ind = ismember(y,condIndPair);
+    t = table(cellstr(num2str(y(ind))),real(x(ind,voxIndList(voxInd))),imag(x(ind,voxIndList(voxInd))),...
+        'VariableNames',{'cond','real','imag'});
+    withinDesign = table({'real' 'imag'}','VariableNames',{'complex'});
+    withinModel = 'complex';
+    rm = fitrm(t,'real,imag~cond','WithinDesign',withinDesign,'WithinModel',withinModel);
+    [TBL,~,~,~] = manova2(rm,withinModel);
+    TBL = TBL(ismember(TBL.Statistic,'Hotelling'),:);
+    featVal(voxIndList(voxInd)) = TBL.Value(ismember(TBL.Between,'cond'));
+    pVal(voxIndList(voxInd)) = TBL.pValue(ismember(TBL.Between,'cond'));
+    
+    extra(voxIndList(voxInd)) = TBL.Value(ismember(TBL.Between,'(Intercept)'));
+    
+%     if isnumeric(condIndPair)
+%         tmp = cat(1,...
+%             cat(2,real(x(y==condIndPair(1),voxIndList(voxInd))),imag(x(y==condIndPair(1),voxIndList(voxInd)))),...
+%             cat(2,real(x(y==condIndPair(2),voxIndList(voxInd))),imag(x(y==condIndPair(2),voxIndList(voxInd))))...
+%             );
+%         HotellingT2(tmp)
+%         MBoxtest(tmp)
+%         stats = T2Hot2iho(tmp);
+%         featVal(voxIndList(voxInd)) = stats.T2;
+%         pVal(voxIndList(voxInd)) = stats.P;
+%     elseif ischar(condIndPair)
+%         switch condIndPair
+%             case 'all3'
+%                 tmp = cat(1,...
+%                     cat(2,real(x(y==1,voxIndList(voxInd))),imag(x(y==1,voxIndList(voxInd)))),...
+%                     cat(2,real(x(y==2,voxIndList(voxInd))),imag(x(y==2,voxIndList(voxInd)))),...
+%                     cat(2,real(x(y==3,voxIndList(voxInd))),imag(x(y==3,voxIndList(voxInd))))...
+%                     );
+%                 
+%                 
+%                 t = table(cellstr(num2str(y)),tmp(:,1),tmp(:,2),...
+%                     'VariableNames',{'group','real','imag'});
+%                 withinDesign = table({'real' 'imag'}','VariableNames',{'complex'});
+%                 withinModel = 'complex';
+%                 rm = fitrm(t,'real,imag~group','WithinDesign',withinDesign,'WithinModel',withinModel);
+%                 [TBL,~,~,~] = manova2(rm);
+%                 TBL = TBL(ismember(TBL.Statistic,'Hotelling'),:);
+%                 TBL.Value(ismember(TBL.Between,'group'))
+% %       
+%                 
+%             otherwise
+%                 error('x')
+%         end
+%     end
+end

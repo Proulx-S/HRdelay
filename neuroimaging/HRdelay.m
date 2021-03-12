@@ -1,8 +1,10 @@
 clear all
 %% Dependencies
-dependencyPath = '/Users/sebastienproulx/Documents/GitHub/utilities';
-addpath(genpath(fullfile(dependencyPath,'circstat-matlab')));
+gitDependencyPath = '/Users/sebastienproulx/Documents/GitHub/utilities';
+matDependencyPath = '/Users/sebastienproulx/Dropbox/MATLAB';
+addpath(genpath(fullfile(gitDependencyPath,'circstat-matlab')));
 addpath(genpath(fullfile(pwd,'matlabFun')));
+% rmpath(genpath(fullfile(matDependencyPath,'HotellingT2')));
 verbose = 1; % prints more info
 
 %% Feature selection parameters
@@ -45,8 +47,8 @@ if 0
     applyAreaMask(figOption)
     processResponses(figOption,verbose)
     processWaveletResponses(figOption,verbose)
-    processFeatSel(p,verbose)
 end
+processFeatSel(p,verbose)
 visualizeFeatSel(p)
 return
 [resBS,resWS] = runAllDecoding(p,figOption,verbose);

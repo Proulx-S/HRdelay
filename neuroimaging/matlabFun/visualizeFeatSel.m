@@ -50,7 +50,7 @@ featSelIn = false(size(brain));
 featSelIn(pAll{subjInd}.masks.roiMasks.v1) = featSel2{subjInd,sessInd}.indIn;
 featSelVal = nan([size(featSel2{subjInd,sessInd}.featSeq.featVal,2) size(brain)]);
 featSelValThresholded = nan([size(featSel2{subjInd,sessInd}.featSeq.featVal,2) size(brain)]);
-featInfo = featSel2{subjInd,sessInd}.featSeq.featInfo;
+featInfo = featSel2{subjInd,sessInd}.featSeq.featSelList;
 featLabel = cell(size(featInfo));
 for i = 1:size(featInfo,2)
     tmp = strsplit(featInfo{i},': ');
@@ -316,6 +316,10 @@ for featInd = 1:size(featInfo,2)
         end
     end
 end
+
+figure('WindowStyle','docked');
+featVal = log(featSel2{subjInd,sessInd}.featSeq.featVal);
+corrplot(featVal,'varnames',featLabel)
 
 if 0
     % Save
