@@ -198,7 +198,7 @@ if p.featSel.discrim.doIt
     curFeatIndIn = false(size(ind,1),1,length(condIndPairList));
     for condIndPairInd = 1:length(condIndPairList)
         tic
-        [featVal,pVal,extra] = getDiscrimStats(d,p,condIndPairList{condIndPairInd});
+        [featVal,pVal,featVal2,pVal2] = getDiscrimStats(d,p,condIndPairList{condIndPairInd});
         toc
         % Threshold
         featVal;
@@ -381,11 +381,12 @@ featSel.n = n;
 % featSel.n = n;
 
 
-function [featVal,pVal,extra] = getDiscrimStats(d,p,condIndPair)
+function [featVal,pVal,featVal2,pVal2] = getDiscrimStats(d,p,condIndPair)
 % Compute stats
-extra = nan(size(d.sin,1),1);
 featVal = nan(size(d.sin,1),1);
 pVal = nan(size(d.sin,1),1);
+featVal2 = nan(size(d.sin,1),1);
+pVal2 = nan(size(d.sin,1),1);
 %     voxIndList = find(ind);
 voxIndList = 1:size(d.sin,1);
 [x,y,~] = getXYK(d,p);
@@ -394,52 +395,137 @@ voxIndList = 1:size(d.sin,1);
 %             [~,~,~,STATS] = ttest(real(x(y==1,ind)),real(x(y==2,ind)));
 %             featVal(ind) = abs(STATS.tstat);
 % Get stats for H0: no difference between conditions
+ind = ismember(y,condIndPair);
+withinDesign = table({'real' 'imag'}','VariableNames',{'complex'});
+withinModel = 'complex';
+voxInd = 1;
+t = table(cellstr(num2str(y(ind))),real(x(ind,voxIndList(voxInd))),imag(x(ind,voxIndList(voxInd))),...
+    'VariableNames',{'cond','real','imag'});
+rm = fitrm(t,'real,imag~cond','WithinDesign',withinDesign,'WithinModel',withinModel);
+Xmat = rm.DesignMatrix;
+[TBL,A,C_MV,D,withinNames,betweenNames] = manova2(rm,withinModel);
 for voxInd = 1:length(voxIndList)
-    ind = ismember(y,condIndPair);
-    t = table(cellstr(num2str(y(ind))),real(x(ind,voxIndList(voxInd))),imag(x(ind,voxIndList(voxInd))),...
-        'VariableNames',{'cond','real','imag'});
-    withinDesign = table({'real' 'imag'}','VariableNames',{'complex'});
-    withinModel = 'complex';
-    rm = fitrm(t,'real,imag~cond','WithinDesign',withinDesign,'WithinModel',withinModel);
-    [TBL,~,~,~] = manova2(rm,withinModel);
-    TBL = TBL(ismember(TBL.Statistic,'Hotelling'),:);
-    featVal(voxIndList(voxInd)) = TBL.Value(ismember(TBL.Between,'cond'));
-    pVal(voxIndList(voxInd)) = TBL.pValue(ismember(TBL.Between,'cond'));
+    Ymat = [real(x(ind,voxIndList(voxInd))) imag(x(ind,voxIndList(voxInd)))];
+    [stat,PVAL] = manova3(Xmat,Ymat,C_MV,A,D);
     
-    extra(voxIndList(voxInd)) = TBL.Value(ismember(TBL.Between,'(Intercept)'));
+    featVal(voxIndList(voxInd)) = stat(ismember(betweenNames,'cond'));
+    pVal(voxIndList(voxInd)) = PVAL(ismember(betweenNames,'cond'));
     
-%     if isnumeric(condIndPair)
-%         tmp = cat(1,...
-%             cat(2,real(x(y==condIndPair(1),voxIndList(voxInd))),imag(x(y==condIndPair(1),voxIndList(voxInd)))),...
-%             cat(2,real(x(y==condIndPair(2),voxIndList(voxInd))),imag(x(y==condIndPair(2),voxIndList(voxInd))))...
-%             );
-%         HotellingT2(tmp)
-%         MBoxtest(tmp)
-%         stats = T2Hot2iho(tmp);
-%         featVal(voxIndList(voxInd)) = stats.T2;
-%         pVal(voxIndList(voxInd)) = stats.P;
-%     elseif ischar(condIndPair)
-%         switch condIndPair
-%             case 'all3'
-%                 tmp = cat(1,...
-%                     cat(2,real(x(y==1,voxIndList(voxInd))),imag(x(y==1,voxIndList(voxInd)))),...
-%                     cat(2,real(x(y==2,voxIndList(voxInd))),imag(x(y==2,voxIndList(voxInd)))),...
-%                     cat(2,real(x(y==3,voxIndList(voxInd))),imag(x(y==3,voxIndList(voxInd))))...
-%                     );
-%                 
-%                 
-%                 t = table(cellstr(num2str(y)),tmp(:,1),tmp(:,2),...
-%                     'VariableNames',{'group','real','imag'});
-%                 withinDesign = table({'real' 'imag'}','VariableNames',{'complex'});
-%                 withinModel = 'complex';
-%                 rm = fitrm(t,'real,imag~group','WithinDesign',withinDesign,'WithinModel',withinModel);
-%                 [TBL,~,~,~] = manova2(rm);
-%                 TBL = TBL(ismember(TBL.Statistic,'Hotelling'),:);
-%                 TBL.Value(ismember(TBL.Between,'group'))
-% %       
-%                 
-%             otherwise
-%                 error('x')
-%         end
-%     end
+    featVal2(voxIndList(voxInd)) = stat(ismember(betweenNames,'(Intercept)'));
+    pVal2(voxIndList(voxInd)) = PVAL(ismember(betweenNames,'(Intercept)'));
+end
+
+function [Value,pValue,ds] = getStats(X,A,B,C,D,SSE,withinNames,betweenNames)
+
+% Hypothesis matrix H
+% H = (A*Beta*C - D)'*inv(A*inv(X'*X)*A')*(A*Beta*C - D);
+% q = rank(Z);
+[H,q] = makeH(A,B,C,D,X);
+
+% Error matrix E
+E = C'*SSE*C;
+
+p = rank(E+H);
+s = min(p,q);
+v = size(X,1)-rank(X);
+if p^2+q^2>5
+    t = sqrt( (p^2*q^2-4) / (p^2+q^2-5));
+else
+    t = 1;
+end
+u = (p*q-2)/4;
+r = v - (p-q+1)/2;
+m = (abs(p-q)-1)/2;
+n = (v-p-1)/2;
+
+% ~~~ Wilks' Lambda = L
+% Formally, L = |E| / |H+E|, but it is more convenient to compute it using
+% the eigenvalues from a generalized eigenvalue problem
+lam = eig(H,E);
+mask = (lam<0) & (lam>-100*eps(max(abs(lam))));
+lam(mask) = 0;
+L_df1 = p*q;
+L_df2 = r*t-2*u;
+if isreal(lam) && all(lam>=0) && L_df2>0
+    L = prod(1./(1+lam));
+else
+    L = NaN;
+    L_df2 = max(0,L_df2);
+end
+L1 = L^(1/t);
+L_F = ((1-L1) / L1) * (r*t-2*u)/(p*q);
+L_rsq = 1-L1;
+
+Value = [L];
+F = [L_F];
+df1 = [L_df1];
+df2 = [L_df2];
+pValue = fcdf(F, df1, df2, 'upper');
+
+if exist('withinNames','var') && ~isempty(withinNames) && exist('betweenNames','var') && ~isempty(betweenName)
+    Within = withinNames;
+    Between = betweenNames;
+    Statistic = categorical({'Wilks'}');
+    Value = [L];
+    F = [L_F];
+    RSquare = [L_rsq];
+    df1 = [L_df1];
+    df2 = [L_df2];
+    ds = table(Within,Between,Statistic, Value, F, RSquare,df1,df2);
+    ds.pValue = fcdf(F, df1, df2, 'upper');
+else
+    ds = [];
+end
+
+
+
+function [H,q] = makeH(A,B,C,D,X) % Make hypothesis matrix H
+% H = (A*Beta*C - D)'*inv(A*inv(X'*X)*A')*(A*Beta*C - D);
+d = A*B*C - D;
+[~,RX] = qr(X,0);
+XA = A/RX;
+Z = XA*XA';
+H = d'*(Z\d);  % note Z is often scalar or at least well-conditioned
+
+if nargout>=2
+    q = rank(Z);
+end
+
+function [Bmat,dfe,Covar] = fitrm2(Xmat,Ymat)
+% Use the design matrix to carry out the fit, and compute
+% information needed to store in the object
+opt.RECT = true;
+Bmat = linsolve(Xmat,Ymat,opt);
+
+Resid = Ymat-Xmat*Bmat;
+dfe = size(Xmat,1)-size(Xmat,2);
+if dfe>0
+    Covar = (Resid'*Resid)/dfe;
+else
+    Covar = NaN(size(Resid,2));
+    
+    % Diagnose the issue
+    if isscalar(formula.PredictorNames) && coefTerms(1)==1 && all(coefTerms(2:end)==2)
+        % It appears there is a single predictor that is
+        % basically a row label, so try to offer a helpful
+        % message
+        warning(message('stats:fitrm:RowLabelPredictor',formula.PredictorNames{1}));
+    else
+        % Generic message
+        warning(message('stats:fitrm:NoDF'));
+    end
+end
+
+function [stat,PVAL] = manova3(Xmat,Ymat,C,A,D)
+[Beta,DFE,Cov] = fitrm2(Xmat,Ymat);
+SSE = DFE * Cov;
+
+stat = nan(size(A,1),1);
+PVAL = nan(size(A,1),1);
+i = 0;
+for withinTestInd = 1:length(C)
+    for betweenTestInd = 1:length(A)
+        i = i+1;
+        [stat(i),PVAL(i),~] = getStats(Xmat,A{betweenTestInd},Beta,C{withinTestInd},D,SSE);
+    end
 end
