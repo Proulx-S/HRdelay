@@ -1,20 +1,11 @@
-function [featSel,featSel2] = getFeatSel(d,p,condPair)
+function featSel = getFeatSel(d,p)
 ind = true(size(d.sin,1),1);
-info1 = {'V1'};
-info2 = {'V1'};
-n = nnz(ind);
-
 
 allFeatVal = cell(0);
 allFeatP = cell(0);
-allFeatFdrInd = cell(0);
+allFeatPrevInd = cell(0);
 allFeatMethod = cell(0);
-% allFeatCondPair = cell(0);
 allFeatIndIn = cell(0);
-% allFeatVal = cell(0);
-% allFeatP = cell(0);
-% allFeatDir = cell(0);
-% allFeatPerc = cell(0);
 
 %% Non vein voxels
 if p.featSel.vein.doIt
@@ -23,6 +14,7 @@ if p.featSel.vein.doIt
     featVal = mean(d.featSel.vein.map(:,:),2);
     thresh = p.featSel.(char(curInfo1));
     curInfo2 = {thresh.threshMethod};
+    prevInd = true(size(featVal));
     switch thresh.threshMethod
         case '%ile'
             pVal = nan(size(featVal));
@@ -30,112 +22,93 @@ if p.featSel.vein.doIt
             curThresh = 100-thresh.percentile;
             curInfo2 = {[curInfo2{1} '<' num2str(curThresh)]};
             
-            fdrInd = false(size(featVal));
             curIndIn = featVal<=prctile(featVal(ind),curThresh);
-            ind = ind & curIndIn;
             
             allFeatVal(end+1) = {featVal};
             allFeatP(end+1) = {pVal};
-            allFeatFdrInd(end+1) = {fdrInd};
+            allFeatPrevInd(end+1) = {prevInd};
             allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
             allFeatIndIn(end+1) = {curIndIn};
-            
-%             allFeatVal(end+1) = {featVal};
-%             allFeatP(end+1) = {pVal};
-%             allFeatDir(end+1) = {'<'};
-%             allFeatPerc(end+1) = {thresh};
         otherwise
             error('X')
     end
-    info1(end+1) = curInfo1;
-    info2(end+1) = curInfo2;
-    n(end+1) = nnz(ind);
+    ind = ind & curIndIn;
+    
+%     info1(end+1) = curInfo1;
+%     info2(end+1) = curInfo2;
+%     n(end+1) = nnz(ind);
 end
 
-%% Activated voxels (fixed-effect sinusoidal fit)
+%% Activated voxels (fixed-effect sinusoidal fit of BOLD timeseries)
 if p.featSel.act.doIt
     curInfo1 = {'act'};
     
     featVal = d.featSel.F.act;
     thresh = p.featSel.(char(curInfo1));
     curInfo2 = {thresh.threshMethod};
+    prevInd = ind;
     switch thresh.threshMethod
         case {'p' 'fdr'}
             pVal = featVal.p;
             featVal = featVal.F;
             curThresh = thresh.threshVal;
             curInfo2 = {[curInfo2{1} '<' num2str(curThresh)]};
-            
             if strcmp(thresh.threshMethod,'fdr')
                 fdr = nan(size(pVal));
-                fdrInd = ind;
-                fdr(fdrInd) = mafdr(pVal(fdrInd),'BHFDR',true);
+                fdr(prevInd) = mafdr(pVal(prevInd),'BHFDR',true);
                 curIndIn = fdr<=curThresh;
             else
-                fdrInd = false(size(featVal));
                 curIndIn = pVal<=curThresh;
             end
-            ind = ind & curIndIn;
-            
-%             allFeatDir(end+1) = {'<'};
-%             allFeatPerc(end+1) = {thresh};
         case '%ile'
             pVal = featVal.p;
             featVal = featVal.F;
             curThresh = thresh.percentile;
             curInfo2 = {[curInfo2{1} '>' num2str(curThresh)]};
             
-            fdrInd = false(size(featVal));
-            curIndIn = featVal>=prctile(featVal(ind),curThresh);
-            ind = ind & curIndIn;
-
-%             allFeatVal(end+1) = {featVal};
-%             allFeatP(end+1) = {pVal};
-%             allFeatMethod(end+1) = curInfo2;
-% %             allFeatDir(end+1) = {'>'};
-% %             allFeatPerc(end+1) = {thresh};
+            curIndIn = featVal>=prctile(featVal(prevInd),curThresh);
         otherwise
             error('X')
     end
+    ind = ind & curIndIn;
+
     allFeatVal(end+1) = {featVal};
     allFeatP(end+1) = {pVal};
-    allFeatFdrInd(end+1) = {fdrInd};
+    allFeatPrevInd(end+1) = {prevInd};
     allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
     allFeatIndIn(end+1) = {curIndIn};
 
-    info1(end+1) = curInfo1;
-    info2(end+1) = curInfo2;
-    n(end+1) = nnz(ind);
+%     info1(end+1) = curInfo1;
+%     info2(end+1) = curInfo2;
+%     n(end+1) = nnz(ind);
+end
+
+
+%% Stats on response vector (random effect)
+if p.featSel.respVecSig.doIt || p.featSel.respVecDiff.doIt
+    statLabel = 'Hotelling'; % 'Pillai' 'Wilks' 'Hotelling' 'Roy'
+    condIndPairList = [{[1 2]} {[1 3]} {[2 3]} {[1 2 3]}];
+    interceptStat = nan(size(d.sin,1),length(condIndPairList));
+    interceptP = nan(size(d.sin,1),length(condIndPairList));
+    condStat = nan(size(d.sin,1),length(condIndPairList));
+    condP = nan(size(d.sin,1),length(condIndPairList));
+    for condIndPairInd = 1:length(condIndPairList)
+        [condStat(:,condIndPairInd),condP(:,condIndPairInd),interceptStat(:,condIndPairInd),interceptP(:,condIndPairInd)] = getDiscrimStats(d,p,condIndPairList{condIndPairInd},statLabel);
+    end
+else
+    condIndPairList = [];
 end
 
 %% Most significant response vectors
 if p.featSel.respVecSig.doIt
     curInfo1 = {'respVecSig'};
-    % Compute stats
-    pTmp = p;
-    pTmp.condPair = 'all';
-    [x,y,~] = getXYK(d,pTmp); clear pTmp
-    %remove condition differences
-    yList = unique(y);
-    xMean = mean(x,1);
-    for i = 1:length(yList)
-        x(y==yList(i),:) = x(y==yList(i),:) - mean(x(y==yList(i),:),1);
-    end
-    x = x + xMean; clear xMean
-    %get stats for H0: vector length=0
-    featVal = nan(size(ind));
-    pVal = nan(size(ind));
-%     voxIndList = find(ind);
-    voxIndList = 1:length(ind);
-    for voxInd = 1:length(voxIndList)
-        tmp = cat(2,real(x(:,voxIndList(voxInd))),imag(x(:,voxIndList(voxInd))));
-        [~,~,featVal(voxIndList(voxInd)),~,~,~,pVal(voxIndList(voxInd))] = T2Hot1(tmp);
-    end
-    
-    % Threshold
+    featVal = interceptStat; clear interceptStat
+    pVal = interceptP; clear interceptP
+
     featVal;
     thresh = p.featSel.(char(curInfo1));
     curInfo2 = {thresh.threshMethod};
+    prevInd = ind;
     switch thresh.threshMethod
         case {'p' 'fdr'}
             pVal;
@@ -145,118 +118,88 @@ if p.featSel.respVecSig.doIt
             
             if strcmp(thresh.threshMethod,'fdr')
                 fdr = nan(size(pVal));
-                fdrInd = ind;
-                fdr(fdrInd) = mafdr(pVal(fdrInd),'BHFDR',true);
+                for condIndPairInd = 1:size(pVal,2)
+                    fdr(prevInd,condIndPairInd) = mafdr(pVal(prevInd,condIndPairInd),'BHFDR',true);
+                end
                 curIndIn = fdr<=curThresh;
             else
-                fdrInd = false(size(featVal));
                 curIndIn = pVal<=curThresh;
             end
-            ind = ind & curIndIn;
-
-%             allFeatDir(end+1) = {'<'};
-%             allFeatPerc(end+1) = {thresh};
         case '%ile'
             pVal;
             featVal;
             curThresh = thresh.percentile;
             curInfo2 = {[curInfo2{1} '>' num2str(curThresh)]};
             
-            fdrInd = false(size(featVal));
-            curIndIn = featVal>=prctile(featVal(ind),curThresh);
-            ind = ind & curIndIn;
-
-%             allFeatVal(end+1) = {featVal};
-%             allFeatP(end+1) = {pVal};
-%             allFeatMethod(end+1) = curInfo2;
-%             allFeatIndIn(end+1) = {curIndIn};
-% %             allFeatDir(end+1) = {'>'};
-% %             allFeatPerc(end+1) = {thresh};
+            curIndIn = featVal>=prctile(featVal(prevInd),curThresh);
         otherwise
             error('X')
     end
+    ind = ind & curIndIn;
+    
     allFeatVal(end+1) = {featVal};
     allFeatP(end+1) = {pVal};
-    allFeatFdrInd(end+1) = {fdrInd};
+    allFeatPrevInd(end+1) = {prevInd};
     allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
     allFeatIndIn(end+1) = {curIndIn};
-    
-    info1(end+1) = curInfo1;
-    info2(end+1) = curInfo2;
-    n(end+1) = nnz(ind);
-end
-
-%% Most discrimant voxels
-if p.featSel.discrim.doIt
-    curInfo1 = {'discrim'};
-    condIndPairList = [{[1 2]} {[1 3]} {[2 3]} {[1 2 3]}];
-    curFeatVal = nan(size(ind,1),1,length(condIndPairList));
-    curFeatP = nan(size(ind,1),1,length(condIndPairList));
-    curFeatFdrInd = false(size(ind,1),1,length(condIndPairList));
-%     curFeatMethod = cell(1,1,length(condIndPairList));
-%     curFeatCondPair = cell(1,1,length(condIndPairList));
-    curFeatIndIn = false(size(ind,1),1,length(condIndPairList));
-    for condIndPairInd = 1:length(condIndPairList)
-        tic
-        [featVal,pVal,featVal2,pVal2] = getDiscrimStats(d,p,condIndPairList{condIndPairInd});
-        toc
-        % Threshold
-        featVal;
-        thresh = p.featSel.(char(curInfo1));
-        curInfo2 = {thresh.threshMethod};
-        switch thresh.threshMethod
-            case {'p' 'fdr'}
-                pVal;
-                featVal;
-                curThresh = thresh.threshVal;
-                curInfo2 = {[curInfo2{1} '<' num2str(curThresh)]};
-                
-                if strcmp(thresh.threshMethod,'fdr')
-                    fdr = nan(size(pVal));
-                    fdrInd = ind;
-                    fdr(fdrInd) = mafdr(pVal(fdrInd),'BHFDR',true);
-                    curIndIn = fdr<=curThresh;
-                else
-                    fdrInd = false(size(featVal));
-                    curIndIn = pVal<=curThresh;
-                end
-%                 ind = ind & curIndIn;
-            case '%ile'
-                pVal;
-                featVal;
-                curThresh = thresh.percentile;
-                curInfo2 = {[curInfo2{1} '>' num2str(curThresh)]};
-                
-                fdrInd = false(size(featVal));
-                curIndIn = featVal>=prctile(featVal(ind),curThresh);
-%                 ind = ind & curIndIn;
-            otherwise
-                error('X')
-        end
-        
-        curFeatVal(:,:,condIndPairInd) = featVal;
-        curFeatP(:,:,condIndPairInd) = pVal;
-        curFeatFdrInd(:,:,condIndPairInd) = fdrInd;
-%         curFeatCondPair(:,:,condIndPairInd) = condIndPairList(condIndPairInd);
-        curFeatIndIn(:,:,condIndPairInd) = curIndIn;
-    end
-    
-    
-    allFeatVal(end+1) = {curFeatVal};
-    allFeatP(end+1) = {curFeatP};
-    allFeatFdrInd(end+1) = {curFeatFdrInd};
-    allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
-%     allFeatCondPair(end+1) = {curFeatCondPair};
-    allFeatIndIn(end+1) = {curFeatIndIn};
     
 %     info1(end+1) = curInfo1;
 %     info2(end+1) = curInfo2;
 %     n(end+1) = nnz(ind);
-else
-    condIndPairList = [];
 end
 
+%% Most discrimant voxels
+if p.featSel.respVecDiff.doIt
+    curInfo1 = {'respVecDiff'};
+    % Threshold
+    featVal = condStat;
+    pVal = condP;
+    thresh = p.featSel.(char(curInfo1));
+    curInfo2 = {thresh.threshMethod};
+    prevInd = ind;                
+    switch thresh.threshMethod
+        case {'p' 'fdr'}
+            curThresh = thresh.threshVal;
+            curInfo2 = {[curInfo2{1} '<' num2str(curThresh)]};
+            
+            if strcmp(thresh.threshMethod,'fdr')
+                fdr = nan(size(pVal));
+                for condIndPairInd = 1:size(pVal,2)
+                    fdr(prevInd(:,condIndPairInd),condIndPairInd) = mafdr(pVal(prevInd(:,condIndPairInd),condIndPairInd),'BHFDR',true);
+                end
+                curIndIn = fdr<=curThresh;
+            else
+                curIndIn = pVal<=curThresh;
+            end
+        case '%ile'
+            curThresh = thresh.percentile;
+            curInfo2 = {[curInfo2{1} '>' num2str(curThresh)]};
+            
+            curIndIn = featVal>=prctile(featVal(prevInd),curThresh);
+        otherwise
+            error('X')
+    end
+    ind = ind & curIndIn;
+    
+    allFeatVal(end+1) = {featVal};
+    allFeatP(end+1) = {pVal};
+    allFeatPrevInd(end+1) = {prevInd};
+    allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
+    allFeatIndIn(end+1) = {curIndIn};
+    
+%     info1(end+1) = curInfo1;
+%     info2(end+1) = curInfo2;
+%     n(end+1) = nnz(ind);
+end
+
+
 %% Multivariate (combined) feature selection
+for i = 1:size(allFeatVal,2)
+    allFeatVal{i} = permute(allFeatVal{i},[1 3 2]);
+    allFeatP{i} = permute(allFeatP{i},[1 3 2]);
+    allFeatPrevInd{i} = permute(allFeatPrevInd{i},[1 3 2]);
+    allFeatIndIn{i} = permute(allFeatIndIn{i},[1 3 2]);
+end
 sz = size(allFeatVal{1},[1 2 3]);
 for i = 1:size(allFeatVal,2)
     if size(allFeatVal{i},3)>sz(3)
@@ -265,128 +208,106 @@ for i = 1:size(allFeatVal,2)
 end
 sz(2) = size(allFeatVal,2);
 
-featSel2.featSeq.featVal = nan(sz);
-featSel2.featSeq.featP = nan(sz);
-featSel2.featSeq.featFdrInd = false(sz);
-featSel2.featSeq.featQtile = nan(sz);
-featSel2.featSeq.featIndIn = false(sz);
-featSel2.featSeq.featSelList = allFeatMethod;
-featSel2.featSeq.condPairList = permute(condIndPairList,[1 3 2]);
-featSel2.featSeq.info = 'vox X featSel X condPair';
 for i = 1:size(allFeatVal,2)
     if size(allFeatVal{i},3)==1
         allFeatVal{i} = repmat(allFeatVal{i},[1 1 sz(3)]);
-        allFeatP{i} = repmat(allFeatP{i},[1 1 sz(3)]);
-        allFeatFdrInd{i} = repmat(allFeatFdrInd{i},[1 1 sz(3)]);
-        allFeatIndIn{i} = repmat(allFeatIndIn{i},[1 1 sz(3)]);
-    end 
-end
-if p.featSel.global.doIt
-    featSel2.featSeq.featVal = catcell(2,allFeatVal);
-    featSel2.featSeq.featP = catcell(2,allFeatP);
-    featSel2.featSeq.featFdrInd = catcell(2,allFeatFdrInd);
-    featSel2.featSeq.featQtile = nan(size(featSel2.featSeq.featVal));
-    featSel2.featSeq.featIndIn = catcell(2,allFeatIndIn);
-    
-    switch p.featSel.global.method
-        case 'all'
-            indIn = all(featSel2.featSeq.featIndIn,2);
-            % Compute quantile
-            for featInd = 1:sz(2)
-                for condIndPairInd = 1:sz(3)
-                    x = featSel2.featSeq.featVal(:,featInd,condIndPairInd);
-                    [fx,x2] = ecdf(x);
-                    x2 = x2(2:end); fx = fx(2:end);
-                    [~,b] = ismember(x,x2);
-                    featSel2.featSeq.featQtile(:,featInd,condIndPairInd) = fx(b);
-                end
-            end
-            
-            
-            %% Output2
-            featSel2.indIn = indIn;
-            featSel2.info = 'vox X featSel X condPair';
-        otherwise
-            error('code that')
-            
-            allFeatVal = catcell(2,allFeatVal);
-            x = zscore(-log(allFeatVal(:,1)));
-            y = zscore(log(allFeatVal(:,2)));
-            z = zscore(log(allFeatVal(:,3)));
-            
-            
-            [fx,x2] = ecdf(x);
-            x2 = x2(2:end); fx = fx(2:end);
-            [~,b] = ismember(x,x2);
-            fx = fx(b); clear x2
-            
-            [fy,y2] = ecdf(y);
-            y2 = y2(2:end); fy = fy(2:end);
-            [~,b] = ismember(y,y2);
-            fy = fy(b); clear y2
-            
-            [fz,z2] = ecdf(z);
-            z2 = z2(2:end); fz = fz(2:end);
-            [~,b] = ismember(z,z2);
-            fz = fz(b); clear z2
-            
-            %     fyz = fy.*fz;
-            %     fyz = fyz - min(fyz);
-            %     fyz = fyz./max(fyz);
-            fxyz = fx.*fy.*fz;
-            fxyz = fxyz - min(fxyz);
-            fxyz = fxyz./max(fxyz);
-            
-            perc = p.featSel.global.percentile;
-            %     ind2 = fyz>prctile(fyz,perc) & fx>prctile(fx,perc);
-            ind2 = fxyz>prctile(fxyz,perc) & fx>prctile(fx,perc);
-            
-            %     if p.figOption.verbose>=1 && subjInd==p.figOption.subjInd && sessInd==p.figOption.sessInd
-            %         figure('WindowStyle','docked');
-            %         scatter3(x(ind2),y(ind2),z(ind2),'k.'); hold on
-            %         scatter3(x(~ind2),y(~ind2),z(~ind2),'r.');
-            %         % ax = gca;
-            %         % ax.CameraPosition = camPos;
-            %         xlabel(['zscore(-log(' info1{1+1} '))'])
-            %         ylabel(['zscore(log(' info1{1+2} '))'])
-            %         zlabel(['zscore(log(' info1{1+3} '))'])
-            %         legend({'include' 'exclude'})
-            %         % ax = gca; camPos = ax.CameraPosition;
-            %         % ax = gca; ax.CameraPosition = camPos;
-            %     end
     end
-    
-    ind;
-    n = [length(ind) nnz(ind)];
-    n = round(n(2)/n(1)*100);
-    info2 = {''};
-%     if p.figOption.verbose>=1 && subjInd==p.figOption.subjInd && sessInd==p.figOption.sessInd
-%         title(['perc=' num2str(p.featSel.global.percentile) '; ' num2str(n) '% of V1 included'])
-%         drawnow
-%     end
+    if size(allFeatP{i},3)==1
+        allFeatP{i} = repmat(allFeatP{i},[1 1 sz(3)]);
+    end
+    if size(allFeatPrevInd{i},3)==1
+        allFeatPrevInd{i} = repmat(allFeatPrevInd{i},[1 1 sz(3)]);
+    end
+    if size(allFeatIndIn{i},3)==1
+        allFeatIndIn{i} = repmat(allFeatIndIn{i},[1 1 sz(3)]);
+    end
+end
+featSel.featSeq.featVal = catcell(2,allFeatVal);
+featSel.featSeq.featP = catcell(2,allFeatP);
+featSel.featSeq.featPrevInd = catcell(2,allFeatPrevInd);
+featSel.featSeq.featQtile = nan(size(featSel.featSeq.featVal));
+featSel.featSeq.featIndIn = catcell(2,allFeatIndIn);
+featSel.featSeq.featSelList = allFeatMethod;
+featSel.featSeq.condPairList = permute(condIndPairList,[1 3 2]);
+featSel.featSeq.info = 'vox X featSel X condPair';
+
+
+switch p.featSel.global.method
+    case 'all'
+        indIn = all(featSel.featSeq.featIndIn,2);
+        % Compute quantile
+        for featInd = 1:sz(2)
+            for condIndPairInd = 1:sz(3)
+                x = featSel.featSeq.featVal(:,featInd,condIndPairInd);
+                [fx,x2] = ecdf(x);
+                x2 = x2(2:end); fx = fx(2:end);
+                [~,b] = ismember(x,x2);
+                featSel.featSeq.featQtile(:,featInd,condIndPairInd) = fx(b);
+            end
+        end
+    otherwise
+        error('code that')
+        
+        allFeatVal = catcell(2,allFeatVal);
+        x = zscore(-log(allFeatVal(:,1)));
+        y = zscore(log(allFeatVal(:,2)));
+        z = zscore(log(allFeatVal(:,3)));
+        
+        
+        [fx,x2] = ecdf(x);
+        x2 = x2(2:end); fx = fx(2:end);
+        [~,b] = ismember(x,x2);
+        fx = fx(b); clear x2
+        
+        [fy,y2] = ecdf(y);
+        y2 = y2(2:end); fy = fy(2:end);
+        [~,b] = ismember(y,y2);
+        fy = fy(b); clear y2
+        
+        [fz,z2] = ecdf(z);
+        z2 = z2(2:end); fz = fz(2:end);
+        [~,b] = ismember(z,z2);
+        fz = fz(b); clear z2
+        
+        %     fyz = fy.*fz;
+        %     fyz = fyz - min(fyz);
+        %     fyz = fyz./max(fyz);
+        fxyz = fx.*fy.*fz;
+        fxyz = fxyz - min(fxyz);
+        fxyz = fxyz./max(fxyz);
+        
+        perc = p.featSel.global.percentile;
+        %     ind2 = fyz>prctile(fyz,perc) & fx>prctile(fx,perc);
+        ind2 = fxyz>prctile(fxyz,perc) & fx>prctile(fx,perc);
+        
+        %     if p.figOption.verbose>=1 && subjInd==p.figOption.subjInd && sessInd==p.figOption.sessInd
+        %         figure('WindowStyle','docked');
+        %         scatter3(x(ind2),y(ind2),z(ind2),'k.'); hold on
+        %         scatter3(x(~ind2),y(~ind2),z(~ind2),'r.');
+        %         % ax = gca;
+        %         % ax.CameraPosition = camPos;
+        %         xlabel(['zscore(-log(' info1{1+1} '))'])
+        %         ylabel(['zscore(log(' info1{1+2} '))'])
+        %         zlabel(['zscore(log(' info1{1+3} '))'])
+        %         legend({'include' 'exclude'})
+        %         % ax = gca; camPos = ax.CameraPosition;
+        %         % ax = gca; ax.CameraPosition = camPos;
+        %     end
+end
+%% Output
+featSel.indIn = indIn;
+featSel.info = 'vox X featSel X condPair';
+
+
+
+
+
+function [featVal,pVal,featVal2,pVal2] = getDiscrimStats(d,p,condIndPair,statLabel)
+if ~exist('statLabel','var') || isempty(statLabel)
+    statLabel = 'Hotelling'; % 'Pillai' 'Wilks' 'Hotelling' 'Roy'
 end
 
-%% Output
-featSel.ind = ind;
-featSel.info1 = info1;
-featSel.info2 = info2;
-featSel.info3 = cellstr(num2str(n'));
-featSel.n = n;
-
-
-% featSel.ind = ind;
-% featSel.info1 = info1;
-% featSel.info2 = info2;
-% featSel.info3 = cellstr(num2str(n'));
-% featSel.n = n;
-
-
-function [featVal,pVal,featVal2,pVal2] = getDiscrimStats(d,p,condIndPair)
 % Compute stats
-featVal = nan(size(d.sin,1),1);
-pVal = nan(size(d.sin,1),1);
-featVal2 = nan(size(d.sin,1),1);
-pVal2 = nan(size(d.sin,1),1);
 %     voxIndList = find(ind);
 voxIndList = 1:size(d.sin,1);
 [x,y,~] = getXYK(d,p);
@@ -403,19 +324,27 @@ t = table(cellstr(num2str(y(ind))),real(x(ind,voxIndList(voxInd))),imag(x(ind,vo
     'VariableNames',{'cond','real','imag'});
 rm = fitrm(t,'real,imag~cond','WithinDesign',withinDesign,'WithinModel',withinModel);
 Xmat = rm.DesignMatrix;
-[TBL,A,C_MV,D,withinNames,betweenNames] = manova2(rm,withinModel);
-for voxInd = 1:length(voxIndList)
-    Ymat = [real(x(ind,voxIndList(voxInd))) imag(x(ind,voxIndList(voxInd)))];
-    [stat,PVAL] = manova3(Xmat,Ymat,C_MV,A,D);
+[TBL,A,C_MV,D,withinNames,betweenNames] = manova2(rm,withinModel,[],statLabel);
+
+featVal = nan(size(d.sin,1),1);
+pVal = nan(size(d.sin,1),1);
+featVal2 = nan(size(d.sin,1),1);
+pVal2 = nan(size(d.sin,1),1);
+
+Ymat = permute(x(ind,:),[1 3 2]);
+Ymat = cat(2,real(Ymat),imag(Ymat));
+for voxInd = voxIndList
+    [stat,PVAL] = manova3(Xmat,Ymat(:,:,voxInd),C_MV,A,D,statLabel);
     
-    featVal(voxIndList(voxInd)) = stat(ismember(betweenNames,'cond'));
-    pVal(voxIndList(voxInd)) = PVAL(ismember(betweenNames,'cond'));
+    featVal(voxInd) = stat(ismember(betweenNames,'cond'));
+    pVal(voxInd) = PVAL(ismember(betweenNames,'cond'));
     
-    featVal2(voxIndList(voxInd)) = stat(ismember(betweenNames,'(Intercept)'));
-    pVal2(voxIndList(voxInd)) = PVAL(ismember(betweenNames,'(Intercept)'));
+    featVal2(voxInd) = stat(ismember(betweenNames,'(Intercept)'));
+    pVal2(voxInd) = PVAL(ismember(betweenNames,'(Intercept)'));
 end
 
-function [Value,pValue,ds] = getStats(X,A,B,C,D,SSE,withinNames,betweenNames)
+function [Value,pValue,ds] = getStats(X,A,B,C,D,SSE,statLabel,withinNames,betweenNames)
+% Adapted from RepeatedMeasuresModel.m
 
 % Hypothesis matrix H
 % H = (A*Beta*C - D)'*inv(A*inv(X'*X)*A')*(A*Beta*C - D);
@@ -438,41 +367,75 @@ r = v - (p-q+1)/2;
 m = (abs(p-q)-1)/2;
 n = (v-p-1)/2;
 
-% ~~~ Wilks' Lambda = L
-% Formally, L = |E| / |H+E|, but it is more convenient to compute it using
-% the eigenvalues from a generalized eigenvalue problem
-lam = eig(H,E);
-mask = (lam<0) & (lam>-100*eps(max(abs(lam))));
-lam(mask) = 0;
-L_df1 = p*q;
-L_df2 = r*t-2*u;
-if isreal(lam) && all(lam>=0) && L_df2>0
-    L = prod(1./(1+lam));
-else
-    L = NaN;
-    L_df2 = max(0,L_df2);
+switch statLabel
+    case 'Wilks'
+        % ~~~ Wilks' Lambda = L
+        % Formally, L = |E| / |H+E|, but it is more convenient to compute it using
+        % the eigenvalues from a generalized eigenvalue problem
+        lam = eig(H,E);
+        mask = (lam<0) & (lam>-100*eps(max(abs(lam))));
+        lam(mask) = 0;
+        L_df1 = p*q;
+        L_df2 = r*t-2*u;
+        if isreal(lam) && all(lam>=0) && L_df2>0
+            L = prod(1./(1+lam));
+        else
+            L = NaN;
+            L_df2 = max(0,L_df2);
+        end
+        L1 = L^(1/t);
+        L_F = ((1-L1) / L1) * (r*t-2*u)/(p*q);
+        L_rsq = 1-L1;
+        
+        Value = L;
+        F = L_F;
+        RSquare = L_rsq;
+        df1 = L_df1;
+        df2 = L_df2;
+    case 'Pillai'
+            error('code that')
+    case 'Hotelling'
+        lam = eig(H,E);
+        mask = (lam<0) & (lam>-100*eps(max(abs(lam))));
+        lam(mask) = 0;
+        
+        % ~~~ Hotelling-Lawley trace = U
+        % U = trace( H * E^-1 ) but it can also be written as the sum of the
+        % eigenvalues that we already obtained above
+        if isreal(lam) && all(lam>=0)
+            U = sum(lam);
+        else
+            U = NaN;
+            n(n<0) = NaN;
+        end
+        b = (p+2*n)*(q+2*n) / (2*(2*n+1)*(n-1));
+        c = (2 + (p*q+2)/(b-1))/(2*n);
+        if n>0
+            U_F = (U/c) * (4+(p*q+2)/(b-1)) / (p*q);
+        else
+            U_F = U * 2 * (s*n+1) / (s^2 * (2*m+s+1));
+        end
+        U_rsq = U / (U+s);
+        U_df1 = s*(2*m+s+1);
+        U_df2 = 2*(s*n+1);
+        
+        Value = U;
+        F = U_F;
+        RSquare = U_rsq;
+        df1 = U_df1;
+        df2 = U_df2;
+    case 'Roy'
+            error('code that')
+    otherwise
+        error('x')
 end
-L1 = L^(1/t);
-L_F = ((1-L1) / L1) * (r*t-2*u)/(p*q);
-L_rsq = 1-L1;
-
-Value = [L];
-F = [L_F];
-df1 = [L_df1];
-df2 = [L_df2];
 pValue = fcdf(F, df1, df2, 'upper');
-
 if exist('withinNames','var') && ~isempty(withinNames) && exist('betweenNames','var') && ~isempty(betweenName)
     Within = withinNames;
     Between = betweenNames;
-    Statistic = categorical({'Wilks'}');
-    Value = [L];
-    F = [L_F];
-    RSquare = [L_rsq];
-    df1 = [L_df1];
-    df2 = [L_df2];
+    Statistic = categorical({statLabel}');
     ds = table(Within,Between,Statistic, Value, F, RSquare,df1,df2);
-    ds.pValue = fcdf(F, df1, df2, 'upper');
+    ds.pValue = pValue;
 else
     ds = [];
 end
@@ -516,7 +479,7 @@ else
     end
 end
 
-function [stat,PVAL] = manova3(Xmat,Ymat,C,A,D)
+function [stat,PVAL] = manova3(Xmat,Ymat,C,A,D,statLabel)
 [Beta,DFE,Cov] = fitrm2(Xmat,Ymat);
 SSE = DFE * Cov;
 
@@ -526,6 +489,6 @@ i = 0;
 for withinTestInd = 1:length(C)
     for betweenTestInd = 1:length(A)
         i = i+1;
-        [stat(i),PVAL(i),~] = getStats(Xmat,A{betweenTestInd},Beta,C{withinTestInd},D,SSE);
+        [stat(i),PVAL(i),~] = getStats(Xmat,A{betweenTestInd},Beta,C{withinTestInd},D,SSE,statLabel);
     end
 end

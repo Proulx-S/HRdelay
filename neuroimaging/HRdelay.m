@@ -23,11 +23,11 @@ p.featSel.respVecSig.doIt = 1;
 p.featSel.respVecSig.threshMethod = 'fdr'; % '%ile' 'p' 'fdr'
 p.featSel.respVecSig.threshVal = 0.05;
 p.featSel.respVecSig.percentile = 20;
-% Most discriminant voxels
-p.featSel.discrim.doIt = 1;
-p.featSel.discrim.threshMethod = '%ile'; % '%ile' 'p' 'fdr'
-p.featSel.discrim.threshVal = 0.03;
-p.featSel.discrim.percentile = 20;
+% Most respVecDiffinant voxels
+p.featSel.respVecDiff.doIt = 1;
+p.featSel.respVecDiff.threshMethod = '%ile'; % '%ile' 'p' 'fdr'
+p.featSel.respVecDiff.threshVal = 0.5;
+p.featSel.respVecDiff.percentile = 20;
 % Feature Combination
 p.featSel.global.doIt = 1;
 p.featSel.global.method = 'all';

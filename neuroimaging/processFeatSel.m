@@ -51,11 +51,13 @@ d = dP; clear dP
 
 %% Feature selection
 featSel = cell(size(d));
-featSel2 = cell(size(d));
+disp('computing feature selection stats')
 for i = 1:numel(d)
-        [subjInd,sessInd] = ind2sub(size(d),i);
-        [featSel{i},featSel2{i}] = getFeatSel(d{subjInd,sessInd},p);
+    disp(['sess' num2str(i) '/' num2str(numel(d))])
+    [subjInd,sessInd] = ind2sub(size(d),i);
+    featSel{i} = getFeatSel(d{subjInd,sessInd},p);
 end
+disp('done')
 
 
 %% Save
@@ -64,5 +66,5 @@ if ~exist(fullfile(funPath,outDir),'dir')
     mkdir(fullfile(funPath,outDir))
 end
 fullfilename = fullfile(funPath,outDir,'featSel.mat');
-save(fullfilename,'featSel','featSel2')
+save(fullfilename,'featSel')
 disp(['saved to: ' fullfilename])

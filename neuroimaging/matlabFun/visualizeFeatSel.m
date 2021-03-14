@@ -38,25 +38,27 @@ load(fullfile(funPath,inDir,'featSel.mat'));
 
 
 
-pAll{1}
-featSel{1}
-featSel2{1}
+% pAll{1}
+% featSel{1}
+% featSel{1}
 
 subjInd = 1;
 sessInd = 1;
+condPairInd = 1;
 brain = pAll{subjInd}.brain.mean(:,:,:,sessInd);
 v1 = pAll{subjInd}.masks.roiMasks.v1;
 featSelIn = false(size(brain));
-featSelIn(pAll{subjInd}.masks.roiMasks.v1) = featSel2{subjInd,sessInd}.indIn;
-featSelVal = nan([size(featSel2{subjInd,sessInd}.featSeq.featVal,2) size(brain)]);
-featSelValThresholded = nan([size(featSel2{subjInd,sessInd}.featSeq.featVal,2) size(brain)]);
-featInfo = featSel2{subjInd,sessInd}.featSeq.featSelList;
+featSelIn(pAll{subjInd}.masks.roiMasks.v1) = featSel{subjInd,sessInd}.indIn(:,:,condPairInd);
+featSelVal = nan([size(featSel{subjInd,sessInd}.featSeq.featVal,2) size(brain)]);
+featSelValThresholded = nan([size(featSel{subjInd,sessInd}.featSeq.featVal,2) size(brain)]);
+featInfo = featSel{subjInd,sessInd}.featSeq.featSelList;
+condInfo = featSel{subjInd,sessInd}.featSeq.condPairList(:,:,condPairInd);
 featLabel = cell(size(featInfo));
 for i = 1:size(featInfo,2)
     tmp = strsplit(featInfo{i},': ');
     featLabel(i) = tmp(1);
-    featSelVal(i,pAll{subjInd}.masks.roiMasks.v1) = featSel2{subjInd,sessInd}.featSeq.featVal(:,i);
-    featSelValThresholded(i,pAll{subjInd}.masks.roiMasks.v1) = featSel2{subjInd,sessInd}.featSeq.featVal(:,i);
+    featSelVal(i,pAll{subjInd}.masks.roiMasks.v1) = featSel{subjInd,sessInd}.featSeq.featVal(:,i,condPairInd);
+    featSelValThresholded(i,pAll{subjInd}.masks.roiMasks.v1) = featSel{subjInd,sessInd}.featSeq.featVal(:,i,condPairInd);
     featSelValThresholded(i,~featSelIn) = nan;
 end
 featSelVal = permute(featSelVal,[2 3 4 1]);
@@ -110,11 +112,11 @@ for featInd = 1:size(featInfo,2)
                 cMap = cMap_F;
                 scale = 'log';
             case 'respVecSig'
-                yLabel = {'Response Vector Strength' '(Hotelling''s T^2)'};
+                yLabel = {'Response Vector Strength' '(Hotelling''s U)'};
                 cMap = cMap_F;
                 scale = 'log';
-            case 'discrim'
-                yLabel = {'Response Vector Stimulus Preference' '(Hotelling''s T^2)'};
+            case 'respVecDiff'
+                yLabel = {'Response Vector Stimulus Preference' '(Hotelling''s U)'};
                 cMap = cMap_F;
                 scale = 'log';
             otherwise
@@ -155,11 +157,11 @@ for featInd = 1:size(featInfo,2)
                 cMap = cMap_F;
                 scale = 'log';
             case 'respVecSig'
-                yLabel = {'Thresholded Response Vector Strength' '(Hotelling''s T^2)'};
+                yLabel = {'Thresholded Response Vector Strength' '(Hotelling''s U)'};
                 cMap = cMap_F;
                 scale = 'log';
-            case 'discrim'
-                yLabel = {'Thresholded Discriminativeness' '(Hotelling''s T^2)'};
+            case 'respVecDiff'
+                yLabel = {'Thresholded Discriminativeness' '(Hotelling''s U)'};
                 cMap = cMap_F;
             otherwise
                 error('X')
@@ -198,11 +200,11 @@ for featInd = 1:size(featInfo,2)
                 qtile = thresh.percentile/100;
                 scale = 'log';
             case 'respVecSig'
-                xLabel = {'Response Vector Strenght' '(Hotelling''s T^2)'};
+                xLabel = {'Response Vector Strenght' '(Hotelling''s U)'};
                 qtile = thresh.percentile/100;
                 scale = 'log';
-            case 'discrim'
-                xLabel = {'Discriminativeness' '(Hotelling''s T^2)'};
+            case 'respVecDiff'
+                xLabel = {'Discriminativeness' '(Hotelling''s U)'};
                 qtile = thresh.percentile/100;
                 scale = 'log';
             otherwise
@@ -217,7 +219,7 @@ for featInd = 1:size(featInfo,2)
             otherwise
                 error('X')
         end
-        [N,edges] = histcounts(tmp(v1));
+        [~,edges] = histcounts(tmp(v1));
         Nout = histcounts(tmp(v1 & ~featSelIn),edges);
         Nin = histcounts(tmp(v1 & featSelIn),edges);
         ctrs = (edges(1:end-1)+edges(2:end))/2; % Calculate the bin centers
@@ -238,18 +240,18 @@ for featInd = 1:size(featInfo,2)
 %         XTickLabel(~ismember(ax.XTick,log(floor(exp(edges(1))./delta):delta:ceil(exp(edges(1))./delta)))) = {''};
 %         ax.XTickLabel = XTickLabel;
         
-        featVals = featSel2{subjInd,sessInd}.featSeq.featVal(:,featInd);
-        qtiles = featSel2{subjInd,sessInd}.featSeq.featQtile(:,featInd);
-        ps = featSel2{subjInd,sessInd}.featSeq.featP(:,featInd);
+        featVals = featSel{subjInd,sessInd}.featSeq.featVal(:,featInd);
+        qtiles = featSel{subjInd,sessInd}.featSeq.featQtile(:,featInd);
+        ps = featSel{subjInd,sessInd}.featSeq.featP(:,featInd);
         fdrs = nan(size(ps));
-        fdrInds = featSel2{subjInd,sessInd}.featSeq.featFdrInd(:,featInd);
+        prevInds = featSel{subjInd,sessInd}.featSeq.featPrevInd(:,featInd);
         switch thresh.threshMethod
             case '%ile'
                 featVal = interp1(qtiles,featVals,qtile);
             case 'p'
                 featVal = interp1(ps,featVals,thresh.threshVal);
             case 'fdr'
-                fdrs(fdrInds) = mafdr(ps(fdrInds),'BHFDR',true);
+                fdrs(prevInds) = mafdr(ps(prevInds),'BHFDR',true);
                 [~,b] = sort(abs(fdrs-thresh.threshVal));
                 featVal = mean(featVals(b(1:2)));
             otherwise
@@ -280,8 +282,8 @@ for featInd = 1:size(featInfo,2)
                 case 'vein'
                     switch thresh.threshMethod
                         case '%ile'
-                            featVals = featSel2{subjInd,sessInd}.featSeq.featVal(:,featInd);
-                            qtiles = featSel2{subjInd,sessInd}.featSeq.featQtile(:,featInd);
+                            featVals = featSel{subjInd,sessInd}.featSeq.featVal(:,featInd);
+                            qtiles = featSel{subjInd,sessInd}.featSeq.featQtile(:,featInd);
                             featVal = interp1(qtiles,featVals,qtile);
                             switch scale
                                 case 'log'
@@ -298,18 +300,18 @@ for featInd = 1:size(featInfo,2)
                     end
                 case 'act'
                     xlabel({'Activation Level' 'log(F value)'});
-                    %                 max(featSel2{subjInd,sessInd}.featP{featInd}(featSel2{subjInd,sessInd}.indIn))
-                    [~,b] = min(abs(featSel2{subjInd,sessInd}.featP{featInd}-0.05));
-                    tmpF = log(featSel2{subjInd,sessInd}.featVal(b,featInd));
+                    %                 max(featSel{subjInd,sessInd}.featP{featInd}(featSel{subjInd,sessInd}.indIn(:,:,condPairInd)))
+                    [~,b] = min(abs(featSel{subjInd,sessInd}.featP{featInd}-0.05));
+                    tmpF = log(featSel{subjInd,sessInd}.featVal(b,featInd));
                     plot([1 1].*tmpF,ylim,'k')
                 case 'respVecSig'
-                    xlabel({'Response Vector Strenght' '(Hotelling''s T^2)'});
-                    %                 max(featSel2{subjInd,sessInd}.featP{featInd}(featSel2{subjInd,sessInd}.indIn))
-                    [~,b] = min(abs(featSel2{subjInd,sessInd}.featP{featInd}-0.05));
-                    tmpF = log(featSel2{subjInd,sessInd}.featVal(b,featInd));
+                    xlabel({'Response Vector Strenght' '(Hotelling''s U)'});
+                    %                 max(featSel{subjInd,sessInd}.featP{featInd}(featSel{subjInd,sessInd}.indIn(:,:,condPairInd)))
+                    [~,b] = min(abs(featSel{subjInd,sessInd}.featP{featInd}-0.05));
+                    tmpF = log(featSel{subjInd,sessInd}.featVal(b,featInd));
                     plot([1 1].*tmpF,ylim,'k')
-                case 'discrim'
-                    xlabel({'Discriminativeness' '(Hotelling''s T^2)'});
+                case 'respVecDiff'
+                    xlabel({'Discriminativeness' '(Hotelling''s U)'});
                 otherwise
                     error('X')
             end
@@ -318,7 +320,7 @@ for featInd = 1:size(featInfo,2)
 end
 
 figure('WindowStyle','docked');
-featVal = log(featSel2{subjInd,sessInd}.featSeq.featVal);
+featVal = log(featSel{subjInd,sessInd}.featSeq.featVal(featSel{subjInd,sessInd}.indIn(:,:,condPairInd),:,condPairInd));
 corrplot(featVal,'varnames',featLabel)
 
 if 0
@@ -488,10 +490,10 @@ end
 % % end
 % 
 % 
-% x = featSel2{subjInd,sessInd}.featVal(:,1);
-% y = featSel2{subjInd,sessInd}.featVal(:,2);
-% z = featSel2{subjInd,sessInd}.featVal(:,3);
-% indIn = featSel2{subjInd,sessInd}.indIn;
+% x = featSel{subjInd,sessInd}.featVal(:,1);
+% y = featSel{subjInd,sessInd}.featVal(:,2);
+% z = featSel{subjInd,sessInd}.featVal(:,3);
+% indIn = featSel{subjInd,sessInd}.indIn(:,:,condPairInd);
 % featLabel = featInfo;
 % 
 % figure('WindowStyle','docked');
