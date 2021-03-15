@@ -47,8 +47,8 @@ if 0
     applyAreaMask(figOption)
     processResponses(figOption,verbose)
     processWaveletResponses(figOption,verbose)
+    processFeatSel(p,verbose)
 end
-processFeatSel(p,verbose)
 visualizeFeatSel(p)
 return
 [resBS,resWS] = runAllDecoding(p,figOption,verbose);

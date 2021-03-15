@@ -28,11 +28,11 @@ clear tmp
 pAll = cell(size(subjList));
 for subjInd = 1:length(subjList)
     if subjInd==1
-        tmp = load(fullfile(funPath,inDir2,[subjList{subjInd} '.mat']),'p');
+        tmp = load(fullfile(funPath,inDir2,[subjList{subjInd} '.mat']),'p','d');
     else
         tmp = load(fullfile(funPath,inDirX,[subjList{subjInd} '.mat']),'p');
     end
-    pAll{subjInd} = tmp.p;
+    pAll{subjInd} = tmp.p; clear tmp
 end
 load(fullfile(funPath,inDir,'featSel.mat'));
 
@@ -72,7 +72,7 @@ sess = ['sess' num2str(sessInd)];
 slice = 11;
 visibility = true;
 
-% Get some nice colormaps
+%% Get some nice colormaps
 filename = fullfile(pwd,mfilename);
 if ~exist(filename,'dir'); mkdir(filename); end
 filename = fullfile(filename,'cmap.mat');
@@ -89,12 +89,12 @@ else
 end
 
 f = {};
-% Brain
+%% Plot Brain
 f{end+1} = figure('WindowStyle','docked','color','w','visible',visibility);
 axBak = plotIm(axes,brain(:,:,slice));
 title('BOLD image (1 TR)')
 
-% Unthresholded maps
+%% Plot unthresholded maps
 doIt = true(size(featInfo));
 % doIt(3) = false;
 for featInd = 1:size(featInfo,2)
@@ -139,7 +139,7 @@ for featInd = 1:size(featInfo,2)
     end
 end
 
-% Thresholded maps
+%% Plot thresholded maps
 doIt = true(size(featInfo));
 % doIt(2) = true;
 for featInd = 1:size(featInfo,2)
@@ -184,7 +184,48 @@ for featInd = 1:size(featInfo,2)
 end
 
 
-% Histograms
+%% Plot response vector maps
+tmp = load(fullfile(funPath,'c',[subjList{subjInd} '.mat']));
+masks = tmp.p.masks; clear tmp
+tmp = load(fullfile(funPath,'d',[subjList{subjInd} '.mat']));
+d = tmp.res.(sess);
+p.dataType = 'sin';
+p.svmSpace = 'cartRoi';
+voxFlag = 1;
+f0 = plotNorm(d,p,featSel{subjInd,sessInd},voxFlag);
+
+% for slice = 2:12
+    f{end+1} = figure('WindowStyle','docked','color','w','visible',visibility);
+    axBak = plotIm(axes,brain(:,:,slice));
+    [x,y,~] = getXYK(d,p);
+    [x,~] = polarSpaceNormalization(x,p.svmSpace);
+    x = real(x);
+    x = mean(x(y==2,:),1) - mean(x(y==1,:),1);
+    im = nan(size(brain));
+    im(pAll{subjInd}.masks.roiMasks.v1) = x;
+    im = im(:,:,slice);
+    yLabel = {'%BOLD amplitude at roi delay'};
+    cMap = jet;
+    scale = 'lin';
+    switch scale
+        case 'lin'
+        case 'log'
+            im = log(im);
+        otherwise
+            error('X')
+    end
+    cLim = [-1 1].*max(abs(x(:)));
+%     cLim = [-1 1].*max(abs(im(:)));
+    cLim(1) = cLim(1) + diff(cLim)*0.2;
+    cLim(2) = cLim(2) - diff(cLim)*0.2;
+    axOver = plotIm(axes,im,cLim);
+    alphaData = ~isnan(im);
+    makeOverlay(axBak,axOver,alphaData,cMap,scale,cLim)
+    ylabel(yLabel)
+% end
+
+
+%% Plot histograms
 doIt = true(size(featInfo));
 for featInd = 1:size(featInfo,2)
     if doIt(featInd)
