@@ -148,6 +148,37 @@ if p.featSel.respVecSig.doIt
 %     n(end+1) = nnz(ind);
 end
 
+
+
+% %% Response vector distribution across voxels
+% [bandwidth,density,X,Y]=kde2d([real(x') imag(x')]);
+% figure('WindowStyle','docked');
+% imagesc(X(1,1:end),Y(1:end,1),density);
+% grid on
+% ax = gca;
+% ax.YDir = 'normal';
+% figure('WindowStyle','docked');
+% scatter(real(x'),imag(x'),'k.')
+% ax2 = gca;
+% ax2.XLim = ax.XLim;
+% ax2.YLim = ax.YLim;
+% grid on
+% 
+% 
+% clear all
+% X=rand(1000,1); Y=sin(X*10*pi)+randn(size(X))/3; data=[X,Y];
+% % apply routine
+% [bandwidth,density,X,Y]=kde2d(data);
+% % plot the data and the density estimate
+% surf(X,Y,density,'LineStyle','none'), view([0,70])
+% colormap hot, hold on, alpha(.8)
+% set(gca, 'color', 'blue');
+% plot(data(:,1),data(:,2),'w.','MarkerSize',5)
+
+
+
+
+
 %% Most discrimant voxels
 if p.featSel.respVecDiff.doIt
     curInfo1 = {'respVecDiff'};
