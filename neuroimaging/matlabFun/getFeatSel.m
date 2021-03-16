@@ -149,32 +149,63 @@ if p.featSel.respVecSig.doIt
 end
 
 
-
-% %% Response vector distribution across voxels
-% [bandwidth,density,X,Y]=kde2d([real(x') imag(x')]);
-% figure('WindowStyle','docked');
-% imagesc(X(1,1:end),Y(1:end,1),density);
-% grid on
-% ax = gca;
-% ax.YDir = 'normal';
-% figure('WindowStyle','docked');
-% scatter(real(x'),imag(x'),'k.')
-% ax2 = gca;
-% ax2.XLim = ax.XLim;
-% ax2.YLim = ax.YLim;
-% grid on
-% 
-% 
-% clear all
-% X=rand(1000,1); Y=sin(X*10*pi)+randn(size(X))/3; data=[X,Y];
-% % apply routine
-% [bandwidth,density,X,Y]=kde2d(data);
-% % plot the data and the density estimate
-% surf(X,Y,density,'LineStyle','none'), view([0,70])
-% colormap hot, hold on, alpha(.8)
-% set(gca, 'color', 'blue');
-% plot(data(:,1),data(:,2),'w.','MarkerSize',5)
-
+%% Response vector distribution across voxels
+if p.featSel.respVecDist.doIt
+    curInfo1 = {'respVecDist'};
+    featVal = nan(size(ind,1),length(condIndPairList));
+    pVal = nan(size(featVal));
+    
+    thresh = p.featSel.(char(curInfo1));
+    curInfo2 = ['%ile>' num2str(thresh.percentile)];
+    prevInd = ind;
+    
+    curIndIn = false(size(prevInd,1),length(condIndPairList));
+    
+    for condIndPairInd = 1:length(condIndPairList)
+        x = d.sin(prevInd(:,condIndPairInd),:,:,:,condIndPairList{condIndPairInd});
+        x = mean(x(:,:),2);
+        
+%         x = wrapToPi(angle(x) - angle(mean(x)));
+%         [fk,xi] = ksdensity(x);  % x is your data
+%         fg = fit(xi',f','gauss2');
+%         figure('WindowStyle','docked');
+%         plot(xi,fk); hold on
+%         plot(xi,fg(xi)); hold on
+        
+        
+        x = [real(x) imag(x)];
+        [~,density,X,Y]=kde2d(x);
+        if p.figOption.verbose>1 && condIndPairList{condIndPairInd}==[1 2 3]
+            figure('WindowStyle','docked');
+            surf(X,Y,density,'LineStyle','none'), view([0,70])
+            colormap hot, hold on, alpha(.8)
+            set(gca, 'color', 'b');
+        end
+        
+        xDensity = interp2(X,Y,density,x(:,1),x(:,2));
+        [Fdens,dens] = ecdf(xDensity);
+        densityThresh = interp1(Fdens,dens,thresh.percentile/100);
+        
+        featVal(prevInd(:,condIndPairInd),condIndPairInd) = xDensity;
+        curIndIn(prevInd(:,condIndPairInd),condIndPairInd) = xDensity>densityThresh;
+        
+        if p.figOption.verbose>1 && all(condIndPairList{condIndPairInd}==[1 2 3])
+            scatter3(x(curIndIn(prevInd(:,condIndPairInd),condIndPairInd),1),x(curIndIn(prevInd(:,condIndPairInd),condIndPairInd),2),xDensity(curIndIn(prevInd(:,condIndPairInd),condIndPairInd)),eps,'w.')
+            scatter3(x(~curIndIn(prevInd(:,condIndPairInd),condIndPairInd),1),x(~curIndIn(prevInd(:,condIndPairInd),condIndPairInd),2),xDensity(~curIndIn(prevInd(:,condIndPairInd),condIndPairInd)),eps,'r.')
+            ax = gca;
+            ax.DataAspectRatio = ax.DataAspectRatio([1 1 3]);
+            ax.PlotBoxAspectRatio = ax.PlotBoxAspectRatio([1 1 3]);
+        end
+    end
+    
+    ind = ind & curIndIn;
+    
+    allFeatVal(end+1) = {featVal};
+    allFeatP(end+1) = {pVal};
+    allFeatPrevInd(end+1) = {prevInd};
+    allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
+    allFeatIndIn(end+1) = {curIndIn};
+end
 
 
 
@@ -273,7 +304,7 @@ switch p.featSel.global.method
                 [fx,x2] = ecdf(x);
                 x2 = x2(2:end); fx = fx(2:end);
                 [~,b] = ismember(x,x2);
-                featSel.featSeq.featQtile(:,featInd,condIndPairInd) = fx(b);
+                featSel.featSeq.featQtile(b~=0,featInd,condIndPairInd) = fx(b(b~=0));
             end
         end
     otherwise

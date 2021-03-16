@@ -23,7 +23,10 @@ p.featSel.respVecSig.doIt = 1;
 p.featSel.respVecSig.threshMethod = 'fdr'; % '%ile' 'p' 'fdr'
 p.featSel.respVecSig.threshVal = 0.05;
 p.featSel.respVecSig.percentile = 20;
-% Most respVecDiffinant voxels
+% Response vector distribution
+p.featSel.respVecDist.doIt = 1;
+p.featSel.respVecDist.percentile = 20;
+% Most discriminant voxels
 p.featSel.respVecDiff.doIt = 1;
 p.featSel.respVecDiff.threshMethod = '%ile'; % '%ile' 'p' 'fdr'
 p.featSel.respVecDiff.threshVal = 0.5;
@@ -47,8 +50,8 @@ if 0
     applyAreaMask(figOption)
     processResponses(figOption,verbose)
     processWaveletResponses(figOption,verbose)
-    processFeatSel(p,verbose)
 end
+processFeatSel(p,verbose)
 visualizeFeatSel(p)
 return
 [resBS,resWS] = runAllDecoding(p,figOption,verbose);

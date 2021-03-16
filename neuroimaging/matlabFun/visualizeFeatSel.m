@@ -115,6 +115,8 @@ for featInd = 1:size(featInfo,2)
                 yLabel = {'Response Vector Strength' '(Hotelling''s U)'};
                 cMap = cMap_F;
                 scale = 'log';
+            case 'respVecDist'
+                continue
             case 'respVecDiff'
                 yLabel = {'Response Vector Stimulus Preference' '(Hotelling''s U)'};
                 cMap = cMap_F;
@@ -160,6 +162,8 @@ for featInd = 1:size(featInfo,2)
                 yLabel = {'Thresholded Response Vector Strength' '(Hotelling''s U)'};
                 cMap = cMap_F;
                 scale = 'log';
+            case 'respVecDist'
+                continue
             case 'respVecDiff'
                 yLabel = {'Thresholded Discriminativeness' '(Hotelling''s U)'};
                 cMap = cMap_F;
@@ -183,12 +187,34 @@ for featInd = 1:size(featInfo,2)
     end
 end
 
+%% Plot response vector distribution
+tmp = load(fullfile(funPath,'d',[subjList{subjInd} '.mat']));
+d = tmp.res.(sess);
+f{end+1} = figure('WindowStyle','docked','color','w','visible',visibility);
+x = mean(d.sin(:,:,:,:),4);
+featSel{subjInd,sessInd}.featSeq.featSelList
+tmp = [];
+for condIndPairInd = 1:length(featSel{subjInd,sessInd}.featSeq.condPairList)
+    if length(featSel{subjInd,sessInd}.featSeq.condPairList{condIndPairInd})==3 && all(featSel{subjInd,sessInd}.featSeq.condPairList{condIndPairInd}==[1 2 3])
+        tmp = condIndPairInd;
+        break
+    end
+end
+if isempty(tmp)
+    error('X')
+else
+    condIndPairInd = tmp;
+end
+featInd = ismember(featLabel,'respVecDist');
+indPrev = featSel{subjInd,sessInd}.featSeq.featPrevInd(:,featInd,condIndPairInd);
+ind = featSel{subjInd,sessInd}.featSeq.featIndIn(:,featInd,condIndPairInd);
+polarscatter(angle(x(indPrev & ind)),abs(x(indPrev & ind)),eps,'.k'); hold on
+polarscatter(angle(x(indPrev & ~ind)),abs(x(indPrev & ~ind)),eps,'.r');
+
 
 %% Plot response vector maps
 tmp = load(fullfile(funPath,'c',[subjList{subjInd} '.mat']));
 masks = tmp.p.masks; clear tmp
-tmp = load(fullfile(funPath,'d',[subjList{subjInd} '.mat']));
-d = tmp.res.(sess);
 p.dataType = 'sin';
 p.svmSpace = 'cartRoi';
 voxFlag = 1;
@@ -244,6 +270,8 @@ for featInd = 1:size(featInfo,2)
                 xLabel = {'Response Vector Strenght' '(Hotelling''s U)'};
                 qtile = thresh.percentile/100;
                 scale = 'log';
+            case 'respVecDist'
+                continue
             case 'respVecDiff'
                 xLabel = {'Discriminativeness' '(Hotelling''s U)'};
                 qtile = thresh.percentile/100;
