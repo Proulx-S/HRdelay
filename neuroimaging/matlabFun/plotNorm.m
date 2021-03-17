@@ -5,7 +5,7 @@ end
 
 if ~isfield(p,'condPair')
     p.condPair = 'all';
-    condIndPairInd = 4;
+    condIndPairInd = 1;
     if ~all(featSel.featSeq.condPairList{condIndPairInd}==[1 2 3])
         error('x')
     end

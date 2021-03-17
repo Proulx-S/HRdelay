@@ -49,17 +49,20 @@ brain = pAll{subjInd}.brain.mean(:,:,:,sessInd);
 v1 = pAll{subjInd}.masks.roiMasks.v1;
 featSelIn = false(size(brain));
 featSelIn(pAll{subjInd}.masks.roiMasks.v1) = featSel{subjInd,sessInd}.indIn(:,:,condPairInd);
+featSelSeqIn = false([length(featSel{subjInd,sessInd}.featSeq.featSelList) size(brain)]);
+featSelSeqIn(:,pAll{subjInd}.masks.roiMasks.v1) = featSel{subjInd,sessInd}.featSeq.featIndIn(:,:,condPairInd)';
+featSelSeqIn = permute(featSelSeqIn,[2 3 4 1]);
 featSelVal = nan([size(featSel{subjInd,sessInd}.featSeq.featVal,2) size(brain)]);
 featSelValThresholded = nan([size(featSel{subjInd,sessInd}.featSeq.featVal,2) size(brain)]);
 featInfo = featSel{subjInd,sessInd}.featSeq.featSelList;
 condInfo = featSel{subjInd,sessInd}.featSeq.condPairList(:,:,condPairInd);
 featLabel = cell(size(featInfo));
-for i = 1:size(featInfo,2)
-    tmp = strsplit(featInfo{i},': ');
-    featLabel(i) = tmp(1);
-    featSelVal(i,pAll{subjInd}.masks.roiMasks.v1) = featSel{subjInd,sessInd}.featSeq.featVal(:,i,condPairInd);
-    featSelValThresholded(i,pAll{subjInd}.masks.roiMasks.v1) = featSel{subjInd,sessInd}.featSeq.featVal(:,i,condPairInd);
-    featSelValThresholded(i,~featSelIn) = nan;
+for featInd = 1:size(featInfo,2)
+    tmp = strsplit(featInfo{featInd},': ');
+    featLabel(featInd) = tmp(1);
+    featSelVal(featInd,pAll{subjInd}.masks.roiMasks.v1) = featSel{subjInd,sessInd}.featSeq.featVal(:,featInd,condPairInd);
+    featSelValThresholded(featInd,pAll{subjInd}.masks.roiMasks.v1) = featSel{subjInd,sessInd}.featSeq.featVal(:,featInd,condPairInd);
+    featSelValThresholded(featInd,~featSelIn) = nan;
 end
 featSelVal = permute(featSelVal,[2 3 4 1]);
 featSelValThresholded = permute(featSelValThresholded,[2 3 4 1]);
@@ -115,7 +118,7 @@ for featInd = 1:size(featInfo,2)
                 yLabel = {'Response Vector Strength' '(Hotelling''s U)'};
                 cMap = cMap_F;
                 scale = 'log';
-            case 'respVecDist'
+            case {'respVecDist' 'lateVein'}
                 continue
             case 'respVecDiff'
                 yLabel = {'Response Vector Stimulus Preference' '(Hotelling''s U)'};
@@ -162,7 +165,7 @@ for featInd = 1:size(featInfo,2)
                 yLabel = {'Thresholded Response Vector Strength' '(Hotelling''s U)'};
                 cMap = cMap_F;
                 scale = 'log';
-            case 'respVecDist'
+            case {'respVecDist' 'lateVein'}
                 continue
             case 'respVecDiff'
                 yLabel = {'Thresholded Discriminativeness' '(Hotelling''s U)'};
@@ -194,22 +197,22 @@ f{end+1} = figure('WindowStyle','docked','color','w','visible',visibility);
 x = mean(d.sin(:,:,:,:),4);
 featSel{subjInd,sessInd}.featSeq.featSelList
 tmp = [];
-for condIndPairInd = 1:length(featSel{subjInd,sessInd}.featSeq.condPairList)
-    if length(featSel{subjInd,sessInd}.featSeq.condPairList{condIndPairInd})==3 && all(featSel{subjInd,sessInd}.featSeq.condPairList{condIndPairInd}==[1 2 3])
-        tmp = condIndPairInd;
-        break
-    end
-end
-if isempty(tmp)
-    error('X')
-else
-    condIndPairInd = tmp;
-end
+condIndPairInd = 1;
 featInd = ismember(featLabel,'respVecDist');
 indPrev = featSel{subjInd,sessInd}.featSeq.featPrevInd(:,featInd,condIndPairInd);
 ind = featSel{subjInd,sessInd}.featSeq.featIndIn(:,featInd,condIndPairInd);
 polarscatter(angle(x(indPrev & ind)),abs(x(indPrev & ind)),eps,'.k'); hold on
 polarscatter(angle(x(indPrev & ~ind)),abs(x(indPrev & ~ind)),eps,'.r');
+
+% f{end+1} = figure('WindowStyle','docked','color','w','visible',visibility);
+% x = wrapToPi(angle(x)-angle(mean(x)))+angle(mean(x));
+% x = -x./pi.*6;
+% figure('WindowStyle','docked');
+% histogram(x,100)
+% ind
+% xlabel('delay (sec)')
+% xlim([0 12])
+
 
 
 %% Plot response vector maps
@@ -261,21 +264,30 @@ for featInd = 1:size(featInfo,2)
                 xLabel = {'Vein score' 'log( BOLD var / BOLD mean )'};
                 qtile = 1-thresh.percentile/100;
                 scale = 'log';
+                xLim = 'auto';
 %                 xlabel({'Vein score' 'BOLD var / BOLD mean'})
             case 'act'
-                xLabel = {'Activation Level' 'log(F value)'};
+                xLabel = {'Activation Level' 'log( F value )'};
                 qtile = thresh.percentile/100;
                 scale = 'log';
+                xLim = 'auto';
             case 'respVecSig'
-                xLabel = {'Response Vector Strenght' '(Hotelling''s U)'};
+                xLabel = {'Response Vector Strenght' 'log( Hotelling''s U )'};
                 qtile = thresh.percentile/100;
                 scale = 'log';
+                xLim = 'auto';
+            case 'lateVein'
+                xLabel = {'Response Vector Delay' '(sec)'};
+                qtile = 1 - thresh.percentile/100;
+                scale = 'lin';
+                xLim = 'auto';
             case 'respVecDist'
                 continue
             case 'respVecDiff'
-                xLabel = {'Discriminativeness' '(Hotelling''s U)'};
+                xLabel = {'Discriminativeness' 'log( Hotelling''s U )'};
                 qtile = thresh.percentile/100;
                 scale = 'log';
+                xLim = 'auto';
             otherwise
                 error('X')
         end
@@ -288,7 +300,14 @@ for featInd = 1:size(featInfo,2)
             otherwise
                 error('X')
         end
+        
+%       
         [~,edges] = histcounts(tmp(v1));
+        tmpInd = featSelSeqIn(:,:,:,featInd);
+%         % Voxel selected based on the displayed feature
+%         Nout = histcounts(tmp(v1 & ~tmpInd),edges);
+%         Nin = histcounts(tmp(v1 & tmpInd),edges);
+        % Voxel selected based on all features
         Nout = histcounts(tmp(v1 & ~featSelIn),edges);
         Nin = histcounts(tmp(v1 & featSelIn),edges);
         ctrs = (edges(1:end-1)+edges(2:end))/2; % Calculate the bin centers
@@ -308,15 +327,15 @@ for featInd = 1:size(featInfo,2)
 %         XTickLabel = cellstr(ax.XTickLabel);
 %         XTickLabel(~ismember(ax.XTick,log(floor(exp(edges(1))./delta):delta:ceil(exp(edges(1))./delta)))) = {''};
 %         ax.XTickLabel = XTickLabel;
-        
-        featVals = featSel{subjInd,sessInd}.featSeq.featVal(:,featInd);
-        qtiles = featSel{subjInd,sessInd}.featSeq.featQtile(:,featInd);
-        ps = featSel{subjInd,sessInd}.featSeq.featP(:,featInd);
+        condIndPairInd = 1;
+        featVals = featSel{subjInd,sessInd}.featSeq.featVal(:,featInd,condIndPairInd);
+        qtiles = featSel{subjInd,sessInd}.featSeq.featQtile(:,featInd,condIndPairInd);
+        ps = featSel{subjInd,sessInd}.featSeq.featP(:,featInd,condIndPairInd);
         fdrs = nan(size(ps));
-        prevInds = featSel{subjInd,sessInd}.featSeq.featPrevInd(:,featInd);
+        prevInds = featSel{subjInd,sessInd}.featSeq.featPrevInd(:,featInd,condIndPairInd);
         switch thresh.threshMethod
             case '%ile'
-                featVal = interp1(qtiles,featVals,qtile);
+                featVal = interp1(qtiles(~isnan(qtiles)&~isnan(featVals)),featVals(~isnan(qtiles)&~isnan(featVals)),qtile);
             case 'p'
                 featVal = interp1(ps,featVals,thresh.threshVal);
             case 'fdr'
@@ -341,9 +360,8 @@ for featInd = 1:size(featInfo,2)
                 error('X')
         end
         ax.TickDir = 'out';
+        xlim(xLim)
         xlabel(xLabel)
-        
-        
         
         
         if 0
@@ -368,19 +386,19 @@ for featInd = 1:size(featInfo,2)
                             error('X')
                     end
                 case 'act'
-                    xlabel({'Activation Level' 'log(F value)'});
+                    xlabel({'Activation Level' 'log( F value )'});
                     %                 max(featSel{subjInd,sessInd}.featP{featInd}(featSel{subjInd,sessInd}.indIn(:,:,condPairInd)))
                     [~,b] = min(abs(featSel{subjInd,sessInd}.featP{featInd}-0.05));
                     tmpF = log(featSel{subjInd,sessInd}.featVal(b,featInd));
                     plot([1 1].*tmpF,ylim,'k')
                 case 'respVecSig'
-                    xlabel({'Response Vector Strenght' '(Hotelling''s U)'});
+                    xlabel({'Response Vector Strenght' 'log( Hotelling''s U )'});
                     %                 max(featSel{subjInd,sessInd}.featP{featInd}(featSel{subjInd,sessInd}.indIn(:,:,condPairInd)))
                     [~,b] = min(abs(featSel{subjInd,sessInd}.featP{featInd}-0.05));
                     tmpF = log(featSel{subjInd,sessInd}.featVal(b,featInd));
                     plot([1 1].*tmpF,ylim,'k')
                 case 'respVecDiff'
-                    xlabel({'Discriminativeness' '(Hotelling''s U)'});
+                    xlabel({'Discriminativeness' 'log( Hotelling''s U )'});
                 otherwise
                     error('X')
             end
@@ -391,6 +409,10 @@ end
 figure('WindowStyle','docked');
 featVal = log(featSel{subjInd,sessInd}.featSeq.featVal(featSel{subjInd,sessInd}.indIn(:,:,condPairInd),:,condPairInd));
 corrplot(featVal,'varnames',featLabel)
+% figure('WindowStyle','docked');
+% featVal = log(featSel{subjInd,sessInd}.featSeq.featVal(:,:,condPairInd));
+% corrplot(featVal,'varnames',featLabel)
+
 
 if 0
     % Save

@@ -1,11 +1,29 @@
 function featSel = getFeatSel(d,p)
-ind = true(size(d.sin,1),1);
 
 allFeatVal = cell(0);
 allFeatP = cell(0);
 allFeatPrevInd = cell(0);
 allFeatMethod = cell(0);
 allFeatIndIn = cell(0);
+condIndPairList = {[1 2 3]};
+
+%% Stats on response vector (random effect)
+if p.featSel.respVecSig.doIt || p.featSel.respVecDiff.doIt
+    statLabel = 'Hotelling'; % 'Pillai' 'Wilks' 'Hotelling' 'Roy'
+    condIndPairList = [condIndPairList {[1 2]} {[1 3]} {[2 3]}];
+    interceptStat = nan(size(d.sin,1),length(condIndPairList));
+    interceptP = nan(size(d.sin,1),length(condIndPairList));
+    condStat = nan(size(d.sin,1),length(condIndPairList));
+    condP = nan(size(d.sin,1),length(condIndPairList));
+    for condIndPairInd = 1:length(condIndPairList)
+        [condStat(:,condIndPairInd),condP(:,condIndPairInd),interceptStat(:,condIndPairInd),interceptP(:,condIndPairInd)] = getDiscrimStats(d,p,condIndPairList{condIndPairInd},statLabel);
+    end
+end
+
+
+
+ind = true(size(d.sin,1),length(condIndPairList));
+
 
 %% Non vein voxels
 if p.featSel.vein.doIt
@@ -14,7 +32,7 @@ if p.featSel.vein.doIt
     featVal = mean(d.featSel.vein.map(:,:),2);
     thresh = p.featSel.(char(curInfo1));
     curInfo2 = {thresh.threshMethod};
-    prevInd = true(size(featVal));
+    prevInd = ind;
     switch thresh.threshMethod
         case '%ile'
             pVal = nan(size(featVal));
@@ -22,7 +40,10 @@ if p.featSel.vein.doIt
             curThresh = 100-thresh.percentile;
             curInfo2 = {[curInfo2{1} '<' num2str(curThresh)]};
             
-            curIndIn = featVal<=prctile(featVal(ind),curThresh);
+%             curIndIn = featVal<=prctile(featVal(ind(:,1)),curThresh);
+            for condIndPairInd = 1
+                curIndIn(:,condIndPairInd) = featVal(:,condIndPairInd)<=prctile(featVal(prevInd(:,condIndPairInd),condIndPairInd),curThresh);
+            end
             
             allFeatVal(end+1) = {featVal};
             allFeatP(end+1) = {pVal};
@@ -46,7 +67,7 @@ if p.featSel.act.doIt
     featVal = d.featSel.F.act;
     thresh = p.featSel.(char(curInfo1));
     curInfo2 = {thresh.threshMethod};
-    prevInd = ind;
+    prevInd = ind(:,1);
     switch thresh.threshMethod
         case {'p' 'fdr'}
             pVal = featVal.p;
@@ -84,21 +105,6 @@ if p.featSel.act.doIt
 end
 
 
-%% Stats on response vector (random effect)
-if p.featSel.respVecSig.doIt || p.featSel.respVecDiff.doIt
-    statLabel = 'Hotelling'; % 'Pillai' 'Wilks' 'Hotelling' 'Roy'
-    condIndPairList = [{[1 2]} {[1 3]} {[2 3]} {[1 2 3]}];
-    interceptStat = nan(size(d.sin,1),length(condIndPairList));
-    interceptP = nan(size(d.sin,1),length(condIndPairList));
-    condStat = nan(size(d.sin,1),length(condIndPairList));
-    condP = nan(size(d.sin,1),length(condIndPairList));
-    for condIndPairInd = 1:length(condIndPairList)
-        [condStat(:,condIndPairInd),condP(:,condIndPairInd),interceptStat(:,condIndPairInd),interceptP(:,condIndPairInd)] = getDiscrimStats(d,p,condIndPairList{condIndPairInd},statLabel);
-    end
-else
-    condIndPairList = [];
-end
-
 %% Most significant response vectors
 if p.featSel.respVecSig.doIt
     curInfo1 = {'respVecSig'};
@@ -108,7 +114,7 @@ if p.featSel.respVecSig.doIt
     featVal;
     thresh = p.featSel.(char(curInfo1));
     curInfo2 = {thresh.threshMethod};
-    prevInd = ind;
+    prevInd = ind(:,1);
     switch thresh.threshMethod
         case {'p' 'fdr'}
             pVal;
@@ -156,7 +162,7 @@ if p.featSel.respVecDist.doIt
     pVal = nan(size(featVal));
     
     thresh = p.featSel.(char(curInfo1));
-    curInfo2 = ['%ile>' num2str(thresh.percentile)];
+    curInfo2 = [thresh.threshMethod '>' num2str(thresh.percentile)];
     prevInd = ind;
     
     curIndIn = false(size(prevInd,1),length(condIndPairList));
@@ -175,7 +181,8 @@ if p.featSel.respVecDist.doIt
         
         x = [real(x) imag(x)];
         [~,density,X,Y]=kde2d(x);
-        if p.figOption.verbose>1 && condIndPairList{condIndPairInd}==[1 2 3]
+        if p.figOption.verbose>1 ...
+            && length(condIndPairList{condIndPairInd})==3 && all(ismember(condIndPairList{condIndPairInd},[1 2 3]))
             figure('WindowStyle','docked');
             surf(X,Y,density,'LineStyle','none'), view([0,70])
             colormap hot, hold on, alpha(.8)
@@ -189,12 +196,33 @@ if p.featSel.respVecDist.doIt
         featVal(prevInd(:,condIndPairInd),condIndPairInd) = xDensity;
         curIndIn(prevInd(:,condIndPairInd),condIndPairInd) = xDensity>densityThresh;
         
-        if p.figOption.verbose>1 && all(condIndPairList{condIndPairInd}==[1 2 3])
+        if p.figOption.verbose>1 ...
+            && length(condIndPairList{condIndPairInd})==3 && all(ismember(condIndPairList{condIndPairInd},[1 2 3]))
             scatter3(x(curIndIn(prevInd(:,condIndPairInd),condIndPairInd),1),x(curIndIn(prevInd(:,condIndPairInd),condIndPairInd),2),xDensity(curIndIn(prevInd(:,condIndPairInd),condIndPairInd)),eps,'w.')
             scatter3(x(~curIndIn(prevInd(:,condIndPairInd),condIndPairInd),1),x(~curIndIn(prevInd(:,condIndPairInd),condIndPairInd),2),xDensity(~curIndIn(prevInd(:,condIndPairInd),condIndPairInd)),eps,'r.')
             ax = gca;
             ax.DataAspectRatio = ax.DataAspectRatio([1 1 3]);
             ax.PlotBoxAspectRatio = ax.PlotBoxAspectRatio([1 1 3]);
+            
+%             % Try to fit double distribution
+%             figure('WindowStyle','docked');
+%             h = gscatter(x(:,1),x(:,2));
+%             hold on
+%             nComp = 2;
+%             GMModel = fitgmdist(x,nComp);
+%             gm = cell(1,nComp);
+%             gmPDF = cell(1,nComp);
+%             for comp = 1:nComp
+%                 %             GMModel.mu(comp,:)
+%                 %             GMModel.Sigma(:,:,comp)
+%                 %             GMModel.ComponentProportion(1,comp)
+%                 gm{comp} = gmdistribution(GMModel.mu(comp,:),GMModel.Sigma(:,:,comp),GMModel.ComponentProportion(1,comp));
+%                 gmPDF{comp} = @(x,y) arrayfun(@(x0,y0) pdf(gm{comp},[x0 y0]),x,y);
+%             end
+%             g = gca;
+%             fcontour(gmPDF{1},[g.XLim g.YLim])
+%             fcontour(gmPDF{2},[g.XLim g.YLim])
+%             fsurf(gmPDF{2},[g.XLim g.YLim])
         end
     end
     
@@ -207,6 +235,61 @@ if p.featSel.respVecDist.doIt
     allFeatIndIn(end+1) = {curIndIn};
 end
 
+%% Late-responding veins
+if p.featSel.lateVein.doIt
+    curInfo1 = {'lateVein'};
+    featVal = nan(size(ind,1),length(condIndPairList));
+    pVal = nan(size(featVal));
+    
+    thresh = p.featSel.(char(curInfo1));
+    curInfo2 = {thresh.threshMethod};
+    prevInd = ind;
+    
+    % Get delay
+    for condIndPairInd = 1:length(condIndPairList)
+        x = d.sin(:,:,:,:,condIndPairList{condIndPairInd});
+        x = mean(x(:,:),2);
+        angleMean = wrapTo2Pi(-angle(mean(x(prevInd(:,condIndPairInd)))));
+        x = angle(x);
+        x = wrapTo2Pi(-x);
+        %put the dominant delay at 1/4 of the stimulus cycle
+        x = x - angleMean+pi/2;
+        %wrap
+        x = wrapTo2Pi(x);
+        %put back the original delay
+        x = x + angleMean-pi/2;
+        featVal(:,condIndPairInd) = x./pi.*6;
+        if p.figOption.verbose>1 && condIndPairInd==1
+            figure('WindowStyle','docked');
+            histogram(featVal(prevInd(:,condIndPairInd),condIndPairInd),100)
+            xlabel('delay (sec)')
+        end
+    end
+    
+    % Threshold
+    curIndIn = false(size(prevInd,1),length(condIndPairList));
+    curThresh = 100-thresh.percentile;
+    curInfo2 = {[curInfo2{1} '<' num2str(curThresh)]};
+    
+    for condIndPairInd = 1:length(condIndPairList)
+        curIndIn(:,condIndPairInd) = featVal(:,condIndPairInd)<=prctile(featVal(prevInd(:,condIndPairInd),condIndPairInd),curThresh);
+    end
+    ind = ind & curIndIn;
+    
+%     figure('WindowStyle','docked');
+%     in = prevInd(:,condIndPairInd);
+%     inIn = in&curIndIn(:,condIndPairInd);
+%     inOut = in&~curIndIn(:,condIndPairInd);
+%     [~,edges] = histcounts(featVal(in,condIndPairInd),100);
+%     histogram(featVal(inOut,condIndPairInd),edges); hold on
+%     histogram(featVal(inIn,condIndPairInd),edges);
+    
+    allFeatVal(end+1) = {featVal};
+    allFeatP(end+1) = {pVal};
+    allFeatPrevInd(end+1) = {prevInd};
+    allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
+    allFeatIndIn(end+1) = {curIndIn};
+end
 
 
 
@@ -237,7 +320,9 @@ if p.featSel.respVecDiff.doIt
             curThresh = thresh.percentile;
             curInfo2 = {[curInfo2{1} '>' num2str(curThresh)]};
             
-            curIndIn = featVal>=prctile(featVal(prevInd),curThresh);
+            for condIndPairInd = 1:length(condIndPairList)
+                curIndIn(:,condIndPairInd) = featVal(:,condIndPairInd)>=prctile(featVal(prevInd(:,condIndPairInd),condIndPairInd),curThresh);
+            end
         otherwise
             error('X')
     end
@@ -300,8 +385,9 @@ switch p.featSel.global.method
         % Compute quantile
         for featInd = 1:sz(2)
             for condIndPairInd = 1:sz(3)
+                prevInd = featSel.featSeq.featPrevInd(:,featInd,condIndPairInd);
                 x = featSel.featSeq.featVal(:,featInd,condIndPairInd);
-                [fx,x2] = ecdf(x);
+                [fx,x2] = ecdf(x(prevInd));
                 x2 = x2(2:end); fx = fx(2:end);
                 [~,b] = ismember(x,x2);
                 featSel.featSeq.featQtile(b~=0,featInd,condIndPairInd) = fx(b(b~=0));
