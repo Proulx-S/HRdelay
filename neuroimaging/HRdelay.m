@@ -51,8 +51,8 @@ p.figOption.verbose = 2;
 p.figOption.subjInd = figOption.subj;
 p.figOption.sessInd = 1;
 
+importData(verbose)
 if 0
-    importData(verbose)
     applyAreaMask(figOption)
     processResponses(figOption,verbose)
     processWaveletResponses(figOption,verbose)

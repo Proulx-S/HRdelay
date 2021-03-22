@@ -26,12 +26,13 @@ for tmpPath = {'repoPath' 'funPath' 'anatPath' 'stimPath' 'inDir' 'outDir'}
     eval([char(tmpPath) '(strfind(' char(tmpPath) ',''\''))=''/'';']);
 end
 maskLabel = 'v1'; % 'v1v2v3'
+areaLabelList = {'v1' 'v2' 'v3'}; % 'v1v2v3'
 
 
 
-for subjInd = 1:length(subjList)
+for subjInd = 1%:length(subjList)
     %% Get data and design
-    clearvars -except tstart mask subjInd smLevel subjStimList subjList maskLabel matFun repo funPath anatPath stimPath inDir outDir noMovement runInd figOption verbose
+    clearvars -except tstart mask subjInd smLevel subjStimList subjList maskLabel matFun repo funPath anatPath stimPath inDir outDir noMovement runInd figOption verbose areaLabelList area censor roiMask cropMask ecc pol hemiMask
     subj = subjList{subjInd}; subjStim = subjStimList{subjInd};
     
     switch getenv('OS')
@@ -74,32 +75,79 @@ for subjInd = 1:length(subjList)
     end
     
     
-    %% Load mask
-    if strcmp(maskLabel,'v1v2v3')
-        mask = load_nii(fullfile(anatData_folder,'v1.nii.gz'));
-        tmpMask = mask.img;
-        mask = load_nii(fullfile(anatData_folder,'v2.nii.gz'));
-        tmpMask(logical(mask.img)) = 1;
-        mask = load_nii(fullfile(anatData_folder,'v3.nii.gz'));
-        tmpMask(logical(mask.img)) = 1;
-        mask = tmpMask; clear tmpMask
-        mask = double(flipdim(permute(mask,[3 1 2 4]),1));
-    else
-        maskFile = dir(fullfile(anatData_folder,[maskLabel '.nii.gz']));
-        if isempty(maskFile)
-            maskFile = dir(fullfile(anatData_folder,[maskLabel '.nii']));
+    %% Load masks
+    area.indList = 1:length(areaLabelList);
+    area.labelList = areaLabelList;
+    for maskLabelInd = 1:length(areaLabelList)
+        curFile = dir(fullfile(anatData_folder,[areaLabelList{maskLabelInd} '.nii.gz']));
+        if isempty(curFile)
+            curFile = dir(fullfile(anatData_folder,[areaLabelList{maskLabelInd} '.nii']));
         end
-        maskFile = fullfile(anatData_folder,maskFile.name);
-        mask = load_nii(maskFile);
-        mask = double(flipdim(permute(mask.img,[3 1 2 4]),1));
+        curFile = fullfile(anatData_folder,curFile.name);
+        im = load_nii(curFile);
+        im = double(flipdim(permute(im.img,[3 1 2 4]),1));
+        im = logical(im);
+        if maskLabelInd==1
+            area.ind = uint8(zeros(size(im)));
+        end
+        area.ind(im) = maskLabelInd;
     end
-    % Censor first and last slices
-    mask(:,:,[1 end]) = false;
-    any3 = repmat(any(mask,3),[           1            1 size(mask,3)]);
+    
+%     if strcmp(maskLabel,'v1v2v3')
+%         roiMask = load_nii(fullfile(anatData_folder,'v1.nii.gz'));
+%         tmpMask = roiMask.img;
+%         roiMask = load_nii(fullfile(anatData_folder,'v2.nii.gz'));
+%         tmpMask(logical(roiMask.img)) = 1;
+%         roiMask = load_nii(fullfile(anatData_folder,'v3.nii.gz'));
+%         tmpMask(logical(roiMask.img)) = 1;
+%         roiMask = tmpMask; clear tmpMask
+%         roiMask = double(flipdim(permute(roiMask,[3 1 2 4]),1));
+%     else
+%         curFile = dir(fullfile(anatData_folder,[maskLabel '.nii.gz']));
+%         if isempty(curFile)
+%             curFile = dir(fullfile(anatData_folder,[maskLabel '.nii']));
+%         end
+%         curFile = fullfile(anatData_folder,curFile.name);
+%         roiMask = load_nii(curFile);
+%         roiMask = double(flipdim(permute(roiMask.img,[3 1 2 4]),1));
+%     end
+    
+    %% Censor first and last slices
+    censor.mask = false(size(area.ind));
+    censor.mask(:,:,[1 end]) = true;
+    
+    %% Define ROI
+    roiMask = area.ind~=0 & ~censor.mask;
+    
+    %% Define crop mask
+    any3 = repmat(any(roiMask,3),[           1            1 size(roiMask,3)]);
     any2 = repmat(any(any3,2),[           1 size(any3,2)            1]);
     any1 = repmat(any(any3,1),[size(any3,1)            1            1]);
     cropMask = any1&any2; clear any1 any2 any3
     cropMask(:,:,[1 end]) = false;
+    
+    %% Ecc
+    im = load_nii(fullfile(anatData_folder,'lh.ecc.nii.gz'));
+    imL = double(flipdim(permute(im.img,[3 1 2 4]),1));
+    im = load_nii(fullfile(anatData_folder,'rh.ecc.nii.gz'));
+    imR = double(flipdim(permute(im.img,[3 1 2 4]),1));
+    overlap = imL~=0 & imR~=0;
+    im = imL+imR;
+    im(overlap) = nan;
+    ecc = im;
+%     imagesc(im(:,:,10))
+    %% Polar angles and hemifield
+    im = load_nii(fullfile(anatData_folder,'lh.pol.nii.gz'));
+    imL = double(flipdim(permute(im.img,[3 1 2 4]),1));
+    im = load_nii(fullfile(anatData_folder,'rh.pol.nii.gz'));
+    imR = double(flipdim(permute(im.img,[3 1 2 4]),1));
+    overlap = imL~=0 & imR~=0;
+    im = imL+imR;
+    im(overlap) = nan;
+    pol = im;
+    %% Hemifields
+    hemiMask.L = imL~=0; hemiMask.L(overlap) = false;
+    hemiMask.R = imR~=0; hemiMask.R(overlap) = false;
     
     %% Process for all conditions
     sessionLabel = cell(3,length(files)/3);
@@ -112,7 +160,7 @@ for subjInd = 1:length(subjList)
     labelList = [45 135 999];
     condCount = zeros(1,3);
     for cond = 1:3
-        clearvars -except tstart mask cropMask subjInd subjList subjStimList smLevel subj funData_folderIN funData_folderOUT labelDir files label labelList cond sessionLabel data design extraRegr labelList curLabel condCount sessionLabel maskLabel matFun repo funPath anatPath stimPath inDir outDir noMovement runInd figOption verbose data1 dataMean
+        clearvars -except tstart roiMask cropMask subjInd subjList subjStimList smLevel subj funData_folderIN funData_folderOUT labelDir files label labelList cond sessionLabel data design extraRegr labelList curLabel condCount sessionLabel maskLabel matFun repo funPath anatPath stimPath inDir outDir noMovement runInd figOption verbose data1 dataMean hemiMask ecc pol areaLabelList area censor roiMask cropMask ecc pol hemiMask
         close all
         curLabel = labelList(cond);
         
@@ -171,7 +219,7 @@ for subjInd = 1:length(subjList)
         fprintf('The sampling rate (TR) is %.6f seconds.\n',tr);
     end
     
-    clearvars -except tstart mask cropMask subjInd smLevel subjStimList subjList subj funData_folderIN funData_folderOUT labelDir data design extraRegr sessionLabel sessModel stimdur tr maskLabel repo funPath anatPath stimPath inDir outDir noMovement runInd figOption verbose data1 dataMean
+    clearvars -except tstart roiMask cropMask subjInd smLevel subjStimList subjList subj funData_folderIN funData_folderOUT labelDir data design extraRegr sessionLabel sessModel stimdur tr maskLabel repo funPath anatPath stimPath inDir outDir noMovement runInd figOption verbose data1 dataMean hemiMask ecc pol areaLabelList area censor roiMask cropMask ecc pol hemiMask
     
     
     %% Rorganize data
@@ -205,8 +253,14 @@ for subjInd = 1:length(subjList)
     p.doMotion = 0;
     p.brain.tr1 = cat(4,mean(cat(4,data1{sessionLabel==1}),4),mean(cat(4,data1{sessionLabel==2}),4));
     p.brain.mean = cat(4,mean(cat(4,dataMean{sessionLabel==1}),4),mean(cat(4,dataMean{sessionLabel==2}),4));
-    p.masks.roiMasks.(maskLabel) = logical(mask);
-    p.masks.cropMask = logical(cropMask);
+    
+    p.voxProp.area = area;
+    p.voxProp.censorMask = censor.mask;
+    p.voxProp.ecc = ecc;
+    p.voxProp.pol = pol;
+    p.voxProp.hemiMask = hemiMask;
+    p.roiMask = roiMask;
+    p.cropMask = cropMask;
     
     %% Save
     disp([subj ': saving croped data'])

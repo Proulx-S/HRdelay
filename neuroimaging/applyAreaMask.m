@@ -58,21 +58,21 @@ for subjInd = 1:length(subjList)
         end
     end
     
-    %% Run GLMs over the full cropped area for later figures
-    if ismember(figOption.subj,subjInd)
-        disp([subj ': fitting over the full crop area for later figure'])
-        sessInd = 1;
-        if any(ismember(figOption.subj,subjInd))
-            res = runGLMs(d.fun(1,sessInd),p,0);
-        end
-        res = rmfield(res,'dataDtrd');
-        % save
-        if ~exist(fullfile(funPath,outDir),'dir')
-            mkdir(fullfile(funPath,outDir))
-        end
-        save(fullfile(funPath,outDir,[subj '_fullFit.mat']),'res')
-        clear res
-    end
+%     %% Run GLMs over the full cropped area for later figures
+%     if ismember(figOption.subj,subjInd)
+%         disp([subj ': fitting over the full crop area for later figure'])
+%         sessInd = 1;
+%         if any(ismember(figOption.subj,subjInd))
+%             res = runGLMs(d.fun(1,sessInd),p,0);
+%         end
+%         res = rmfield(res,'dataDtrd');
+%         % save
+%         if ~exist(fullfile(funPath,outDir),'dir')
+%             mkdir(fullfile(funPath,outDir))
+%         end
+%         save(fullfile(funPath,outDir,[subj '_fullFit.mat']),'res')
+%         clear res
+%     end
     
     %% Apply area mask and vectorize
     v1mask = false(size(d.fun(1,1).data{1},[1 2 3]));
