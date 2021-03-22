@@ -3,6 +3,7 @@ clear all
 gitDependencyPath = '/Users/sebastienproulx/Documents/GitHub/utilities';
 matDependencyPath = '/Users/sebastienproulx/Dropbox/MATLAB';
 addpath(genpath(fullfile(gitDependencyPath,'circstat-matlab')));
+addpath(genpath(fullfile(gitDependencyPath,'RAMBiNo')));
 addpath(genpath(fullfile(pwd,'matlabFun')));
 % rmpath(genpath(fullfile(matDependencyPath,'HotellingT2')));
 verbose = 1; % prints more info
@@ -14,12 +15,12 @@ p.featSel.vein.threshMethod = '%ile'; % '%ile' 'p' 'fdr'
 p.featSel.vein.threshVal = 0.01;
 p.featSel.vein.percentile = 20;
 % Most activated voxels
-p.featSel.act.doIt = 1;
+p.featSel.act.doIt = 0;
 p.featSel.act.threshMethod = 'fdr'; % '%ile' 'p' 'fdr'
 p.featSel.act.threshVal = 0.05;
 p.featSel.act.percentile = 20;
 % Most significant response vectors
-p.featSel.respVecSig.doIt = 1;
+p.featSel.respVecSig.doIt = 0;
 p.featSel.respVecSig.threshMethod = 'fdr'; % '%ile' 'p' 'fdr'
 p.featSel.respVecSig.threshVal = 0.05;
 p.featSel.respVecSig.percentile = 20;

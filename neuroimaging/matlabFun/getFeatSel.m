@@ -204,6 +204,25 @@ if p.featSel.respVecDist.doIt
             ax.DataAspectRatio = ax.DataAspectRatio([1 1 3]);
             ax.PlotBoxAspectRatio = ax.PlotBoxAspectRatio([1 1 3]);
             
+%             x=-10:0.01:10;
+%             gaussian = @(x) (1/sqrt((2*pi))*exp(-x.^2/2));
+%             skewedgaussian = @(x,alpha) 2*gaussian(x).*normcdf(alpha*x);
+%             plot(x, gaussian(x))
+%             hold on
+%             plot(x, skewedgaussian(x, 4))
+%             plot(x, skewedgaussian(x, -4))
+
+% lambda=1;
+% mu=0; sigma = 1;
+% t0 = normrnd(0,1)
+% t1 = normrnd(0,1)
+% d  = lambda / sqrt(1 + lambda*lambda)
+% y  = mu + sigma * (d * abs(t0) + t1 * sqrt(1 - d * d))
+
+
+            
+%             RAMBiNoDemo
+            
 %             % Try to fit double distribution
 %             figure('WindowStyle','docked');
 %             h = gscatter(x(:,1),x(:,2));
