@@ -38,7 +38,7 @@ clear tmp
 
 %% Run
 if actuallyRun
-    for subjInd = 1:length(subjList)
+    for subjInd = 1%:length(subjList)
         % Load data
         subj = subjList{subjInd};
         disp([subj ': loading'])
@@ -52,6 +52,10 @@ if actuallyRun
             dDtrd.(sess).data = res.(sess).dataDtrd;
             res.(sess) = rmfield(res.(sess),'dataDtrd');
         end
+        % Add info to res
+        res.sess1.voxProp = d.voxProp;
+        res.sess2.voxProp = d.voxProp;
+        
         % Save
         disp([subj ': saving responses'])
         if ~exist(fullfile(funPath,outDir),'dir')

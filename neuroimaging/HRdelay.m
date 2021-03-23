@@ -53,10 +53,10 @@ p.figOption.sessInd = 1;
 
 if 0
     importData(verbose)
+    applyAreaMask(figOption)
 end
-applyAreaMask(figOption)
-return
 processResponses(figOption,verbose)
+return
 processWaveletResponses(figOption,verbose)
 processFeatSel(p,verbose)
 visualizeFeatSel(p)
