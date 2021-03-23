@@ -31,6 +31,12 @@ for subjInd = 1:size(subjList,2)
     curFile = fullfile(funPath,inDir,[subjList{subjInd} '.mat']);
     if verbose; disp(['loading: ' curFile]); end
     load(curFile,'res');
+    for sessInd = 1:2
+        sess = ['sess' num2str(sessInd)];
+        if isfield(res.(sess),'featSel')
+            res.(sess) = rmfield(res.(sess),'featSel');
+        end
+    end
     dAll{subjInd} = res;
 end
 d = dAll; clear dAll

@@ -54,11 +54,11 @@ p.figOption.sessInd = 1;
 if 0
     importData(verbose)
     applyAreaMask(figOption)
+    processResponses(figOption,verbose)
+    processWaveletResponses(figOption,verbose)
 end
-processResponses(figOption,verbose)
-return
-processWaveletResponses(figOption,verbose)
 processFeatSel(p,verbose)
+return
 visualizeFeatSel(p)
 
 [resBS,resWS] = runAllDecoding(p,figOption,verbose);
