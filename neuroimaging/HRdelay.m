@@ -51,15 +51,16 @@ p.figOption.verbose = 2;
 p.figOption.subjInd = figOption.subj;
 p.figOption.sessInd = 1;
 
-importData(verbose)
 if 0
-    applyAreaMask(figOption)
-    processResponses(figOption,verbose)
-    processWaveletResponses(figOption,verbose)
+    importData(verbose)
 end
+applyAreaMask(figOption)
+return
+processResponses(figOption,verbose)
+processWaveletResponses(figOption,verbose)
 processFeatSel(p,verbose)
 visualizeFeatSel(p)
-return
+
 [resBS,resWS] = runAllDecoding(p,figOption,verbose);
 groupAna(p,figOption,verbose)
 

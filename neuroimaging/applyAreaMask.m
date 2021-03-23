@@ -1,4 +1,6 @@
 function applyAreaMask(figOption)
+areaLabel = 'v1';
+
 actuallyRun = 1;
 if ~actuallyRun
     disp(['skipping ' mfilename])
@@ -75,14 +77,29 @@ for subjInd = 1:length(subjList)
 %     end
     
     %% Apply area mask and vectorize
-    v1mask = false(size(d.fun(1,1).data{1},[1 2 3]));
-    v1mask(:) = p.masks.roiMasks.v1(p.masks.cropMask);
+    d.anat.brain = p.brain.mean;
+    ind = p.voxProp.area.indList(ismember(p.voxProp.area.labelList,areaLabel));
+    d.anat.roiMask = p.voxProp.area.ind==ind & p.roiMask;
+    
+    d.voxProp.area = p.voxProp.area.ind(d.anat.roiMask);
+    d.voxProp.ecc = p.voxProp.ecc(d.anat.roiMask);
+    d.voxProp.pol = p.voxProp.pol(d.anat.roiMask);
+
     for sessInd = 1:size(d.fun,2)
         for runInd = 1:size(d.fun(1,sessInd).data,1)
             tmp = permute(d.fun(1,sessInd).data{runInd},[4 1 2 3]);
-            d.fun(1,sessInd).data{runInd} = permute(tmp(:,v1mask),[2 3 4 1]); clear tmp
+            d.fun(1,sessInd).data{runInd} = permute(tmp(:,d.anat.roiMask(p.cropMask)),[2 3 4 1]); clear tmp
         end
     end
+    
+%     imagesc(p.voxProp.ecc(:,:,10))
+%     ax = gca;
+%     tmp = nan(size(p.voxProp.ecc));
+%     tmp(d.anat.roiMask) = d.voxProp.ecc;
+%     imagesc(tmp(:,:,10),ax.CLim)
+        
+    
+    
     %% Save
     if ~exist(fullfile(funPath,outDir),'dir')
         mkdir(fullfile(funPath,outDir))
