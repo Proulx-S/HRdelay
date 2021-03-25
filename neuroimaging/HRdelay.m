@@ -59,7 +59,7 @@ if 0
     importData(verbose)
     applyAreaMask(figOption)
     processResponses(figOption,verbose)
-    processWaveletResponses(figOption,verbose)
+%     processWaveletResponses(figOption,verbose)
 end
 processFeatSel(p,verbose)
 return

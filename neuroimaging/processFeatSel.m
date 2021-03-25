@@ -58,14 +58,12 @@ d = dP; clear dP
 %% Feature selection
 featSel = cell(size(d));
 disp('computing feature selection stats')
-for i = [1 7]%1:numel(d)
-    disp(['sess' num2str(i) '/' num2str(numel(d))])
-    [subjInd,sessInd] = ind2sub(size(d),i);
-    featSel{i} = getFeatSel(d{subjInd,sessInd},p);
+for sessInd = 1:numel(d)
+    disp(['sess' num2str(sessInd) '/' num2str(numel(d))])
+    [subjInd,sessInd] = ind2sub(size(d),sessInd);
+    featSel{sessInd} = getFeatSel(d{subjInd,sessInd},p);
 end
 disp('done')
-
-
 
 
 %% Save
