@@ -31,12 +31,12 @@ for subjInd = 1:size(subjList,2)
     curFile = fullfile(funPath,inDir,[subjList{subjInd} '.mat']);
     if verbose; disp(['loading: ' curFile]); end
     load(curFile,'res');
-    for sessInd = 1:2
-        sess = ['sess' num2str(sessInd)];
-        if isfield(res.(sess),'featSel')
-            res.(sess) = rmfield(res.(sess),'featSel');
-        end
-    end
+%     for sessInd = 1:2
+%         sess = ['sess' num2str(sessInd)];
+%         if isfield(res.(sess),'featSel')
+%             res.(sess) = rmfield(res.(sess),'featSel');
+%         end
+%     end
     dAll{subjInd} = res;
 end
 d = dAll; clear dAll
@@ -58,12 +58,14 @@ d = dP; clear dP
 %% Feature selection
 featSel = cell(size(d));
 disp('computing feature selection stats')
-for i = 1:numel(d)
+for i = [1 7]%1:numel(d)
     disp(['sess' num2str(i) '/' num2str(numel(d))])
     [subjInd,sessInd] = ind2sub(size(d),i);
     featSel{i} = getFeatSel(d{subjInd,sessInd},p);
 end
 disp('done')
+
+
 
 
 %% Save

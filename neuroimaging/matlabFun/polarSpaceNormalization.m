@@ -1,4 +1,4 @@
-function [x,polNorm] = polarSpaceNormalization(x,SVMspace,te)
+function [x,polNorm] = polarSpaceNormalization(x,SVMspace,te,phaseOffset)
 [x,sz] = reDim1(x);
 if ~exist('te','var') || isempty(te)
     te = false(size(x,1),1);
@@ -28,9 +28,9 @@ switch SVMspace
         error('X')
 end
 
-% Compute norm
+%% Compute norm
 if computeNorm
-    %rho scale
+    % rho scale
     switch normSpace.rhoScale
         case 'vox'
             polNorm.rhoScale = abs(mean(x(~te,:),1));
@@ -43,7 +43,7 @@ if computeNorm
         otherwise
             error('X')
     end
-    %theta shift
+    % theta shift
     switch normSpace.thetaShift
         case 'vox'
             polNorm.thetaShift = angle(mean(x(~te,:),1));
@@ -57,8 +57,11 @@ if computeNorm
             error('X')
     end
 end
-% Apply norm
-%rho scale
+if exist('phaseOffset','var')
+    polNorm.thetaShift = polNorm.thetaShift + phaseOffset;
+end
+%% Apply norm
+% rho scale
 switch normSpace.rhoScale
     case {'vox' 'roi'}
         rho = abs(x)./polNorm.rhoScale;
@@ -69,7 +72,7 @@ switch normSpace.rhoScale
     otherwise
         error('X')
 end
-%theta shift
+% theta shift
 switch normSpace.thetaShift
     case {'vox' 'roi'}
         theta = wrapToPi(angle(x) - polNorm.thetaShift);

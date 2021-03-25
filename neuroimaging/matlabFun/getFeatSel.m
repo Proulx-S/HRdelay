@@ -25,6 +25,62 @@ end
 ind = true(size(d.sin,1),length(condIndPairList));
 
 
+%% Voxels representing stimulus fov
+if p.featSel.fov.doIt
+    curInfo1 = {'fov'};
+    
+    featVal = d.voxProp.ecc;
+    thresh = p.featSel.(char(curInfo1));
+    curInfo2 = {thresh.threshMethod};
+    prevInd = ind;
+    pVal = nan(size(featVal));
+    switch thresh.threshMethod
+        case 'ecc'
+            curThresh = thresh.threshVal;
+            
+            curIndIn = curThresh(1)<featVal & featVal<curThresh(2);
+            curIndIn = repmat(curIndIn,[1 length(condIndPairList)]);
+            
+            allFeatVal(end+1) = {featVal};
+            allFeatP(end+1) = {pVal};
+            allFeatPrevInd(end+1) = {prevInd};
+            allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
+            allFeatIndIn(end+1) = {curIndIn};
+        otherwise
+            error('X')
+    end
+    
+    ind = ind & curIndIn;
+    
+    if p.figOption.verbose>1
+        vec = mean(d.sin(allFeatPrevInd{end}(:,1),:),2);
+        [vec,~] = polarSpaceNormalization(vec,'cartRoi');
+        plotDensity(vec)
+        vec = abs(angle(vec));
+        
+        cMap = redblue(256);
+        vecSpace = linspace(pi,0,256);
+        c = interp1(vecSpace,cMap,vec,'nearest');
+        
+        figure('WindowStyle','docked');
+        ecc = d.voxProp.ecc(allFeatPrevInd{end}(:,1));
+        pol = d.voxProp.pol(allFeatPrevInd{end}(:,1))./180*pi;
+        hemiL = d.voxProp.hemifieldL(allFeatPrevInd{end}(:,1));
+        hemiR = d.voxProp.hemifieldR(allFeatPrevInd{end}(:,1));
+        polarscatter(pol(hemiL),log(ecc(hemiL)+1),eps,c(hemiL,:),'.','MarkerFaceColor','flat'); hold on
+        polarscatter(-pol(hemiR),log(ecc(hemiR)+1),eps,c(hemiR,:),'.');
+        ax = gca;
+        ax.ThetaZeroLocation = 'top';
+        ax.RTick = log((1:max(ecc))+1);
+        ax.RTickLabel = num2str((1:max(ecc))');
+        ax.RLim = [0 log(max(ecc)+1)];
+        
+        th = repmat(linspace(0,2*pi,50),[2 1])';
+        r = log(p.featSel.(char(curInfo1)).threshVal+1);
+        polarplot(th,r+zeros(size(th)),'k');
+    end
+end
+
 %% Non vein voxels
 if p.featSel.vein.doIt
     curInfo1 = {'vein'};
@@ -41,9 +97,9 @@ if p.featSel.vein.doIt
             curInfo2 = {[curInfo2{1} '<' num2str(curThresh)]};
             
 %             curIndIn = featVal<=prctile(featVal(ind(:,1)),curThresh);
-            for condIndPairInd = 1
-                curIndIn(:,condIndPairInd) = featVal(:,condIndPairInd)<=prctile(featVal(prevInd(:,condIndPairInd),condIndPairInd),curThresh);
-            end
+            condIndPairInd = 1;
+            curIndIn = featVal(:,condIndPairInd)<=prctile(featVal(prevInd(:,condIndPairInd),condIndPairInd),curThresh);
+            curIndIn = repmat(curIndIn,[1 length(condIndPairList)]);
             
             allFeatVal(end+1) = {featVal};
             allFeatP(end+1) = {pVal};
@@ -54,14 +110,13 @@ if p.featSel.vein.doIt
             error('X')
     end
     ind = ind & curIndIn;
-    
-%     info1(end+1) = curInfo1;
-%     info2(end+1) = curInfo2;
-%     n(end+1) = nnz(ind);
 end
 
 %% Activated voxels (fixed-effect sinusoidal fit of BOLD timeseries)
 if p.featSel.act.doIt
+    if p.featSel.respVecSig.doIt || p.featSel.respVecDiff.doIt
+        warning('selecting activated voxels baseed on all conditions')
+    end
     curInfo1 = {'act'};
     
     featVal = d.featSel.F.act;

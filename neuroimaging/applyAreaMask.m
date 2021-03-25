@@ -77,14 +77,28 @@ for subjInd = 1%:length(subjList)
 %     end
     
     %% Apply area mask and vectorize
+%     figure('WindowStyle','docked');
+%     ecc = p.voxProp.ecc;
+%     ecc(p.voxProp.area.ind~=1) = nan;
+%     imagesc(ecc(:,:,13),[min(ecc(:)) max(ecc(:))]); colorbar
+%     
+%     pol = p.voxProp.pol;
+%     pol(p.voxProp.area.ind~=1) = nan;
+%     imagesc(pol(:,:,13),[0 180]); colorbar
+    
     d.anat.brain = p.brain.mean;
     ind = p.voxProp.area.indList(ismember(p.voxProp.area.labelList,areaLabel));
     d.anat.roiMask = p.voxProp.area.ind==ind & p.roiMask;
     
     d.voxProp.area = p.voxProp.area.ind(d.anat.roiMask);
     d.voxProp.ecc = p.voxProp.ecc(d.anat.roiMask);
+    d.voxProp.eccInfo = 'dva';
     d.voxProp.pol = p.voxProp.pol(d.anat.roiMask);
-
+    d.voxProp.eccInfo = 'degrees of polar position in visual field, from noon (0) to 6:00 (180)';
+    d.voxProp.hemifieldL = p.voxProp.hemiMask.R(d.anat.roiMask);
+    d.voxProp.hemifieldR = p.voxProp.hemiMask.L(d.anat.roiMask);
+    
+    
     for sessInd = 1:size(d.fun,2)
         for runInd = 1:size(d.fun(1,sessInd).data,1)
             tmp = permute(d.fun(1,sessInd).data{runInd},[4 1 2 3]);
