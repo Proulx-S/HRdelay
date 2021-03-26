@@ -100,8 +100,9 @@ d = dP; clear dP
 
 
 
-
-
+subjInd = 1;
+sessInd = 1;
+flattenEccDist(d{subjInd,sessInd},p)
 
 %% Feature selection
 featSel = cell(size(d));

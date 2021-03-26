@@ -27,7 +27,8 @@ tmpR = tmpR(:);
 
 if plotFlag
     % Prepare figure
-    clf;
+    figure('WindowStyle','docked');
+%     clf;
     hold on;
     LegHandles = []; LegText = {};
 end
