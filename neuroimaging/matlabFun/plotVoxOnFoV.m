@@ -31,10 +31,14 @@ if transFlag
     ax.RLim = [0 log(max(ecc)+1)];
 end
 
-th = repmat(linspace(0,2*pi,50),[2 1])';
-if transFlag
-    r = log(p.featSel.fov.threshVal+1);
-else
-    r = p.featSel.fov.threshVal;
+if ~isempty(p.featSel.fov.threshVal)
+    th = repmat(linspace(0,2*pi,50),[2 1])';
+    if transFlag
+        r = log(p.featSel.fov.threshVal+1);
+    else
+        r = p.featSel.fov.threshVal;
+    end
+    polarplot(th,r+zeros(size(th)),'k');
 end
-polarplot(th,r+zeros(size(th)),'k');
+
+
