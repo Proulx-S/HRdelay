@@ -53,9 +53,11 @@ if p.featSel.fov.doIt
     ind = ind & curIndIn;
     
     if p.figOption.verbose>1
+        plotVoxOnFoV(d,p,allFeatPrevInd{end}(:,1))
+        
         vec = mean(d.sin(allFeatPrevInd{end}(:,1),:),2);
         [vec,~] = polarSpaceNormalization(vec,'cartRoi');
-        plotDensity(vec)
+%         plotDensity(vec)
         vec = abs(angle(vec));
         
         cMap = redblue(256);
