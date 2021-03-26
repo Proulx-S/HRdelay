@@ -61,7 +61,7 @@ disp('computing feature selection stats')
 for sessInd = 1:numel(d)
     disp(['sess' num2str(sessInd) '/' num2str(numel(d))])
     [subjInd,sessInd] = ind2sub(size(d),sessInd);
-    featSel{sessInd} = getFeatSel(d{subjInd,sessInd},p);
+    featSel{subjInd,sessInd} = getFeatSel(d{subjInd,sessInd},p);
 end
 disp('done')
 

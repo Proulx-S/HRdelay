@@ -54,32 +54,6 @@ if p.featSel.fov.doIt
     
     if p.figOption.verbose>1
         plotVoxOnFoV(d,p,allFeatPrevInd{end}(:,1))
-        
-        vec = mean(d.sin(allFeatPrevInd{end}(:,1),:),2);
-        [vec,~] = polarSpaceNormalization(vec,'cartRoi');
-%         plotDensity(vec)
-        vec = abs(angle(vec));
-        
-        cMap = redblue(256);
-        vecSpace = linspace(pi,0,256);
-        c = interp1(vecSpace,cMap,vec,'nearest');
-        
-        figure('WindowStyle','docked');
-        ecc = d.voxProp.ecc(allFeatPrevInd{end}(:,1));
-        pol = d.voxProp.pol(allFeatPrevInd{end}(:,1))./180*pi;
-        hemiL = d.voxProp.hemifieldL(allFeatPrevInd{end}(:,1));
-        hemiR = d.voxProp.hemifieldR(allFeatPrevInd{end}(:,1));
-        polarscatter(pol(hemiL),log(ecc(hemiL)+1),eps,c(hemiL,:),'.','MarkerFaceColor','flat'); hold on
-        polarscatter(-pol(hemiR),log(ecc(hemiR)+1),eps,c(hemiR,:),'.');
-        ax = gca;
-        ax.ThetaZeroLocation = 'top';
-        ax.RTick = log((1:max(ecc))+1);
-        ax.RTickLabel = num2str((1:max(ecc))');
-        ax.RLim = [0 log(max(ecc)+1)];
-        
-        th = repmat(linspace(0,2*pi,50),[2 1])';
-        r = log(p.featSel.(char(curInfo1)).threshVal+1);
-        polarplot(th,r+zeros(size(th)),'k');
     end
 end
 
