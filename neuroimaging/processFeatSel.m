@@ -66,6 +66,60 @@ end
 disp('done')
 
 
+warning('finish coding that or comment it out')
+keyboard
+indInX = cell(1,size(d,2));
+dX = cell(1,size(d,2));
+fieldList = fields(d{subjInd,sessInd});
+for sessInd = 1:size(d,2)
+    for subjInd = 1:size(d,1)
+        if subjInd==1
+            indInX{sessInd} = featSel{subjInd,sessInd}.featSeq.featIndIn;
+            dX{sessInd} = d{subjInd,sessInd};
+        else
+            indInX{sessInd} = cat(1,indInX{sessInd},featSel{subjInd,sessInd}.featSeq.featIndIn);
+            for fieldInd = 1:length(fieldList)
+                if isnumeric(d{subjInd,sessInd}.(fieldList{fieldInd}))...
+                        && ~strcmp(fieldList{fieldInd},'sinDesign')...
+                        && ~strcmp(fieldList{fieldInd},'hrDesign')
+                    dX{sessInd}.(fieldList{fieldInd}) = cat(1,mean(dX{sessInd}.(fieldList{fieldInd}),4),mean(d{subjInd,sessInd}.(fieldList{fieldInd}),4));
+                elseif isstruct(d{subjInd,sessInd}.(fieldList{fieldInd}))...
+                        && ~strcmp(fieldList{fieldInd},'featSel')
+                    fieldList2 = fields(d{subjInd,sessInd}.(fieldList{fieldInd}));
+                    for fieldInd2 = 1:length(fieldList2)
+                        if isnumeric(d{subjInd,sessInd}.(fieldList{fieldInd}).(fieldList2{fieldInd2}))...
+                                || islogical(d{subjInd,sessInd}.(fieldList{fieldInd}).(fieldList2{fieldInd2}))
+                            dX{sessInd}.(fieldList{fieldInd}).(fieldList2{fieldInd2}) = ...
+                                cat(1,dX{sessInd}.(fieldList{fieldInd}).(fieldList2{fieldInd2}),d{subjInd,sessInd}.(fieldList{fieldInd}).(fieldList2{fieldInd2}));    
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+sessInd = 1;
+plotVoxOnFoV(dX{sessInd},p,true(size(dX{sessInd}.sin,1),1))
+ax = gca;
+RLim = ax.RLim;
+title('allVox')
+for featInd = 1:length(featSel{subjInd,sessInd}.featSeq.featSelList)
+    plotVoxOnFoV(dX{sessInd},p,indInX{sessInd}(:,featInd,1))
+    title(featSel{subjInd,sessInd}.featSeq.featSelList{featInd})
+    ax = gca;
+    ax.RLim = RLim;
+end
+
+featSel{subjInd,sessInd}.featSeq.featSelList'
+featInd = [3 4];
+plotVoxOnFoV(dX{sessInd},p,all(indInX{sessInd}(:,featInd,1),2))
+ax = gca;
+tmpR = [ax.Children(3).RData ax.Children(4).RData];
+figure('WindowStyle','docked');
+tmpR = exp(tmpR)-1;
+hist(tmpR,100)
+
+
 %% Save
 disp('saving feature selection')
 if ~exist(fullfile(funPath,outDir),'dir')
