@@ -38,7 +38,7 @@ clear tmp
 
 %% Run
 if actuallyRun
-    for subjInd = 1%:length(subjList)
+    for subjInd = 1:length(subjList)
         % Load data
         subj = subjList{subjInd};
         disp([subj ': loading'])

@@ -30,7 +30,7 @@ areaLabelList = {'v1' 'v2' 'v3'}; % 'v1v2v3'
 
 
 
-for subjInd = 1%:length(subjList)
+for subjInd = 1:length(subjList)
     %% Get data and design
     clearvars -except tstart mask subjInd smLevel subjStimList subjList maskLabel matFun repo funPath anatPath stimPath inDir outDir noMovement runInd figOption verbose areaLabelList area censor roiMask cropMask ecc pol hemiMask
     subj = subjList{subjInd}; subjStim = subjStimList{subjInd};
