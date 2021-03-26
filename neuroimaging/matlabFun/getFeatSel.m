@@ -2,7 +2,7 @@ function featSel = getFeatSel(d,p)
 
 allFeatVal = cell(0);
 allFeatP = cell(0);
-allFeatPrevInd = cell(0);
+% allFeatPrevInd = cell(0);
 allFeatMethod = cell(0);
 allFeatIndIn = cell(0);
 condIndPairList = {[1 2 3]};
@@ -22,7 +22,8 @@ end
 
 
 
-ind = true(size(d.sin,1),length(condIndPairList));
+% ind = true(size(d.sin,1),length(condIndPairList));
+ind = true(size(d.sin,1),1);
 
 
 %% Voxels representing stimulus fov
@@ -43,17 +44,18 @@ if p.featSel.fov.doIt
             
             allFeatVal(end+1) = {featVal};
             allFeatP(end+1) = {pVal};
-            allFeatPrevInd(end+1) = {prevInd};
+%             allFeatPrevInd(end+1) = {prevInd};
             allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
             allFeatIndIn(end+1) = {curIndIn};
         otherwise
             error('X')
     end
     
-    ind = ind & curIndIn;
+%     ind = ind & curIndIn;
     
     if p.figOption.verbose>1
-        plotVoxOnFoV(d,p,allFeatPrevInd{end}(:,1))
+        tmpInd = true(size(d.sin,1),1);
+        plotVoxOnFoV(d,p,tmpInd)
     end
 end
 
@@ -79,13 +81,13 @@ if p.featSel.vein.doIt
             
             allFeatVal(end+1) = {featVal};
             allFeatP(end+1) = {pVal};
-            allFeatPrevInd(end+1) = {prevInd};
+%             allFeatPrevInd(end+1) = {prevInd};
             allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
             allFeatIndIn(end+1) = {curIndIn};
         otherwise
             error('X')
     end
-    ind = ind & curIndIn;
+%     ind = ind & curIndIn;
 end
 
 %% Activated voxels (fixed-effect sinusoidal fit of BOLD timeseries)
@@ -98,7 +100,8 @@ if p.featSel.act.doIt
     featVal = d.featSel.F.act;
     thresh = p.featSel.(char(curInfo1));
     curInfo2 = {thresh.threshMethod};
-    prevInd = ind(:,1);
+    prevInd = ind;
+%     prevInd = ind(:,1);
     switch thresh.threshMethod
         case {'p' 'fdr'}
             pVal = featVal.p;
@@ -122,11 +125,11 @@ if p.featSel.act.doIt
         otherwise
             error('X')
     end
-    ind = ind & curIndIn;
+%     ind = ind & curIndIn;
 
     allFeatVal(end+1) = {featVal};
     allFeatP(end+1) = {pVal};
-    allFeatPrevInd(end+1) = {prevInd};
+%     allFeatPrevInd(end+1) = {prevInd};
     allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
     allFeatIndIn(end+1) = {curIndIn};
 
@@ -145,7 +148,8 @@ if p.featSel.respVecSig.doIt
     featVal;
     thresh = p.featSel.(char(curInfo1));
     curInfo2 = {thresh.threshMethod};
-    prevInd = ind(:,1);
+%     prevInd = ind(:,1);
+    prevInd = ind;
     switch thresh.threshMethod
         case {'p' 'fdr'}
             pVal;
@@ -172,11 +176,11 @@ if p.featSel.respVecSig.doIt
         otherwise
             error('X')
     end
-    ind = ind & curIndIn;
+%     ind = ind & curIndIn;
     
     allFeatVal(end+1) = {featVal};
     allFeatP(end+1) = {pVal};
-    allFeatPrevInd(end+1) = {prevInd};
+%     allFeatPrevInd(end+1) = {prevInd};
     allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
     allFeatIndIn(end+1) = {curIndIn};
     
@@ -276,11 +280,11 @@ if p.featSel.respVecDist.doIt
         end
     end
     
-    ind = ind & curIndIn;
+%     ind = ind & curIndIn;
     
     allFeatVal(end+1) = {featVal};
     allFeatP(end+1) = {pVal};
-    allFeatPrevInd(end+1) = {prevInd};
+%     allFeatPrevInd(end+1) = {prevInd};
     allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
     allFeatIndIn(end+1) = {curIndIn};
 end
@@ -324,7 +328,7 @@ if p.featSel.lateVein.doIt
     for condIndPairInd = 1:length(condIndPairList)
         curIndIn(:,condIndPairInd) = featVal(:,condIndPairInd)<=prctile(featVal(prevInd(:,condIndPairInd),condIndPairInd),curThresh);
     end
-    ind = ind & curIndIn;
+%     ind = ind & curIndIn;
     
 %     figure('WindowStyle','docked');
 %     in = prevInd(:,condIndPairInd);
@@ -336,7 +340,7 @@ if p.featSel.lateVein.doIt
     
     allFeatVal(end+1) = {featVal};
     allFeatP(end+1) = {pVal};
-    allFeatPrevInd(end+1) = {prevInd};
+%     allFeatPrevInd(end+1) = {prevInd};
     allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
     allFeatIndIn(end+1) = {curIndIn};
 end
@@ -371,16 +375,17 @@ if p.featSel.respVecDiff.doIt
             curInfo2 = {[curInfo2{1} '>' num2str(curThresh)]};
             
             for condIndPairInd = 1:length(condIndPairList)
-                curIndIn(:,condIndPairInd) = featVal(:,condIndPairInd)>=prctile(featVal(prevInd(:,condIndPairInd),condIndPairInd),curThresh);
+                curIndIn(:,condIndPairInd) = featVal(:,condIndPairInd)>=prctile(featVal(prevInd,condIndPairInd),curThresh);
+%                 curIndIn(:,condIndPairInd) = featVal(:,condIndPairInd)>=prctile(featVal(prevInd(:,condIndPairInd),condIndPairInd),curThresh);
             end
         otherwise
             error('X')
     end
-    ind = ind & curIndIn;
+%     ind = ind & curIndIn;
     
     allFeatVal(end+1) = {featVal};
     allFeatP(end+1) = {pVal};
-    allFeatPrevInd(end+1) = {prevInd};
+%     allFeatPrevInd(end+1) = {prevInd};
     allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
     allFeatIndIn(end+1) = {curIndIn};
     
@@ -394,7 +399,7 @@ end
 for i = 1:size(allFeatVal,2)
     allFeatVal{i} = permute(allFeatVal{i},[1 3 2]);
     allFeatP{i} = permute(allFeatP{i},[1 3 2]);
-    allFeatPrevInd{i} = permute(allFeatPrevInd{i},[1 3 2]);
+%     allFeatPrevInd{i} = permute(allFeatPrevInd{i},[1 3 2]);
     allFeatIndIn{i} = permute(allFeatIndIn{i},[1 3 2]);
 end
 sz = size(allFeatVal{1},[1 2 3]);
@@ -412,16 +417,16 @@ for i = 1:size(allFeatVal,2)
     if size(allFeatP{i},3)==1
         allFeatP{i} = repmat(allFeatP{i},[1 1 sz(3)]);
     end
-    if size(allFeatPrevInd{i},3)==1
-        allFeatPrevInd{i} = repmat(allFeatPrevInd{i},[1 1 sz(3)]);
-    end
+%     if size(allFeatPrevInd{i},3)==1
+%         allFeatPrevInd{i} = repmat(allFeatPrevInd{i},[1 1 sz(3)]);
+%     end
     if size(allFeatIndIn{i},3)==1
         allFeatIndIn{i} = repmat(allFeatIndIn{i},[1 1 sz(3)]);
     end
 end
 featSel.featSeq.featVal = catcell(2,allFeatVal);
 featSel.featSeq.featP = catcell(2,allFeatP);
-featSel.featSeq.featPrevInd = catcell(2,allFeatPrevInd);
+% featSel.featSeq.featPrevInd = catcell(2,allFeatPrevInd);
 featSel.featSeq.featQtile = nan(size(featSel.featSeq.featVal));
 featSel.featSeq.featIndIn = catcell(2,allFeatIndIn);
 featSel.featSeq.featSelList = allFeatMethod;
@@ -435,8 +440,8 @@ switch p.featSel.global.method
         % Compute quantile
         for featInd = 1:sz(2)
             for condIndPairInd = 1:sz(3)
-                prevInd = featSel.featSeq.featPrevInd(:,featInd,condIndPairInd);
                 x = featSel.featSeq.featVal(:,featInd,condIndPairInd);
+                prevInd = true(size(x));
                 [fx,x2] = ecdf(x(prevInd));
                 x2 = x2(2:end); fx = fx(2:end);
                 [~,b] = ismember(x,x2);
