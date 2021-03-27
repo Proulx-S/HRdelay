@@ -55,54 +55,20 @@ end
 d = dP; clear dP
 
 
-% featSel = cell(size(d));
-% 
-% logFlag = 0;
-% subjInd = 2;
-% sessInd = 1;
-% featSel{subjInd,sessInd} = getFeatSel(d{subjInd,sessInd},p);
-% featInd = [0];
-% condPairInd = 1;
-% if featInd==0
-%     ind = true(size(featSel{subjInd,sessInd}.featSeq.featIndIn,1),1);
-% else
-%     ind = all(featSel{subjInd,sessInd}.featSeq.featIndIn(:,featInd,condPairInd),2);
-% end
-% featSel{subjInd,sessInd}.featSeq.featSelList'
+warning('not done here')
+keyboard
+p.figOption.verbose = 1;
+d = flattenEccDist2(d,p);
 
-% fac = 1;
-% fac = (2*pi);
-% fac = 1/(2*pi);
-% fac = (2*2*pi);
-% fac = 1/(2*2*pi);
-% p.featSel.fov.threshVal = [];
-% plotVoxOnFoV(d{subjInd,sessInd},p,ind,logFlag)
-% 
-% R = d{subjInd,sessInd}.voxProp.ecc;
-% Rp = cdf(nonparamDistFit(R),R);
-% v = linspace(min(R),max(R)*fac,length(unique(R)));%R
-% v = linspace(min(R),max(R)*fac,length(unique(R)));%R
-% x = linspace(1/length(unique(R)),1,length(unique(R)));%Rp
-% xq = Rp;%Rp
-% vq = interp1(x,v,xq);%R
-% R2 = vq;
-% Rp2 = xq;
-% % figure('WindowStyle','docked');
-% % [~,uInd,~] = unique(R);
-% % plot(R(uInd),Rp(uInd),'.'); hold on
-% % [~,uInd,~] = unique(R2);
-% % plot(R2(uInd),Rp2(uInd),'.'); hold on
-% % nonparamDistFit(R2,1)
-% 
-% d2 = d{subjInd,sessInd};
-% d2.voxProp.ecc = R2;
-% plotVoxOnFoV(d2,p,ind)
-
-
-
-subjInd = 1;
 sessInd = 1;
-flattenEccDist(d{subjInd,sessInd},p)
+for subjInd = 1:size(d,1)
+    ind = true([size(d{subjInd,sessInd}.sin,1) 1]);
+    plotVoxOnFoV(d{subjInd,sessInd},p,ind,0)
+    title(['subj' num2str(subjInd) '; before'])
+    plotVoxOnFoV(d{subjInd,sessInd},p,ind,1)
+    title(['subj' num2str(subjInd) '; after'])
+end
+
 
 %% Feature selection
 featSel = cell(size(d));
