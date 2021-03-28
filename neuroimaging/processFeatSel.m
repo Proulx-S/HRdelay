@@ -55,10 +55,33 @@ end
 d = dP; clear dP
 
 
-warning('not done here')
-keyboard
-p.figOption.verbose = 1;
-d = flattenEccDist2(d,p);
+% p.figOption.verbose
+d = flattenEccDist(d,2);
+figure('WindowStyle','docked');
+subjInd = 2;
+X = d{subjInd,1}.voxProp.eccXY.X;
+Y = d{subjInd,1}.voxProp.eccXY.Y;
+d{subjInd,1}
+Zecc = d{subjInd,1}.voxProp.eccXY.density;
+surf(Xecc,Yecc,Zecc,'LineStyle','none'); hold on
+U = d{subjInd,1}.voxProp.pol,d{subjInd,1}.voxProp.eccFlat.U;
+V = d{subjInd,1}.voxProp.pol,d{subjInd,1}.voxProp.eccFlat.V;
+[U,V] = meshgrid(U,V);
+
+
+
+W = interp2(Xecc,Xecc,Zecc,U,V);
+W  = interp2(U,V,Zecc,Xecc,Xecc);
+Vq = interp2(X,Y,V   ,Xq  ,Yq)
+Vq =        interp2(U,V,V        ,Xq,Yq)
+
+scatter3(U,V,densityUV,eps,'w.')
+colormap hot
+alpha(.8)
+set(gca, 'color', 'b');
+ax = gca;
+ax.PlotBoxAspectRatio(1:2) = max(ax.PlotBoxAspectRatio(1:2));
+ax.DataAspectRatio(1:2) = max(ax.DataAspectRatio(1:2));
 
 sessInd = 1;
 for subjInd = 1:size(d,1)

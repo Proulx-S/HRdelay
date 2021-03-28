@@ -1,7 +1,11 @@
-function plotVoxOnFoV(d,p,ind,flatFlag)
-if ~exist('flatFlag','var')
+function plotVoxOnFoV(d,ind,eccRef,flatFlag)
+if ~exist('flatFlag','var') || isempty(flatFlag)
     flatFlag = 0;
 end
+if ~exist('eccRef','var')
+    eccRef = [];
+end
+
 vec = mean(d.sin(ind,:),2);
 [vec,~] = polarSpaceNormalization(vec,'cartRoi');
 %         plotDensity(vec)
@@ -15,7 +19,7 @@ figure('WindowStyle','docked');
 if ~flatFlag
     ecc = d.voxProp.ecc(ind);
 else
-    ecc = d.voxProp.eccFlat(ind);
+    ecc = d.voxProp.eccFlat.ecc(ind);
 end
 pol = d.voxProp.pol(ind)./180*pi;
 hemiL = d.voxProp.hemifieldL(ind);
@@ -35,14 +39,9 @@ ax.ThetaZeroLocation = 'top';
 %     ax.RLim = [0 log(max(ecc)+1)];
 % end
 
-if ~isempty(p.featSel.fov.threshVal) && ~flatFlag
+if ~isempty(eccRef)
     th = repmat(linspace(0,2*pi,50),[2 1])';
-%     if flatFlag
-%         r = log(p.featSel.fov.threshVal+1);
-%     else
-        r = p.featSel.fov.threshVal;
-%     end
-    polarplot(th,r+zeros(size(th)),'k');
+    polarplot(th,eccRef+zeros(size(th)),'k');
 end
 
 
