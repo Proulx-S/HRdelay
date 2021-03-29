@@ -59,87 +59,31 @@ d = dP; clear dP
 d = flattenEccDist(d,2);
 
 for subjInd = 1:size(d,1)
-sessInd = 1;
-voxProp = d{subjInd,sessInd}.voxProp;
-voxProp.ecc = voxProp.ecc2eccFlat(voxProp.ecc);
-[densityUV,U,V,densityXY,X,Y] = pol2surf(voxProp);
-
-ind = true(size(d{subjInd,sessInd}.sin,1),1);
-vecUV = mean(d{subjInd,sessInd}.sin(ind,:),2);
-[vecUV,~] = polarSpaceNormalization(vecUV,'cartRoi');
-vecUV = abs(angle(vecUV));
-F = scatteredInterpolant(U,V,vecUV,'natural');
-vecXY = F(X,Y);
-vecXY(isnan(densityXY)) = nan;
-cMap = redblue(256);
-vecSpace = linspace(pi,0,256);
-C = interp1(vecSpace,cMap,vecXY,'nearest');
-
-figure('WindowStyle','docked');
-surf(X,Y,vecXY,C,'LineStyle','none'); hold on
-view([0,90]);
-scatter3(U,V,vecUV,eps,'k.')
-ax = gca;
-ax.DataAspectRatio = ax.DataAspectRatio([1 1 3]);
-ax.PlotBoxAspectRatio = ax.PlotBoxAspectRatio([1 1 3]);
-
-plotVoxOnFoV(d{subjInd,sessInd},[],[],1)
-end
-
-
-
-[U,V] = meshgrid(U,V);
-
-
-vecXY = interp2(U',V,vecUV',X,Y)
-Vq = interp2(X,Y,V,Xq,Yq)
-
-
-
-
-[X,Y] = meshgrid(-3:3);
-V = peaks(X,Y);
-figure
-surf(X,Y,V)
-title('Original Sampling');
-
-
-
-
-
-figure('WindowStyle','docked');
-subjInd = 2;
-X = d{subjInd,1}.voxProp.eccXY.X;
-Y = d{subjInd,1}.voxProp.eccXY.Y;
-d{subjInd,1}
-Zecc = d{subjInd,1}.voxProp.eccXY.density;
-surf(Xecc,Yecc,Zecc,'LineStyle','none'); hold on
-U = d{subjInd,1}.voxProp.pol,d{subjInd,1}.voxProp.eccFlat.U;
-V = d{subjInd,1}.voxProp.pol,d{subjInd,1}.voxProp.eccFlat.V;
-[U,V] = meshgrid(U,V);
-
-
-
-W = interp2(Xecc,Xecc,Zecc,U,V);
-W  = interp2(U,V,Zecc,Xecc,Xecc);
-Vq = interp2(X,Y,V   ,Xq  ,Yq)
-Vq =        interp2(U,V,V        ,Xq,Yq)
-
-scatter3(U,V,densityUV,eps,'w.')
-colormap hot
-alpha(.8)
-set(gca, 'color', 'b');
-ax = gca;
-ax.PlotBoxAspectRatio(1:2) = max(ax.PlotBoxAspectRatio(1:2));
-ax.DataAspectRatio(1:2) = max(ax.DataAspectRatio(1:2));
-
-sessInd = 1;
-for subjInd = 1:size(d,1)
-    ind = true([size(d{subjInd,sessInd}.sin,1) 1]);
-    plotVoxOnFoV(d{subjInd,sessInd},p,ind,0)
-    title(['subj' num2str(subjInd) '; before'])
-    plotVoxOnFoV(d{subjInd,sessInd},p,ind,1)
-    title(['subj' num2str(subjInd) '; after'])
+    sessInd = 1;
+    voxProp = d{subjInd,sessInd}.voxProp;
+    voxProp.ecc = voxProp.ecc2eccFlat(voxProp.ecc);
+    [densityUV,U,V,densityXY,X,Y] = pol2surf(voxProp);
+    
+    ind = true(size(d{subjInd,sessInd}.sin,1),1);
+    vecUV = mean(d{subjInd,sessInd}.sin(ind,:),2);
+    [vecUV,~] = polarSpaceNormalization(vecUV,'cartRoi');
+    vecUV = abs(angle(vecUV));
+    F = scatteredInterpolant(U,V,vecUV,'natural');
+    vecXY = F(X,Y);
+    vecXY(isnan(densityXY)) = nan;
+    cMap = redblue(256);
+    vecSpace = linspace(pi,0,256);
+    C = interp1(vecSpace,cMap,vecXY,'nearest');
+    
+    figure('WindowStyle','docked');
+    surf(X,Y,vecXY,C,'LineStyle','none'); hold on
+    view([0,90]);
+    scatter3(U,V,vecUV,eps,'k.')
+    ax = gca;
+    ax.DataAspectRatio = ax.DataAspectRatio([1 1 3]);
+    ax.PlotBoxAspectRatio = ax.PlotBoxAspectRatio([1 1 3]);
+    
+    plotVoxOnFoV(d{subjInd,sessInd},[],[],1)
 end
 
 
