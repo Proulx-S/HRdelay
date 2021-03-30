@@ -61,7 +61,10 @@ d = flattenEccDist(d,p,1);
 for subjInd = 2:size(d,1)
     sessInd = 1;
     
-    getDelayFovMap(d{subjInd,sessInd},1);
+    levels = 0.1:0.1:0.9;
+    levelColors = repmat({'w'},[1 length(levels)]);
+    getDelayFovMap(d{subjInd,sessInd},0.5,10,levelColors);
+    getDelayFovMap(d{subjInd,sessInd},0.5,levels,levelColors);
     
     sessInd = 1;
     voxProp = d{subjInd,sessInd}.voxProp;
