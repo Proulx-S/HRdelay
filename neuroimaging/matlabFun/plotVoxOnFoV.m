@@ -11,7 +11,7 @@ elseif isa(flatFlag,'cfit')
     flatTrans = flatFlag;
     flatFlag = 1;
 elseif flatFlag
-    flatTrans = d.voxProp.ecc2eccFlat;
+    flatTrans = d.voxProp.eccTrans;
 end
 
 vec = mean(d.sin(ind,:),2);

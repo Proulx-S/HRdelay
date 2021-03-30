@@ -54,36 +54,90 @@ for subjInd = 1:length(d)
 end
 d = dP; clear dP
 
-
+%% Empirical FOV
 % p.figOption.verbose
-d = flattenEccDist(d,2);
+d = flattenEccDist(d,p,1);
 
-for subjInd = 1:size(d,1)
+for subjInd = 2:size(d,1)
+    sessInd = 1;
+    
+    getDelayFovMap(d{subjInd,sessInd},1);
+    
     sessInd = 1;
     voxProp = d{subjInd,sessInd}.voxProp;
-    voxProp.ecc = voxProp.ecc2eccFlat(voxProp.ecc);
-    [densityUV,U,V,densityXY,X,Y] = pol2surf(voxProp);
+    voxProp.ecc = voxProp.eccTrans(voxProp.ecc);
+    [~,U,V,densityXY,X,Y] = pol2surf(voxProp);
     
     ind = true(size(d{subjInd,sessInd}.sin,1),1);
     vecUV = mean(d{subjInd,sessInd}.sin(ind,:),2);
     [vecUV,~] = polarSpaceNormalization(vecUV,'cartRoi');
     vecUV = abs(angle(vecUV));
-    F = scatteredInterpolant(U,V,vecUV,'natural');
+    F = scatteredInterpolant(U,V,vecUV,'natural','nearest');
     vecXY = F(X,Y);
-    vecXY(isnan(densityXY)) = nan;
+%     vecXY(isnan(densityXY)) = nan;
     cMap = redblue(256);
     vecSpace = linspace(pi,0,256);
     C = interp1(vecSpace,cMap,vecXY,'nearest');
+    
+    
+    
+    
+    
+    figure('WindowStyle','docked');
+%     imagesc(X(1,:),Y(:,1),imgaussfilt(vecXY),[0 pi]); hold on
+    imagesc(X(1,:),Y(:,1),vecXY,[0 pi]); hold on
+    colormap(flip(cMap,1));
+    set(gca,'YDir','normal')
+    hScat = scatter(U,V);
+    hScat.MarkerEdgeColor = 'none';
+    hScat.MarkerFaceColor = 'k';
+    hScat.SizeData = 4^2;
+    hScat.MarkerFaceAlpha = 0.1;
+    ax = gca;
+    ax.DataAspectRatio = ax.DataAspectRatio([1 1 3]);
+    ax.PlotBoxAspectRatio = ax.PlotBoxAspectRatio([1 1 3]);
+    xLim = xlim; yLim = ylim;
+    
+    [M,c] = contour(X,Y,imgaussfilt(vecXY,1),[1 1].*pi/2); hold on
+    c.LineColor = 'k';
+%     c.ZData(:) = max(vecXY(:))+1;
+%     scatter3(M(1,2:end),M(2,2:end),ones(1,size(M(:,2:end),2)).*max(vecXY(:))+1)
+%     plot3(M(1,2:end),M(2,2:end),ones(1,size(M(:,2:end),2)).*max(vecXY(:))+1)
+    
+    
+    
     
     figure('WindowStyle','docked');
     surf(X,Y,vecXY,C,'LineStyle','none'); hold on
     view([0,90]);
     scatter3(U,V,vecUV,eps,'k.')
+    ylim(yLim); xlim(xLim);
     ax = gca;
     ax.DataAspectRatio = ax.DataAspectRatio([1 1 3]);
     ax.PlotBoxAspectRatio = ax.PlotBoxAspectRatio([1 1 3]);
     
-    plotVoxOnFoV(d{subjInd,sessInd},[],[],1)
+    [M,c] = contour(X,Y,vecXY,[1 1].*pi/2); hold on
+    c.ZData(:) = max(vecXY(:))+1;
+    scatter3(M(1,2:end),M(2,2:end),ones(1,size(M(:,2:end),2)).*max(vecXY(:))+1)
+    plot3(M(1,2:end),M(2,2:end),ones(1,size(M(:,2:end),2)).*max(vecXY(:))+1)
+    
+    
+    
+    for i = 1:2
+        ecc = voxProp.eccTrans(p.featSel.fov.threshVal(i));
+        pol = linspace(-pi,pi,100);
+        [u,v] = pol2cart(pol,ecc);
+        plot3(u,v,max(vecUV).*ones(size(v)),'k')
+    end
+    eccList = 0:6;
+    for eccInd = 1:length(eccList)
+        ecc = voxProp.eccTrans(eccList(eccInd));
+        pol = linspace(-pi,pi,100);
+        [u,v] = pol2cart(pol,ecc);
+        plot3(u,v,max(vecUV).*ones(size(v)),'color',[1 1 1].*0.8)
+    end
+    
+    
 end
 
 

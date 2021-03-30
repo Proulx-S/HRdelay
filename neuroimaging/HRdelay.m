@@ -1,4 +1,5 @@
 clear all
+close all
 %% Dependencies
 gitDependencyPath = '/Users/sebastienproulx/Documents/GitHub/utilities';
 matDependencyPath = '/Users/sebastienproulx/Dropbox/MATLAB';
