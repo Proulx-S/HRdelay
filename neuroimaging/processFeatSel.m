@@ -54,17 +54,14 @@ for subjInd = 1:length(d)
 end
 d = dP; clear dP
 
-% d = flattenEccDist(d,p,1);
-% for subjInd = 1:size(d,1)
-%     sessInd = 1;
-%     
-%     sm = 0.3;
-%     level = 0.3;
-%     [hLine,hScat] = getDelayFovMap(d{subjInd,sessInd},sm,level);
-%     ind = [1 -2];
-%     indIn = contour2mask(hLine,ind,hScat);
-% end
-
+%% Precompute flattened voxel ecc distribution on fov
+if p.featSel.fov.doIt && strcmp(p.featSel.fov.threshMethod,'empirical')
+    d = flattenEccDist(d,p,1);
+    smList    = [0.6 0.4 0.4 0.4 0.4 0.4]; % ecc
+    levelList = [0.3 0.3 0.3 0.3 0.3 0.3]; % 0:1
+    padFac = 1.3;
+    contIndList = {[1 -2] [1 -2] [1 -2] [1 -2] [1 -2] [1 -2]}; % contour indices, positive values->select voxels inside contour; negative values->select voxels outside contour
+end
 
 %% Feature selection
 featSel = cell(size(d));
@@ -72,7 +69,7 @@ disp('computing feature selection stats')
 for sessInd = 1:numel(d)
     disp(['sess' num2str(sessInd) '/' num2str(numel(d))])
     [subjInd,sessInd] = ind2sub(size(d),sessInd);
-    featSel{subjInd,sessInd} = getFeatSel(d{subjInd,sessInd},p);
+    featSel{subjInd,sessInd} = getFeatSel(d{subjInd,sessInd},p,smList(subjInd),levelList(subjInd),padFac,contIndList{subjInd},subjInd);
 end
 disp('done')
 

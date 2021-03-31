@@ -3,25 +3,38 @@ if ~exist('plotFlag','var')
     plotFlag = 1;
 end
 eccRef = p.featSel.fov.threshVal';
-subjInd = 1;
-sessInd = 1;
 
 %% Plot original vox distribution on fov
-if plotFlag>=1
-    plotVoxOnFoV(d{subjInd,sessInd},[],eccRef)
-    title('orig')
+if plotFlag>=2
+    for subjInd = 1:size(d,1)
+        plotVoxOnFoV(d{subjInd,p.figOption.sessInd},[],eccRef)
+        title(['subj' num2str(subjInd) '; orig'])
+    end
+elseif plotFlag>=1
+    plotVoxOnFoV(d{p.figOption.subjInd,p.figOption.sessInd},[],eccRef)
+    title(['subj' num2str(p.figOption.subjInd) '; orig'])
 end
 %% Flatten vox distribution based on circle area
 [ecc2eccFlat_1,~] = getFlatTrans(d,'circ',[],plotFlag);
-if plotFlag>=1
-    plotVoxOnFoV(d{subjInd,sessInd},[],eccRef,ecc2eccFlat_1{subjInd})
-    title('circular flattened')
+if plotFlag>=2
+    for subjInd = 1:size(d,1)
+        plotVoxOnFoV(d{subjInd,p.figOption.sessInd},[],eccRef,ecc2eccFlat_1{subjInd})
+        title(['subj' num2str(subjInd) '; circular flattened'])
+    end
+elseif plotFlag>=1
+    plotVoxOnFoV(d{p.figOption.subjInd,p.figOption.sessInd},[],eccRef,ecc2eccFlat_1{p.figOption.subjInd})
+    title(['subj' num2str(p.figOption.subjInd) '; circular flattened'])
 end
 %% Flatten vox distribution based empirically measured pdf
-[ecc2eccFlat_1_2,~] = getFlatTrans(d,'empiric',ecc2eccFlat_1,plotFlag);
-if plotFlag>=1
-    plotVoxOnFoV(d{subjInd,sessInd},[],eccRef,ecc2eccFlat_1_2{subjInd})
-    title('empirically flattened')
+[ecc2eccFlat_1_2,~] = getFlatTrans(d,'empirical',ecc2eccFlat_1,plotFlag);
+if plotFlag>=2
+    for subjInd = 1:size(d,1)
+        plotVoxOnFoV(d{subjInd,p.figOption.sessInd},[],eccRef,ecc2eccFlat_1_2{subjInd})
+        title(['subj' num2str(subjInd) '; empirically flattened'])
+    end
+elseif plotFlag>=1
+    plotVoxOnFoV(d{p.figOption.subjInd,p.figOption.sessInd},[],eccRef,ecc2eccFlat_1_2{p.figOption.subjInd})
+    title(['subj' num2str(p.figOption.subjInd) '; empirically flattened'])
 end
 %% Output the ecc transform to d
 for sessInd = 1:size(d,2)
@@ -49,7 +62,7 @@ for subjInd = 1:size(d,1)
 end
 
 switch transFlag
-    case 'empiric'
+    case 'empirical'
         nPts = 1000;
         %% Estimate empirical pdf(ecc)
         eccXY = cell(size(d,1),1);
@@ -62,15 +75,20 @@ switch transFlag
         eccXYspline = cell(size(d,1),1);
         densityXYspline = cell(size(d,1),1);
         sessInd = 1;
+        sm = 0.99;
         for subjInd = 1:size(d,1)
-            [eccXY{subjInd},densityXY{subjInd},X{subjInd},Y{subjInd},okInd{subjInd},U{subjInd},V{subjInd},eccXYspline{subjInd},densityXYspline{subjInd}] = getEccPd(d{subjInd,sessInd},ecc{subjInd,sessInd},plotFlag);
-            if plotFlag>1
+            [eccXY{subjInd},densityXY{subjInd},X{subjInd},Y{subjInd},okInd{subjInd},U{subjInd},V{subjInd},eccXYspline{subjInd},densityXYspline{subjInd},eccXYbin{subjInd},densityXYmed{subjInd}] = getEccPd(d{subjInd,sessInd},ecc{subjInd,sessInd},sm,plotFlag);
+            if (plotFlag>1 && subjInd==1) || plotFlag>2
                 title(['subj' num2str(subjInd)]);
                 figure('WindowStyle','docked');
                 hScat = scatter(eccXY{subjInd}(okInd{subjInd}),densityXY{subjInd}(okInd{subjInd}),'ko','filled'); hold on
                 alpha(hScat,0.1)
-                plot(eccXYspline{subjInd},densityXYspline{subjInd},'r')
+                plot(eccXYbin{subjInd},densityXYmed{subjInd},'or')
+                plot(eccXYspline{subjInd},densityXYspline{subjInd},'-r')
                 title(['subj' num2str(subjInd)]);
+                legend({'voxels' 'median-filtered' 'spline-smoothed'})
+                xlabel('fov ecc (dva)')
+                ylabel('voxel density on fov')
             end
         end
         % Interpolate on a grid common across subjects
@@ -175,7 +193,7 @@ end
 ecc2eccFlatMean = smSpline(cat(1,eccOrig{:}),eccFlatMean);
 
 
-function [eccXY,densityXY,X,Y,okInd,U,V,eccXYspline,densityXYspline] = getEccPd(d,ecc,plotFlag)
+function [eccXY,densityXY,X,Y,okInd,U,V,eccXYspline,densityXYspline,eccXYbin,densityXYmed] = getEccPd(d,ecc,sm,plotFlag)
 if exist('ecc','var') || ~isempty(ecc)
     d.voxProp.ecc = ecc;
 end
@@ -196,11 +214,57 @@ if plotFlag>1
 end
 [~,eccXY] = cart2pol(X,Y);
 okInd = ~isnan(densityXY);
+if exist('sm','var') && ~isempty(sm)
+    sm2 = sm;
+end
 sm = 0.8;
-[fitresult, ~] = fitSpline(eccXY(okInd), densityXY(okInd), sm);
+%median filter
+n = 100;
+[~,edges,bin] = histcounts(eccXY(okInd),n);
+eccXYbin = edges(1:end-1)+diff(edges([1 end]))/n/2;
+densityTmp = densityXY(okInd);
+densityXYmed = nan(size(eccXYbin));
+for binInd = 1:n
+    densityXYmed(binInd) = median(densityTmp(bin==binInd));
+end
+
+%smothing spline
+% [fitresult, ~] = fitSpline(eccXY(okInd), densityXY(okInd), sm);
+[fitresult, ~] = fitSpline(eccXYbin, densityXYmed, sm2);
 eccXYspline = linspace(min(eccXY(okInd)),max(eccXY(okInd)),100);
 densityXYspline = fitresult(eccXYspline);
 
+
+function [fitresult, gof] = fitSpline(rho, densityXY, sm, plotFlag)
+if ~exist('plotFlag','var')
+    plotFlag = 0;
+end
+
+%% Fit: 'untitled fit 1'.
+[xData, yData] = prepareCurveData( rho, densityXY );
+
+% Set up fittype and options.
+ft = fittype( 'smoothingspline' );
+opts = fitoptions( 'Method', 'SmoothingSpline' );
+if exist('sm','var') && ~isempty(sm)
+    opts.SmoothingParam = sm;
+else
+    opts.SmoothingParam = 0.8;
+end
+
+% Fit model to data.
+[fitresult, gof] = fit( xData, yData, ft, opts );
+
+if plotFlag
+    % Plot fit with data.
+    figure( 'Name', 'untitled fit 1' );
+    h = plot( fitresult, xData, yData );
+    legend( h, 'densityXY vs. rho', 'untitled fit 1', 'Location', 'NorthEast', 'Interpreter', 'none' );
+    % Label axes
+    xlabel( 'rho', 'Interpreter', 'none' );
+    ylabel( 'densityXY', 'Interpreter', 'none' );
+    grid on
+end
 
 
 function [fitresult, gof] = smSpline(curecc, cureccFlat)
