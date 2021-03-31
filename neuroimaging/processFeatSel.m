@@ -54,31 +54,16 @@ for subjInd = 1:length(d)
 end
 d = dP; clear dP
 
-%% Empirical FOV
-d = flattenEccDist(d,p,1);
-
-for subjInd = 1:size(d,1)
-    sessInd = 1;
-    
-    sm = 0.3;
-    level = 0.3;
-    ind = [1 2];
-    [~,hLine] = getDelayFovMap(d{subjInd,sessInd},sm,level);
-    showTheseContour(hLine,ind)
-    
-    
-    set(hLine([1 2]))
-    
-    hLine(2).Color = 'k';
-    ind = [1 2];
-    tmp = true(size(hLine));
-    tmp(ind) = false;
-    ind = tmp; clear tmp
-    delete(hLine(ind))
-    
-    ax(2).Children.XData
-    
-end
+% d = flattenEccDist(d,p,1);
+% for subjInd = 1:size(d,1)
+%     sessInd = 1;
+%     
+%     sm = 0.3;
+%     level = 0.3;
+%     [hLine,hScat] = getDelayFovMap(d{subjInd,sessInd},sm,level);
+%     ind = [1 -2];
+%     indIn = contour2mask(hLine,ind,hScat);
+% end
 
 
 %% Feature selection

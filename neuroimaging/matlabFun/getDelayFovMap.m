@@ -1,4 +1,4 @@
-function [cont,hLine] = getDelayFovMap(d,filterSD,level)
+function [hLine,hScat] = getDelayFovMap(d,filterSD,level)
 % filterSD in ecc dva
 % level between 0 and 1
 
