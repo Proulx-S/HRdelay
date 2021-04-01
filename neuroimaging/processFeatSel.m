@@ -58,7 +58,7 @@ d = dP; clear dP
 if p.featSel.fov.doIt && strcmp(p.featSel.fov.threshMethod,'empirical')
     d = flattenEccDist(d,p,1);
     %            1    2    3    4    5    6
-    smList    = [0.45 0.50 0.50 0.50 0.50 0.50]; % ecc
+    smList    = [0.50 0.50 0.50 0.50 0.50 0.50]; % ecc
     levelList = [0.30 0.35 0.35 0.35 0.35 0.35]; % 0:1
 %     smList    = [0.45 0.50 0.60 0.50 0.50 0.60]; % ecc
 %     levelList = [0.35 0.35 0.35 0.35 0.35 0.40]; % 0:1
