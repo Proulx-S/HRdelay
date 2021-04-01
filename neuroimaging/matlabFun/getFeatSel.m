@@ -26,6 +26,47 @@ end
 ind = true(size(d.sin,1),1);
 
 
+%% Voxels representing stimulus fov
+if p.featSel.fov.doIt
+    curInfo1 = {'fov'};
+    
+    thresh = p.featSel.(char(curInfo1));
+    curInfo2 = {thresh.threshMethod};
+    pVal = nan(size(ind));
+    switch thresh.threshMethod
+        case 'ecc'
+            featVal = d.voxProp.ecc;
+            curThresh = thresh.threshVal;
+            
+            curIndIn = curThresh(1)<featVal & featVal<curThresh(2);
+        case 'empirical'
+%             curFeatIndIn = allFeatIndIn(~cellfun('isempty',strfind(allFeatMethod,'vein:')) ...
+%                 | ~cellfun('isempty',strfind(allFeatMethod,'act:')) ...
+%                 | ~cellfun('isempty',strfind(allFeatMethod,'respVecSig:')));
+%             prevInd = all(catcell(3,curFeatIndIn),3);
+%             prevInd = prevInd(:,1);
+            
+            prevInd = ind;
+            
+            interp = 'natural'; % 'linear' 'natural' 'nearest'
+            extrap = 'none'; % 'linear' or 'nearest'
+            contData = getDelayFovContour(d,p,prevInd,sm,level,padFac,subjInd,interp,extrap);
+            curIndIn = applyDelayFovContour(d,p,contData,contInd,subjInd,interp,extrap);
+            featVal = contData.vecUV;
+        otherwise
+            error('X')
+    end
+    curIndIn = repmat(curIndIn,[1 length(condIndPairList)]);
+    
+    allFeatVal(end+1) = {featVal};
+    allFeatP(end+1) = {pVal};
+    allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
+    allFeatIndIn(end+1) = {curIndIn};
+    
+%     ind = ind & curIndIn;
+end
+
+
 %% Non vein voxels
 if p.featSel.vein.doIt
     curInfo1 = {'vein'};
@@ -156,43 +197,6 @@ if p.featSel.respVecSig.doIt
 %     info1(end+1) = curInfo1;
 %     info2(end+1) = curInfo2;
 %     n(end+1) = nnz(ind);
-end
-
-%% Voxels representing stimulus fov
-if p.featSel.fov.doIt
-    curInfo1 = {'fov'};
-    
-    thresh = p.featSel.(char(curInfo1));
-    curInfo2 = {thresh.threshMethod};
-    pVal = nan(size(ind));
-    switch thresh.threshMethod
-        case 'ecc'
-            featVal = d.voxProp.ecc;
-            curThresh = thresh.threshVal;
-            
-            curIndIn = curThresh(1)<featVal & featVal<curThresh(2);
-            curIndIn = repmat(curIndIn,[1 length(condIndPairList)]);
-        case 'empirical'
-            curFeatIndIn = allFeatIndIn(~cellfun('isempty',strfind(allFeatMethod,'vein:')) ...
-                | ~cellfun('isempty',strfind(allFeatMethod,'act:')) ...
-                | ~cellfun('isempty',strfind(allFeatMethod,'respVecSig:')));
-            prevInd = all(catcell(3,curFeatIndIn),3);
-            prevInd = prevInd(:,1);
-            warning('need to do something here')
-            keyboard
-            [hLine,hScat,featVal] = getDelayFovMap(d,p,prevInd,sm,level,padFac,subjInd);
-            curIndIn = contour2mask(hLine,contInd,hScat);
-            drawnow
-        otherwise
-            error('X')
-    end
-    allFeatVal(end+1) = {featVal};
-    allFeatP(end+1) = {pVal};
-    %             allFeatPrevInd(end+1) = {prevInd};
-    allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
-    allFeatIndIn(end+1) = {curIndIn};
-    
-%     ind = ind & curIndIn;
 end
 
 %% Response vector distribution across voxels
@@ -379,6 +383,7 @@ if p.featSel.respVecDiff.doIt
             curThresh = thresh.percentile;
             curInfo2 = {[curInfo2{1} '>' num2str(curThresh)]};
             
+            curIndIn = false(size(featVal));
             for condIndPairInd = 1:length(condIndPairList)
                 curIndIn(:,condIndPairInd) = featVal(:,condIndPairInd)>=prctile(featVal(prevInd,condIndPairInd),curThresh);
 %                 curIndIn(:,condIndPairInd) = featVal(:,condIndPairInd)>=prctile(featVal(prevInd(:,condIndPairInd),condIndPairInd),curThresh);

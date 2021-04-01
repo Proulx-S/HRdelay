@@ -57,10 +57,13 @@ d = dP; clear dP
 %% Precompute flattened voxel ecc distribution on fov
 if p.featSel.fov.doIt && strcmp(p.featSel.fov.threshMethod,'empirical')
     d = flattenEccDist(d,p,1);
-    smList    = [0.6 0.4 0.4 0.4 0.4 0.4]; % ecc
-    levelList = [0.3 0.3 0.3 0.3 0.3 0.3]; % 0:1
-    padFac = 1.3;
-    contIndList = {[1 -2] [1 -2] [1 -2] [1 -2] [1 -2] [1 -2]}; % contour indices, positive values->select voxels inside contour; negative values->select voxels outside contour
+    %            1    2    3    4    5    6
+    smList    = [0.45 0.50 0.50 0.50 0.50 0.50]; % ecc
+    levelList = [0.30 0.35 0.35 0.35 0.35 0.35]; % 0:1
+%     smList    = [0.45 0.50 0.60 0.50 0.50 0.60]; % ecc
+%     levelList = [0.35 0.35 0.35 0.35 0.35 0.40]; % 0:1
+    padFac = 1.2;
+    contIndList = {[1] [1 -2] [1 -2] [1 -2] [1 -2] [1 -2]}; % contour indices, positive values->select voxels inside contour; negative values->select voxels outside contour
 end
 
 %% Feature selection
@@ -69,6 +72,9 @@ disp('computing feature selection stats')
 for sessInd = 1:numel(d)
     disp(['sess' num2str(sessInd) '/' num2str(numel(d))])
     [subjInd,sessInd] = ind2sub(size(d),sessInd);
+    if sessInd==2
+        keyboard
+    end
     featSel{subjInd,sessInd} = getFeatSel(d{subjInd,sessInd},p,smList(subjInd),levelList(subjInd),padFac,contIndList{subjInd},subjInd);
 end
 disp('done')

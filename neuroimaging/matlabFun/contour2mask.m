@@ -15,10 +15,10 @@ if exist('hScat','var')
         end
     end
     indIn = all(indIn,2);
-    hScat2 = copyobj(hScat,hScat.Parent);
-    hScat2.XData(:,~indIn) = [];
-    hScat2.YData(:,~indIn) = [];
-    hScat.Visible = 'off';
+%     hScat2 = copyobj(hScat,hScat.Parent);
+%     hScat2.XData(:,~indIn) = [];
+%     hScat2.YData(:,~indIn) = [];
+%     hScat.Visible = 'off';
 else
     indIn = [];
 end
