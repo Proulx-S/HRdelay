@@ -26,7 +26,7 @@ ax.PlotBoxAspectRatio = ax.PlotBoxAspectRatio([1 1 3]);
 % [M,c] = contour(X,Y,vecXYcont,ones(2,1).*level); hold on
 
 for i = 1:length(cont)
-    if ismember(i,abs(contInd))
+    if ismember(i,abs(contInd)) | contInd==inf
         plot(cont{i}(:,1),cont{i}(:,2),'k')
     end
 end

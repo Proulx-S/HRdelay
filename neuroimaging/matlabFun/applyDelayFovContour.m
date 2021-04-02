@@ -1,15 +1,53 @@
 % function [hLine,hScat,vecUV] = applyDelayFovContour(d,p,ind,filterSD,level,padFac,subjInd)
-function [indIn] = applyDelayFovContour(d,p,contData,contInd,subjInd,interp,extrap)
+function indIn = applyDelayFovContour(d,p,contData,contInd,subjInd,interp,extrap,contInd2)
 
 %% Get voxel selection
-indIn = false(size(contData.vecUV,1),length(contInd));
-for i = 1:length(contInd)
-    indIn(:,i) = inpolygon(contData.U,contData.V,contData.cont{abs(contInd(i))}(:,1),contData.cont{abs(contInd(i))}(:,2));
-    if contInd(i)<0
-        indIn(:,i) = ~indIn(:,i);
+if isfield(contData,'contPgon')
+    contPgon = regions(contData.contPgon);
+    contData.cont = {contPgon.Vertices};
+    if length(unique(contData.contLevel))==1
+        contData.contLevel = contData.contLevel(1);
+    else
+        contData.contLevel = nan;
+    end
+    if contInd2==inf
+        contInd2 = 1:length(contData.cont);
+    end
+    contData.cont = contData.cont(contInd2);
+    contInd = 1:length(contData.cont);
+    indOut = false(size(d.sin,1),1);
+    for i = 1:length(contInd)
+        indOut = indOut | inpolygon(contData.U,contData.V,contData.cont{contInd(i)}(:,1),contData.cont{contInd(i)}(:,2));
+    end
+    indIn = ~indOut;
+else
+    if contInd==inf
+        indIn = true(size(d.sin,1),1);
+    else
+        if nnz(contInd>0)
+            indIn = false(size(contData.vecUV,1),nnz(contInd>0));
+        else
+            indIn = true(size(contData.vecUV,1),1);
+        end
+        iIn = 0;
+        if nnz(contInd<0)
+            indOut = false(size(contData.vecUV,1),nnz(contInd<0));
+        else
+            indOut = false(size(contData.vecUV,1),1);
+        end
+        iOut = 0;
+        for i = 1:length(contInd)
+            if contInd(i)<0
+                iOut = iOut+1;
+                indOut(:,iOut) = inpolygon(contData.U,contData.V,contData.cont{abs(contInd(i))}(:,1),contData.cont{abs(contInd(i))}(:,2));
+            else
+                iIn = iIn+1;
+                indIn(:,iIn) = inpolygon(contData.U,contData.V,contData.cont{abs(contInd(i))}(:,1),contData.cont{abs(contInd(i))}(:,2));
+            end
+        end
+        indIn = any(indIn,2) & any(~indOut,2);
     end
 end
-indIn = any(indIn,2);
 
 %% Plot
 F = scatteredInterpolant(contData.U,contData.V,contData.vecUV,interp,extrap);
@@ -21,11 +59,13 @@ title(['subj' num2str(subjInd)])
 drawnow
 xLim = xlim; yLim = ylim;
 
-showDelayFovContour([],[],[],contData.cMap,contData.U(indIn),contData.V(indIn),contData.cont,contInd)
-addEccRef(d,p)
-set(gca,'XLim',xLim,'YLim',yLim)
-title(['subj' num2str(subjInd)])
-drawnow
+if contInd~=inf
+    showDelayFovContour([],[],[],contData.cMap,contData.U(indIn),contData.V(indIn),contData.cont,contInd)
+    addEccRef(d,p)
+    set(gca,'XLim',xLim,'YLim',yLim)
+    title(['subj' num2str(subjInd)])
+    drawnow
+end
 
 
 % 

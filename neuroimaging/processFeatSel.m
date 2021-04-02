@@ -57,13 +57,19 @@ d = dP; clear dP
 %% Precompute flattened voxel ecc distribution on fov
 if p.featSel.fov.doIt && strcmp(p.featSel.fov.threshMethod,'empirical')
     d = flattenEccDist(d,p,1);
-    %            1    2    3    4    5    6
-    smList    = [0.50 0.50 0.50 0.50 0.50 0.50]; % ecc
-    levelList = [0.30 0.35 0.35 0.35 0.35 0.35]; % 0:1
-%     smList    = [0.45 0.50 0.60 0.50 0.50 0.60]; % ecc
-%     levelList = [0.35 0.35 0.35 0.35 0.35 0.40]; % 0:1
+    %                   1    2    3    4    5    6
+%     smList           = [0.20 0.20 0.20 0.20 0.20 0.20]; % ecc
+    smList           = [0.15 0.15 0.15 0.15 0.15 0.15]; % ecc
+    levelList        = [0.50 0.50 0.50 0.50 0.50 0.50]; % 0:1
+    mergeRadiusList  = [1.00 1.00 1.00 1.00 1.00 1.00]; % 0:1
+    marginRadiusList = [0.30 0.30 0.30 0.30 0.30 0.30]; % 0:1
+% %   %            1    2    3    4    5    6
+%     smList    = [0.50 0.50 0.50 0.50 0.50 0.50]; % ecc
+%     levelList = [0.30 0.35 0.35 0.35 0.35 0.35]; % 0:1
     padFac = 1.2;
-    contIndList = {[1] [1 -2] [1 -2] [1 -2] [1 -2] [1 -2]}; % contour indices, positive values->select voxels inside contour; negative values->select voxels outside contour
+%     contIndList = {[1 2] [1 -2] [1 2 3] [1 -2 3] [1 -2] [1 -2]}; % contour indices, positive values->select voxels inside contour; negative values->select voxels outside contour
+    contIndList = {[inf] [inf] [inf] [inf] [inf] [inf]}; % contour indices, positive values->select voxels inside contour; negative values->select voxels outside contour
+    contIndList2 = {[1 2 3] [inf] [inf] [inf] [inf] [inf]}; % contour indices, positive values->select voxels inside contour; negative values->select voxels outside contour
 end
 
 %% Feature selection
@@ -75,7 +81,7 @@ for sessInd = 1:numel(d)
     if sessInd==2
         keyboard
     end
-    featSel{subjInd,sessInd} = getFeatSel(d{subjInd,sessInd},p,smList(subjInd),levelList(subjInd),padFac,contIndList{subjInd},subjInd);
+    featSel{subjInd,sessInd} = getFeatSel(d{subjInd,sessInd},p,smList(subjInd),levelList(subjInd),padFac,contIndList{subjInd},subjInd,contIndList2{subjInd},mergeRadiusList(subjInd),marginRadiusList(subjInd));
 end
 disp('done')
 

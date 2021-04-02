@@ -1,4 +1,4 @@
-function featSel = getFeatSel(d,p,sm,level,padFac,contInd,subjInd)                
+function featSel = getFeatSel(d,p,sm,level,padFac,contInd,subjInd,contInd2,mergeRadius,marginRadius)
 
 allFeatVal = cell(0);
 allFeatP = cell(0);
@@ -51,7 +51,9 @@ if p.featSel.fov.doIt
             interp = 'natural'; % 'linear' 'natural' 'nearest'
             extrap = 'none'; % 'linear' or 'nearest'
             contData = getDelayFovContour(d,p,prevInd,sm,level,padFac,subjInd,interp,extrap);
-            curIndIn = applyDelayFovContour(d,p,contData,contInd,subjInd,interp,extrap);
+            contData = processDelayFovContour(d,p,contData,contInd,subjInd,interp,extrap,mergeRadius,marginRadius);
+            curIndIn = applyDelayFovContour(d,p,contData,1:contData.contPgon.NumRegions,subjInd,interp,extrap,contInd2);
+%             curIndIn = applyDelayFovContour(d,p,contData,contInd,subjInd,interp,extrap);
             featVal = contData.vecUV;
         otherwise
             error('X')

@@ -72,7 +72,7 @@ vecXY = nanconv(vecXY,kernel,'nanout');
 % imagesc(X(1,:),Y(:,1),vecXY,hIm.Parent.CLim); hold on
 % scatter(U,V,'.k')
 
-vecXY(outXY|outUV) = level;
+vecXY(outXY|outUV) = level-pi*0.01;
 
 M = contourc(X(1,:),Y(:,1),vecXY,ones(2,1).*level);
 cont = cell(0);
