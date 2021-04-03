@@ -26,7 +26,7 @@ p.featSel.act.threshMethod = 'fdr'; % '%ile' 'p' 'fdr'
 p.featSel.act.threshVal = 0.05; % threshMethod='p' or 'fdr'
 p.featSel.act.percentile = 20; % threshMethod='%ile'
 % Most significant response vectors
-p.featSel.respVecSig.doIt = 1;
+p.featSel.respVecSig.doIt = 0;
 p.featSel.respVecSig.threshMethod = 'fdr'; % '%ile' 'p' 'fdr'
 p.featSel.respVecSig.threshVal = 0.05; % threshMethod='p' or 'fdr'
 p.featSel.respVecSig.percentile = 20; % threshMethod='%ile'
@@ -39,7 +39,7 @@ p.featSel.lateVein.doIt = 0;
 p.featSel.lateVein.threshMethod = '%ile'; % '%ile' 'p' 'fdr'
 p.featSel.lateVein.percentile = 20;
 % Most discriminant voxels
-p.featSel.respVecDiff.doIt = 1;
+p.featSel.respVecDiff.doIt = 0;
 p.featSel.respVecDiff.threshMethod = '%ile'; % '%ile' 'p' 'fdr'
 p.featSel.respVecDiff.threshVal = 0.5; % threshMethod='p' or 'fdr'
 p.featSel.respVecDiff.percentile = 20; % threshMethod='%ile'

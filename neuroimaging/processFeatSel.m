@@ -56,34 +56,57 @@ d = dP; clear dP
 
 %% Precompute flattened voxel ecc distribution on fov
 if p.featSel.fov.doIt && strcmp(p.featSel.fov.threshMethod,'empirical')
+    disp('Flattening: computing')
     d = flattenEccDist(d,p,1);
-    %                   1    2    3    4    5    6
-%     smList           = [0.20 0.20 0.20 0.20 0.20 0.20]; % ecc
-    smList           = [0.15 0.15 0.15 0.15 0.15 0.15]; % ecc
-    levelList        = [0.50 0.50 0.50 0.50 0.50 0.50]; % 0:1
-    mergeRadiusList  = [1.00 1.00 1.00 1.00 1.00 1.00]; % 0:1
-    marginRadiusList = [0.30 0.30 0.30 0.30 0.30 0.30]; % 0:1
-% %   %            1    2    3    4    5    6
-%     smList    = [0.50 0.50 0.50 0.50 0.50 0.50]; % ecc
-%     levelList = [0.30 0.35 0.35 0.35 0.35 0.35]; % 0:1
-    padFac = 1.2;
-%     contIndList = {[1 2] [1 -2] [1 2 3] [1 -2 3] [1 -2] [1 -2]}; % contour indices, positive values->select voxels inside contour; negative values->select voxels outside contour
-    contIndList = {[inf] [inf] [inf] [inf] [inf] [inf]}; % contour indices, positive values->select voxels inside contour; negative values->select voxels outside contour
-    contIndList2 = {[1 2 3] [inf] [inf] [inf] [inf] [inf]}; % contour indices, positive values->select voxels inside contour; negative values->select voxels outside contour
+    disp('Flattening: done')
+    p.featSel.fov.empirical.padFac = 1.2;
+    d = prepareDelayFovContour(d,p);
+    %                                           1    2    3    4    5    6
+    p.featSel.fov.empirical.smList           = [0.01  0.15  0.15  0.15  0.15  0.15
+                                                0.01  0.15  0.15  0.15  0.15  0.15]; % ecc
+    p.featSel.fov.empirical.levelList        = [0.50  0.50  0.50  0.50  0.50  0.50
+                                                0.50  0.50  0.50  0.50  0.50  0.50]; % 0:1
+    p.featSel.fov.empirical.mergeRadiusList  = [0.60  0.60  0.60  0.60  0.60  0.60
+                                                0.60  0.60  0.60  0.60  0.60  0.60]; % ecc
+    p.featSel.fov.empirical.marginRadiusList = [0.40  0.40  0.40  0.40  0.40  0.40
+                                                0.40  0.40  0.40  0.40  0.40  0.40]; % ecc
+    p.featSel.fov.empirical.contIndList1     = {[1 4 5 11 12 16 20 45  2 8 7 3 37 38 9 39 26 29 42 6 14 24] [inf] [inf] [inf] [inf] [inf]
+                                                [1 4 5 12 18 26 48  9 21 35 3 7 14 2 29 33 8 32 6] [inf] [inf] [inf] [inf] [inf]}; % contour indices, positive values->select voxels inside contour; negative values->select voxels outside contour
+    p.featSel.fov.empirical.contIndList2     = {[inf] [inf] [inf] [inf] [inf] [inf]
+                                                [inf] [inf] [inf] [inf] [inf] [inf]}; % contour indices, positive values->select voxels inside contour; negative values->select voxels outside contour
+
 end
 
 %% Feature selection
 featSel = cell(size(d));
-disp('computing feature selection stats')
-for sessInd = 1:numel(d)
-    disp(['sess' num2str(sessInd) '/' num2str(numel(d))])
-    [subjInd,sessInd] = ind2sub(size(d),sessInd);
-    if sessInd==2
-        keyboard
+f = cell(size(d));
+% disp('computing feature selection stats')
+for sessInd = 1:size(d,2)
+    for subjInd = 1:size(d,1)
+        p.subjInd = subjInd;
+        p.sessInd = sessInd;
+        disp(['subj' num2str(subjInd) '; sess' num2str(sessInd)])
+        [featSel{subjInd,sessInd},f{subjInd,sessInd}] = getFeatSel(d{subjInd,sessInd},p);
     end
-    featSel{subjInd,sessInd} = getFeatSel(d{subjInd,sessInd},p,smList(subjInd),levelList(subjInd),padFac,contIndList{subjInd},subjInd,contIndList2{subjInd},mergeRadiusList(subjInd),marginRadiusList(subjInd));
 end
-disp('done')
+
+fAll = cell(size(f{1}));
+supTitleList = {'Contour Definition' 'Contour Processing' 'Final Contour' 'Contour Masking'};
+for fAllInd = 1:size(f{1},2)
+    if fAllInd~=4
+        fAll{fAllInd} = figure('WindowStyle','docked');
+        [ha, pos] = tight_subplot(size(d,2), size(d,1), 0, 0.1, 0); delete(ha);
+        for subjInd = 1:size(d,1)
+            for sessInd = 1:size(d,2)
+                ax = copyobj(f{subjInd,sessInd}(fAllInd).Children,fAll{fAllInd});
+                ax.Position = pos{(sessInd-1)*size(d,1)+subjInd};
+                ax.Colormap = f{subjInd,sessInd}(fAllInd).Children.Colormap;
+                delete(f{subjInd,sessInd}(fAllInd).Children);
+            end
+        end
+        suptitle(supTitleList{fAllInd})
+    end
+end
 
 
 indInX = cell(1,size(d,2));

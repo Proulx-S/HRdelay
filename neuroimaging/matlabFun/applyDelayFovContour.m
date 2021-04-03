@@ -1,5 +1,5 @@
 % function [hLine,hScat,vecUV] = applyDelayFovContour(d,p,ind,filterSD,level,padFac,subjInd)
-function indIn = applyDelayFovContour(d,p,contData,contInd,subjInd,interp,extrap,contInd2)
+function [indIn,f,f2] = applyDelayFovContour(d,p,plotFlag)
 
 %% Get voxel selection
 if isfield(contData,'contPgon')
@@ -53,14 +53,22 @@ end
 F = scatteredInterpolant(contData.U,contData.V,contData.vecUV,interp,extrap);
 vecXY = F(contData.X,contData.Y);
 vecXY(contData.outXY|contData.outUV) = pi/2;
-showDelayFovContour(contData.X,contData.Y,vecXY,contData.cMap,contData.U,contData.V,contData.cont,contInd)
+if plotFlag
+    f = showDelayFovContour(contData.X,contData.Y,vecXY,contData.cMap,contData.U,contData.V,contData.cont,contInd,'on');
+else
+    f = showDelayFovContour(contData.X,contData.Y,vecXY,contData.cMap,contData.U,contData.V,contData.cont,contInd,'off');
+end
 addEccRef(d,p)
 title(['subj' num2str(subjInd)])
 drawnow
 xLim = xlim; yLim = ylim;
 
 if contInd~=inf
-    showDelayFovContour([],[],[],contData.cMap,contData.U(indIn),contData.V(indIn),contData.cont,contInd)
+    if plotFlag
+        f2 = showDelayFovContour([],[],[],contData.cMap,contData.U(indIn),contData.V(indIn),contData.cont,contInd,'on');
+    else
+        f2 = showDelayFovContour([],[],[],contData.cMap,contData.U(indIn),contData.V(indIn),contData.cont,contInd,'off');
+    end
     addEccRef(d,p)
     set(gca,'XLim',xLim,'YLim',yLim)
     title(['subj' num2str(subjInd)])

@@ -1,4 +1,4 @@
-function showDelayFovContour(X,Y,vecXY,cMap,U,V,cont,contInd,visibilityFlag)
+function f = showDelayFovContour(X,Y,vecXY,cMap,U,V,cont,contInd,visibilityFlag)
 if ~exist('visibilityFlag','var') || isempty(visibilityFlag)
     visibilityFlag = 'on';
 end
