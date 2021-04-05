@@ -26,7 +26,7 @@ elseif plotFlag>=1
     title(['subj' num2str(p.figOption.subjInd) '; circular flattened'])
 end
 %% Flatten vox distribution based empirically measured pdf
-[ecc2eccFlat_1_2,~] = getFlatTrans(d,'empirical',ecc2eccFlat_1,plotFlag);
+[ecc2eccFlat_1_2,eccFlat2ecc_1_2,~] = getFlatTrans(d,'empirical',ecc2eccFlat_1,plotFlag);
 if plotFlag>=2
     for subjInd = 1:size(d,1)
         plotVoxOnFoV(d{subjInd,p.figOption.sessInd},[],eccRef,ecc2eccFlat_1_2{subjInd})
@@ -40,10 +40,11 @@ end
 for sessInd = 1:size(d,2)
     for subjInd = 1:size(d,1)
         d{subjInd,sessInd}.voxProp.eccTrans = ecc2eccFlat_1_2{subjInd};
+        d{subjInd,sessInd}.voxProp.eccTrans_rev = eccFlat2ecc_1_2{subjInd};
     end
 end
 
-function [ecc2eccFlat,ecc2eccFlatMean] = getFlatTrans(d,transFlag,eccTrans,plotFlag)
+function [ecc2eccFlat,eccFlat2ecc,ecc2eccFlatMean] = getFlatTrans(d,transFlag,eccTrans,plotFlag)
 sessInd = 1;
 %% Update ecc with existing flattening transformations
 eccOrig = cell(size(d,1),1);
@@ -189,6 +190,7 @@ end
 ecc2eccFlat = cell(size(d,1),1);
 for subjInd = 1:size(d,1)
     ecc2eccFlat{subjInd} = smSpline(eccOrig{subjInd},eccFlat{subjInd});
+    eccFlat2ecc{subjInd} = smSpline(eccFlat{subjInd},eccOrig{subjInd});
 end
 ecc2eccFlatMean = smSpline(cat(1,eccOrig{:}),eccFlatMean);
 

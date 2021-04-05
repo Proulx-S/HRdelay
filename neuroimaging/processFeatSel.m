@@ -57,23 +57,39 @@ d = dP; clear dP
 %% Precompute flattened voxel ecc distribution on fov
 if p.featSel.fov.doIt && strcmp(p.featSel.fov.threshMethod,'empirical')
     disp('Flattening: computing')
-    d = flattenEccDist(d,p,1);
+    d = flattenEccDist(d,p,3);
     disp('Flattening: done')
     p.featSel.fov.empirical.padFac = 1.2;
     d = prepareDelayFovContour(d,p);
-    %                                           1    2    3    4    5    6
-    p.featSel.fov.empirical.smList           = [0.01  0.15  0.15  0.15  0.15  0.15
-                                                0.01  0.15  0.15  0.15  0.15  0.15]; % ecc
-    p.featSel.fov.empirical.levelList        = [0.50  0.50  0.50  0.50  0.50  0.50
-                                                0.50  0.50  0.50  0.50  0.50  0.50]; % 0:1
-    p.featSel.fov.empirical.mergeRadiusList  = [0.60  0.60  0.60  0.60  0.60  0.60
-                                                0.60  0.60  0.60  0.60  0.60  0.60]; % ecc
-    p.featSel.fov.empirical.marginRadiusList = [0.40  0.40  0.40  0.40  0.40  0.40
-                                                0.40  0.40  0.40  0.40  0.40  0.40]; % ecc
-    p.featSel.fov.empirical.contIndList1     = {[1 4 5 11 12 16 20 45  2 8 7 3 37 38 9 39 26 29 42 6 14 24] [inf] [inf] [inf] [inf] [inf]
-                                                [1 4 5 12 18 26 48  9 21 35 3 7 14 2 29 33 8 32 6] [inf] [inf] [inf] [inf] [inf]}; % contour indices, positive values->select voxels inside contour; negative values->select voxels outside contour
-    p.featSel.fov.empirical.contIndList2     = {[inf] [inf] [inf] [inf] [inf] [inf]
-                                                [inf] [inf] [inf] [inf] [inf] [inf]}; % contour indices, positive values->select voxels inside contour; negative values->select voxels outside contour
+    %                                                 1    2    3    4    5    6
+%     p.featSel.fov.empirical.auto1.smList           = [0.01   0.10   0.10   0.15   0.15   0.15
+%                                                       0.01   0.10   0.10   0.15   0.15   0.15]; % ecc
+%     p.featSel.fov.empirical.auto1.mergeRadiusList  = [0.70   0.70   0.70   0.70   0.70   0.70
+%                                                       0.70   0.70   0.70   0.70   0.70   0.70]; % ecc
+%     p.featSel.fov.empirical.auto1.marginRadiusList = [0.40   0.40   0.40   0.40   0.40   0.40
+%                                                       0.40   0.40   0.40   0.40   0.40   0.40]; % ecc
+%     p.featSel.fov.empirical.auto1.contInList1      = {'auto' 'auto' 'auto' 'auto' 'auto' 'auto'
+%                                                       'auto' 'auto' 'auto' 'auto' 'auto' 'auto'}; % contour indices, positive values->select voxels inside contour; negative values->select voxels outside contour
+    p.featSel.fov.empirical.auto(1).smList           = 0.01; % ecc
+    p.featSel.fov.empirical.auto(1).mergeRadiusList  = 0.70; % ecc
+    p.featSel.fov.empirical.auto(1).marginRadiusList = 0.40; % ecc
+    p.featSel.fov.empirical.auto(2).smList           = 0.15; % ecc
+    p.featSel.fov.empirical.auto(2).mergeRadiusList  = 0.70; % ecc
+    p.featSel.fov.empirical.auto(2).marginRadiusList = 0.40; % ecc
+    
+    
+%     p.featSel.fov.empirical.smList           = [0.01  0.1  0.1  0.15  0.15  0.15
+%                                                 0.01  0.1  0.1  0.15  0.15  0.15]; % ecc
+%     p.featSel.fov.empirical.levelList        = [0.50  0.50  0.50  0.50  0.50  0.50
+%                                                 0.50  0.50  0.50  0.50  0.50  0.50]; % 0:1
+%     p.featSel.fov.empirical.mergeRadiusList  = [0.70  0.70  0.70  0.70  0.70  0.70
+%                                                 0.70  0.70  0.70  0.70  0.70  0.70]; % ecc
+%     p.featSel.fov.empirical.marginRadiusList = [0.40  0.40  0.40  0.40  0.40  0.40
+%                                                 0.40  0.40  0.40  0.40  0.40  0.40]; % ecc
+%     p.featSel.fov.empirical.contIndList1     = {[1 4 5 11 12 16 20 45  2 8 7 3 37 38 9 39 26 29 42 6 14 24] [inf] [inf] [inf] [inf] [inf]
+%                                                 [1 4 5 12 18 26 48  9 21 35 3 7 14 2 29 33 8 32 6] [inf] [inf] [inf] [inf] [inf]}; % contour indices, positive values->select voxels inside contour; negative values->select voxels outside contour
+%     p.featSel.fov.empirical.contIndList2     = {[inf] [inf] [inf] [inf] [inf] [inf]
+%                                                 [inf] [inf] [inf] [inf] [inf] [inf]}; % contour indices, positive values->select voxels inside contour; negative values->select voxels outside contour
 
 end
 
@@ -90,23 +106,29 @@ for sessInd = 1:size(d,2)
     end
 end
 
-fAll = cell(size(f{1}));
-supTitleList = {'Contour Definition' 'Contour Processing' 'Final Contour' 'Contour Masking'};
-for fAllInd = 1:size(f{1},2)
-    if fAllInd~=4
-        fAll{fAllInd} = figure('WindowStyle','docked');
-        [ha, pos] = tight_subplot(size(d,2), size(d,1), 0, 0.1, 0); delete(ha);
-        for subjInd = 1:size(d,1)
-            for sessInd = 1:size(d,2)
-                ax = copyobj(f{subjInd,sessInd}(fAllInd).Children,fAll{fAllInd});
-                ax.Position = pos{(sessInd-1)*size(d,1)+subjInd};
-                ax.Colormap = f{subjInd,sessInd}(fAllInd).Children.Colormap;
-                delete(f{subjInd,sessInd}(fAllInd).Children);
-            end
+fIndList = [1 3 6 8 9];
+supTitleList = {'1st contours' '1st contours processing' '2nd contours' '2nd contours processing' 'Final contours'};
+fAll = cell(size(fIndList));
+% supTitleList = {'Contour Definition' 'Contour Processing' 'Final Contour' 'Contour Masking'};
+for i = 1:length(fIndList)
+    fInd = fIndList(i);
+    fAll{i} = figure('WindowStyle','docked');
+    [ha, pos] = tight_subplot(size(d,2), size(d,1), 0, 0.1, 0); delete(ha);
+    for subjInd = 1:size(d,1)
+        for sessInd = 1:size(d,2)
+            ax = copyobj(f{subjInd,sessInd}(fInd).Children,fAll{i});
+            ax.Position = pos{(sessInd-1)*size(d,1)+subjInd};
+            ax.Colormap = f{subjInd,sessInd}(fInd).Children.Colormap;
+%             delete(f{subjInd,sessInd}(fInd).Children);
         end
-        suptitle(supTitleList{fAllInd})
     end
+    suptitle(supTitleList{i})
 end
+
+
+
+
+
 
 
 indInX = cell(1,size(d,2));

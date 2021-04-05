@@ -46,15 +46,32 @@ if p.featSel.fov.doIt
 %             prevInd = all(catcell(3,curFeatIndIn),3);
 %             prevInd = prevInd(:,1);
             
+            
+            warning('remove small voxel island here')
+            d{sessInd}.featSel.cont.outXY;
+            keyboard
+            
             prevInd = ind;
             
-            d = getDelayFovContour(d,p,prevInd);
-            [curIndIn,f] = processDelayFovContour(d,p,1);
+%             d = getDelayFovContour(d,p,prevInd);
+            sm           = p.featSel.fov.empirical.auto(1).smList;
+            mergeRadius  = p.featSel.fov.empirical.auto(1).mergeRadiusList;
+            marginRadius = p.featSel.fov.empirical.auto(1).marginRadiusList;
+            d = getDelayFovContour2(d,sm,prevInd);
+            [~,f1,pgon] = processDelayFovContour2(d,p,sm,mergeRadius,marginRadius,[],'do not add pgonRef',1);
+            if p.featSel.fov.empirical.auto(2).smList~=sm
+                sm           = p.featSel.fov.empirical.auto(2).smList;
+                d = getDelayFovContour2(d,sm,prevInd);
+            end
+            mergeRadius  = p.featSel.fov.empirical.auto(2).mergeRadiusList;
+            marginRadius = p.featSel.fov.empirical.auto(2).marginRadiusList;
+            [curIndIn,f2,~] = processDelayFovContour2(d,p,sm,mergeRadius,marginRadius,pgon,'add pgonRef',1);
             
             featVal = d.featSel.cont.vecUV;
         otherwise
             error('X')
     end
+    f = [f1 f2];
     curIndIn = repmat(curIndIn,[1 length(condIndPairList)]);
     
     allFeatVal(end+1) = {featVal};

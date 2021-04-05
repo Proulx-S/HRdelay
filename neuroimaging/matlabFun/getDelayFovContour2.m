@@ -1,4 +1,4 @@
-function d = getDelayFovContour(d,p,ind)
+function d = getDelayFovContour2(d,sm,ind)
 
 %% Initialize
 U = d.featSel.cont.U;
@@ -8,19 +8,7 @@ X = d.featSel.cont.X;
 Y = d.featSel.cont.Y;
 outXY = d.featSel.cont.outXY;
 
-if isfield(p.featSel.fov.empirical,'auto')
-    smList = p.featSel.fov.empirical.auto(1).smList;
-    if length(smList)>1
-        error('code that')
-    else
-       sm = smList;
-    end
-    level = 0.5;
-else
-    sm = p.featSel.fov.empirical.smList(p.sessInd,p.subjInd);
-    level = p.featSel.fov.empirical.levelList(p.sessInd,p.subjInd);
-end
-
+level = 0.5;
 level = level.*pi;
 warning('off','MATLAB:scatteredInterpolant:DupPtsAvValuesWarnId')
 if ~exist('ind','var') || isempty(ind)

@@ -1,13 +1,58 @@
-function [indIn,fs] = processDelayFovContour(d,p,plotFlag)
+function [indIn,fs,pgon] = processDelayFovContour(d,p,pgonStart,plotFlag)
 warning('off','MATLAB:polyshape:repairedBySimplify')
 %% Initiate
 subjInd = p.subjInd;
 sessInd = p.sessInd;
-contInd1 = p.featSel.fov.empirical.contIndList1{sessInd,subjInd};
-contInd2 = p.featSel.fov.empirical.contIndList2{sessInd,subjInd};
-sm = p.featSel.fov.empirical.smList(sessInd,subjInd);
-mergeRadius = p.featSel.fov.empirical.mergeRadiusList(sessInd,subjInd);
-marginRadius = p.featSel.fov.empirical.marginRadiusList(sessInd,subjInd);
+
+if isfield(p.featSel.fov.empirical,'auto')
+    autoSelect1 = 1;
+    contInList1 = p.featSel.fov.empirical.auto(1).contInList1;
+    autoSelect2 = 1;
+    contInList2 = p.featSel.fov.empirical.auto(1).contInList2;
+    smList = p.featSel.fov.empirical.auto(1).smList;
+    mergeRadiusList = p.featSel.fov.empirical.auto(1).mergeRadiusList;
+    marginRadiusList = p.featSel.fov.empirical.auto(1).marginRadiusList;
+    
+    if length(contInList1)>1
+        contInd1 = p.featSel.fov.empirical.contIndList1{sessInd,subjInd};
+    else
+        contInd1 = contInList1{1};
+    end
+    if ischar(contInd1)&&strcmp(contInd1,'auto')
+        contInd1 = inf;
+    end
+    
+    if length(contInList2)>1
+        contInd2 = p.featSel.fov.empirical.contIndList2{sessInd,subjInd};
+    else        
+        contInd2 = contInList2{1};
+    end
+    if ischar(contInd2)&&strcmp(contInd2,'auto')
+        contInd2 = inf;
+    end
+    
+    if length(smList)>1
+        sm = p.featSel.fov.empirical.smList(sessInd,subjInd);
+    else
+        sm = smList;
+    end
+    if length(mergeRadiusList)>1
+        mergeRadius = p.featSel.fov.empirical.mergeRadiusList(sessInd,subjInd);
+    else
+        mergeRadius = mergeRadiusList;
+    end
+    if length(marginRadiusList)>1
+        marginRadius = p.featSel.fov.empirical.marginRadiusList(sessInd,subjInd);
+    else
+        marginRadius = marginRadiusList;
+    end
+else
+    contInd1 = p.featSel.fov.empirical.contIndList1{sessInd,subjInd};
+    contInd2 = p.featSel.fov.empirical.contIndList2{sessInd,subjInd};
+    sm = p.featSel.fov.empirical.smList(sessInd,subjInd);
+    mergeRadius = p.featSel.fov.empirical.mergeRadiusList(sessInd,subjInd);
+    marginRadius = p.featSel.fov.empirical.marginRadiusList(sessInd,subjInd);
+end
 
 X = d.featSel.cont.X;
 Y = d.featSel.cont.Y;
@@ -35,14 +80,44 @@ if plotFlag
     end
     fs = [fs f];
     plot(pgon,'FaceAlpha',0);
-    for contInd = 1:pgon.NumRegions
-        [x,y] = centroid(pgon,contInd);
-        text(x,y,num2str(contInd),'HorizontalAlignment','Center','VerticalAlignment','Middle','FontSize',12,'Color','m')
+    if ~isempty(pgonStart)
+        plot(pgonStart,'FaceAlpha',0);
+    end
+    if ~autoSelect1
+        for contInd = 1:pgon.NumRegions
+            [x,y] = centroid(pgon,contInd);
+            text(x,y,num2str(contInd),'HorizontalAlignment','Center','VerticalAlignment','Middle','FontSize',12,'Color','m')
+        end
     end
     addEccRef(d,p)
     title({['subj' num2str(subjInd) '; sess' num2str(sessInd)] ['sm=' num2str(sm) '; mergeRad=' num2str(mergeRadius) '; marginRad=' num2str(marginRadius)]})
     drawnow
 end
+
+if autoSelect1
+    if plotFlag>1
+        f = showDelayFovContour(X,Y,vecXY,cMap,U,V,[],[],'on');
+    else
+        f = showDelayFovContour(X,Y,vecXY,cMap,U,V,[],[],'off');
+    end
+    fs = [fs f];
+    [x,y] = addEccRef(d,p);
+    Axis = axis;
+    pgonRef = polyshape(mat2cell(x,size(x,1),[1 1]),mat2cell(y,size(y,1),[1 1]));
+    pgonRef = addboundary(pgonRef,Axis([1 2 2 1 1]),Axis([1 1 2 2 1]));
+    pgon = regions(pgon);    
+    pgon = pgon(overlaps(pgonRef,pgon));
+    [~,b] = sort(area(pgon),'descend');
+    pgon = union(pgon(b));
+    pgon = simplify(pgon);
+    pgon = rmholes(pgon);
+    plot(pgon,'FaceAlpha',0)
+%     for contInd = 1:pgon.NumRegions
+%         [x,y] = centroid(pgon,contInd);
+%         text(x,y,num2str(contInd),'HorizontalAlignment','Center','VerticalAlignment','Middle','FontSize',12,'Color','m')
+%     end
+end
+
 
 
 %% Process contour
@@ -85,12 +160,7 @@ end
 % Sort from larger to smaller area contours
 pgon = regions(pgon);
 [~,b] = sort(area(pgon),'descend');
-pgon = pgon(b);
-pgon2 = polyshape;
-for i = 1:length(pgon)
-    pgon2 = addboundary(pgon2,pgon(i).Vertices(:,1),pgon(i).Vertices(:,2));
-end
-pgon = pgon2; clear pgon2
+pgon = union(pgon(b));
 
 % Remove some other contours
 if contInd2~=inf
