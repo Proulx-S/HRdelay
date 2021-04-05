@@ -59,7 +59,8 @@ if p.featSel.fov.doIt && strcmp(p.featSel.fov.threshMethod,'empirical')
     disp('Flattening: computing')
     d = flattenEccDist(d,p,3);
     disp('Flattening: done')
-    p.featSel.fov.empirical.padFac = 1.2;
+    p.featSel.fov.empirical.padFac             = 1.2;
+    p.featSel.fov.empirical.minCoutPercentArea = 0.05;
     d = prepareDelayFovContour(d,p);
     %                                                 1    2    3    4    5    6
 %     p.featSel.fov.empirical.auto1.smList           = [0.01   0.10   0.10   0.15   0.15   0.15
@@ -106,8 +107,8 @@ for sessInd = 1:size(d,2)
     end
 end
 
-fIndList = [1 3 6 8 9];
-supTitleList = {'1st contours' '1st contours processing' '2nd contours' '2nd contours processing' 'Final contours'};
+fIndList = [1 2 4 7 9 10];
+supTitleList = {'removing small islands' '1st contours' '1st contours processing' '2nd contours' '2nd contours processing' 'Final contours'};
 fAll = cell(size(fIndList));
 % supTitleList = {'Contour Definition' 'Contour Processing' 'Final Contour' 'Contour Masking'};
 for i = 1:length(fIndList)
@@ -119,7 +120,7 @@ for i = 1:length(fIndList)
             ax = copyobj(f{subjInd,sessInd}(fInd).Children,fAll{i});
             ax.Position = pos{(sessInd-1)*size(d,1)+subjInd};
             ax.Colormap = f{subjInd,sessInd}(fInd).Children.Colormap;
-%             delete(f{subjInd,sessInd}(fInd).Children);
+            delete(f{subjInd,sessInd}(fInd).Children);
         end
     end
     suptitle(supTitleList{i})

@@ -16,7 +16,11 @@ if ~exist('ind','var') || isempty(ind)
 end
 
 %% Interpolate delay to surface
-F = scatteredInterpolant(U(ind),V(ind),ones(size(U(ind))).*pi/2,'nearest','none');
+try
+    F = scatteredInterpolant(U(ind),V(ind),ones(size(U(ind))).*pi/2,'nearest','none');
+catch
+    keyboard
+end
 outUV = isnan(F(X,Y));
 
 F = scatteredInterpolant(U(ind),V(ind),vecUV(ind),'natural','none');

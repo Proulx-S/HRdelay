@@ -1,4 +1,4 @@
-function [indIn,fs,pgon] = processDelayFovContour2(d,p,sm,mergeRadius,marginRadius,pgonRef,method,plotFlag)
+function [indIn,fs,pgon] = processDelayFovContour2(d,p,prevInd,sm,mergeRadius,marginRadius,pgonRef,method,plotFlag)
 warning('off','MATLAB:polyshape:repairedBySimplify')
 %% Initiate
 subjInd = p.subjInd;
@@ -8,9 +8,9 @@ X = d.featSel.cont.X;
 Y = d.featSel.cont.Y;
 vecXY = d.featSel.cont.vecXY;
 outXY = d.featSel.cont.outXY;
-U = d.featSel.cont.U;
-V = d.featSel.cont.V;
-vecUV = d.featSel.cont.vecUV;
+U = d.featSel.cont.U(prevInd);
+V = d.featSel.cont.V(prevInd);
+vecUV = d.featSel.cont.vecUV(prevInd);
 outUV = d.featSel.cont.outUV;
 cMap = d.featSel.cont.cMap;
 pgon = d.featSel.cont.pgon;
@@ -83,6 +83,15 @@ pgon = union(pgon(b));
 if plotFlag
     plot(pgon,'FaceColor','none');
 end
+% Select the biggest one of the merged center coutours
+pgonRef2 = regions(pgonRef);
+[~,b] = min(area(pgonRef2));
+pgonRef2 = polybuffer(pgonRef2(b),marginRadius);
+pgon = regions(pgon);
+overInd = find(overlaps(pgonRef2,pgon));
+pgon(overInd(2:end)) = [];
+pgon = union(pgon);
+
 % Expand for conservative boundaries
 pgon = polybuffer(pgon,marginRadius);
 pgon = simplify(pgon);
@@ -123,18 +132,19 @@ end
 
 %% Apply contour to feat selection
 pgon = regions(pgon);
-indIn = false(size(U,1),length(pgon));
+indIn = false(length(prevInd),length(pgon));
+% indIn = false(size(U,1),length(pgon));
 for contInd = 1:length(pgon)
-    indIn(:,contInd) = inpolygon(U,V,pgon(contInd).Vertices(:,1),pgon(contInd).Vertices(:,2));
+    indIn(prevInd,contInd) = inpolygon(U,V,pgon(contInd).Vertices(:,1),pgon(contInd).Vertices(:,2));
 end
-indIn = any(indIn,2);
+indIn = ~any(indIn,2);
 pgon = union(pgon);
 % plot it
 if plotFlag
     if plotFlag>1
-        f = showDelayFovContour(X,Y,[],cMap,U(indIn),V(indIn),[],[],'on');
+        f = showDelayFovContour(X,Y,[],cMap,U(indIn(prevInd)),V(indIn(prevInd)),[],[],'on');
     else
-        f = showDelayFovContour(X,Y,[],cMap,U(indIn),V(indIn),[],[],'off');
+        f = showDelayFovContour(X,Y,[],cMap,U(indIn(prevInd)),V(indIn(prevInd)),[],[],'off');
     end
     fs = [fs f];
     plot(pgon,'FaceColor','none');

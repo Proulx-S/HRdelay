@@ -1,4 +1,5 @@
 function [featSel,f] = getFeatSel(d,p)
+visibleFlag = 0;
 
 allFeatVal = cell(0);
 allFeatP = cell(0);
@@ -29,7 +30,7 @@ ind = true(size(d.sin,1),1);
 %% Voxels representing stimulus fov
 if p.featSel.fov.doIt
     curInfo1 = {'fov'};
-    
+    minCoutPercentArea = p.featSel.fov.empirical.minCoutPercentArea;
     thresh = p.featSel.(char(curInfo1));
     curInfo2 = {thresh.threshMethod};
     pVal = nan(size(ind));
@@ -47,31 +48,71 @@ if p.featSel.fov.doIt
 %             prevInd = prevInd(:,1);
             
             
-            warning('remove small voxel island here')
-            d{sessInd}.featSel.cont.outXY;
-            keyboard
+            M = contourc(d.featSel.cont.X(1,:),d.featSel.cont.Y(:,1),double(d.featSel.cont.outXY),ones(2,1).*0.5);
+            pgon = polyshape;
+            while ~isempty(M)
+                pgon = addboundary(pgon,M(1,2:1+M(2,1)),M(2,2:1+M(2,1)));
+                M(:,1:1+M(2,1)) = [];
+            end
+            pgonOrig = pgon;
             
-            prevInd = ind;
+            pgon = regions(pgon);
+            areas = area(pgon);
+            pgon = pgon(areas/sum(areas) > minCoutPercentArea);
             
-%             d = getDelayFovContour(d,p,prevInd);
+            X = d.featSel.cont.X;
+            Y = d.featSel.cont.Y;
+            U = d.featSel.cont.U;
+            V = d.featSel.cont.V;
+            tmpInd = false([size(X) length(pgon)]);
+            tmpInd2 = false([size(U,1) length(pgon)]);
+            for i = 1:length(pgon)
+                Vertices = pgon(i).Vertices;
+                tmpInd(:,:,i) = inpolygon(X,Y,Vertices(:,1),Vertices(:,2));
+                tmpInd2(:,i) = inpolygon(U,V,Vertices(:,1),Vertices(:,2));
+            end
+            tmpInd = any(tmpInd,3);
+            tmpInd2 = any(tmpInd2,2);
+            if visibleFlag
+                visibleFlag2 = 2;
+            else
+                visibleFlag2 = 1;
+            end
+            if p.figOption.verbose>=3
+                if visibleFlag
+                    f0 = figure('WindowStyle','docked','visible','on');
+                else
+                    f0 = figure('WindowStyle','docked','visible','off');
+                end
+                imagesc(d.featSel.cont.X(1,:),d.featSel.cont.Y(:,1),~tmpInd); hold on
+                set(gca,'YDir','normal'); colormap autumn
+                plot(pgonOrig,'FaceColor','none')
+                set(gca,'PlotBoxAspectRatio',[1 1 1],'DataAspectRatio',[1 1 1]);
+            else
+                f0 = [];
+            end
+            
+            d.featSel.cont.outXY = ~tmpInd;
+            prevInd = ind&tmpInd2;
+            
             sm           = p.featSel.fov.empirical.auto(1).smList;
             mergeRadius  = p.featSel.fov.empirical.auto(1).mergeRadiusList;
             marginRadius = p.featSel.fov.empirical.auto(1).marginRadiusList;
             d = getDelayFovContour2(d,sm,prevInd);
-            [~,f1,pgon] = processDelayFovContour2(d,p,sm,mergeRadius,marginRadius,[],'do not add pgonRef',1);
+            [~,f1,pgon] = processDelayFovContour2(d,p,prevInd,sm,mergeRadius,marginRadius,[],'do not add pgonRef',visibleFlag2);
             if p.featSel.fov.empirical.auto(2).smList~=sm
                 sm           = p.featSel.fov.empirical.auto(2).smList;
                 d = getDelayFovContour2(d,sm,prevInd);
             end
             mergeRadius  = p.featSel.fov.empirical.auto(2).mergeRadiusList;
             marginRadius = p.featSel.fov.empirical.auto(2).marginRadiusList;
-            [curIndIn,f2,~] = processDelayFovContour2(d,p,sm,mergeRadius,marginRadius,pgon,'add pgonRef',1);
+            [curIndIn,f2,~] = processDelayFovContour2(d,p,prevInd,sm,mergeRadius,marginRadius,pgon,'add pgonRef',visibleFlag2);
             
             featVal = d.featSel.cont.vecUV;
         otherwise
             error('X')
     end
-    f = [f1 f2];
+    f = [f0 f1 f2];
     curIndIn = repmat(curIndIn,[1 length(condIndPairList)]);
     
     allFeatVal(end+1) = {featVal};
