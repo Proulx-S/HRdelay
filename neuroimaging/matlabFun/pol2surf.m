@@ -7,8 +7,12 @@ if ~exist('n','var') || isempty(n)
 end
 ecc = voxProp.ecc;
 pol = voxProp.pol;
-pol(voxProp.hemifieldL) = voxProp.pol(voxProp.hemifieldL)./180*pi;
-pol(voxProp.hemifieldR) = -voxProp.pol(voxProp.hemifieldR)./180*pi;
+if any(voxProp.hemifieldL)
+    pol(voxProp.hemifieldL) = voxProp.pol(voxProp.hemifieldL)./180*pi;
+end
+if any(voxProp.hemifieldR)
+    pol(voxProp.hemifieldR) = -voxProp.pol(voxProp.hemifieldR)./180*pi;
+end
 pol = wrapToPi(pol+pi/2);
 [U,V] = pol2cart(pol,ecc);
 

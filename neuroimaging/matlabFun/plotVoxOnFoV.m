@@ -29,10 +29,14 @@ if flatFlag
     ecc = flatTrans(ecc);
 end
 pol = d.voxProp.pol(ind)./180*pi;
-hemiL = d.voxProp.hemifieldL(ind);
-hemiR = d.voxProp.hemifieldR(ind);
-polarscatter(pol(hemiL),ecc(hemiL),eps,c(hemiL,:),'.'); hold on
-polarscatter(-pol(hemiR),ecc(hemiR),eps,c(hemiR,:),'.');
+hemiL = logical(d.voxProp.hemifieldL(ind));
+if any(hemiL)
+    polarscatter(pol(hemiL),ecc(hemiL),eps,c(hemiL,:),'.'); hold on
+end
+hemiR = logical(d.voxProp.hemifieldR(ind));
+if any(hemiR)
+    polarscatter(-pol(hemiR),ecc(hemiR),eps,c(hemiR,:),'.'); hold on
+end
 ax = gca;
 ax.ThetaZeroLocation = 'top';
 
@@ -48,8 +52,8 @@ if ~isempty(eccRef)
 end
 
 if flatFlag
-    ticks = 0:1:20;
     ax = gca;
+    ticks = 0:1:eccRef(2);
     ax.RTick = flatTrans(ticks);
     tickLabels = cellstr(num2str(ticks'));
     tickLabels(9:end) = {''};

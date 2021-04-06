@@ -57,7 +57,23 @@ d = dP; clear dP
 %% Precompute flattened voxel ecc distribution on fov and delay map
 if p.featSel.fov.doIt && strcmp(p.featSel.fov.threshMethod,'empirical')
     disp('Flattening ecc dist: computing')
-    d = flattenEccDist(d,p,1);
+    dL = d(:,sessInd);
+    for subjInd = 1:size(d,1)
+        [dL{subjInd},~] = getOneHemi(d{subjInd,sessInd},p,'L');
+    end
+    dR = d(:,sessInd);
+    for subjInd = 1:size(d,1)
+        [dR{subjInd},~] = getOneHemi(d{subjInd,sessInd},p,'R');
+    end
+    dLR = [dL; dR]; %clear dL dR
+    dLR = flattenEccDist(dLR,p,3);
+    dR = d;
+    for subjInd = 1:size(d,1)
+        for sessInd = 1:size(d,2)
+            [dR{subjInd,sessInd},~] = getOneHemi(d{subjInd,sessInd},p,'R');
+        end
+    end
+    dR = flattenEccDist(dR,p,3);
     disp('Flattening ecc dist: done')
     disp('Delay map for contour: computing')
     p.featSel.fov.empirical.padFac             = 1.2;
