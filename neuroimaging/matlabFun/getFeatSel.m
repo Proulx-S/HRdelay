@@ -30,7 +30,7 @@ ind = true(size(d.sin,1),1);
 %% Voxels representing stimulus fov
 if p.featSel.fov.doIt
     curInfo1 = {'fov'};
-    minCoutPercentArea = p.featSel.fov.empirical.minCoutPercentArea;
+    minContPercentArea = p.featSel.fov.empirical.minContPercentArea;
     thresh = p.featSel.(char(curInfo1));
     curInfo2 = {thresh.threshMethod};
     pVal = nan(size(ind));
@@ -58,7 +58,7 @@ if p.featSel.fov.doIt
             
             pgon = regions(pgon);
             areas = area(pgon);
-            pgon = pgon(areas/sum(areas) > minCoutPercentArea);
+            pgon = pgon(areas/sum(areas) > minContPercentArea);
             
             X = d.featSel.cont.X;
             Y = d.featSel.cont.Y;
@@ -78,19 +78,15 @@ if p.featSel.fov.doIt
             else
                 visibleFlag2 = 1;
             end
-            if p.figOption.verbose>=3
-                if visibleFlag
-                    f0 = figure('WindowStyle','docked','visible','on');
-                else
-                    f0 = figure('WindowStyle','docked','visible','off');
-                end
-                imagesc(d.featSel.cont.X(1,:),d.featSel.cont.Y(:,1),~tmpInd); hold on
-                set(gca,'YDir','normal'); colormap autumn
-                plot(pgonOrig,'FaceColor','none')
-                set(gca,'PlotBoxAspectRatio',[1 1 1],'DataAspectRatio',[1 1 1]);
+            if visibleFlag
+                f0 = figure('WindowStyle','docked','visible','on');
             else
-                f0 = [];
+                f0 = figure('WindowStyle','docked','visible','off');
             end
+            imagesc(d.featSel.cont.X(1,:),d.featSel.cont.Y(:,1),~tmpInd); hold on
+            set(gca,'YDir','normal'); colormap autumn
+            plot(pgonOrig,'FaceColor','none')
+            set(gca,'PlotBoxAspectRatio',[1 1 1],'DataAspectRatio',[1 1 1]);
             
             d.featSel.cont.outXY = ~tmpInd;
             prevInd = ind&tmpInd2;
