@@ -65,15 +65,10 @@ if p.featSel.fov.doIt && strcmp(p.featSel.fov.threshMethod,'empirical')
     for subjInd = 1:size(d,1)
         [dR{subjInd},~] = getOneHemi(d{subjInd,sessInd},p,'R');
     end
-    dLR = [dL; dR]; %clear dL dR
+    dLR = [dL; dR]; clear dL dR
     dLR = flattenEccDist(dLR,p,3);
-    dR = d;
-    for subjInd = 1:size(d,1)
-        for sessInd = 1:size(d,2)
-            [dR{subjInd,sessInd},~] = getOneHemi(d{subjInd,sessInd},p,'R');
-        end
-    end
-    dR = flattenEccDist(dR,p,3);
+    dOrig = d;
+    d = dLR;
     disp('Flattening ecc dist: done')
     disp('Delay map for contour: computing')
     p.featSel.fov.empirical.padFac             = 1.2;
@@ -93,9 +88,15 @@ if p.featSel.fov.doIt && strcmp(p.featSel.fov.threshMethod,'empirical')
 end
 
 %% Feature selection
-featSel = cell(size(d));
+featSel_areaAndFov = cell(size(d));
 f = cell(size(d));
 % disp('computing feature selection stats')
+for hemiInd = 1:size(d,1)
+    p.subjInd = hemiInd;
+    p.sessInd = nan;
+    disp(['hemi:' num2str(hemiInd) '/' num2str(size(d,1))])
+    [featSel_areaAndFov{hemiInd},f{hemiInd}] = getFeatSel_areaAndFov(d{hemiInd},p);
+end
 for sessInd = 1:size(d,2)
     for subjInd = 1:size(d,1)
         p.subjInd = subjInd;
@@ -104,6 +105,7 @@ for sessInd = 1:size(d,2)
         [featSel{subjInd,sessInd},f{subjInd,sessInd}] = getFeatSel(d{subjInd,sessInd},p);
     end
 end
+% single hemispheres
 
 fIndList = [1 2 4 7 9 10];
 supTitleList = {'removing small islands' '1st contours' '1st contours processing' '2nd contours' '2nd contours processing' 'Final contours'};
