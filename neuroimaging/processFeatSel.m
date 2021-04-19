@@ -70,7 +70,8 @@ if p.featSel.fov.doIt && strcmp(p.featSel.fov.threshMethod,'empirical')
     disp('Delay map for contour: computing hemiR')
     cont.R = prepareDelayFovContour(d,voxProp.R,p);
     disp('Delay map for contour: done')
-    % Repack into d
+    
+    % Repack voxProp into d
     for subjInd = 1:size(d,1)
         for sessInd = 1:size(d,2)
             d{subjInd,sessInd}.voxProp.L = voxProp.L{subjInd};
@@ -79,6 +80,7 @@ if p.featSel.fov.doIt && strcmp(p.featSel.fov.threshMethod,'empirical')
         voxProp.L{subjInd} = {};
         voxProp.R{subjInd} = {};
     end
+    clear voxProp
 end
 
 %% Setting fov contour params
@@ -125,27 +127,67 @@ for subjInd = 1:size(d,1)
     end
 end
 
-warning('not done; something very wrong with the flatening')
-keyboard
-
 fIndList = [1 2 4 7 9 10];
 supTitleList = {'removing small islands' '1st contours' '1st contours processing' '2nd contours' '2nd contours processing' 'Final contours'};
+% fAll.L = cell(size(fIndList));
+% fAll.R = cell(size(fIndList));
 fAll = cell(size(fIndList));
 % supTitleList = {'Contour Definition' 'Contour Processing' 'Final Contour' 'Contour Masking'};
 for i = 1:length(fIndList)
     fInd = fIndList(i);
+%     fAll.L{i} = figure('WindowStyle','docked');
     fAll{i} = figure('WindowStyle','docked');
-    [ha, pos] = tight_subplot(size(d,2), size(d,1), 0, 0.1, 0); delete(ha);
+    [ha, pos] = tight_subplot(size(d,2), size(d,1)*2, 0, 0.1, 0); delete(ha);
     for subjInd = 1:size(d,1)
         for sessInd = 1:size(d,2)
-            ax = copyobj(f.L{subjInd,sessInd}(fInd).Children,fAll{i});
-            ax.Position = pos{(sessInd-1)*size(d,1)+subjInd};
-            ax.Colormap = f.L{subjInd,sessInd}(fInd).Children.Colormap;
+            hemi = 'L';
+            ax.(hemi) = copyobj(f.(hemi){subjInd,sessInd}(fInd).Children,fAll{i});
+            ax.(hemi).DataAspectRatioMode = 'auto';
+            ax.(hemi).PlotBoxAspectRatioMode = 'auto';
+%           ax = copyobj(f.(hemi){subjInd,sessInd}(fInd).Children,fAll.(hemi){i});
+%             ax.Position = pos{(sessInd-1)*size(d,1)+subjInd};
+            ax.(hemi).Position = pos{(sessInd-1)*(size(d,1)*2)+(subjInd*2-1)};
+            ax.(hemi).Colormap = f.(hemi){subjInd,sessInd}(fInd).Children.Colormap;
             drawnow
-%             delete(f{subjInd,sessInd}(fInd).Children);
+            
+            hemi = 'R';
+            ax.(hemi) = copyobj(f.(hemi){subjInd,sessInd}(fInd).Children,fAll{i});
+            ax.(hemi).DataAspectRatioMode = 'auto';
+            ax.(hemi).PlotBoxAspectRatioMode = 'auto';
+            ax.(hemi).Position = pos{(sessInd-1)*(size(d,1)*2)+(subjInd*2-1)+1};
+            ax.(hemi).Colormap = f.(hemi){subjInd,sessInd}(fInd).Children.Colormap;
+            drawnow
+            
+            yLim = [-1 1].*max(abs([ax.L.YLim ax.R.YLim ax.L.XLim(1) ax.R.XLim(2)]));
+            xLim = yLim(2);
+            ax.L.YLim = yLim;
+            ax.R.YLim = yLim;
+            ax.L.XLim = [-xLim 0];
+            ax.R.XLim = [0 xLim];
+            drawnow
+            
+            ax.L.PlotBoxAspectRatio = [0.5 1 1];
+            ax.R.PlotBoxAspectRatio = [0.5 1 1];
+            
+            ax.L.YAxis.Visible = 'off';
+            ax.R.YAxis.Visible = 'off';
         end
     end
     suptitle(supTitleList{i})
+    
+%     fInd = fIndList(i);
+%     fAll.R{i} = figure('WindowStyle','docked');
+%     [ha, pos] = tight_subplot(size(d,2), size(d,1), 0, 0.1, 0); delete(ha);
+%     for subjInd = 1:size(d,1)
+%         for sessInd = 1:size(d,2)
+%             ax = copyobj(f.R{subjInd,sessInd}(fInd).Children,fAll.R{i});
+%             ax.Position = pos{(sessInd-1)*size(d,1)+subjInd};
+%             ax.Colormap = f.R{subjInd,sessInd}(fInd).Children.Colormap;
+%             drawnow
+% %             delete(f{subjInd,sessInd}(fInd).Children);
+%         end
+%     end
+%     suptitle(supTitleList{i})
 end
 
 

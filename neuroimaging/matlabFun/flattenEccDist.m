@@ -211,7 +211,17 @@ if plotFlag>1
     scatter(eccFlatMean,ecc_cdfMean); hold on
 end
 
+
+% Define this transformation
+[ecc2eccFlat_2,eccFlat2ecc_2] = defineTrans(ecc,eccFlat,transFlag);
+
 % Define the transformation from original ecc to pdf(ecc)-flattened ecc
+[ecc2eccFlat,eccFlat2ecc] = defineTrans(eccOrig,eccFlat,transFlag);
+
+
+
+
+
 ecc2eccFlat = cell(size(d,1),1);
 eccFlat2ecc = cell(size(d,1),1);
 eccOrigMax = max(cat(1,eccOrig{:}));
@@ -250,7 +260,90 @@ for subjInd = 1:size(d,1)
     end
 end
 
+
+% Define the transformation from this transformation to pdf(ecc)-flattened ecc
+ecc2eccFlat_2 = cell(size(d,1),1);
+eccFlat2ecc_2 = cell(size(d,1),1);
+eccMax = max(cat(1,ecc{:}));
+for subjInd = 1:size(d,1)
+    x = ecc{subjInd};
+    y = eccFlat{subjInd};
+    switch transFlag
+        case 'empirical'
+            [a,b] = max(x);
+            y = y./y(b).*a;
+        case 'circ'
+        otherwise
+            error('X')
+    end
+    if plotFlag>1
+        figure('WindowStyle','docked');
+        scatter(x,y); hold on
+    end
+    [x,b] = sort(x);
+    y = y(b);
+    [x,b,~] = unique(x);
+    y = y(b);
+    delta = mean(diff(x(end-10:end)));
+    eccExtra = (x(end)+delta:delta:eccMax)';
+    eccFlatExtra = eccExtra;
+    x = [x; eccExtra];
+    y = [y; eccFlatExtra];
+    ecc2eccFlat_2{subjInd} = smSpline(x,y);
+    xLim = [min(x) max(x)];
+    x = linspace(xLim(1),xLim(2),1000)';
+    y = ecc2eccFlat_2{subjInd}(x);
+    eccFlat2ecc_2{subjInd} = smSpline(y,x);
+    if plotFlag>1
+        plot(x,y); hold on
+        plot(eccFlat2ecc_2{subjInd}(y),y); hold on
+    end
+end
+
 ecc2eccFlatMean = smSpline(cat(1,eccOrig{:}),eccFlatMean);
+
+
+function [ecc2eccFlat,eccFlat2ecc] = defineTrans(ecc,eccFlat,transFlag)
+% Define the transformation from original ecc to pdf(ecc)-flattened ecc
+ecc2eccFlat = cell(size(ecc,1),1);
+eccFlat2ecc = cell(size(ecc,1),1);
+eccMax = max(cat(1,ecc{:}));
+for subjInd = 1:size(ecc,1)
+    x = ecc{subjInd};
+    y = eccFlat{subjInd};
+    switch transFlag
+        case 'empirical'
+            [a,b] = max(x);
+            y = y./y(b).*a;
+        case 'circ'
+        otherwise
+            error('X')
+    end
+    if plotFlag>1
+        figure('WindowStyle','docked');
+        scatter(x,y); hold on
+    end
+    [x,b] = sort(x);
+    y = y(b);
+    [x,b,~] = unique(x);
+    y = y(b);
+    delta = mean(diff(x(end-10:end)));
+    eccExtra = (x(end)+delta:delta:eccMax)';
+    eccFlatExtra = eccExtra;
+    x = [x; eccExtra];
+    y = [y; eccFlatExtra];
+    ecc2eccFlat{subjInd} = smSpline(x,y);
+    xLim = [min(x) max(x)];
+    x = linspace(xLim(1),xLim(2),1000)';
+    y = ecc2eccFlat{subjInd}(x);
+    eccFlat2ecc{subjInd} = smSpline(y,x);
+    if plotFlag>1
+        plot(x,y); hold on
+        plot(eccFlat2ecc{subjInd}(y),y); hold on
+    end
+end
+ecc2eccFlatMean = smSpline(cat(1,ecc{:}),eccFlatMean);
+
 
 
 function [eccXY,densityXY,X,Y,okInd,U,V,eccXYspline,densityXYspline,eccXYbin,densityXYmed] = getEccPd(d,ecc,sm,plotFlag)
