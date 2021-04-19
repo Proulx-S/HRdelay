@@ -1,4 +1,4 @@
-function [d,p] = getOneHemi(d,p,hemi)
+function d = getOneHemi(d,hemi)
 
 ind = d.voxProp.(['hemifield' hemi]);
 
@@ -28,3 +28,4 @@ end
 
 d.voxProp.hemifieldL = logical(d.voxProp.hemifieldL);
 d.voxProp.hemifieldR = logical(d.voxProp.hemifieldR);
+d.voxProp.hemifield = ind;

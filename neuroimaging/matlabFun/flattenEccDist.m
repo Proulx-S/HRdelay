@@ -1,8 +1,12 @@
-function d = flattenEccDist(d,p,plotFlag)
+function voxProp = flattenEccDist(d,hemi,p,plotFlag)
 if ~exist('plotFlag','var')
     plotFlag = 1;
 end
 eccRef = p.featSel.fov.threshVal';
+
+for sessInd = 1:numel(d)
+    d{sessInd} = getOneHemi(d{sessInd},hemi);
+end
 
 %% Plot original vox distribution on fov
 if plotFlag>=2
@@ -38,11 +42,12 @@ elseif plotFlag>=1
     title(['subj' num2str(p.figOption.subjInd) '; empirically flattened'])
 end
 %% Output the ecc transform to d
-for sessInd = 1:size(d,2)
-    for subjInd = 1:size(d,1)
-        d{subjInd,sessInd}.voxProp.eccTrans = ecc2eccFlat_1_2{subjInd};
-        d{subjInd,sessInd}.voxProp.eccTrans_rev = eccFlat2ecc_1_2{subjInd};
-    end
+voxProp = cell(size(d,1),1);
+sessInd = 1;
+for subjInd = 1:size(d,1)
+    voxProp{subjInd} = d{subjInd,sessInd}.voxProp;
+    voxProp{subjInd}.eccTrans = ecc2eccFlat_1_2{subjInd};
+    voxProp{subjInd}.eccTrans_rev = eccFlat2ecc_1_2{subjInd};
 end
 
 function [ecc2eccFlat,eccFlat2ecc,ecc2eccFlatMean] = getFlatTrans(d,transFlag,eccTrans,plotFlag)
@@ -102,15 +107,6 @@ switch transFlag
             ind = isnan(eccGrid_pdf(subjInd,:));
             eccGrid_pdf(subjInd,ind) = eccGrid_pdfMean(ind);
         end
-%         tmp = diff(isnan(eccGrid_pdf),[],2);
-%         for subjInd = 1:size(tmp)
-%             ind1 = find(tmp(subjInd,:)==1);
-%             ind2 = find(tmp(subjInd,:)==-1);
-%             if ~isempty(ind1) && ( any(ind1(1)<ind2) )
-%                 ind = (ind1(1)+1):ind2(ind1(1)<ind2);
-%                 eccGrid_pdf(subjInd,ind) = eccGrid_pdfMean(ind);
-%             end
-%         end
         % Plot
         if plotFlag>1
             for subjInd = 1:size(d,1)
@@ -140,13 +136,11 @@ switch transFlag
         end
         %% Transform ecc toward a flat pdf(ecc)
         % pdf(ecc) -> cdf(ecc)
-        eccGrid_cdf = nan(size(d,1),nPts);
+        eccGrid_cdf = nan(size(eccGrid_pdf));
         for subjInd = 1:size(d,1)
-            ind = ~isnan(eccGrid_pdf(subjInd,:));
-            eccGrid_cdf(subjInd,ind) = cumsum(eccGrid_pdf(subjInd,ind),2);
+            eccGrid_cdf(subjInd,:) = cumsum(eccGrid_pdf(subjInd,:),2);
         end
-        ind = ~isnan(eccGrid_pdfMean);
-        eccGrid_cdfMean(1,ind) = cumsum(eccGrid_pdfMean(1,ind),2);
+        eccGrid_cdfMean = cumsum(eccGrid_pdfMean,2);
         % Normalize cdf(ecc) to max of one based on the group mean (for display
         % purposes)
         eccGrid_cdf = eccGrid_cdf./max(eccGrid_cdfMean);
@@ -222,18 +216,6 @@ ecc2eccFlat = cell(size(d,1),1);
 eccFlat2ecc = cell(size(d,1),1);
 eccOrigMax = max(cat(1,eccOrig{:}));
 for subjInd = 1:size(d,1)
-%     figure('WindowStyle','docked');
-%     scatter(eccOrig{subjInd},eccFlat{subjInd}); hold on
-%     x = eccOrig{subjInd};
-%     y = eccFlat{subjInd};
-%     [ecc2eccFlat{subjInd}, ~] = powerFit(x, y);
-%     [eccFlat2ecc{subjInd}, ~] = powerFit(y, x);
-%     xLim = xlim;
-%     x = linspace(max([xLim(1) min(x)]),xLim(2),100);
-%     plot(x,ecc2eccFlat{subjInd}(x))
-    
-%     
-    figure('WindowStyle','docked');
     x = eccOrig{subjInd};
     y = eccFlat{subjInd};
     switch transFlag
@@ -244,7 +226,10 @@ for subjInd = 1:size(d,1)
         otherwise
             error('X')
     end
-    scatter(x,y); hold on
+    if plotFlag>1
+        figure('WindowStyle','docked');
+        scatter(x,y); hold on
+    end
     [x,b] = sort(x);
     y = y(b);
     [x,b,~] = unique(x);
@@ -252,80 +237,19 @@ for subjInd = 1:size(d,1)
     delta = mean(diff(x(end-10:end)));
     eccOrigExtra = (x(end)+delta:delta:eccOrigMax)';
     eccFlatExtra = eccOrigExtra;
-%     eccFlatExtra = interp1(x,y,eccOrigExtra,'linear','extrap');
     x = [x; eccOrigExtra];
     y = [y; eccFlatExtra];
     ecc2eccFlat{subjInd} = smSpline(x,y);
     xLim = [min(x) max(x)];
     x = linspace(xLim(1),xLim(2),1000)';
     y = ecc2eccFlat{subjInd}(x);
-    plot(x,y); hold on
     eccFlat2ecc{subjInd} = smSpline(y,x);
-    plot(eccFlat2ecc{subjInd}(y),y); hold on
-%     
-% 
-%     ind = eccOrigAll>max(eccOrig{subjInd});
-%     ecc2eccFlat{subjInd} = smSpline([eccOrig{subjInd}; eccOrigAll(ind)],[eccFlat{subjInd}; eccFlatAll(ind)]);
-% %     figure('WindowStyle','docked');
-% %     scatter(eccOrig{subjInd},ecc2eccFlat{subjInd}(eccOrig{subjInd})); hold on
-% %     scatter(eccOrigAll(ind),ecc2eccFlat{subjInd}(eccOrigAll(ind))); hold on
-%     xLim = [min([eccOrig{subjInd}; eccOrigAll(ind)]) max([eccOrig{subjInd}; eccOrigAll(ind)])];
-%     x = linspace(xLim(1),xLim(2),1000)';
-%     y = ecc2eccFlat{subjInd}(x);
-% %     plot(x,y)
-%     
-%     eccFlat2ecc{subjInd} = smSpline(y,x);
-%     
-% %     figure('WindowStyle','docked');
-% %     scatter(eccFlat2ecc{subjInd}(eccFlat{subjInd}),eccFlat{subjInd}); hold on
-% %     scatter(eccFlat2ecc{subjInd}(eccFlatAll(ind)),eccFlatAll(ind)); hold on
-% %     yLim = [min([eccFlat{subjInd}; eccFlatAll(ind)]) max([eccFlat{subjInd}; eccFlatAll(ind)])];
-% %     y = linspace(yLim(1),yLim(2),10000);
-% %     x = eccFlat2ecc{subjInd}(y);
-% %     plot(x,y)
-
+    if plotFlag>1
+        plot(x,y); hold on
+        plot(eccFlat2ecc{subjInd}(y),y); hold on
+    end
 end
 
-
-
-
-% ecc2eccFlat = cell(size(d,1),1);
-% eccFlat2ecc = cell(size(d,1),1);
-% eccOrigAll = cat(1,eccOrig{:});
-% eccFlatAll = cat(1,eccFlat{:});
-% % figure('WindowStyle','docked');
-% % scatter(eccOrigAll,eccFlatAll); hold on
-% n = 100;
-% [eccOrigAll,eccFlatAll] = medianFilter(eccOrigAll,eccFlatAll,n);
-% % plot(eccOrigAll,eccFlatAll);
-% [fitresult, ~] = fitSpline(eccOrigAll, eccFlatAll, 0.99);
-% eccFlatAll = fitresult(eccOrigAll);
-% eccOrigAll = eccOrigAll';
-% % plot(eccOrigAll,eccFlatAll);
-% 
-% for subjInd = 1:size(d,1)
-%     ind = eccOrigAll>max(eccOrig{subjInd});
-%     ind(find(ind,5)) = false;
-%     ecc2eccFlat{subjInd} = smSpline([eccOrig{subjInd}; eccOrigAll(ind)],[eccFlat{subjInd}; eccFlatAll(ind)]);
-% %     figure('WindowStyle','docked');
-% %     scatter(eccOrig{subjInd},ecc2eccFlat{subjInd}(eccOrig{subjInd})); hold on
-% %     scatter(eccOrigAll(ind),ecc2eccFlat{subjInd}(eccOrigAll(ind))); hold on
-%     xLim = [min([eccOrig{subjInd}; eccOrigAll(ind)]) max([eccOrig{subjInd}; eccOrigAll(ind)])];
-%     x = linspace(xLim(1),xLim(2),1000)';
-%     y = ecc2eccFlat{subjInd}(x);
-% %     plot(x,y)
-%     
-%     eccFlat2ecc{subjInd} = smSpline(y,x);
-%     
-% %     figure('WindowStyle','docked');
-% %     scatter(eccFlat2ecc{subjInd}(eccFlat{subjInd}),eccFlat{subjInd}); hold on
-% %     scatter(eccFlat2ecc{subjInd}(eccFlatAll(ind)),eccFlatAll(ind)); hold on
-% %     yLim = [min([eccFlat{subjInd}; eccFlatAll(ind)]) max([eccFlat{subjInd}; eccFlatAll(ind)])];
-% %     y = linspace(yLim(1),yLim(2),10000);
-% %     x = eccFlat2ecc{subjInd}(y);
-% %     plot(x,y)
-% 
-% end
 ecc2eccFlatMean = smSpline(cat(1,eccOrig{:}),eccFlatMean);
 
 

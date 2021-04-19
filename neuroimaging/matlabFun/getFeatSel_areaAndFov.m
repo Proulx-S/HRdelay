@@ -1,16 +1,16 @@
-function [featSel,f] = getFeatSel_areaAndFov(d,p)
+function [featVal,featMethod,featIndIn,featInfo,f] = getFeatSel_areaAndFov(cont,voxProp,p)
+
 warning('off','MATLAB:polyshape:repairedBySimplify')
 visibleFlag = 0;
 
-allFeatVal = cell(0);
-allFeatP = cell(0);
-% allFeatPrevInd = cell(0);
-allFeatMethod = cell(0);
-allFeatIndIn = cell(0);
-condIndPairList = {[1 2 3]};
+% allFeatVal = cell(0);
+% allFeatP = cell(0);
+% % allFeatPrevInd = cell(0);
+% allFeatMethod = cell(0);
+% allFeatIndIn = cell(0);
 
 %% Precompute stats on response vector (random effect)
-ind = true(size(d.sin,1),1);
+ind = true(size(cont.U,1),1);
 
 
 %% Voxels representing stimulus fov
@@ -19,7 +19,7 @@ if p.featSel.fov.doIt
     minContPercentArea = p.featSel.fov.empirical.minContPercentArea;
     thresh = p.featSel.(char(curInfo1));
     curInfo2 = {thresh.threshMethod};
-    pVal = nan(size(ind));
+%     pVal = nan(size(ind));
     switch thresh.threshMethod
         case 'ecc'
             featVal = d.voxProp.ecc;
@@ -34,7 +34,7 @@ if p.featSel.fov.doIt
 %             prevInd = prevInd(:,1);
             
             
-            M = contourc(d.featSel.cont.X(1,:),d.featSel.cont.Y(:,1),double(d.featSel.cont.outXY),ones(2,1).*0.5);
+            M = contourc(cont.X(1,:),cont.Y(:,1),double(cont.outXY),ones(2,1).*0.5);
             pgon = polyshape;
             while ~isempty(M)
                 pgon = addboundary(pgon,M(1,2:1+M(2,1)),M(2,2:1+M(2,1)));
@@ -46,16 +46,12 @@ if p.featSel.fov.doIt
             areas = area(pgon);
             pgon = pgon(areas/sum(areas) > minContPercentArea);
             
-            X = d.featSel.cont.X;
-            Y = d.featSel.cont.Y;
-            U = d.featSel.cont.U;
-            V = d.featSel.cont.V;
-            tmpInd = false([size(X) length(pgon)]);
-            tmpInd2 = false([size(U,1) length(pgon)]);
+            tmpInd = false([size(cont.X) length(pgon)]);
+            tmpInd2 = false([size(cont.U,1) length(pgon)]);
             for i = 1:length(pgon)
                 Vertices = pgon(i).Vertices;
-                tmpInd(:,:,i) = inpolygon(X,Y,Vertices(:,1),Vertices(:,2));
-                tmpInd2(:,i) = inpolygon(U,V,Vertices(:,1),Vertices(:,2));
+                tmpInd(:,:,i) = inpolygon(cont.X,cont.Y,Vertices(:,1),Vertices(:,2));
+                tmpInd2(:,i) = inpolygon(cont.U,cont.V,Vertices(:,1),Vertices(:,2));
             end
             tmpInd = any(tmpInd,3);
             tmpInd2 = any(tmpInd2,2);
@@ -69,41 +65,49 @@ if p.featSel.fov.doIt
             else
                 f0 = figure('WindowStyle','docked','visible','off');
             end
-            imagesc(d.featSel.cont.X(1,:),d.featSel.cont.Y(:,1),~tmpInd); hold on
+            imagesc(cont.X(1,:),cont.Y(:,1),~tmpInd); hold on
             set(gca,'YDir','normal'); colormap autumn
             plot(pgonOrig,'FaceColor','none')
             set(gca,'PlotBoxAspectRatio',[1 1 1],'DataAspectRatio',[1 1 1]);
             
-            d.featSel.cont.outXY = ~tmpInd;
+            cont.outXY = ~tmpInd;
             prevInd = ind&tmpInd2;
             
             sm           = p.featSel.fov.empirical.auto(1).smList;
             mergeRadius  = p.featSel.fov.empirical.auto(1).mergeRadiusList;
             marginRadius = p.featSel.fov.empirical.auto(1).marginRadiusList;
-            d = getDelayFovContour2(d,sm,prevInd);
-            [~,f1,pgon] = processDelayFovContour2(d,p,prevInd,sm,mergeRadius,marginRadius,[],'do not add pgonRef',visibleFlag2);
+            cont = getDelayFovContour3(cont,sm,prevInd);
+            featVal = cont.vecUV;
+            [~,f1,pgon] = processDelayFovContour3(cont,voxProp,p,prevInd,sm,mergeRadius,marginRadius,[],'do not add pgonRef',visibleFlag2);
             if p.featSel.fov.empirical.auto(2).smList~=sm
-                sm           = p.featSel.fov.empirical.auto(2).smList;
-                d = getDelayFovContour2(d,sm,prevInd);
+                sm = p.featSel.fov.empirical.auto(2).smList;
+                cont = getDelayFovContour3(cont,sm,prevInd);
             end
             mergeRadius  = p.featSel.fov.empirical.auto(2).mergeRadiusList;
             marginRadius = p.featSel.fov.empirical.auto(2).marginRadiusList;
-            [curIndIn,f2,~] = processDelayFovContour2(d,p,prevInd,sm,mergeRadius,marginRadius,pgon,'add pgonRef',visibleFlag2);
-            
-            featVal = d.featSel.cont.vecUV;
+            if ~isempty(pgon)
+                [curIndIn,f2,~] = processDelayFovContour3(cont,voxProp,p,prevInd,sm,mergeRadius,marginRadius,pgon,'add pgonRef',visibleFlag2);
+            else
+                curIndIn = true(size(prevInd));
+                f2 = gobjects([1 5]);
+            end
         otherwise
             error('X')
     end
     f = [f0 f1 f2];
-    curIndIn = repmat(curIndIn,[1 length(condIndPairList)]);
     
-    allFeatVal(end+1) = {featVal};
-    allFeatP(end+1) = {pVal};
-    allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
-    allFeatIndIn(end+1) = {curIndIn};
+%     allFeatVal(end+1) = {featVal};
+%     allFeatP(end+1) = {pVal};
+%     allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
+%     allFeatIndIn(end+1) = {curIndIn};
     
 %     ind = ind & curIndIn;
 end
+featVal;
+featMethod = strjoin([curInfo1 curInfo2],': ');
+featIndIn = curIndIn;
+featInfo = 'vox X featSel X condPair';
+return
 
 
 %% Multivariate (combined) feature selection

@@ -1,6 +1,6 @@
-function [x,y] = addEccRef(d,p)
+function [x,y] = addEccRef(voxProp,p)
 theta = linspace(-pi,pi,100);
-eccRef = d.voxProp.eccTrans(p.featSel.fov.threshVal);
+eccRef = voxProp.eccTrans(p.featSel.fov.threshVal);
 x = nan(size(theta,2),length(eccRef));
 y = nan(size(theta,2),length(eccRef));
 for i = 1:length(eccRef)

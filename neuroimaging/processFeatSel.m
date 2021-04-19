@@ -56,25 +56,29 @@ d = dP; clear dP
 
 %% Precompute flattened voxel ecc distribution on fov and delay map
 if p.featSel.fov.doIt && strcmp(p.featSel.fov.threshMethod,'empirical')
-    disp('Flattening ecc dist: computing')
-    dL = d(:,sessInd);
-    for subjInd = 1:size(d,1)
-        [dL{subjInd},~] = getOneHemi(d{subjInd,sessInd},p,'L');
-    end
-    dR = d(:,sessInd);
-    for subjInd = 1:size(d,1)
-        [dR{subjInd},~] = getOneHemi(d{subjInd,sessInd},p,'R');
-    end
-    dLR = [dL; dR]; clear dL dR
-    dLR = flattenEccDist(dLR,p,3);
-    dOrig = d;
-    d = dLR;
+    disp('Flattening ecc dist: computing hemiL')
+    voxProp.L = flattenEccDist(d,'L',p,1);
+    disp('Flattening ecc dist: computing hemiR')
+    voxProp.R = flattenEccDist(d,'R',p,1);
     disp('Flattening ecc dist: done')
-    disp('Delay map for contour: computing')
+    
+    
     p.featSel.fov.empirical.padFac             = 1.2;
     p.featSel.fov.empirical.minContPercentArea = 0.05;
-    d = prepareDelayFovContour(d,p);
+    disp('Delay map for contour: computing hemiL')
+    cont.L = prepareDelayFovContour(d,voxProp.L,p);
+    disp('Delay map for contour: computing hemiR')
+    cont.R = prepareDelayFovContour(d,voxProp.R,p);
     disp('Delay map for contour: done')
+    % Repack into d
+    for subjInd = 1:size(d,1)
+        for sessInd = 1:size(d,2)
+            d{subjInd,sessInd}.voxProp.L = voxProp.L{subjInd};
+            d{subjInd,sessInd}.voxProp.R = voxProp.R{subjInd};
+        end
+        voxProp.L{subjInd} = {};
+        voxProp.R{subjInd} = {};
+    end
 end
 
 %% Setting fov contour params
@@ -89,23 +93,40 @@ end
 
 %% Feature selection
 featSel_areaAndFov = cell(size(d));
-f = cell(size(d));
+f.L = cell(size(d));
+f.R = cell(size(d));
 % disp('computing feature selection stats')
-for hemiInd = 1:size(d,1)
-    p.subjInd = hemiInd;
-    p.sessInd = nan;
-    disp(['hemi:' num2str(hemiInd) '/' num2str(size(d,1))])
-    [featSel_areaAndFov{hemiInd},f{hemiInd}] = getFeatSel_areaAndFov(d{hemiInd},p);
-end
-for sessInd = 1:size(d,2)
-    for subjInd = 1:size(d,1)
+for subjInd = 1:size(d,1)
+    disp(['subj:' num2str(subjInd) '/' num2str(size(d,1))])
+    for sessInd = 1:size(d,2)
         p.subjInd = subjInd;
         p.sessInd = sessInd;
-        disp(['subj' num2str(subjInd) '; sess' num2str(sessInd)])
-        [featSel{subjInd,sessInd},f{subjInd,sessInd}] = getFeatSel(d{subjInd,sessInd},p);
+        hemi = 'L';
+        [featValLR.(hemi),featMethodLR.(hemi),featIndInLR.(hemi),featInfoLR.(hemi),f.(hemi){subjInd,sessInd}] = getFeatSel_areaAndFov(cont.(hemi){subjInd,sessInd},d{subjInd,sessInd}.voxProp.(hemi),p);
+        hemi = 'R';
+        [featValLR.(hemi),featMethodLR.(hemi),featIndInLR.(hemi),featInfoLR.(hemi),f.(hemi){subjInd,sessInd}] = getFeatSel_areaAndFov(cont.(hemi){subjInd,sessInd},d{subjInd,sessInd}.voxProp.(hemi),p);
+        
+        % Combine hemifields
+        featVal = nan(size(d{subjInd,sessInd}.voxProp.(hemi).hemifield));
+        featIndIn = nan(size(d{subjInd,sessInd}.voxProp.(hemi).hemifield));
+        hemi = 'L';
+        featVal(d{subjInd,sessInd}.voxProp.(hemi).hemifield) = featValLR.(hemi);
+        featIndIn(d{subjInd,sessInd}.voxProp.(hemi).hemifield) = featIndInLR.(hemi);
+        hemi = 'R';
+        featVal(d{subjInd,sessInd}.voxProp.(hemi).hemifield) = featValLR.(hemi);
+        featIndIn(d{subjInd,sessInd}.voxProp.(hemi).hemifield) = featIndInLR.(hemi);
+        featMethod = featMethodLR.L;
+        featInfo = featInfoLR.L;
+        
+        featSel_areaAndFov{subjInd,sessInd}.featVal = featVal; clear featVal featValLR;
+        featSel_areaAndFov{subjInd,sessInd}.featIndIn = featIndIn; clear featIndIn featIndInLR;
+        featSel_areaAndFov{subjInd,sessInd}.featMethod = featMethod; clear featMethod featMethodLR;
+        featSel_areaAndFov{subjInd,sessInd}.featInfo = featInfo; clear featInfo featInfoLR;
     end
 end
-% single hemispheres
+
+warning('not done; something very wrong with the flatening')
+keyboard
 
 fIndList = [1 2 4 7 9 10];
 supTitleList = {'removing small islands' '1st contours' '1st contours processing' '2nd contours' '2nd contours processing' 'Final contours'};
@@ -117,14 +138,31 @@ for i = 1:length(fIndList)
     [ha, pos] = tight_subplot(size(d,2), size(d,1), 0, 0.1, 0); delete(ha);
     for subjInd = 1:size(d,1)
         for sessInd = 1:size(d,2)
-            ax = copyobj(f{subjInd,sessInd}(fInd).Children,fAll{i});
+            ax = copyobj(f.L{subjInd,sessInd}(fInd).Children,fAll{i});
             ax.Position = pos{(sessInd-1)*size(d,1)+subjInd};
-            ax.Colormap = f{subjInd,sessInd}(fInd).Children.Colormap;
+            ax.Colormap = f.L{subjInd,sessInd}(fInd).Children.Colormap;
+            drawnow
 %             delete(f{subjInd,sessInd}(fInd).Children);
         end
     end
     suptitle(supTitleList{i})
 end
+
+
+
+
+
+%% Functionaly defined feature selection
+for sessInd = 1:size(d,2)
+    for subjInd = 1:size(d,1)
+        p.subjInd = subjInd;
+        p.sessInd = sessInd;
+        disp(['subj' num2str(subjInd) '; sess' num2str(sessInd)])
+        [featSel{subjInd,sessInd},f{subjInd,sessInd}] = getFeatSel(d{subjInd,sessInd},p);
+    end
+end
+% single hemispheres
+
 
 
 
