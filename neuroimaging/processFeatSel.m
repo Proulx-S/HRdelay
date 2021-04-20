@@ -86,10 +86,10 @@ end
 %% Setting fov contour params
 if p.featSel.fov.doIt && strcmp(p.featSel.fov.threshMethod,'empirical')
     p.featSel.fov.empirical.auto(1).smList           = 0.001; % ecc
-    p.featSel.fov.empirical.auto(1).mergeRadiusList  = 0.75; % ecc
+    p.featSel.fov.empirical.auto(1).mergeRadiusList  = 0.70; % ecc
     p.featSel.fov.empirical.auto(1).marginRadiusList = 0.40; % ecc
     p.featSel.fov.empirical.auto(2).smList           = 0.25; % ecc
-    p.featSel.fov.empirical.auto(2).mergeRadiusList  = 0.75; % ecc
+    p.featSel.fov.empirical.auto(2).mergeRadiusList  = 0.70; % ecc
     p.featSel.fov.empirical.auto(2).marginRadiusList = 0.40; % ecc
 end
 

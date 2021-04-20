@@ -124,14 +124,14 @@ pgon = union(pgon(b));
 if plotFlag
     plot(pgon,'FaceColor','none');
 end
-% Select the biggest one of the merged center coutours
-pgonRef2 = regions(pgonRef);
-[~,b] = min(area(pgonRef2));
-pgonRef2 = polybuffer(pgonRef2(b),marginRadius);
-pgon = regions(pgon);
-overInd = find(overlaps(pgonRef2,pgon));
-pgon(overInd(2:end)) = [];
-pgon = union(pgon);
+% % Select the biggest one of the merged center coutours
+% pgonRef2 = regions(pgonRef);
+% [~,b] = min(area(pgonRef2));
+% pgonRef2 = polybuffer(pgonRef2(b),marginRadius);
+% pgon = regions(pgon);
+% overInd = find(overlaps(pgonRef2,pgon));
+% pgon(overInd(2:end)) = [];
+% pgon = union(pgon);
 
 % Expand for conservative boundaries
 pgon = polybuffer(pgon,marginRadius);
