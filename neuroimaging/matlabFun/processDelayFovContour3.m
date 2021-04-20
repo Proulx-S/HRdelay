@@ -28,6 +28,18 @@ if plotFlag
     else
         f = showDelayFovContour(X,Y,vecXY,cMap,U,V,[],[],'off');
     end
+    f.UserData.F = cont.F;
+%     f.UserData = cont;
+%     f.UserData.F = cont.F;
+%     f.UserData.U = cont.U;
+%     f.UserData.V = cont.V;
+%     f.UserData.vecUV = cont.vecUV;
+%     f.UserData.outUV = cont.outUV;
+%     f.UserData.X = cont.X;
+%     f.UserData.Y = cont.Y;
+%     f.UserData.vecXY = cont.vecXY;
+%     f.UserData.outXY = cont.vecXY;
+    f.UserData.ind = cont.ind;
     fs = [fs f];
     plot(pgon,'FaceColor','none');
     [x,y] = addEccRef(voxProp,p);
@@ -47,11 +59,23 @@ if plotFlag>1
 else
     f = showDelayFovContour(X,Y,vecXY,cMap,U,V,[],[],'off');
 end
+f.UserData.F = cont.F;
+% f.UserData.U = cont.U;
+% f.UserData.V = cont.V;
+% f.UserData.vecUV = cont.vecUV;
+% f.UserData.X = cont.X;
+% f.UserData.Y = cont.Y;
+% f.UserData.vecXY = cont.vecXY;
+f.UserData.ind = cont.ind;
 fs = [fs f];
 addEccRef(voxProp,p);
 % select contours overlapping extended pgonRef
 pgonRef = polybuffer(pgonRef,marginRadius);
-pgon = regions(pgon);
+try
+    pgon = regions(pgon);
+catch
+    keyboard
+end
 pgon = union(pgon(overlaps(pgonRef,pgon)));
 pgon = simplify(rmholes(pgon));
 pgonRef = polybuffer(pgonRef,-marginRadius);
@@ -79,6 +103,14 @@ if plotFlag
     else
         f = showDelayFovContour(X,Y,vecXY,cMap,U,V,[],[],'off');
     end
+    f.UserData.F = cont.F;
+%     f.UserData.U = cont.U;
+%     f.UserData.V = cont.V;
+%     f.UserData.vecUV = cont.vecUV;
+%     f.UserData.X = cont.X;
+%     f.UserData.Y = cont.Y;
+%     f.UserData.vecXY = cont.vecXY;
+    f.UserData.ind = cont.ind;
     fs = [fs f];
     plot(pgon,'FaceColor','none');
 end
@@ -131,6 +163,14 @@ if plotFlag
     else
         f = showDelayFovContour(X,Y,vecXY,cMap,U,V,[],[],'off');
     end
+    f.UserData.F = F;
+%     f.UserData.U = cont.U;
+%     f.UserData.V = cont.V;
+%     f.UserData.vecUV = cont.vecUV;
+%     f.UserData.X = cont.X;
+%     f.UserData.Y = cont.Y;
+%     f.UserData.vecXY = cont.vecXY;
+    f.UserData.ind = prevInd;
     fs = [fs f];
     plot(pgon,'FaceColor','none');
 %     plot(pgon,'FaceColor','none');

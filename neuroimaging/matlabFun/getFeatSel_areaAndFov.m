@@ -79,6 +79,17 @@ if p.featSel.fov.doIt
             cont = getDelayFovContour3(cont,sm,prevInd);
             featVal = cont.vecUV;
             [~,f1,pgon] = processDelayFovContour3(cont,voxProp,p,prevInd,sm,mergeRadius,marginRadius,[],'do not add pgonRef',visibleFlag2);
+            
+%             ax = gca;
+%             revertEmpiricalFlatening(ax,voxProp,cont)
+%             ax.Children(1)
+%             ax.Children(2)
+%             ax.Children(3).Shape.Vertices
+%             ax.Children(4)
+%             ax.Children(5)
+            
+            
+            
             if p.featSel.fov.empirical.auto(2).smList~=sm
                 sm = p.featSel.fov.empirical.auto(2).smList;
                 cont = getDelayFovContour3(cont,sm,prevInd);

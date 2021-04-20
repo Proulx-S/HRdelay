@@ -5,7 +5,7 @@ for subjInd = 1:size(d,1)
     curVoxProp = voxProp{subjInd};
     % Apply precomputed flattening
     if isfield(curVoxProp,'eccTrans')
-        curVoxProp.ecc = curVoxProp.eccTrans(curVoxProp.ecc);
+        curVoxProp.ecc = curVoxProp.eccTrans.toFlat{end}(curVoxProp.ecc);
     end
     for sessInd = 1:size(d,2)
         vecUV = mean(d{subjInd,sessInd}.sin(curVoxProp.hemifield,:),2);

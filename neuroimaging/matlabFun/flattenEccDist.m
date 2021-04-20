@@ -19,7 +19,7 @@ elseif plotFlag>=1
     title(['subj' num2str(p.figOption.subjInd) '; orig'])
 end
 %% Flatten vox distribution based on circle area
-[ecc2eccFlat_1,~] = getFlatTrans(d,'circ',[],plotFlag);
+[ecc2eccFlat_1,eccFlat2ecc_1,~,~,~,~] = getFlatTrans(d,p,'circ',[],plotFlag);
 if plotFlag>=2
     for subjInd = 1:size(d,1)
         plotVoxOnFoV(d{subjInd,p.figOption.sessInd},[],eccRef,ecc2eccFlat_1{subjInd})
@@ -30,7 +30,7 @@ elseif plotFlag>=1
     title(['subj' num2str(p.figOption.subjInd) '; circular flattened'])
 end
 %% Flatten vox distribution based empirically measured pdf
-[ecc2eccFlat_1_2,eccFlat2ecc_1_2,~] = getFlatTrans(d,'empirical',ecc2eccFlat_1,plotFlag);
+[ecc2eccFlat_2,eccFlat2ecc_2,~,ecc2eccFlat_1_2,eccFlat2ecc_1_2,~] = getFlatTrans(d,p,'empirical',ecc2eccFlat_1,plotFlag);
 if plotFlag>=2
     sessInd = 1;
     for subjInd = 1:size(d,1)
@@ -46,25 +46,27 @@ voxProp = cell(size(d,1),1);
 sessInd = 1;
 for subjInd = 1:size(d,1)
     voxProp{subjInd} = d{subjInd,sessInd}.voxProp;
-    voxProp{subjInd}.eccTrans = ecc2eccFlat_1_2{subjInd};
-    voxProp{subjInd}.eccTrans_rev = eccFlat2ecc_1_2{subjInd};
+    voxProp{subjInd}.eccTrans.toFlat = [ecc2eccFlat_1(subjInd) ecc2eccFlat_2(subjInd) ecc2eccFlat_1_2(subjInd)];
+    voxProp{subjInd}.eccTrans.toOrig = [eccFlat2ecc_1(subjInd) eccFlat2ecc_2(subjInd) eccFlat2ecc_1_2(subjInd)];
+    voxProp{subjInd}.eccTrans.info = {'circ' 'empirical' 'circ+empirical'};
 end
 
-function [ecc2eccFlat,eccFlat2ecc,ecc2eccFlatMean] = getFlatTrans(d,transFlag,eccTrans,plotFlag)
+function [ecc2eccFlat,eccFlat2ecc,ecc2eccFlatMean,ecc2eccFlat_fromOrig,eccFlat2ecc_fromOrig,ecc2eccFlatMean_fromOrig] = getFlatTrans(d,p,transFlag,eccTrans,plotFlag)
 sessInd = 1;
 %% Update ecc with existing flattening transformations
-eccOrig = cell(size(d,1),1);
 ecc = cell(size(d,1),1);
 for subjInd = 1:size(d,1)
-    eccOrig{subjInd} = d{subjInd,sessInd}.voxProp.ecc;
-    if ~isempty(eccTrans)
+    ecc{subjInd} = d{subjInd,sessInd}.voxProp.ecc;
+end
+if ~isempty(eccTrans)
+    eccOrig = cell(size(d,1),1);
+    for subjInd = 1:size(d,1)
+        eccOrig{subjInd} = ecc{subjInd};
         if isa(eccTrans,'cfit')
-            ecc{subjInd} = eccTrans(d{subjInd,sessInd}.voxProp.ecc);
+            ecc{subjInd} = eccTrans(eccOrig{subjInd});
         else
-            ecc{subjInd} = eccTrans{subjInd}(d{subjInd,sessInd}.voxProp.ecc);
+            ecc{subjInd} = eccTrans{subjInd}(eccOrig{subjInd});
         end
-    else
-        ecc{subjInd} = d{subjInd,sessInd}.voxProp.ecc;
     end
 end
 
@@ -213,97 +215,102 @@ end
 
 
 % Define this transformation
-[ecc2eccFlat_2,eccFlat2ecc_2] = defineTrans(ecc,eccFlat,transFlag);
+[ecc2eccFlat,eccFlat2ecc] = defineTrans(p,ecc,eccFlat,transFlag,plotFlag);
+ecc2eccFlatMean = smSpline(cat(1,ecc{:}),eccFlatMean);
 
-% Define the transformation from original ecc to pdf(ecc)-flattened ecc
-[ecc2eccFlat,eccFlat2ecc] = defineTrans(eccOrig,eccFlat,transFlag);
-
-
-
-
-
-ecc2eccFlat = cell(size(d,1),1);
-eccFlat2ecc = cell(size(d,1),1);
-eccOrigMax = max(cat(1,eccOrig{:}));
-for subjInd = 1:size(d,1)
-    x = eccOrig{subjInd};
-    y = eccFlat{subjInd};
-    switch transFlag
-        case 'empirical'
-            [a,b] = max(x);
-            y = y./y(b).*a;
-        case 'circ'
-        otherwise
-            error('X')
-    end
-    if plotFlag>1
-        figure('WindowStyle','docked');
-        scatter(x,y); hold on
-    end
-    [x,b] = sort(x);
-    y = y(b);
-    [x,b,~] = unique(x);
-    y = y(b);
-    delta = mean(diff(x(end-10:end)));
-    eccOrigExtra = (x(end)+delta:delta:eccOrigMax)';
-    eccFlatExtra = eccOrigExtra;
-    x = [x; eccOrigExtra];
-    y = [y; eccFlatExtra];
-    ecc2eccFlat{subjInd} = smSpline(x,y);
-    xLim = [min(x) max(x)];
-    x = linspace(xLim(1),xLim(2),1000)';
-    y = ecc2eccFlat{subjInd}(x);
-    eccFlat2ecc{subjInd} = smSpline(y,x);
-    if plotFlag>1
-        plot(x,y); hold on
-        plot(eccFlat2ecc{subjInd}(y),y); hold on
-    end
+if ~isempty(eccTrans)
+    % Define the transformation from original ecc to pdf(ecc)-flattened ecc
+    [ecc2eccFlat_fromOrig,eccFlat2ecc_fromOrig] = defineTrans(p,eccOrig,eccFlat,transFlag,plotFlag);
+    ecc2eccFlatMean_fromOrig = smSpline(cat(1,eccOrig{:}),eccFlatMean);
+else
+    ecc2eccFlat_fromOrig = ecc2eccFlat;
+    eccFlat2ecc_fromOrig = eccFlat2ecc;
+    ecc2eccFlatMean_fromOrig = ecc2eccFlatMean;
 end
 
+% 
+% ecc2eccFlat = cell(size(d,1),1);
+% eccFlat2ecc = cell(size(d,1),1);
+% eccOrigMax = max(cat(1,eccOrig{:}));
+% for subjInd = 1:size(d,1)
+%     x = eccOrig{subjInd};
+%     y = eccFlat{subjInd};
+%     switch transFlag
+%         case 'empirical'
+%             [a,b] = max(x);
+%             y = y./y(b).*a;
+%         case 'circ'
+%         otherwise
+%             error('X')
+%     end
+%     if plotFlag>1
+%         figure('WindowStyle','docked');
+%         scatter(x,y); hold on
+%     end
+%     [x,b] = sort(x);
+%     y = y(b);
+%     [x,b,~] = unique(x);
+%     y = y(b);
+%     delta = mean(diff(x(end-10:end)));
+%     eccOrigExtra = (x(end)+delta:delta:eccOrigMax)';
+%     eccFlatExtra = eccOrigExtra;
+%     x = [x; eccOrigExtra];
+%     y = [y; eccFlatExtra];
+%     ecc2eccFlat{subjInd} = smSpline(x,y);
+%     xLim = [min(x) max(x)];
+%     x = linspace(xLim(1),xLim(2),1000)';
+%     y = ecc2eccFlat{subjInd}(x);
+%     eccFlat2ecc{subjInd} = smSpline(y,x);
+%     if plotFlag>1
+%         plot(x,y); hold on
+%         plot(eccFlat2ecc{subjInd}(y),y); hold on
+%     end
+% end
+% 
+% 
+% % Define the transformation from this transformation to pdf(ecc)-flattened ecc
+% ecc2eccFlat_2 = cell(size(d,1),1);
+% eccFlat2ecc_2 = cell(size(d,1),1);
+% eccMax = max(cat(1,ecc{:}));
+% for subjInd = 1:size(d,1)
+%     x = ecc{subjInd};
+%     y = eccFlat{subjInd};
+%     switch transFlag
+%         case 'empirical'
+%             [a,b] = max(x);
+%             y = y./y(b).*a;
+%         case 'circ'
+%         otherwise
+%             error('X')
+%     end
+%     if plotFlag>1
+%         figure('WindowStyle','docked');
+%         scatter(x,y); hold on
+%     end
+%     [x,b] = sort(x);
+%     y = y(b);
+%     [x,b,~] = unique(x);
+%     y = y(b);
+%     delta = mean(diff(x(end-10:end)));
+%     eccExtra = (x(end)+delta:delta:eccMax)';
+%     eccFlatExtra = eccExtra;
+%     x = [x; eccExtra];
+%     y = [y; eccFlatExtra];
+%     ecc2eccFlat_2{subjInd} = smSpline(x,y);
+%     xLim = [min(x) max(x)];
+%     x = linspace(xLim(1),xLim(2),1000)';
+%     y = ecc2eccFlat_2{subjInd}(x);
+%     eccFlat2ecc_2{subjInd} = smSpline(y,x);
+%     if plotFlag>1
+%         plot(x,y); hold on
+%         plot(eccFlat2ecc_2{subjInd}(y),y); hold on
+%     end
+% end
+% 
+% ecc2eccFlatMean = smSpline(cat(1,eccOrig{:}),eccFlatMean);
 
-% Define the transformation from this transformation to pdf(ecc)-flattened ecc
-ecc2eccFlat_2 = cell(size(d,1),1);
-eccFlat2ecc_2 = cell(size(d,1),1);
-eccMax = max(cat(1,ecc{:}));
-for subjInd = 1:size(d,1)
-    x = ecc{subjInd};
-    y = eccFlat{subjInd};
-    switch transFlag
-        case 'empirical'
-            [a,b] = max(x);
-            y = y./y(b).*a;
-        case 'circ'
-        otherwise
-            error('X')
-    end
-    if plotFlag>1
-        figure('WindowStyle','docked');
-        scatter(x,y); hold on
-    end
-    [x,b] = sort(x);
-    y = y(b);
-    [x,b,~] = unique(x);
-    y = y(b);
-    delta = mean(diff(x(end-10:end)));
-    eccExtra = (x(end)+delta:delta:eccMax)';
-    eccFlatExtra = eccExtra;
-    x = [x; eccExtra];
-    y = [y; eccFlatExtra];
-    ecc2eccFlat_2{subjInd} = smSpline(x,y);
-    xLim = [min(x) max(x)];
-    x = linspace(xLim(1),xLim(2),1000)';
-    y = ecc2eccFlat_2{subjInd}(x);
-    eccFlat2ecc_2{subjInd} = smSpline(y,x);
-    if plotFlag>1
-        plot(x,y); hold on
-        plot(eccFlat2ecc_2{subjInd}(y),y); hold on
-    end
-end
 
-ecc2eccFlatMean = smSpline(cat(1,eccOrig{:}),eccFlatMean);
-
-
-function [ecc2eccFlat,eccFlat2ecc] = defineTrans(ecc,eccFlat,transFlag)
+function [ecc2eccFlat,eccFlat2ecc] = defineTrans(p,ecc,eccFlat,transFlag,plotFlag)
 % Define the transformation from original ecc to pdf(ecc)-flattened ecc
 ecc2eccFlat = cell(size(ecc,1),1);
 eccFlat2ecc = cell(size(ecc,1),1);
@@ -311,14 +318,31 @@ eccMax = max(cat(1,ecc{:}));
 for subjInd = 1:size(ecc,1)
     x = ecc{subjInd};
     y = eccFlat{subjInd};
-    switch transFlag
-        case 'empirical'
-            [a,b] = max(x);
-            y = y./y(b).*a;
-        case 'circ'
-        otherwise
-            error('X')
-    end
+%     switch transFlag
+%         case 'empirical'
+            [~,b] = min(abs(x-p.featSel.fov.threshVal(2)));
+            x1 = x(b);
+            if x1<p.featSel.fov.threshVal(2)
+                x2 = min(x(x>x1));
+            else
+                x2 = max(x(x<x1));
+            end
+            if isempty(x2)
+                xRef = p.featSel.fov.threshVal(2);
+                param = polyfit(x,y,1);
+                yRef = param(1)*p.featSel.fov.threshVal(2)+param(2);
+            else
+                ind = [find(x1==x,1) find(x2==x,1)];
+                xRef = sort(x(ind));
+                yRef = sort(y(ind)); clear ind
+                yRef = interp1(xRef,yRef,p.featSel.fov.threshVal(2));
+                xRef = p.featSel.fov.threshVal(2);
+            end
+            y = y./yRef.*xRef;            
+%         case 'circ'
+%         otherwise
+%             error('X')
+%     end
     if plotFlag>1
         figure('WindowStyle','docked');
         scatter(x,y); hold on
@@ -327,11 +351,18 @@ for subjInd = 1:size(ecc,1)
     y = y(b);
     [x,b,~] = unique(x);
     y = y(b);
-    delta = mean(diff(x(end-10:end)));
-    eccExtra = (x(end)+delta:delta:eccMax)';
-    eccFlatExtra = eccExtra;
-    x = [x; eccExtra];
-    y = [y; eccFlatExtra];
+    if x(end)~=eccMax
+        x = [x; eccMax];
+        y = [y; eccMax];
+    end
+%     y = [y; eccMax.*param(1)+param(2)];
+    
+%     delta = median(diff(x(round(end*0.90):end)));
+%     eccExtra = (x(end)+delta:delta:eccMax)';
+%     eccFlatExtra = (y(end)+delta:delta:eccMax)';
+% %     eccFlatExtra = eccExtra;
+%     x = [x; eccExtra];
+%     y = [y; eccFlatExtra];
     ecc2eccFlat{subjInd} = smSpline(x,y);
     xLim = [min(x) max(x)];
     x = linspace(xLim(1),xLim(2),1000)';
@@ -342,8 +373,6 @@ for subjInd = 1:size(ecc,1)
         plot(eccFlat2ecc{subjInd}(y),y); hold on
     end
 end
-ecc2eccFlatMean = smSpline(cat(1,ecc{:}),eccFlatMean);
-
 
 
 function [eccXY,densityXY,X,Y,okInd,U,V,eccXYspline,densityXYspline,eccXYbin,densityXYmed] = getEccPd(d,ecc,sm,plotFlag)

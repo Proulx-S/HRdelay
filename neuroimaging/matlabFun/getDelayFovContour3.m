@@ -16,11 +16,7 @@ warning('off','MATLAB:scatteredInterpolant:DupPtsAvValuesWarnId')
 % end
 
 %% Interpolate delay to surface
-try
-    F = scatteredInterpolant(U(ind),V(ind),ones(size(U(ind))).*pi/2,'nearest','none');
-catch
-    keyboard
-end
+F = scatteredInterpolant(U(ind),V(ind),ones(size(U(ind))).*pi/2,'nearest','none');
 outUV = isnan(F(X,Y));
 
 F = scatteredInterpolant(U(ind),V(ind),vecUV(ind),'natural','none');
@@ -44,30 +40,35 @@ vecXY = nanconv(vecXY,kernel,'nanout');
 vecXY(outXY|outUV) = level-pi*0.01;
 
 M = contourc(X(1,:),Y(:,1),vecXY,ones(2,1).*level);
-cont2 = cell(0);
-while ~isempty(M)
-    cont2 = [cont2 {M(:,2:1+M(2,1))'}];
-    M(:,1:1+M(2,1)) = [];
+if isempty(M)
+    pgon = cont.pgon;
+else
+    cont2 = cell(0);
+    while ~isempty(M)
+        cont2 = [cont2 {M(:,2:1+M(2,1))'}];
+        M(:,1:1+M(2,1)) = [];
+    end
+    
+    %% Contours to polygons
+    pgon = polyshape;
+    for contInd = 1:length(cont2)
+        pgon = addboundary(pgon,cont2{contInd}(:,1),cont2{contInd}(:,2));
+    end
+    pgon = simplify(pgon);
+    pgon = rmholes(pgon);
+    % sort
+    pgon = regions(pgon);
+    [~,b] = sort(area(pgon),'descend');
+    pgon = union(pgon(b));
 end
-
-%% Contours to polygons
-pgon = polyshape;
-for contInd = 1:length(cont2)
-    pgon = addboundary(pgon,cont2{contInd}(:,1),cont2{contInd}(:,2));
-end
-pgon = simplify(pgon);
-pgon = rmholes(pgon);
-% sort
-pgon = regions(pgon);
-[~,b] = sort(area(pgon),'descend');
-pgon = union(pgon(b));
-
 
 %% Output
 cont.vecXY = vecXY;
 cont.outUV = outUV;
 cont.cMap = cMap;
 cont.pgon = pgon;
+cont.ind = ind;
+cont.F = F;
 
 
 % contData.cont = cont;
