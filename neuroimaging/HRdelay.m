@@ -54,9 +54,10 @@ p.norm.doCartSpaceScale = 1;
 %% Display parameters
 figOption.save = 0; % save all figures
 figOption.subj = 1; % subjInd-> plots participants subjInd; +inf-> plots all participant (if verbose==0, will only plot subjInd==1 but still produce and save all the other figures)
-p.figOption.verbose = 3;
-p.figOption.subjInd = figOption.subj;
-p.figOption.sessInd = 1;
+p.figOption.verbose  = 3;
+p.figOption.subjInd  = figOption.subj;
+p.figOption.sessInd  = 1;
+p.figOption.sliceInd = 10;
 if 0
     importData(verbose)
     applyAreaMask(figOption)
