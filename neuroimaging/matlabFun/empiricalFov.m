@@ -1,18 +1,18 @@
-function featSel_areaAndFov = empiricalFov(d,p,outPath)
+function [featSel_areaAndFov,d,p] = empiricalFov(d,p,outPath)
 filePath = fullfile(outPath,mfilename);
 forceFlag = 0;
 
+%% Initiate params
+p.featSel.fov.empirical.padFac             = 1.2;
+p.featSel.fov.empirical.minContPercentArea = 0.05;
+p.featSel.fov.empirical.auto(1).smList           = 0.001; % ecc
+p.featSel.fov.empirical.auto(1).mergeRadiusList  = 0.70; % ecc
+p.featSel.fov.empirical.auto(1).marginRadiusList = 0.40; % ecc
+p.featSel.fov.empirical.auto(2).smList           = 0.25; % ecc
+p.featSel.fov.empirical.auto(2).mergeRadiusList  = 0.70; % ecc
+p.featSel.fov.empirical.auto(2).marginRadiusList = 0.40; % ecc
+
 if ~exist([filePath '.mat'],'file') || forceFlag
-    %% Initiate params
-    p.featSel.fov.empirical.padFac             = 1.2;
-    p.featSel.fov.empirical.minContPercentArea = 0.05;
-    p.featSel.fov.empirical.auto(1).smList           = 0.001; % ecc
-    p.featSel.fov.empirical.auto(1).mergeRadiusList  = 0.70; % ecc
-    p.featSel.fov.empirical.auto(1).marginRadiusList = 0.40; % ecc
-    p.featSel.fov.empirical.auto(2).smList           = 0.25; % ecc
-    p.featSel.fov.empirical.auto(2).mergeRadiusList  = 0.70; % ecc
-    p.featSel.fov.empirical.auto(2).marginRadiusList = 0.40; % ecc
-    
     %% Precompute flattened voxel ecc distribution on fov and delay map
     disp('Flattening ecc dist: computing hemiL')
     voxProp.L = flattenEccDist(d,'L',p,1);
@@ -139,6 +139,19 @@ if ~exist([filePath '.mat'],'file') || forceFlag
     f = fAll{end};
     save(fullfile(outPath,mfilename),'featSel_areaAndFov','voxProp','cont','fAll','f')
 else
-    load(fullfile(outPath,mfilename),'featSel_areaAndFov','f')
+    load(fullfile(outPath,mfilename),'featSel_areaAndFov','cont','voxProp')
+    if p.figOption.verbose>=1
+        load(fullfile(outPath,mfilename),'f')    
+    end
+end
+
+%% Pack cont into featSel_areaAndFov and voxProp into d
+for subjInd = 1:size(d,1)
+    for sessInd = 1:size(d,2)
+        featSel_areaAndFov{subjInd,sessInd}.cont.L = cont.L{subjInd,sessInd};
+        featSel_areaAndFov{subjInd,sessInd}.cont.R = cont.R{subjInd,sessInd};
+        d{subjInd,sessInd}.voxProp.L = voxProp{subjInd,sessInd}.L;
+        d{subjInd,sessInd}.voxProp.R = voxProp{subjInd,sessInd}.R;
+    end
 end
 

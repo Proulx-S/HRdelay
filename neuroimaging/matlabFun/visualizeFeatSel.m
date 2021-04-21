@@ -27,11 +27,11 @@ clear tmp
 %% Load data
 pAll = cell(size(subjList));
 for subjInd = 1:length(subjList)
-    if subjInd==1
-        tmp = load(fullfile(funPath,inDir2,[subjList{subjInd} '.mat']),'p','d');
-    else
+%     if subjInd==1
+%         tmp = load(fullfile(funPath,inDir2,[subjList{subjInd} '.mat']),'p','d');
+%     else
         tmp = load(fullfile(funPath,inDirX,[subjList{subjInd} '.mat']),'p');
-    end
+%     end
     pAll{subjInd} = tmp.p; clear tmp
 end
 load(fullfile(funPath,inDir,'featSel.mat'));
@@ -42,15 +42,24 @@ load(fullfile(funPath,inDir,'featSel.mat'));
 % featSel{1}
 % featSel{1}
 
+%% Initialize subj, sess and masks
 subjInd = 1;
 sessInd = 1;
-condPairInd = 1;
+for i = 1:length(featSel{subjInd,sessInd}.condPairList)
+    if length(featSel{subjInd,sessInd}.condPairList{i})==3 ...
+            && all(featSel{subjInd,sessInd}.condPairList{i} == [1 2 3])
+        condPairInd = i;
+    end
+end
 brain = pAll{subjInd}.brain.mean(:,:,:,sessInd);
-v1 = pAll{subjInd}.masks.roiMasks.v1;
+roi = pAll{subjInd}.voxProp.area.ind==pAll{subjInd}.voxProp.area.indList(ismember(pAll{subjInd}.voxProp.area.labelList,p.featSel.fov.areaLabel))...
+    & ~pAll{subjInd}.voxProp.censorMask;
+
+
 featSelIn = false(size(brain));
-featSelIn(pAll{subjInd}.masks.roiMasks.v1) = featSel{subjInd,sessInd}.indIn(:,:,condPairInd);
+featSelIn(roi) = featSel{subjInd,sessInd}.indIn(:,:,condPairInd);
 featSelSeqIn = false([length(featSel{subjInd,sessInd}.featSeq.featSelList) size(brain)]);
-featSelSeqIn(:,pAll{subjInd}.masks.roiMasks.v1) = featSel{subjInd,sessInd}.featSeq.featIndIn(:,:,condPairInd)';
+featSelSeqIn(:,roi) = featSel{subjInd,sessInd}.featSeq.featIndIn(:,:,condPairInd)';
 featSelSeqIn = permute(featSelSeqIn,[2 3 4 1]);
 featSelVal = nan([size(featSel{subjInd,sessInd}.featSeq.featVal,2) size(brain)]);
 featSelValThresholded = nan([size(featSel{subjInd,sessInd}.featSeq.featVal,2) size(brain)]);
@@ -60,8 +69,8 @@ featLabel = cell(size(featInfo));
 for featInd = 1:size(featInfo,2)
     tmp = strsplit(featInfo{featInd},': ');
     featLabel(featInd) = tmp(1);
-    featSelVal(featInd,pAll{subjInd}.masks.roiMasks.v1) = featSel{subjInd,sessInd}.featSeq.featVal(:,featInd,condPairInd);
-    featSelValThresholded(featInd,pAll{subjInd}.masks.roiMasks.v1) = featSel{subjInd,sessInd}.featSeq.featVal(:,featInd,condPairInd);
+    featSelVal(featInd,roi) = featSel{subjInd,sessInd}.featSeq.featVal(:,featInd,condPairInd);
+    featSelValThresholded(featInd,roi) = featSel{subjInd,sessInd}.featSeq.featVal(:,featInd,condPairInd);
     featSelValThresholded(featInd,~featSelIn) = nan;
 end
 featSelVal = permute(featSelVal,[2 3 4 1]);
@@ -97,9 +106,12 @@ f{end+1} = figure('WindowStyle','docked','color','w','visible',visibility);
 axBak = plotIm(axes,brain(:,:,slice));
 title('BOLD image (1 TR)')
 
-%% Plot unthresholded maps
+
 doIt = true(size(featInfo));
+% doIt(ismember(featLabel,'retinoFov')) = false;
 % doIt(3) = false;
+
+%% Plot unthresholded maps
 for featInd = 1:size(featInfo,2)
     if doIt(featInd)
         f{end+1} = figure('WindowStyle','docked','color','w','visible',visibility);
@@ -124,6 +136,11 @@ for featInd = 1:size(featInfo,2)
                 yLabel = {'Response Vector Stimulus Preference' '(Hotelling''s U)'};
                 cMap = cMap_F;
                 scale = 'log';
+            case 'retinoFov'
+                yLabel = {'Activation vs Deactivation' '(absolute delay from roi delay)'};
+                cMap = flipud(redblue(256));
+                scale = 'lin';
+                im = im./pi*6;
             otherwise
                 error('X')
         end
@@ -134,9 +151,12 @@ for featInd = 1:size(featInfo,2)
             otherwise
                 error('X')
         end
-        cLim = [min(im(:)) max(im(:))];
-%         cLim = prctile(im(:),[1 99]);
-        cLim(1) = cLim(1) + diff(cLim)*0.2;
+        if strcmp(featLabel{featInd},'retinoFov')
+            cLim = [0 6];
+        else
+            cLim = [min(im(:)) max(im(:))];
+            cLim(1) = cLim(1) + diff(cLim)*0.2;
+        end
         axOver = plotIm(axes,im,cLim);
         alphaData = ~isnan(im);
         makeOverlay(axBak,axOver,alphaData,cMap,scale,cLim)
@@ -145,8 +165,6 @@ for featInd = 1:size(featInfo,2)
 end
 
 %% Plot thresholded maps
-doIt = true(size(featInfo));
-% doIt(2) = true;
 for featInd = 1:size(featInfo,2)
     if doIt(featInd)
         f{end+1} = figure('WindowStyle','docked','color','w','visible',visibility);
@@ -170,6 +188,11 @@ for featInd = 1:size(featInfo,2)
             case 'respVecDiff'
                 yLabel = {'Thresholded Discriminativeness' '(Hotelling''s U)'};
                 cMap = cMap_F;
+            case 'retinoFov'
+                yLabel = {'Thresholded Activation vs Deactivation' '(absolute delay from roi delay)'};
+                cMap = flipud(redblue(256));
+                scale = 'lin';
+                im = im./pi*6;
             otherwise
                 error('X')
         end
@@ -180,9 +203,12 @@ for featInd = 1:size(featInfo,2)
             otherwise
                 error('X')
         end
-        cLim = [min(im(:)) max(im(:))];
-%         cLim = prctile(im(:),[1 99]);
-        cLim(1) = cLim(1) + diff(cLim)*0.2;
+        if strcmp(featLabel{featInd},'retinoFov')
+            cLim = [0 6];
+        else
+            cLim = [min(im(:)) max(im(:))];
+            cLim(1) = cLim(1) + diff(cLim)*0.2;
+        end
         axOver = plotIm(axes,im,cLim);
         alphaData = ~isnan(im);
         makeOverlay(axBak,axOver,alphaData,cMap,scale,cLim)
@@ -195,14 +221,12 @@ tmp = load(fullfile(funPath,'d',[subjList{subjInd} '.mat']));
 d = tmp.res.(sess);
 f{end+1} = figure('WindowStyle','docked','color','w','visible',visibility);
 x = mean(d.sin(:,:,:,:),4);
-featSel{subjInd,sessInd}.featSeq.featSelList
 tmp = [];
-condIndPairInd = 1;
-featInd = ismember(featLabel,'respVecDist');
-indPrev = featSel{subjInd,sessInd}.featSeq.featPrevInd(:,featInd,condIndPairInd);
-ind = featSel{subjInd,sessInd}.featSeq.featIndIn(:,featInd,condIndPairInd);
-polarscatter(angle(x(indPrev & ind)),abs(x(indPrev & ind)),eps,'.k'); hold on
-polarscatter(angle(x(indPrev & ~ind)),abs(x(indPrev & ~ind)),eps,'.r');
+featInd = ismember(featLabel,'respVecSig');
+% indPrev = featSel{subjInd,sessInd}.featSeq.featPrevInd(:,featInd,condIndPairInd);
+ind = featSel{subjInd,sessInd}.featSeq.featIndIn(:,featInd,condPairInd);
+polarscatter(angle(x(ind)),abs(x(ind)),eps,'.k'); hold on
+polarscatter(angle(x(~ind)),abs(x(~ind)),eps,'.r');
 
 % f{end+1} = figure('WindowStyle','docked','color','w','visible',visibility);
 % x = wrapToPi(angle(x)-angle(mean(x)))+angle(mean(x));
@@ -216,8 +240,8 @@ polarscatter(angle(x(indPrev & ~ind)),abs(x(indPrev & ~ind)),eps,'.r');
 
 
 %% Plot response vector maps
-tmp = load(fullfile(funPath,'c',[subjList{subjInd} '.mat']));
-masks = tmp.p.masks; clear tmp
+% tmp = load(fullfile(funPath,'c',[subjList{subjInd} '.mat']));
+% masks = tmp.p.masks; clear tmp
 p.dataType = 'sin';
 p.svmSpace = 'cartRoi';
 voxFlag = 1;
@@ -231,7 +255,7 @@ f0 = plotNorm(d,p,featSel{subjInd,sessInd},voxFlag);
     x = real(x);
     x = mean(x(y==2,:),1) - mean(x(y==1,:),1);
     im = nan(size(brain));
-    im(pAll{subjInd}.masks.roiMasks.v1) = x;
+    im(roi) = x;
     im = im(:,:,slice);
     yLabel = {'%BOLD amplitude at roi delay'};
     cMap = jet;
@@ -245,21 +269,31 @@ f0 = plotNorm(d,p,featSel{subjInd,sessInd},voxFlag);
     end
     cLim = [-1 1].*max(abs(x(:)));
 %     cLim = [-1 1].*max(abs(im(:)));
-    cLim(1) = cLim(1) + diff(cLim)*0.2;
-    cLim(2) = cLim(2) - diff(cLim)*0.2;
+    cLim = [cLim(1) + diff(cLim)*0.2 cLim(2) - diff(cLim)*0.2];
     axOver = plotIm(axes,im,cLim);
     alphaData = ~isnan(im);
     makeOverlay(axBak,axOver,alphaData,cMap,scale,cLim)
-    ylabel(yLabel)
+    ylabel([yLabel {[num2str(cLim(1)) ' to ' num2str(cLim(2))]}])
 % end
 
 
 %% Plot histograms
 doIt = true(size(featInfo));
+% doIt(ismember(featLabel,'retinoFov')) = false;
 for featInd = 1:size(featInfo,2)
     if doIt(featInd)
-        thresh = p.featSel.(featLabel{featInd});
+        if strcmp(featLabel{featInd},'retinoFov')
+            thresh = p.featSel.fov;
+        else
+            thresh = p.featSel.(featLabel{featInd});
+        end
         switch featLabel{featInd}
+            case 'retinoFov'
+                xLabel = {'Delay relative to roi average' '(sec)'};
+                qtile = nan;
+                scale = 'lin';
+                xLim = 'auto';
+                %                 xlabel({'Vein score' 'BOLD var / BOLD mean'})    
             case 'vein'
                 xLabel = {'Vein score' 'log( BOLD var / BOLD mean )'};
                 qtile = 1-thresh.percentile/100;
@@ -293,6 +327,9 @@ for featInd = 1:size(featInfo,2)
         end
         f{end+1} = figure('WindowStyle','docked','color','w','visible',visibility);
         tmp = featSelVal(:,:,:,featInd);
+        if strcmp(featLabel{featInd},'retinoFov')
+            tmp = tmp./pi*6;
+        end
         switch scale
             case 'log'
                 tmp = log(tmp);
@@ -301,63 +338,86 @@ for featInd = 1:size(featInfo,2)
                 error('X')
         end
         
-%       
-        [~,edges] = histcounts(tmp(v1));
-        tmpInd = featSelSeqIn(:,:,:,featInd);
-%         % Voxel selected based on the displayed feature
-%         Nout = histcounts(tmp(v1 & ~tmpInd),edges);
-%         Nin = histcounts(tmp(v1 & tmpInd),edges);
-        % Voxel selected based on all features
-        Nout = histcounts(tmp(v1 & ~featSelIn),edges);
-        Nin = histcounts(tmp(v1 & featSelIn),edges);
+%         [nnz(tmpInd(roi) & ~featSelIn(roi))
+%         nnz(~tmpInd(roi) & featSelIn(roi))
+%         nnz(tmpInd(roi) & featSelIn(roi))
+%         nnz(~tmpInd(roi) & ~featSelIn(roi))]
+%         nnz(roi)
+%         
+%         indOut_thisFeat = ~featSelSeqIn(:,:,:,featInd);
+%         indOut_otherFeat = ~featSelSeqIn; indOut_otherFeat(:,:,:,featInd) = []; indOut_otherFeat = any(indOut_otherFeat,4);
+%         indIn = featSelIn;
+%         
+%         [nnz(indOut_thisFeat(roi) & ~indOut_otherFeat(roi))
+%         nnz(~indOut_thisFeat(roi) & indOut_otherFeat(roi))
+%         nnz(indOut_thisFeat(roi) & indOut_otherFeat(roi))
+%         nnz(~indOut_thisFeat(roi) & ~indOut_otherFeat(roi))]
+%         nnz(roi(roi))
+%         nnz(indIn(roi))
+%         
+%         [~,edges] = histcounts(tmp);
+%         N1 = histcounts(tmp(roi & indOut_thisFeat & ~indOut_otherFeat),edges)';
+%         N2 = histcounts(tmp(roi & ~indOut_thisFeat & indOut_otherFeat),edges)';
+%         N3 = histcounts(tmp(roi & indOut_thisFeat & indOut_otherFeat),edges)';
+%         N4 = histcounts(tmp(roi & ~indOut_thisFeat & ~indOut_otherFeat),edges)';
+%         ctrs = (edges(1:end-1)+edges(2:end))/2; % Calculate the bin centers
+%         hBar = bar(ctrs, [N4 N1 N2 N3],1,'stacked','FaceAlpha',0.6); hold on
+%         legend({'4' '1' '2' '3'})
+        
+        
+        
+        [~,edges] = histcounts(tmp);
+        Nin = histcounts(tmp(roi & featSelIn),edges)';
+        Nout = histcounts(tmp(roi & ~featSelIn),edges)';
         ctrs = (edges(1:end-1)+edges(2:end))/2; % Calculate the bin centers
-        hBar = bar(ctrs, [Nin' Nout'],1,'stacked','FaceAlpha',0.6); hold on
+        hBar = bar(ctrs, [Nin Nout],1,'stacked','FaceAlpha',0.6); hold on
         hBar(1).FaceColor = 'w';
         hBar(1).EdgeColor = 'none';
         hBar(2).FaceColor = 'r';
         hBar(2).EdgeColor = 'none';
-        stairs(ctrs-mode(diff(edges)/2),Nin,'k')
+        if Nin(1)~=0
+            stairs([ctrs(1)-mode(diff(edges)/2)-mode(diff(edges)) ctrs-mode(diff(edges)/2)],[0 Nin'],'k')
+        else
+            stairs(ctrs-mode(diff(edges)/2),Nin,'k')
+        end
         
         ax = gca;
         ax.Box = 'off';
-%         delta = diff(exp(edges([1 end])));
-%         delta = 1/10 .^ (-floor(log10(abs(delta))));
-%         ax.XTick = log(floor(exp(edges(1))./delta):delta/10:ceil(exp(edges(1))./delta));
-%         ax.XTickLabel = exp(ax.XTick);
-%         XTickLabel = cellstr(ax.XTickLabel);
-%         XTickLabel(~ismember(ax.XTick,log(floor(exp(edges(1))./delta):delta:ceil(exp(edges(1))./delta)))) = {''};
-%         ax.XTickLabel = XTickLabel;
-        condIndPairInd = 1;
-        featVals = featSel{subjInd,sessInd}.featSeq.featVal(:,featInd,condIndPairInd);
-        qtiles = featSel{subjInd,sessInd}.featSeq.featQtile(:,featInd,condIndPairInd);
-        ps = featSel{subjInd,sessInd}.featSeq.featP(:,featInd,condIndPairInd);
-        fdrs = nan(size(ps));
-        prevInds = featSel{subjInd,sessInd}.featSeq.featPrevInd(:,featInd,condIndPairInd);
-        switch thresh.threshMethod
-            case '%ile'
-                featVal = interp1(qtiles(~isnan(qtiles)&~isnan(featVals)),featVals(~isnan(qtiles)&~isnan(featVals)),qtile);
-            case 'p'
-                featVal = interp1(ps,featVals,thresh.threshVal);
-            case 'fdr'
-                fdrs(prevInds) = mafdr(ps(prevInds),'BHFDR',true);
-                [~,b] = sort(abs(fdrs-thresh.threshVal));
-                featVal = mean(featVals(b(1:2)));
-            otherwise
-                error('X')
-        end
-        switch scale
-            case 'log'
-                featVal = log(featVal);
-            case 'lin'
-        end
-        hThresh = plot([1 1].*featVal,ylim,':k');
-        switch thresh.threshMethod
-            case {'p' 'fdr'}
-                legend([hBar hThresh],{'included voxels' 'exlcuded voxels' [thresh.threshMethod '=' num2str(thresh.threshVal)]},'box','off');
-            case '%ile'
-                legend([hBar hThresh],{'included voxels' 'exlcuded voxels' [thresh.threshMethod '=' num2str(thresh.percentile)]},'box','off');
-            otherwise
-                error('X')
+        
+        if ~strcmp(thresh.threshMethod,'empirical')
+            featVals = featSel{subjInd,sessInd}.featSeq.featVal(:,featInd,condPairInd);
+            qtiles = featSel{subjInd,sessInd}.featSeq.featQtile(:,featInd,condPairInd);
+            ps = featSel{subjInd,sessInd}.featSeq.featP(:,featInd,condPairInd);
+            fdrs = nan(size(ps));
+            startInds = featSel{subjInd,sessInd}.featSeq.featIndStart(:,featInd,condPairInd);
+            switch thresh.threshMethod
+                case '%ile'
+                    featVal = interp1(qtiles(~isnan(qtiles)&~isnan(featVals)),featVals(~isnan(qtiles)&~isnan(featVals)),qtile);
+                case 'p'
+                    featVal = interp1(ps,featVals,thresh.threshVal);
+                case 'fdr'
+                    fdrs(startInds) = mafdr(ps(startInds),'BHFDR',true);
+                    [~,b] = sort(abs(fdrs-thresh.threshVal));
+                    featVal = mean(featVals(b(1:2)));
+                otherwise
+                    error('X')
+            end
+            switch scale
+                case 'log'
+                    featVal = log(featVal);
+                case 'lin'
+            end
+            hThresh = plot([1 1].*featVal,ylim,':k');
+            switch thresh.threshMethod
+                case {'p' 'fdr'}
+                    legend([hBar hThresh],{'incl. voxels' 'excl. voxels' [thresh.threshMethod '=' num2str(thresh.threshVal)]},'box','off');
+                case '%ile'
+                    legend([hBar hThresh],{'incl. voxels' 'excl. voxels' [thresh.threshMethod '=' num2str(thresh.percentile)]},'box','off');
+                otherwise
+                    error('X')
+            end
+        else
+            legend(hBar,{'incl. voxels' 'excl. voxels'},'box','off');
         end
         ax.TickDir = 'out';
         xlim(xLim)

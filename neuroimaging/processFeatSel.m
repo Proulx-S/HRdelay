@@ -54,130 +54,128 @@ for subjInd = 1:length(d)
 end
 d = dP; clear dP
 
+%% Retinotopic feature selection
 if p.featSel.fov.doIt && strcmp(p.featSel.fov.threshMethod,'empirical')
-    featSel_fov = empiricalFov(d,p,fullfile(funPath,outDir));
+    [featSel_fov,d,p] = empiricalFov(d,p,fullfile(funPath,outDir));
 end
+% saved to empiricalFov.mat by empiricalFov.m
 
 
-
-
-%% Functionaly defined feature selection
+%% Functional feature selection
+featSel = cell(size(d));
+f = cell(size(d));
+disp('Feature Selection: processing')
 for sessInd = 1:size(d,2)
     for subjInd = 1:size(d,1)
         p.subjInd = subjInd;
         p.sessInd = sessInd;
         disp(['subj' num2str(subjInd) '; sess' num2str(sessInd)])
-        [featSel{subjInd,sessInd},f{subjInd,sessInd}] = getFeatSel(d{subjInd,sessInd},p);
+        [featSel{subjInd,sessInd}] = getFeatSel(d{subjInd,sessInd},p,featSel_fov{subjInd,sessInd});
     end
 end
-% single hemispheres
-
-
-
-
-
-
-
-
-indInX = cell(1,size(d,2));
-dX = cell(1,size(d,2));
-fieldList = fields(d{subjInd,sessInd});
-for sessInd = 1:size(d,2)
-    for subjInd = 1:size(d,1)
-        if subjInd==1
-            indInX{sessInd} = featSel{subjInd,sessInd}.featSeq.featIndIn;
-            dX{sessInd} = d{subjInd,sessInd};
-        else
-            indInX{sessInd} = cat(1,indInX{sessInd},featSel{subjInd,sessInd}.featSeq.featIndIn);
-            for fieldInd = 1:length(fieldList)
-                if isnumeric(d{subjInd,sessInd}.(fieldList{fieldInd}))...
-                        && ~strcmp(fieldList{fieldInd},'sinDesign')...
-                        && ~strcmp(fieldList{fieldInd},'hrDesign')
-                    dX{sessInd}.(fieldList{fieldInd}) = cat(1,mean(dX{sessInd}.(fieldList{fieldInd}),4),mean(d{subjInd,sessInd}.(fieldList{fieldInd}),4));
-                elseif isstruct(d{subjInd,sessInd}.(fieldList{fieldInd}))...
-                        && ~strcmp(fieldList{fieldInd},'featSel')
-                    fieldList2 = fields(d{subjInd,sessInd}.(fieldList{fieldInd}));
-                    for fieldInd2 = 1:length(fieldList2)
-                        if isnumeric(d{subjInd,sessInd}.(fieldList{fieldInd}).(fieldList2{fieldInd2}))...
-                                || islogical(d{subjInd,sessInd}.(fieldList{fieldInd}).(fieldList2{fieldInd2}))
-                            dX{sessInd}.(fieldList{fieldInd}).(fieldList2{fieldInd2}) = ...
-                                cat(1,dX{sessInd}.(fieldList{fieldInd}).(fieldList2{fieldInd2}),d{subjInd,sessInd}.(fieldList{fieldInd}).(fieldList2{fieldInd2}));    
-                        end
-                    end
-                end
-            end
-        end
-    end
-end
-
-sessInd = 1;
-plotVoxOnFoV(dX{sessInd},p,true(size(dX{sessInd}.sin,1),1))
-ax = gca;
-RLim = ax.RLim;
-title('allVox')
-for featInd = 1:length(featSel{subjInd,sessInd}.featSeq.featSelList)
-    plotVoxOnFoV(dX{sessInd},p,indInX{sessInd}(:,featInd,1))
-    title(featSel{subjInd,sessInd}.featSeq.featSelList{featInd})
-    ax = gca;
-    ax.RLim = RLim;
-end
-
-featSel{subjInd,sessInd}.featSeq.featSelList'
-featInd = [3 4];
-plotVoxOnFoV(dX{sessInd},p,all(indInX{sessInd}(:,featInd,1),2))
-ax = gca;
-R = [ax.Children(3).RData ax.Children(4).RData];
-figure('WindowStyle','docked');
-R = exp(R)-1;
-hist(R,100)
-
-
-
-
-featInd = [0];
-condPairInd = 1;
-if featInd==0
-    ind = true(size(featSel{subjInd,sessInd}.featSeq.featIndIn,1),1);
-else
-    ind = all(featSel{subjInd,sessInd}.featSeq.featIndIn(:,featInd,condPairInd),2);
-end
-p.featSel.fov.threshVal = [];
-plotVoxOnFoV(dX{1},p,ind)
-
-% fac = 1;
-% fac = (2*pi);
-% fac = 1/(2*pi);
-% fac = (2*2*pi);
-fac = 1/(2*2*pi);
-
-R = dX{sessInd}.voxProp.ecc;
-Rp = cdf(nonparamDistFit(R),R);
-v = linspace(min(R),max(R)*fac,length(unique(R)));%R
-x = linspace(1/length(unique(R)),1,length(unique(R)));%Rp
-xq = Rp;%Rp
-vq = interp1(x,v,xq);%R
-R2 = vq;
-Rp2 = xq;
-figure('WindowStyle','docked');
-[~,uInd,~] = unique(R);
-plot(R(uInd),Rp(uInd),'.'); hold on
-[~,uInd,~] = unique(R2);
-plot(R2(uInd),Rp2(uInd),'.'); hold on
-nonparamDistFit(R2,0)
-
-d2 = dX{sessInd};
-d2.voxProp.ecc = R2;
-plotVoxOnFoV(d2,p,ind)
-
-
-
-
-
-%% Save
-disp('saving feature selection')
+% save to featSel.mat
+disp('Feature Selection: saving')
 if ~exist(fullfile(funPath,outDir),'dir')
     mkdir(fullfile(funPath,outDir))
 end
 fullfilename = fullfile(funPath,outDir,'featSel.mat');
 save(fullfilename,'featSel')
-disp(['saved to: ' fullfilename])
+disp(['Feature Selection: saved to ' fullfilename])
+
+
+% % single hemispheres
+% 
+% indInX = cell(1,size(d,2));
+% dX = cell(1,size(d,2));
+% fieldList = fields(d{subjInd,sessInd});
+% for sessInd = 1:size(d,2)
+%     for subjInd = 1:size(d,1)
+%         if subjInd==1
+%             indInX{sessInd} = featSel{subjInd,sessInd}.featSeq.featIndIn;
+%             dX{sessInd} = d{subjInd,sessInd};
+%         else
+%             indInX{sessInd} = cat(1,indInX{sessInd},featSel{subjInd,sessInd}.featSeq.featIndIn);
+%             for fieldInd = 1:length(fieldList)
+%                 if isnumeric(d{subjInd,sessInd}.(fieldList{fieldInd}))...
+%                         && ~strcmp(fieldList{fieldInd},'sinDesign')...
+%                         && ~strcmp(fieldList{fieldInd},'hrDesign')
+%                     dX{sessInd}.(fieldList{fieldInd}) = cat(1,mean(dX{sessInd}.(fieldList{fieldInd}),4),mean(d{subjInd,sessInd}.(fieldList{fieldInd}),4));
+%                 elseif isstruct(d{subjInd,sessInd}.(fieldList{fieldInd}))...
+%                         && ~strcmp(fieldList{fieldInd},'featSel')
+%                     fieldList2 = fields(d{subjInd,sessInd}.(fieldList{fieldInd}));
+%                     for fieldInd2 = 1:length(fieldList2)
+%                         if isnumeric(d{subjInd,sessInd}.(fieldList{fieldInd}).(fieldList2{fieldInd2}))...
+%                                 || islogical(d{subjInd,sessInd}.(fieldList{fieldInd}).(fieldList2{fieldInd2}))
+%                             dX{sessInd}.(fieldList{fieldInd}).(fieldList2{fieldInd2}) = ...
+%                                 cat(1,dX{sessInd}.(fieldList{fieldInd}).(fieldList2{fieldInd2}),d{subjInd,sessInd}.(fieldList{fieldInd}).(fieldList2{fieldInd2}));    
+%                         end
+%                     end
+%                 end
+%             end
+%         end
+%     end
+% end
+% 
+% sessInd = 1;
+% plotVoxOnFoV(dX{sessInd},p,true(size(dX{sessInd}.sin,1),1))
+% ax = gca;
+% RLim = ax.RLim;
+% title('allVox')
+% for featInd = 1:length(featSel{subjInd,sessInd}.featSeq.featSelList)
+%     plotVoxOnFoV(dX{sessInd},p,indInX{sessInd}(:,featInd,1))
+%     title(featSel{subjInd,sessInd}.featSeq.featSelList{featInd})
+%     ax = gca;
+%     ax.RLim = RLim;
+% end
+% 
+% featSel{subjInd,sessInd}.featSeq.featSelList'
+% featInd = [3 4];
+% plotVoxOnFoV(dX{sessInd},p,all(indInX{sessInd}(:,featInd,1),2))
+% ax = gca;
+% R = [ax.Children(3).RData ax.Children(4).RData];
+% figure('WindowStyle','docked');
+% R = exp(R)-1;
+% hist(R,100)
+% 
+% 
+% 
+% 
+% featInd = [0];
+% condPairInd = 1;
+% if featInd==0
+%     ind = true(size(featSel{subjInd,sessInd}.featSeq.featIndIn,1),1);
+% else
+%     ind = all(featSel{subjInd,sessInd}.featSeq.featIndIn(:,featInd,condPairInd),2);
+% end
+% p.featSel.fov.threshVal = [];
+% plotVoxOnFoV(dX{1},p,ind)
+% 
+% % fac = 1;
+% % fac = (2*pi);
+% % fac = 1/(2*pi);
+% % fac = (2*2*pi);
+% fac = 1/(2*2*pi);
+% 
+% R = dX{sessInd}.voxProp.ecc;
+% Rp = cdf(nonparamDistFit(R),R);
+% v = linspace(min(R),max(R)*fac,length(unique(R)));%R
+% x = linspace(1/length(unique(R)),1,length(unique(R)));%Rp
+% xq = Rp;%Rp
+% vq = interp1(x,v,xq);%R
+% R2 = vq;
+% Rp2 = xq;
+% figure('WindowStyle','docked');
+% [~,uInd,~] = unique(R);
+% plot(R(uInd),Rp(uInd),'.'); hold on
+% [~,uInd,~] = unique(R2);
+% plot(R2(uInd),Rp2(uInd),'.'); hold on
+% nonparamDistFit(R2,0)
+% 
+% d2 = dX{sessInd};
+% d2.voxProp.ecc = R2;
+% plotVoxOnFoV(d2,p,ind)
+
+
+
+
+
