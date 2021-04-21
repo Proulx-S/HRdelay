@@ -280,6 +280,7 @@ f0 = plotNorm(d,p,featSel{subjInd,sessInd},voxFlag);
 %% Plot histograms
 doIt = true(size(featInfo));
 % doIt(ismember(featLabel,'retinoFov')) = false;
+fovSelIn = featSelSeqIn(:,:,:,ismember(featLabel,'retinoFov'));
 for featInd = 1:size(featInfo,2)
     if doIt(featInd)
         if strcmp(featLabel{featInd},'retinoFov')
@@ -368,18 +369,28 @@ for featInd = 1:size(featInfo,2)
         
         [~,edges] = histcounts(tmp);
         Nin = histcounts(tmp(roi & featSelIn),edges)';
-        Nout = histcounts(tmp(roi & ~featSelIn),edges)';
+        Nout_fovIn = histcounts(tmp(roi & ~featSelIn & fovSelIn),edges)';
+        Nout_fovOut = histcounts(tmp(roi & ~featSelIn & ~fovSelIn),edges)';
         ctrs = (edges(1:end-1)+edges(2:end))/2; % Calculate the bin centers
-        hBar = bar(ctrs, [Nin Nout],1,'stacked','FaceAlpha',0.6); hold on
+        hBar = bar(ctrs, [Nin Nout_fovIn Nout_fovOut],1,'stacked','FaceAlpha',0.6); hold on
         hBar(1).FaceColor = 'w';
         hBar(1).EdgeColor = 'none';
         hBar(2).FaceColor = 'r';
         hBar(2).EdgeColor = 'none';
-        if Nin(1)~=0
-            stairs([ctrs(1)-mode(diff(edges)/2)-mode(diff(edges)) ctrs-mode(diff(edges)/2)],[0 Nin'],'k')
-        else
-            stairs(ctrs-mode(diff(edges)/2),Nin,'k')
+        hBar(3).FaceColor = 'b';
+        hBar(3).EdgeColor = 'none';
+        
+        outline_x = ctrs-mode(diff(edges)/2);
+        outline_y = sum([Nin Nout_fovIn Nout_fovOut],2)';
+        if outline_y(1)~=0
+            outline_x = [ctrs(1)-mode(diff(edges)/2)-mode(diff(edges)) outline_x];
+            outline_y = [0 outline_y];
         end
+        if outline_y(end)~=0
+            outline_x = [outline_x ctrs(end)-mode(diff(edges)/2)+mode(diff(edges))];
+            outline_y = [outline_y 0];
+        end
+        stairs(outline_x,outline_y,'k')
         
         ax = gca;
         ax.Box = 'off';
@@ -410,14 +421,14 @@ for featInd = 1:size(featInfo,2)
             hThresh = plot([1 1].*featVal,ylim,':k');
             switch thresh.threshMethod
                 case {'p' 'fdr'}
-                    legend([hBar hThresh],{'incl. voxels' 'excl. voxels' [thresh.threshMethod '=' num2str(thresh.threshVal)]},'box','off');
+                    legend([hBar hThresh],{'incl.' 'excl. (within fov)' 'excl. (outside fov)' [thresh.threshMethod '=' num2str(thresh.threshVal)]},'box','off');
                 case '%ile'
-                    legend([hBar hThresh],{'incl. voxels' 'excl. voxels' [thresh.threshMethod '=' num2str(thresh.percentile)]},'box','off');
+                    legend([hBar hThresh],{'incl.' 'excl. (within fov)' 'excl. (outside fov)' [thresh.threshMethod '=' num2str(thresh.percentile)]},'box','off');
                 otherwise
                     error('X')
             end
         else
-            legend(hBar,{'incl. voxels' 'excl. voxels'},'box','off');
+            legend(hBar,{'incl.' 'excl. (within fov)' 'excl. (outside fov)'},'box','off');
         end
         ax.TickDir = 'out';
         xlim(xLim)
