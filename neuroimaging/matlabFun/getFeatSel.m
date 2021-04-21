@@ -25,19 +25,21 @@ ind = true(size(d.sin,1),1);
 %% Voxels representing stimulus fov
 curInfo1 = {'retinoFov'};
 featVal = featSel_fov.featVal;
-pVal = nan;
+pVal = nan(size(featVal));
 % thresh = nan;
 curInfo2 = {featSel_fov.featMethod};
 startInd = ind;
-ind = logical(featSel_fov.featIndIn);
+curIndIn = logical(featSel_fov.featIndIn);
 
-allFeatVal(end+1) = {featVal};
-allFeatP(end+1) = {nan(size(featVal))};
+
+allFeatVal(end+1) = {uniformizeOutputs(featVal,condIndPairList)};
+allFeatP(end+1) = {uniformizeOutputs(pVal,condIndPairList)};
 allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
-allFeatIndStart(end+1) = {startInd};
-allFeatIndIn(end+1) = {ind};
+allFeatIndStart(end+1) = {uniformizeOutputs(startInd,condIndPairList)};
+allFeatIndIn(end+1) = {uniformizeOutputs(curIndIn,condIndPairList)};
 
 
+ind = curIndIn;
 
 % if p.featSel.fov.doIt
 %     curInfo1 = {'fov'};
@@ -131,37 +133,6 @@ allFeatIndIn(end+1) = {ind};
 % end
 
 
-%% Non vein voxels
-if p.featSel.vein.doIt
-    curInfo1 = {'vein'};
-    
-    featVal = mean(d.featSel.vein.map(:,:),2);
-    thresh = p.featSel.(char(curInfo1));
-    curInfo2 = {thresh.threshMethod};
-    startInd = ind;
-    switch thresh.threshMethod
-        case '%ile'
-            pVal = nan(size(featVal));
-            featVal;
-            curThresh = 100-thresh.percentile;
-            curInfo2 = {[curInfo2{1} '<' num2str(curThresh)]};
-            
-%             curIndIn = featVal<=prctile(featVal(ind(:,1)),curThresh);
-            curIndIn = featVal<=prctile(featVal(startInd,1),curThresh);
-            curIndIn = repmat(curIndIn,[1 length(condIndPairList)]);
-            
-            allFeatVal(end+1) = {featVal};
-            allFeatP(end+1) = {pVal};
-%             allFeatPrevInd(end+1) = {prevInd};
-            allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
-            allFeatIndStart(end+1) = {startInd};
-            allFeatIndIn(end+1) = {curIndIn};
-        otherwise
-            error('X')
-    end
-%     ind = ind & curIndIn;
-end
-
 %% Activated voxels (fixed-effect sinusoidal fit of BOLD timeseries)
 if p.featSel.act.doIt
 %     if (p.featSel.respVecSig.doIt || p.featSel.respVecDiff.doIt) && ~( length(condIndPairList)==1 && all(condIndPairList{1}==[1 2 3]) )
@@ -201,12 +172,19 @@ if p.featSel.act.doIt
     
 %     ind = ind & curIndIn;
 
-    allFeatVal(end+1) = {featVal};
-    allFeatP(end+1) = {pVal};
-%     allFeatPrevInd(end+1) = {prevInd};
+    allFeatVal(end+1) = {uniformizeOutputs(featVal,condIndPairList)};
+    allFeatP(end+1) = {uniformizeOutputs(pVal,condIndPairList)};
     allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
-    allFeatIndStart(end+1) = {startInd};
-    allFeatIndIn(end+1) = {curIndIn};
+    allFeatIndStart(end+1) = {uniformizeOutputs(startInd,condIndPairList)};
+    allFeatIndIn(end+1) = {uniformizeOutputs(curIndIn,condIndPairList)};
+
+
+%     allFeatVal(end+1) = {featVal};
+%     allFeatP(end+1) = {pVal};
+% %     allFeatPrevInd(end+1) = {prevInd};
+%     allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
+%     allFeatIndStart(end+1) = {startInd};
+%     allFeatIndIn(end+1) = {curIndIn};
 
 %     info1(end+1) = curInfo1;
 %     info2(end+1) = curInfo2;
@@ -252,18 +230,65 @@ if p.featSel.respVecSig.doIt
             error('X')
     end
 %     ind = ind & curIndIn;
-    
-    allFeatVal(end+1) = {featVal};
-    allFeatP(end+1) = {pVal};
-%     allFeatPrevInd(end+1) = {prevInd};
+
+    allFeatVal(end+1) = {uniformizeOutputs(featVal,condIndPairList)};
+    allFeatP(end+1) = {uniformizeOutputs(pVal,condIndPairList)};
     allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
-    allFeatIndStart(end+1) = {startInd};
-    allFeatIndIn(end+1) = {curIndIn};
+    allFeatIndStart(end+1) = {uniformizeOutputs(startInd,condIndPairList)};
+    allFeatIndIn(end+1) = {uniformizeOutputs(curIndIn,condIndPairList)};
+
+    
+%     allFeatVal(end+1) = {featVal};
+%     allFeatP(end+1) = {pVal};
+% %     allFeatPrevInd(end+1) = {prevInd};
+%     allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
+%     allFeatIndStart(end+1) = {startInd};
+%     allFeatIndIn(end+1) = {curIndIn};
     
 %     info1(end+1) = curInfo1;
 %     info2(end+1) = curInfo2;
 %     n(end+1) = nnz(ind);
 end
+
+
+%% Non vein voxels
+if p.featSel.vein.doIt
+    curInfo1 = {'vein'};
+    
+    featVal = mean(d.featSel.vein.map(:,:),2);
+    thresh = p.featSel.(char(curInfo1));
+    curInfo2 = {thresh.threshMethod};
+%     allFeatIndIn
+    startInd = ind;
+    switch thresh.threshMethod
+        case '%ile'
+            pVal = nan(size(featVal));
+            featVal;
+            curThresh = 100-thresh.percentile;
+            curInfo2 = {[curInfo2{1} '<' num2str(curThresh)]};
+            
+%             curIndIn = featVal<=prctile(featVal(ind(:,1)),curThresh);
+            curIndIn = featVal<=prctile(featVal(startInd,1),curThresh);
+            
+            
+            allFeatVal(end+1) = {uniformizeOutputs(featVal,condIndPairList)};
+            allFeatP(end+1) = {uniformizeOutputs(pVal,condIndPairList)};
+            allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
+            allFeatIndStart(end+1) = {uniformizeOutputs(startInd,condIndPairList)};
+            allFeatIndIn(end+1) = {uniformizeOutputs(curIndIn,condIndPairList)};
+
+%             allFeatVal(end+1) = {featVal};
+%             allFeatP(end+1) = {pVal};
+% %             allFeatPrevInd(end+1) = {prevInd};
+%             allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
+%             allFeatIndStart(end+1) = {startInd};
+%             allFeatIndIn(end+1) = {curIndIn};
+        otherwise
+            error('X')
+    end
+%     ind = ind & curIndIn;
+end
+
 
 % %% Response vector distribution across voxels
 % if p.featSel.respVecDist.doIt
@@ -476,13 +501,20 @@ if p.featSel.respVecDiff.doIt
             error('X')
     end
 %     ind = ind & curIndIn;
-    
-    allFeatVal(end+1) = {featVal};
-    allFeatP(end+1) = {pVal};
-%     allFeatPrevInd(end+1) = {prevInd};
+
+    allFeatVal(end+1) = {uniformizeOutputs(featVal,condIndPairList)};
+    allFeatP(end+1) = {uniformizeOutputs(pVal,condIndPairList)};
     allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
-    allFeatIndStart(end+1) = {startInd};
-    allFeatIndIn(end+1) = {curIndIn};
+    allFeatIndStart(end+1) = {uniformizeOutputs(startInd,condIndPairList)};
+    allFeatIndIn(end+1) = {uniformizeOutputs(curIndIn,condIndPairList)};
+
+
+%     allFeatVal(end+1) = {featVal};
+%     allFeatP(end+1) = {pVal};
+% %     allFeatPrevInd(end+1) = {prevInd};
+%     allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
+%     allFeatIndStart(end+1) = {startInd};
+%     allFeatIndIn(end+1) = {curIndIn};
     
 %     info1(end+1) = curInfo1;
 %     info2(end+1) = curInfo2;
@@ -494,31 +526,10 @@ end
 for i = 1:size(allFeatVal,2)
     allFeatVal{i} = permute(allFeatVal{i},[1 3 2]);
     allFeatP{i} = permute(allFeatP{i},[1 3 2]);
-%     allFeatPrevInd{i} = permute(allFeatPrevInd{i},[1 3 2]);
+    allFeatIndStart{i} = permute(allFeatIndStart{i},[1 3 2]);
     allFeatIndIn{i} = permute(allFeatIndIn{i},[1 3 2]);
 end
-sz = size(allFeatVal{1},[1 2 3]);
-for i = 1:size(allFeatVal,2)
-    if size(allFeatVal{i},3)>sz(3)
-        sz(3) = size(allFeatVal{i},3);
-    end
-end
-sz(2) = size(allFeatVal,2);
 
-for i = 1:size(allFeatVal,2)
-    if size(allFeatVal{i},3)==1
-        allFeatVal{i} = repmat(allFeatVal{i},[1 1 sz(3)]);
-    end
-    if size(allFeatP{i},3)==1
-        allFeatP{i} = repmat(allFeatP{i},[1 1 sz(3)]);
-    end
-%     if size(allFeatPrevInd{i},3)==1
-%         allFeatPrevInd{i} = repmat(allFeatPrevInd{i},[1 1 sz(3)]);
-%     end
-    if size(allFeatIndIn{i},3)==1
-        allFeatIndIn{i} = repmat(allFeatIndIn{i},[1 1 sz(3)]);
-    end
-end
 featSel.featSeq.featVal = catcell(2,allFeatVal);
 featSel.featSeq.featP = catcell(2,allFeatP);
 % featSel.featSeq.featPrevInd = catcell(2,allFeatPrevInd);
@@ -534,10 +545,11 @@ switch p.featSel.global.method
     case 'all'
         indIn = all(featSel.featSeq.featIndIn,2);
         % Compute quantile
-        for featInd = 1:sz(2)
-            for condIndPairInd = 1:sz(3)
+        for featInd = 1:size(featSel.featSeq.featQtile,2)
+            for condIndPairInd = 1:size(featSel.featSeq.featQtile,3)
                 x = featSel.featSeq.featVal(:,featInd,condIndPairInd);
-                startInd = true(size(x));
+                startInd = featSel.featSeq.featIndStart(:,featInd,condIndPairInd);
+%                 startInd = true(size(x));
                 [fx,x2] = ecdf(x(startInd));
                 x2 = x2(2:end); fx = fx(2:end);
                 [~,b] = ismember(x,x2);
@@ -792,3 +804,11 @@ for withinTestInd = 1:length(C)
         [stat(i),PVAL(i),~] = getStats(Xmat,A{betweenTestInd},Beta,C{withinTestInd},D,SSE,statLabel);
     end
 end
+
+function featVec = uniformizeOutputs(featVec,condIndPairList)
+if size(featVec,2)==1
+    featVec = repmat(featVec,[1 length(condIndPairList) 1]);
+elseif size(featVec,2)~=length(condIndPairList)
+    error('X')
+end
+

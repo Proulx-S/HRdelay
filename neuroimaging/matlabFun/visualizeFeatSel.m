@@ -43,8 +43,8 @@ load(fullfile(funPath,inDir,'featSel.mat'));
 % featSel{1}
 
 %% Initialize subj, sess and masks
-subjInd = 1;
-sessInd = 1;
+subjInd = p.figOption.subjInd;
+sessInd = p.figOption.sessInd;
 for i = 1:length(featSel{subjInd,sessInd}.condPairList)
     if length(featSel{subjInd,sessInd}.condPairList{i})==3 ...
             && all(featSel{subjInd,sessInd}.condPairList{i} == [1 2 3])
@@ -81,7 +81,7 @@ featSelValThresholded = permute(featSelValThresholded,[2 3 4 1]);
 
 
 sess = ['sess' num2str(sessInd)];
-slice = 11;
+slice = p.figOption.sliceInd;
 visibility = true;
 
 %% Get some nice colormaps
