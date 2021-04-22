@@ -77,7 +77,7 @@ end
 d = dAll; clear dAll
 sessList = fields(d{1});
 % Load feature slection
-load(fullfile(funPath,inDir,'featSel.mat'));
+load(fullfile(funPath,inDir,'featSel.mat'),'featSel');
 if verbose
     disp('---');
     disp(['SVM space: ' p.svmSpace '; on ' dataType]);
@@ -87,13 +87,19 @@ end
 dP = cell(size(d,2),length(sessList));
 for subjInd = 1:length(d)
     for sessInd = 1:length(sessList)
-        sess = ['sess' num2str(sessInd)];
+        switch p.condPair
+            case 'grat1VSgrat2'
+                featSel{subjInd,sessInd}.condPairCurInd = cellfun('length',featSel{subjInd,sessInd}.condPairList)==3;
+            otherwise
+                error('code that')
+        end
         dP{subjInd,sessInd} = d{subjInd}.(sessList{sessInd});
         d{subjInd}.(sessList{sessInd}) = [];
-        dP{subjInd,sessInd}.featSel = featSel2{subjInd,sessInd};
+        dP{subjInd,sessInd}.featSel = featSel{subjInd,sessInd};
     end
 end
 d = dP; clear dP
+
 
 
 % figure('WindowStyle','docked');
@@ -110,8 +116,9 @@ d = dP; clear dP
 % end
 
 %% Example plot of trigonometric (polar) representation
-i = 1;
-f = plotNorm(d{i},p,featSel{i},featSel2{i});
+subjInd = p.figOption.subjInd;
+sessInd = p.figOption.sessInd;
+f = plotNorm(d{subjInd,sessInd},p,featSel{subjInd,sessInd});
 if figOption.save
     error('code that')
     filename = fullfile(pwd,mfilename);
@@ -188,7 +195,7 @@ for i = 1:numel(d)
     end
     
     % cross-session feature selection
-    featSelInd = featSel2{subjInd,sessIndCross}.indIn;
+    featSelInd = featSel{subjInd,sessIndCross}.indIn(:,:,featSel{subjInd,sessIndCross}.condPairCurInd);
     if strcmp(dataType,'waveTrialSparseCat2')
         featSelInd = repmat(featSelInd,[1 12]);
     end
@@ -257,7 +264,7 @@ for i = 1:numel(d)
             error('X')
     end
     % same-session feature-selection
-    featSelInd = featSel2{subjInd,trainInd}.indIn;
+    featSelInd = featSel{subjInd,trainInd}.indIn(:,:,featSel{subjInd,trainInd}.condPairCurInd);
     if strcmp(dataType,'waveTrialSparseCat2')
         featSelInd = repmat(featSelInd,[1 12]);
     end
@@ -313,7 +320,7 @@ for i = 1:numel(d)
             error('X')
     end
     % cross-session feature selection
-    featSelInd = featSel2{subjInd,trainInd}.indIn;
+    featSelInd = featSel{subjInd,trainInd}.indIn(:,:,featSel{subjInd,trainInd}.condPairCurInd);
     if strcmp(dataType,'waveTrialSparseCat2')
         featSelInd = repmat(featSelInd,[1 12]);
     end
@@ -332,7 +339,7 @@ acc_fdr = mafdr([resBS_sess.acc_p],'BHFDR',true);
 for i = 1:numel(d)
     resBS_sess(i).acc_fdr = acc_fdr(i);
     resBS_sess(i).nVoxOrig = size(d{i}.sin,2);
-    resBS_sess(i).nVox = sum(featSel{i}.ind);
+    resBS_sess(i).nVox = nnz(featSel{i}.indIn(:,:,featSel{i}.condPairCurInd));
     resBS_sess(i).svmSpace = p.svmSpace;
     resBS_sess(i).norm = p.norm;
 end
@@ -347,7 +354,7 @@ acc_fdr = mafdr([resWS_sess.acc_p],'BHFDR',true);
 for i = 1:numel(d)
     resWS_sess(i).acc_fdr = acc_fdr(i);
     resWS_sess(i).nVoxOrig = size(d{i}.sin,2);
-    resWS_sess(i).nVox = sum(featSel{i}.ind);
+    resWS_sess(i).nVox = nnz(featSel{i}.indIn(:,:,featSel{i}.condPairCurInd));
     resWS_sess(i).svmSpace = p.svmSpace;
     resWS_sess(i).norm = p.norm;
 end
@@ -431,12 +438,20 @@ if verbose
     end
     
     
-    textLine = [textLine {strjoin(featSel{figOption.subj,1}.info1,'; ')}];
-    textLine = [textLine {strjoin(featSel{figOption.subj,1}.info2,'; ')}];
     
-    n = nan([length(featSel{1}.n) size(featSel)]);
+    textLine = [textLine {strjoin(featSel{figOption.subj,1}.featSeq.featSelList,'; ')}];
+%     textLine = [textLine {strjoin(featSel{figOption.subj,1}.info1,'; ')}];
+%     textLine = [textLine {strjoin(featSel{figOption.subj,1}.info2,'; ')}];
+    
+
+    
+    n    = nan([length(featSel{1}.featSeq.featSelList)+1 size(featSel)]);
+%     n = nan([length(featSel{1}.n) size(featSel)]);
     for sessInd = 1:numel(featSel)
-        n(:,sessInd) = featSel{sessInd}.n;
+        n(2:end,sessInd) = sum(cumsum(featSel{sessInd}.featSeq.featIndIn(:,:,featSel{sessInd}.condPairCurInd),2) == 1:size(featSel{sessInd}.featSeq.featIndIn,2),1);
+        n(1,sessInd) = size(featSel{sessInd}.featSeq.featIndIn,1);
+%         n(:,sessInd) = nnz(featSel{sessInd}.indIn(:,:,featSel{sessInd}.condPairCurInd));
+%         n(:,sessInd) = featSel{sessInd}.n;
     end
     nMin = min(n(:,:),[],2)';
     nMin = cellstr(num2str(nMin'))';
