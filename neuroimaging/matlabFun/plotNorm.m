@@ -139,8 +139,10 @@ if ~voxFlag
     xLim = prctile(real(x(1,:)),[2.5 97.5]);
     yLim = prctile(imag(x(1,:)),[2.5 97.5]);
     % lim = [-lim lim];
-    xlim(xLim);
-    if ~strcmp(p.svmSpace,'cartNoDelay')
+    if ~all(xLim==[0 0])
+        xlim(xLim);
+    end
+    if ~all(yLim==[0 0])
         ylim(yLim);
     end
     % switch p.svmSpace
@@ -204,8 +206,10 @@ if ~voxFlag
     yLim = prctile(imag(x(1,:)),[2.5 97.5]);
     % lim = prctile(abs([real(x(:)) imag(x(:))]),95);
     % lim = [-lim lim];
-    xlim(xLim);
-    if ~strcmp(p.svmSpace,'cartNoDelay')
+    if ~all(xLim==[0 0])
+        xlim(xLim);
+    end
+    if ~all(yLim==[0 0])
         ylim(yLim);
     end
     % switch p.svmSpace
@@ -216,7 +220,7 @@ if ~voxFlag
     %     otherwise
     %         error('X')
     % end
-    % xLim = xlim;
+    xLim = xlim;
     delta = abs(diff(xLim)).*0.1;
     if ~(xLim(1)<0)
         xLim(1) = -delta;
@@ -227,6 +231,7 @@ if ~voxFlag
     xlim(xLim)
     
     yLim = ylim;
+    delta = abs(diff(yLim)).*0.1;
     if ~(yLim(1)<0)
         yLim(1) = -delta;
     end

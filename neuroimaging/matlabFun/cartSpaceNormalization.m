@@ -14,44 +14,49 @@ end
 if computeNorm
     % Specify norm
     switch SVMspace
-        case {'cart' 'cartNoAmp'}
-            if doCartSpaceScale
+        case {'cart' 'cartNoAmp' 'cartNoAmp_affineRot' 'cart_roi' 'cart_affineRot'}
+%             if doCartSpaceScale
                 normSpace.realShift = 'vox';
                 normSpace.imagShift = 'vox';
                 normSpace.realScale = 'vox';
                 normSpace.imagScale = 'vox';
-            else
-                normSpace.realShift = 'roi';
-                normSpace.imagShift = 'roi';
-                normSpace.realScale = 'none';
-                normSpace.imagScale = 'none';
-            end
-        case {'cartNoDelay' 'cartReal'}
-            normSpace.realShift = 'vox';
-            normSpace.imagShift = 'rm';
-            if doCartSpaceScale
+%             else
+%                 normSpace.realShift = 'roi';
+%                 normSpace.imagShift = 'roi';
+%                 normSpace.realScale = 'none';
+%                 normSpace.imagScale = 'none';
+%             end
+        case {'cartNoDelay' 'cartReal' 'cartReal_affineRot'}
+%             normSpace.realShift = 'vox';
+%             normSpace.imagShift = 'rm';
+%             if doCartSpaceScale
                 normSpace.realShift = 'vox';
                 normSpace.imagShift = 'rm';
                 normSpace.realScale = 'vox';
                 normSpace.imagScale = 'rm';
-            else
-                normSpace.realShift = 'roi';
-                normSpace.imagShift = 'roi';
-                normSpace.realScale = 'none';
-                normSpace.imagScale = 'rm';
-            end
-        case {'cartNoAmpImag' 'cartImag'}
-            if doCartSpaceScale
+%             else
+%                 normSpace.realShift = 'roi';
+%                 normSpace.imagShift = 'roi';
+%                 normSpace.realScale = 'none';
+%                 normSpace.imagScale = 'rm';
+%             end
+        case {'cartImag' 'cartNoAmpImag' 'cartImag_affineRot' 'cartNoAmpImag_affineRot'}
+%             if doCartSpaceScale
                 normSpace.realShift = 'rm';
                 normSpace.imagShift = 'vox';
                 normSpace.realScale = 'rm';
                 normSpace.imagScale = 'vox';
-            else
-                normSpace.realShift = 'roi';
-                normSpace.imagShift = 'roi';
-                normSpace.realScale = 'rm';
-                normSpace.imagScale = 'none';
-            end
+%             else
+%                 normSpace.realShift = 'roi';
+%                 normSpace.imagShift = 'roi';
+%                 normSpace.realScale = 'rm';
+%                 normSpace.imagScale = 'none';
+%             end
+        case 'cartNoAmp_affineRot_affineCart'
+            normSpace.realShift = 'roi';
+            normSpace.imagShift = 'roi';
+            normSpace.realScale = 'roi';
+            normSpace.imagScale = 'roi';
         otherwise
             error('X')
     end

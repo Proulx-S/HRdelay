@@ -12,7 +12,10 @@ else
 end
 
 switch SVMspace
-    case 'cartRoi'
+    case {'cart_affineRot' 'cartImag_affineRot' 'cartReal_affineRot'}
+        normSpace.rhoScale = 'vox';
+        normSpace.thetaShift = 'roi';
+    case 'cart_roi'
         normSpace.rhoScale = 'roi';
         normSpace.thetaShift = 'roi';
     case {'cart' 'cartReal' 'cartImag'}
@@ -21,6 +24,9 @@ switch SVMspace
     case {'cartNoAmp' 'cartNoAmpImag'}
         normSpace.rhoScale = 'rm';
         normSpace.thetaShift = 'vox';
+    case {'cartNoAmp_affineRot' 'cartNoAmp_affineRot_affineCart' 'cartNoAmpImag_affineRot'}
+        normSpace.rhoScale = 'rm';
+        normSpace.thetaShift = 'roi';
     case 'cartNoDelay'
         normSpace.rhoScale = 'vox';
         normSpace.thetaShift = 'rm';

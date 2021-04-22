@@ -156,7 +156,7 @@ for featInd = 1:size(featInfo,2)
     end
 end
 
-if 0
+if 1
     %% Plot thresholded maps
     for featInd = 1:size(featInfo,2)
         if doIt(featInd)

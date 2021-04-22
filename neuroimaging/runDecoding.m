@@ -88,7 +88,7 @@ dP = cell(size(d,2),length(sessList));
 for subjInd = 1:length(d)
     for sessInd = 1:length(sessList)
         switch p.condPair
-            case 'grat1VSgrat2'
+            case {'grat1VSgrat2' 'grat1VSplaid' 'grat2VSplaid'}
                 featSel{subjInd,sessInd}.condPairCurInd = cellfun('length',featSel{subjInd,sessInd}.condPairList)==3;
             otherwise
                 error('code that')
@@ -733,11 +733,11 @@ function [x,nVox,nDim] = complex2svm(x,SVMspace)
 % Output SVM ready data
 nVox = size(x,2);
 switch SVMspace
-    case {'cart' 'cartNoAmp'}
+    case {'cart' 'cartNoAmp' 'cartNoAmp_affineRot' 'cartNoAmp_affineRot_affineCart' 'cart_roi' 'cart_affineRot'}
         x = cat(2,real(x),imag(x));
-    case {'cartNoDelay' 'cartReal'}
+    case {'cartNoDelay' 'cartReal' 'cartReal_affineRot'}
         x = real(x);
-    case {'cartNoAmpImag' 'cartImag'}
+    case {'cartNoAmpImag' 'cartImag' 'cartImag_affineRot' 'cartNoAmpImag_affineRot'}
         x = imag(x);
     otherwise
         error('X')

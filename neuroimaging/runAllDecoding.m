@@ -9,9 +9,21 @@ if ~exist('figOption','var') || isempty(figOption)
 end
 clear resBS resWS
 p.dataType = 'sin';
-p.svmSpace = 'cartNoAmp';
+p.svmSpace = 'cartReal';
+p.svmSpace = 'cartReal_affineRot';
+p.svmSpace = 'cartImag';
+p.svmSpace = 'cartImag_affineRot';
 p.svmSpace = 'cart';
+p.svmSpace = 'cartNoAmp';
+p.svmSpace = 'cartNoAmpImag';
+p.svmSpace = 'cartNoAmpImag_affineRot';
+p.svmSpace = 'cartNoDelay';
+p.svmSpace = 'cart_roi';
+p.svmSpace = 'cart_affineRot';
+p.svmSpace = 'cartNoAmp_affineRot';
+p.svmSpace = 'cartNoAmp_affineRot_affineCart';
 p.condPair = 'grat1VSgrat2';
+p.condPair = 'grat1VSplaid';
 [resBS,resWS] = runDecoding(p,verbose);
 return
 

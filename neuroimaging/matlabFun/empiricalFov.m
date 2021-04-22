@@ -152,6 +152,7 @@ for subjInd = 1:size(d,1)
         featSel_areaAndFov{subjInd,sessInd}.cont.R = cont.R{subjInd,sessInd};
         d{subjInd,sessInd}.voxProp.L = voxProp{subjInd,sessInd}.L;
         d{subjInd,sessInd}.voxProp.R = voxProp{subjInd,sessInd}.R;
+
     end
 end
 
