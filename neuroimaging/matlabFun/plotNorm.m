@@ -140,7 +140,9 @@ if ~voxFlag
     yLim = prctile(imag(x(1,:)),[2.5 97.5]);
     % lim = [-lim lim];
     xlim(xLim);
-    ylim(yLim);
+    if ~strcmp(p.svmSpace,'cartNoDelay')
+        ylim(yLim);
+    end
     % switch p.svmSpace
     %     case {'cart' 'cartReal'}
     %         xlim(lim);
@@ -203,7 +205,9 @@ if ~voxFlag
     % lim = prctile(abs([real(x(:)) imag(x(:))]),95);
     % lim = [-lim lim];
     xlim(xLim);
-    ylim(yLim);
+    if ~strcmp(p.svmSpace,'cartNoDelay')
+        ylim(yLim);
+    end
     % switch p.svmSpace
     %     case {'cart' 'cartReal'}
     %     case 'cartNoAmp'
