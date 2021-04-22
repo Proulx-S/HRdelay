@@ -121,20 +121,6 @@ if ~exist([filePath '.mat'],'file') || forceFlag
             end
         end
         suptitle(supTitleList{i})
-        
-        %     fInd = fIndList(i);
-        %     fAll.R{i} = figure('WindowStyle','docked');
-        %     [ha, pos] = tight_subplot(size(d,2), size(d,1), 0, 0.1, 0); delete(ha);
-        %     for subjInd = 1:size(d,1)
-        %         for sessInd = 1:size(d,2)
-        %             ax = copyobj(f.R{subjInd,sessInd}(fInd).Children,fAll.R{i});
-        %             ax.Position = pos{(sessInd-1)*size(d,1)+subjInd};
-        %             ax.Colormap = f.R{subjInd,sessInd}(fInd).Children.Colormap;
-        %             drawnow
-        % %             delete(f{subjInd,sessInd}(fInd).Children);
-        %         end
-        %     end
-        %     suptitle(supTitleList{i})
     end
     f = fAll{end};
     save(fullfile(outPath,mfilename),'featSel_areaAndFov','voxProp','cont','fAll','f')
@@ -152,7 +138,6 @@ for subjInd = 1:size(d,1)
         featSel_areaAndFov{subjInd,sessInd}.cont.R = cont.R{subjInd,sessInd};
         d{subjInd,sessInd}.voxProp.L = voxProp{subjInd,sessInd}.L;
         d{subjInd,sessInd}.voxProp.R = voxProp{subjInd,sessInd}.R;
-
     end
 end
 

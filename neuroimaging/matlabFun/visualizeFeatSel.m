@@ -26,11 +26,7 @@ clear tmp
 %% Load data
 pAll = cell(size(subjList));
 for subjInd = 1:length(subjList)
-%     if subjInd==1
-%         tmp = load(fullfile(funPath,inDir2,[subjList{subjInd} '.mat']),'p','d');
-%     else
-        tmp = load(fullfile(funPath,inDirX,[subjList{subjInd} '.mat']),'p');
-%     end
+    tmp = load(fullfile(funPath,inDirX,[subjList{subjInd} '.mat']),'p');
     pAll{subjInd} = tmp.p; clear tmp
 end
 load(fullfile(funPath,inDir,'featSel.mat'));
@@ -391,24 +387,22 @@ if 0
 end
 
 %% Save figures
-if 1
-%     if p.figOption.save
-        filename = fullfile(funPath,outDir,mfilename);
-        
-        if ~exist(filename,'dir'); mkdir(filename); end
-        filename = fullfile(filename,[subjList{subjInd}]);
-        for i = 1:length(f)
-            curF = f{i};
-            curF.Color = 'none';
-            set(findobj(curF.Children,'type','Axes'),'color','none')
-            curFile = [filename '_' num2str(i)];
-            curExt = 'svg';
-            saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
-            curF.Color = 'w';
-            curExt = 'fig';
-            saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
-            curExt = 'jpg';
-            saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
-        end
-%     end
+if 0
+    filename = fullfile(funPath,outDir,mfilename);
+    
+    if ~exist(filename,'dir'); mkdir(filename); end
+    filename = fullfile(filename,[subjList{subjInd}]);
+    for i = 1:length(f)
+        curF = f{i};
+        curF.Color = 'none';
+        set(findobj(curF.Children,'type','Axes'),'color','none')
+        curFile = [filename '_' num2str(i)];
+        curExt = 'svg';
+        saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
+        curF.Color = 'w';
+        curExt = 'fig';
+        saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
+        curExt = 'jpg';
+        saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
+    end
 end

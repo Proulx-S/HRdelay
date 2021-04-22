@@ -1,7 +1,6 @@
 function featSel = getFeatSel(d,p,featSel_fov)
 allFeatVal = cell(0);
 allFeatP = cell(0);
-% allFeatPrevInd = cell(0);
 allFeatMethod = cell(0);
 allFeatIndStart = cell(0);
 allFeatIndIn = cell(0);
@@ -40,97 +39,6 @@ allFeatIndIn(end+1) = {uniformizeOutputs(curIndIn,condIndPairList)};
 
 
 ind = curIndIn;
-
-% if p.featSel.fov.doIt
-%     curInfo1 = {'fov'};
-%     minContPercentArea = p.featSel.fov.empirical.minContPercentArea;
-%     thresh = p.featSel.(char(curInfo1));
-%     curInfo2 = {thresh.threshMethod};
-%     pVal = nan(size(ind));
-%     switch thresh.threshMethod
-%         case 'ecc'
-%             featVal = d.voxProp.ecc;
-%             curThresh = thresh.threshVal;
-%             
-%             curIndIn = curThresh(1)<featVal & featVal<curThresh(2);
-%         case 'empirical'
-% %             curFeatIndIn = allFeatIndIn(~cellfun('isempty',strfind(allFeatMethod,'vein:')) ...
-% %                 | ~cellfun('isempty',strfind(allFeatMethod,'act:')) ...
-% %                 | ~cellfun('isempty',strfind(allFeatMethod,'respVecSig:')));
-% %             prevInd = all(catcell(3,curFeatIndIn),3);
-% %             prevInd = prevInd(:,1);
-%             
-%             
-%             M = contourc(d.featSel.cont.X(1,:),d.featSel.cont.Y(:,1),double(d.featSel.cont.outXY),ones(2,1).*0.5);
-%             pgon = polyshape;
-%             while ~isempty(M)
-%                 pgon = addboundary(pgon,M(1,2:1+M(2,1)),M(2,2:1+M(2,1)));
-%                 M(:,1:1+M(2,1)) = [];
-%             end
-%             pgonOrig = pgon;
-%             
-%             pgon = regions(pgon);
-%             areas = area(pgon);
-%             pgon = pgon(areas/sum(areas) > minContPercentArea);
-%             
-%             X = d.featSel.cont.X;
-%             Y = d.featSel.cont.Y;
-%             U = d.featSel.cont.U;
-%             V = d.featSel.cont.V;
-%             tmpInd = false([size(X) length(pgon)]);
-%             tmpInd2 = false([size(U,1) length(pgon)]);
-%             for i = 1:length(pgon)
-%                 Vertices = pgon(i).Vertices;
-%                 tmpInd(:,:,i) = inpolygon(X,Y,Vertices(:,1),Vertices(:,2));
-%                 tmpInd2(:,i) = inpolygon(U,V,Vertices(:,1),Vertices(:,2));
-%             end
-%             tmpInd = any(tmpInd,3);
-%             tmpInd2 = any(tmpInd2,2);
-%             if visibleFlag
-%                 visibleFlag2 = 2;
-%             else
-%                 visibleFlag2 = 1;
-%             end
-%             if visibleFlag
-%                 f0 = figure('WindowStyle','docked','visible','on');
-%             else
-%                 f0 = figure('WindowStyle','docked','visible','off');
-%             end
-%             imagesc(d.featSel.cont.X(1,:),d.featSel.cont.Y(:,1),~tmpInd); hold on
-%             set(gca,'YDir','normal'); colormap autumn
-%             plot(pgonOrig,'FaceColor','none')
-%             set(gca,'PlotBoxAspectRatio',[1 1 1],'DataAspectRatio',[1 1 1]);
-%             
-%             d.featSel.cont.outXY = ~tmpInd;
-%             prevInd = ind&tmpInd2;
-%             
-%             sm           = p.featSel.fov.empirical.auto(1).smList;
-%             mergeRadius  = p.featSel.fov.empirical.auto(1).mergeRadiusList;
-%             marginRadius = p.featSel.fov.empirical.auto(1).marginRadiusList;
-%             d = getDelayFovContour2(d,sm,prevInd);
-%             [~,f1,pgon] = processDelayFovContour2(d,p,prevInd,sm,mergeRadius,marginRadius,[],'do not add pgonRef',visibleFlag2);
-%             if p.featSel.fov.empirical.auto(2).smList~=sm
-%                 sm           = p.featSel.fov.empirical.auto(2).smList;
-%                 d = getDelayFovContour2(d,sm,prevInd);
-%             end
-%             mergeRadius  = p.featSel.fov.empirical.auto(2).mergeRadiusList;
-%             marginRadius = p.featSel.fov.empirical.auto(2).marginRadiusList;
-%             [curIndIn,f2,~] = processDelayFovContour2(d,p,prevInd,sm,mergeRadius,marginRadius,pgon,'add pgonRef',visibleFlag2);
-%             
-%             featVal = d.featSel.cont.vecUV;
-%         otherwise
-%             error('X')
-%     end
-%     f = [f0 f1 f2];
-%     curIndIn = repmat(curIndIn,[1 length(condIndPairList)]);
-%     
-%     allFeatVal(end+1) = {featVal};
-%     allFeatP(end+1) = {pVal};
-%     allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
-%     allFeatIndIn(end+1) = {curIndIn};
-%     
-% %     ind = ind & curIndIn;
-% end
 
 
 %% Activated voxels (fixed-effect sinusoidal fit of BOLD timeseries)
@@ -177,18 +85,6 @@ if p.featSel.act.doIt
     allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
     allFeatIndStart(end+1) = {uniformizeOutputs(startInd,condIndPairList)};
     allFeatIndIn(end+1) = {uniformizeOutputs(curIndIn,condIndPairList)};
-
-
-%     allFeatVal(end+1) = {featVal};
-%     allFeatP(end+1) = {pVal};
-% %     allFeatPrevInd(end+1) = {prevInd};
-%     allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
-%     allFeatIndStart(end+1) = {startInd};
-%     allFeatIndIn(end+1) = {curIndIn};
-
-%     info1(end+1) = curInfo1;
-%     info2(end+1) = curInfo2;
-%     n(end+1) = nnz(ind);
 end
 
 
@@ -236,18 +132,6 @@ if p.featSel.respVecSig.doIt
     allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
     allFeatIndStart(end+1) = {uniformizeOutputs(startInd,condIndPairList)};
     allFeatIndIn(end+1) = {uniformizeOutputs(curIndIn,condIndPairList)};
-
-    
-%     allFeatVal(end+1) = {featVal};
-%     allFeatP(end+1) = {pVal};
-% %     allFeatPrevInd(end+1) = {prevInd};
-%     allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
-%     allFeatIndStart(end+1) = {startInd};
-%     allFeatIndIn(end+1) = {curIndIn};
-    
-%     info1(end+1) = curInfo1;
-%     info2(end+1) = curInfo2;
-%     n(end+1) = nnz(ind);
 end
 
 
@@ -258,7 +142,6 @@ if p.featSel.vein.doIt
     featVal = mean(d.featSel.vein.map(:,:),2);
     thresh = p.featSel.(char(curInfo1));
     curInfo2 = {thresh.threshMethod};
-%     allFeatIndIn
     startInd = ind;
     switch thresh.threshMethod
         case '%ile'
@@ -267,185 +150,18 @@ if p.featSel.vein.doIt
             curThresh = 100-thresh.percentile;
             curInfo2 = {[curInfo2{1} '<' num2str(curThresh)]};
             
-%             curIndIn = featVal<=prctile(featVal(ind(:,1)),curThresh);
-            curIndIn = featVal<=prctile(featVal(startInd,1),curThresh);
-            
+            curIndIn = featVal<=prctile(featVal(startInd,1),curThresh);            
             
             allFeatVal(end+1) = {uniformizeOutputs(featVal,condIndPairList)};
             allFeatP(end+1) = {uniformizeOutputs(pVal,condIndPairList)};
             allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
             allFeatIndStart(end+1) = {uniformizeOutputs(startInd,condIndPairList)};
             allFeatIndIn(end+1) = {uniformizeOutputs(curIndIn,condIndPairList)};
-
-%             allFeatVal(end+1) = {featVal};
-%             allFeatP(end+1) = {pVal};
-% %             allFeatPrevInd(end+1) = {prevInd};
-%             allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
-%             allFeatIndStart(end+1) = {startInd};
-%             allFeatIndIn(end+1) = {curIndIn};
         otherwise
             error('X')
     end
 %     ind = ind & curIndIn;
 end
-
-
-% %% Response vector distribution across voxels
-% if p.featSel.respVecDist.doIt
-%     curInfo1 = {'respVecDist'};
-%     featVal = nan(size(ind,1),length(condIndPairList));
-%     pVal = nan(size(featVal));
-%     
-%     thresh = p.featSel.(char(curInfo1));
-%     curInfo2 = [thresh.threshMethod '>' num2str(thresh.percentile)];
-%     startInd = ind;
-%     
-%     curIndIn = false(size(startInd,1),length(condIndPairList));
-%     
-%     for condIndPairInd = 1:length(condIndPairList)
-%         x = d.sin(startInd(:,condIndPairInd),:,:,:,condIndPairList{condIndPairInd});
-%         x = mean(x(:,:),2);
-%         
-% %         x = wrapToPi(angle(x) - angle(mean(x)));
-% %         [fk,xi] = ksdensity(x);  % x is your data
-% %         fg = fit(xi',f','gauss2');
-% %         figure('WindowStyle','docked');
-% %         plot(xi,fk); hold on
-% %         plot(xi,fg(xi)); hold on
-%         
-%         
-%         x = [real(x) imag(x)];
-%         [~,density,X,Y]=kde2d(x);
-%         if p.figOption.verbose>1 ...
-%             && length(condIndPairList{condIndPairInd})==3 && all(ismember(condIndPairList{condIndPairInd},[1 2 3]))
-%             figure('WindowStyle','docked');
-%             surf(X,Y,density,'LineStyle','none'), view([0,70])
-%             colormap hot, hold on, alpha(.8)
-%             set(gca, 'color', 'b');
-%         end
-%         
-%         xDensity = interp2(X,Y,density,x(:,1),x(:,2));
-%         [Fdens,dens] = ecdf(xDensity);
-%         densityThresh = interp1(Fdens,dens,thresh.percentile/100);
-%         
-%         featVal(startInd(:,condIndPairInd),condIndPairInd) = xDensity;
-%         curIndIn(startInd(:,condIndPairInd),condIndPairInd) = xDensity>densityThresh;
-%         
-%         if p.figOption.verbose>1 ...
-%             && length(condIndPairList{condIndPairInd})==3 && all(ismember(condIndPairList{condIndPairInd},[1 2 3]))
-%             scatter3(x(curIndIn(startInd(:,condIndPairInd),condIndPairInd),1),x(curIndIn(startInd(:,condIndPairInd),condIndPairInd),2),xDensity(curIndIn(startInd(:,condIndPairInd),condIndPairInd)),eps,'w.')
-%             scatter3(x(~curIndIn(startInd(:,condIndPairInd),condIndPairInd),1),x(~curIndIn(startInd(:,condIndPairInd),condIndPairInd),2),xDensity(~curIndIn(startInd(:,condIndPairInd),condIndPairInd)),eps,'r.')
-%             ax = gca;
-%             ax.DataAspectRatio = ax.DataAspectRatio([1 1 3]);
-%             ax.PlotBoxAspectRatio = ax.PlotBoxAspectRatio([1 1 3]);
-%             
-% %             x=-10:0.01:10;
-% %             gaussian = @(x) (1/sqrt((2*pi))*exp(-x.^2/2));
-% %             skewedgaussian = @(x,alpha) 2*gaussian(x).*normcdf(alpha*x);
-% %             plot(x, gaussian(x))
-% %             hold on
-% %             plot(x, skewedgaussian(x, 4))
-% %             plot(x, skewedgaussian(x, -4))
-% 
-% % lambda=1;
-% % mu=0; sigma = 1;
-% % t0 = normrnd(0,1)
-% % t1 = normrnd(0,1)
-% % d  = lambda / sqrt(1 + lambda*lambda)
-% % y  = mu + sigma * (d * abs(t0) + t1 * sqrt(1 - d * d))
-% 
-% 
-%             
-% %             RAMBiNoDemo
-%             
-% %             % Try to fit double distribution
-% %             figure('WindowStyle','docked');
-% %             h = gscatter(x(:,1),x(:,2));
-% %             hold on
-% %             nComp = 2;
-% %             GMModel = fitgmdist(x,nComp);
-% %             gm = cell(1,nComp);
-% %             gmPDF = cell(1,nComp);
-% %             for comp = 1:nComp
-% %                 %             GMModel.mu(comp,:)
-% %                 %             GMModel.Sigma(:,:,comp)
-% %                 %             GMModel.ComponentProportion(1,comp)
-% %                 gm{comp} = gmdistribution(GMModel.mu(comp,:),GMModel.Sigma(:,:,comp),GMModel.ComponentProportion(1,comp));
-% %                 gmPDF{comp} = @(x,y) arrayfun(@(x0,y0) pdf(gm{comp},[x0 y0]),x,y);
-% %             end
-% %             g = gca;
-% %             fcontour(gmPDF{1},[g.XLim g.YLim])
-% %             fcontour(gmPDF{2},[g.XLim g.YLim])
-% %             fsurf(gmPDF{2},[g.XLim g.YLim])
-%         end
-%     end
-%     
-% %     ind = ind & curIndIn;
-%     
-%     allFeatVal(end+1) = {featVal};
-%     allFeatP(end+1) = {pVal};
-% %     allFeatPrevInd(end+1) = {prevInd};
-%     allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
-%     allFeatIndIn(end+1) = {curIndIn};
-% end
-% 
-% %% Late-responding veins
-% if p.featSel.lateVein.doIt
-%     curInfo1 = {'lateVein'};
-%     featVal = nan(size(ind,1),length(condIndPairList));
-%     pVal = nan(size(featVal));
-%     
-%     thresh = p.featSel.(char(curInfo1));
-%     curInfo2 = {thresh.threshMethod};
-%     startInd = ind;
-%     
-%     % Get delay
-%     for condIndPairInd = 1:length(condIndPairList)
-%         x = d.sin(:,:,:,:,condIndPairList{condIndPairInd});
-%         x = mean(x(:,:),2);
-%         angleMean = wrapTo2Pi(-angle(mean(x(startInd(:,condIndPairInd)))));
-%         x = angle(x);
-%         x = wrapTo2Pi(-x);
-%         %put the dominant delay at 1/4 of the stimulus cycle
-%         x = x - angleMean+pi/2;
-%         %wrap
-%         x = wrapTo2Pi(x);
-%         %put back the original delay
-%         x = x + angleMean-pi/2;
-%         featVal(:,condIndPairInd) = x./pi.*6;
-%         if p.figOption.verbose>1 && condIndPairInd==1
-%             figure('WindowStyle','docked');
-%             histogram(featVal(startInd(:,condIndPairInd),condIndPairInd),100)
-%             xlabel('delay (sec)')
-%         end
-%     end
-%     
-%     % Threshold
-%     curIndIn = false(size(startInd,1),length(condIndPairList));
-%     curThresh = 100-thresh.percentile;
-%     curInfo2 = {[curInfo2{1} '<' num2str(curThresh)]};
-%     
-%     for condIndPairInd = 1:length(condIndPairList)
-%         curIndIn(:,condIndPairInd) = featVal(:,condIndPairInd)<=prctile(featVal(startInd(:,condIndPairInd),condIndPairInd),curThresh);
-%     end
-% %     ind = ind & curIndIn;
-%     
-% %     figure('WindowStyle','docked');
-% %     in = prevInd(:,condIndPairInd);
-% %     inIn = in&curIndIn(:,condIndPairInd);
-% %     inOut = in&~curIndIn(:,condIndPairInd);
-% %     [~,edges] = histcounts(featVal(in,condIndPairInd),100);
-% %     histogram(featVal(inOut,condIndPairInd),edges); hold on
-% %     histogram(featVal(inIn,condIndPairInd),edges);
-%     
-%     allFeatVal(end+1) = {featVal};
-%     allFeatP(end+1) = {pVal};
-% %     allFeatPrevInd(end+1) = {prevInd};
-%     allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
-%     allFeatIndIn(end+1) = {curIndIn};
-% end
-
-
 
 %% Most discrimant voxels (of the activated voxels)
 if p.featSel.respVecDiff.doIt
@@ -507,18 +223,6 @@ if p.featSel.respVecDiff.doIt
     allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
     allFeatIndStart(end+1) = {uniformizeOutputs(startInd,condIndPairList)};
     allFeatIndIn(end+1) = {uniformizeOutputs(curIndIn,condIndPairList)};
-
-
-%     allFeatVal(end+1) = {featVal};
-%     allFeatP(end+1) = {pVal};
-% %     allFeatPrevInd(end+1) = {prevInd};
-%     allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
-%     allFeatIndStart(end+1) = {startInd};
-%     allFeatIndIn(end+1) = {curIndIn};
-    
-%     info1(end+1) = curInfo1;
-%     info2(end+1) = curInfo2;
-%     n(end+1) = nnz(ind);
 end
 
 
@@ -532,7 +236,6 @@ end
 
 featSel.featSeq.featVal = catcell(2,allFeatVal);
 featSel.featSeq.featP = catcell(2,allFeatP);
-% featSel.featSeq.featPrevInd = catcell(2,allFeatPrevInd);
 featSel.featSeq.featQtile = nan(size(featSel.featSeq.featVal));
 featSel.featSeq.featIndStart = catcell(2,allFeatIndStart);
 featSel.featSeq.featIndIn = catcell(2,allFeatIndIn);
@@ -557,53 +260,7 @@ switch p.featSel.global.method
             end
         end
     otherwise
-        error('code that')
-        
-        allFeatVal = catcell(2,allFeatVal);
-        x = zscore(-log(allFeatVal(:,1)));
-        y = zscore(log(allFeatVal(:,2)));
-        z = zscore(log(allFeatVal(:,3)));
-        
-        
-        [fx,x2] = ecdf(x);
-        x2 = x2(2:end); fx = fx(2:end);
-        [~,b] = ismember(x,x2);
-        fx = fx(b); clear x2
-        
-        [fy,y2] = ecdf(y);
-        y2 = y2(2:end); fy = fy(2:end);
-        [~,b] = ismember(y,y2);
-        fy = fy(b); clear y2
-        
-        [fz,z2] = ecdf(z);
-        z2 = z2(2:end); fz = fz(2:end);
-        [~,b] = ismember(z,z2);
-        fz = fz(b); clear z2
-        
-        %     fyz = fy.*fz;
-        %     fyz = fyz - min(fyz);
-        %     fyz = fyz./max(fyz);
-        fxyz = fx.*fy.*fz;
-        fxyz = fxyz - min(fxyz);
-        fxyz = fxyz./max(fxyz);
-        
-        perc = p.featSel.global.percentile;
-        %     ind2 = fyz>prctile(fyz,perc) & fx>prctile(fx,perc);
-        ind2 = fxyz>prctile(fxyz,perc) & fx>prctile(fx,perc);
-        
-        %     if p.figOption.verbose>=1 && subjInd==p.figOption.subjInd && sessInd==p.figOption.sessInd
-        %         figure('WindowStyle','docked');
-        %         scatter3(x(ind2),y(ind2),z(ind2),'k.'); hold on
-        %         scatter3(x(~ind2),y(~ind2),z(~ind2),'r.');
-        %         % ax = gca;
-        %         % ax.CameraPosition = camPos;
-        %         xlabel(['zscore(-log(' info1{1+1} '))'])
-        %         ylabel(['zscore(log(' info1{1+2} '))'])
-        %         zlabel(['zscore(log(' info1{1+3} '))'])
-        %         legend({'include' 'exclude'})
-        %         % ax = gca; camPos = ax.CameraPosition;
-        %         % ax = gca; ax.CameraPosition = camPos;
-        %     end
+        error('X')
 end
 %% Output
 featSel.indIn = indIn;

@@ -5,17 +5,6 @@ end
 
 p.condPair = 'all';
 condIndPairInd = find(cellfun('length',featSel.featSeq.condPairList)==3);
-% featSel.featSeq.condPairList
-% 
-% if ~isfield(p,'condPair')
-%     p.condPair = 'all';
-%     condIndPairInd = 1;
-%     if ~all(featSel.featSeq.condPairList{condIndPairInd}==[1 2 3])
-%         error('x')
-%     end
-% else
-%     error('double-check that')
-% end
 
 switch p.dataType
     case 'sin'
