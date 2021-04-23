@@ -172,26 +172,9 @@ if p.featSel.respVecDiff.doIt
     thresh = p.featSel.(char(curInfo1));
     curInfo2 = {thresh.threshMethod};
     
-    % get startInd from previous featSel steps
-    startInd = true(size(ind));
-    allFeatMethod_tmp = allFeatMethod;
-    for i = 1:length(allFeatMethod)
-        tmp = strsplit(allFeatMethod{i},':');
-        allFeatMethod_tmp(i) = tmp(1);
-    end
-    condIndPairInd = cellfun('length',condIndPairList)==3;
-    if ~all(condIndPairList{condIndPairInd}==[1 2 3])
-        error('X')
-    end
-    featInd = ismember(allFeatMethod_tmp,{'retinoFov' 'vein' 'act' 'respVecSig'});
-    for i = 1:length(featInd)
-        if featInd(i)
-            startInd = startInd & allFeatIndIn{i}(:,condIndPairInd);
-        end
-    end
-    
     switch thresh.threshMethod
         case {'p' 'fdr'}
+            error('double-check that')
             curThresh = thresh.threshVal;
             curInfo2 = {[curInfo2{1} '<' num2str(curThresh)]};
             
@@ -210,8 +193,15 @@ if p.featSel.respVecDiff.doIt
             
             curIndIn = false(size(featVal));
             for condIndPairInd = 1:length(condIndPairList)
+                %get startInd specific for each condition set
+                [ind_nSpecFeatSel,ind_nSpecFeatSelCond,ind_specFeatSel,ind_specFeatSelCond] = defineFeatSel(allFeatMethod,condIndPairList,p.featSel.global.method,condIndPairInd);
+                startInd_nSpec = all(catcell(3,allFeatIndIn(ind_nSpecFeatSel)),3);
+                startInd_nSpec = startInd_nSpec(:,ind_nSpecFeatSelCond);
+                startInd_spec = all(catcell(3,allFeatIndIn(ind_specFeatSel)),3);
+                startInd_spec = startInd_spec(:,ind_specFeatSelCond);
+                startInd = startInd_nSpec & startInd_spec;
+                
                 curIndIn(:,condIndPairInd) = featVal(:,condIndPairInd)>=prctile(featVal(startInd,condIndPairInd),curThresh);
-%                 curIndIn(:,condIndPairInd) = featVal(:,condIndPairInd)>=prctile(featVal(prevInd(:,condIndPairInd),condIndPairInd),curThresh);
             end
         otherwise
             error('X')
@@ -242,6 +232,7 @@ featSel.featSeq.featIndIn = catcell(2,allFeatIndIn);
 featSel.featSeq.featSelList = allFeatMethod;
 featSel.featSeq.condPairList = permute(condIndPairList,[1 3 2]);
 featSel.featSeq.info = 'vox X featSel X condPair';
+featSel.featSeq.info2 = p.featSel.global.method;
 
 % Compute quantile
 for featInd = 1:size(featSel.featSeq.featQtile,2)
