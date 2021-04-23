@@ -19,7 +19,6 @@ if p.featSel.respVecSig.doIt || p.featSel.respVecDiff.doIt
 end
 
 
-ind = true(size(d.sin,1),1);
 
 %% Voxels representing stimulus fov
 curInfo1 = {'retinoFov'};
@@ -27,9 +26,9 @@ featVal = featSel_fov.featVal;
 pVal = nan(size(featVal));
 % thresh = nan;
 curInfo2 = {featSel_fov.featMethod};
-startInd = ind;
+startInd = true(size(d.sin,1),1);
 curIndIn = logical(featSel_fov.featIndIn);
-
+indFovIn = curIndIn;
 
 allFeatVal(end+1) = {uniformizeOutputs(featVal,condIndPairList)};
 allFeatP(end+1) = {uniformizeOutputs(pVal,condIndPairList)};
@@ -38,21 +37,21 @@ allFeatIndStart(end+1) = {uniformizeOutputs(startInd,condIndPairList)};
 allFeatIndIn(end+1) = {uniformizeOutputs(curIndIn,condIndPairList)};
 
 
-ind = curIndIn;
-
 
 %% Activated voxels (fixed-effect sinusoidal fit of BOLD timeseries)
+% !!!Warning!!! Contrary to what defineFeatSel.m may suggest, activated
+% voxels (model explaining the BOLD timeseries) are not detected using only
+% the to-be-decoded conditions. It always uses all conditions. The reason
+% is that I did not go back to to have processResponses.m <- runGLMs.m
+% output stats from fits using only the corresponding conditions. Lazy
+% programming, but likely no impact at all.
 if p.featSel.act.doIt
-%     if (p.featSel.respVecSig.doIt || p.featSel.respVecDiff.doIt) && ~( length(condIndPairList)==1 && all(condIndPairList{1}==[1 2 3]) )
-%         warning('selecting activated voxels baseed on all conditions')
-%     end
     curInfo1 = {'act'};
     
     featVal = d.featSel.F.act;
     thresh = p.featSel.(char(curInfo1));
     curInfo2 = {thresh.threshMethod};
-    startInd = ind;
-%     prevInd = ind(:,1);
+    startInd = indFovIn;
     switch thresh.threshMethod
         case {'p' 'fdr'}
             pVal = featVal.p;
@@ -67,6 +66,7 @@ if p.featSel.act.doIt
                 curIndIn = pVal<=curThresh;
             end
         case '%ile'
+            error('double-check that')
             pVal = featVal.p;
             featVal = featVal.F;
             curThresh = thresh.percentile;
@@ -77,8 +77,6 @@ if p.featSel.act.doIt
             error('X')
     end
     curIndIn = repmat(curIndIn,[1 length(condIndPairList)]);
-    
-%     ind = ind & curIndIn;
 
     allFeatVal(end+1) = {uniformizeOutputs(featVal,condIndPairList)};
     allFeatP(end+1) = {uniformizeOutputs(pVal,condIndPairList)};
@@ -97,8 +95,7 @@ if p.featSel.respVecSig.doIt
     featVal;
     thresh = p.featSel.(char(curInfo1));
     curInfo2 = {thresh.threshMethod};
-%     prevInd = ind(:,1);
-    startInd = ind;
+    startInd = indFovIn;
     switch thresh.threshMethod
         case {'p' 'fdr'}
             pVal;
@@ -116,6 +113,7 @@ if p.featSel.respVecSig.doIt
                 curIndIn = pVal<=curThresh;
             end
         case '%ile'
+            error('double-check that')
             pVal;
             featVal;
             curThresh = thresh.percentile;
@@ -125,8 +123,6 @@ if p.featSel.respVecSig.doIt
         otherwise
             error('X')
     end
-%     ind = ind & curIndIn;
-
     allFeatVal(end+1) = {uniformizeOutputs(featVal,condIndPairList)};
     allFeatP(end+1) = {uniformizeOutputs(pVal,condIndPairList)};
     allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
@@ -142,7 +138,16 @@ if p.featSel.vein.doIt
     featVal = mean(d.featSel.vein.map(:,:),2);
     thresh = p.featSel.(char(curInfo1));
     curInfo2 = {thresh.threshMethod};
-    startInd = ind;
+    
+    % Compute vein %tile threshold on active fov voxels that were identified
+    % using all three conditions, since veins should be veins irrespective
+    % of which conditions are being decoded)
+    startInd = all(catcell(3,allFeatIndIn),3);
+    condIndPairList_tmp = condIndPairList;
+    for i = 1:length(condIndPairList)
+        condIndPairList_tmp{i} = num2str(condIndPairList{i});
+    end
+    startInd = startInd(:,ismember(condIndPairList_tmp,num2str([1 2 3])));
     switch thresh.threshMethod
         case '%ile'
             pVal = nan(size(featVal));
@@ -160,13 +165,11 @@ if p.featSel.vein.doIt
         otherwise
             error('X')
     end
-%     ind = ind & curIndIn;
 end
 
 %% Most discrimant voxels (of the activated voxels)
 if p.featSel.respVecDiff.doIt
     curInfo1 = {'respVecDiff'};
-    % Threshold
     featVal = condStat;
     pVal = condP;
     thresh = p.featSel.(char(curInfo1));
@@ -193,7 +196,9 @@ if p.featSel.respVecDiff.doIt
             
             curIndIn = false(size(featVal));
             for condIndPairInd = 1:length(condIndPairList)
-                %get startInd specific for each condition set
+                % Compute discriminent voxel %tile threshold in a way that
+                % follows the use of p.featSel.global.method in
+                % runDecoding.m
                 [ind_nSpecFeatSel,ind_nSpecFeatSelCond,ind_specFeatSel,ind_specFeatSelCond] = defineFeatSel(allFeatMethod,condIndPairList,p.featSel.global.method,condIndPairInd);
                 startInd_nSpec = all(catcell(3,allFeatIndIn(ind_nSpecFeatSel)),3);
                 startInd_nSpec = startInd_nSpec(:,ind_nSpecFeatSelCond);
@@ -206,8 +211,7 @@ if p.featSel.respVecDiff.doIt
         otherwise
             error('X')
     end
-%     ind = ind & curIndIn;
-
+    
     allFeatVal(end+1) = {uniformizeOutputs(featVal,condIndPairList)};
     allFeatP(end+1) = {uniformizeOutputs(pVal,condIndPairList)};
     allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
