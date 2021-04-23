@@ -4,6 +4,7 @@ if ~isfield(p,'figOption') || isempty(p.figOption)
     p.figOption.subjInd = 1;
     p.figOption.sessInd = 1;
 end
+condPair = 'grat1VSgrat2';
 
 
 %% Define paths
@@ -36,32 +37,48 @@ load(fullfile(funPath,inDir,'featSel.mat'));
 %% Initialize subj, sess and masks
 subjInd = p.figOption.subjInd;
 sessInd = p.figOption.sessInd;
-for i = 1:length(featSel{subjInd,sessInd}.condPairList)
-    if length(featSel{subjInd,sessInd}.condPairList{i})==3 ...
-            && all(featSel{subjInd,sessInd}.condPairList{i} == [1 2 3])
-        condPairInd = i;
-    end
-end
 brain = pAll{subjInd}.brain.mean(:,:,:,sessInd);
 roi = pAll{subjInd}.voxProp.area.ind==pAll{subjInd}.voxProp.area.indList(ismember(pAll{subjInd}.voxProp.area.labelList,p.featSel.fov.areaLabel))...
     & ~pAll{subjInd}.voxProp.censorMask;
 
 
+
+[ind_nSpecFeatSel,ind_nSpecFeatSelCond,ind_specFeatSel,ind_specFeatSelCond] = defineFeatSel(featSel{subjInd,sessInd}.featSeq.featSelList,featSel{subjInd,sessInd}.featSeq.condPairList,p.featSel.global.method,condPair);
+
+featP = nan(size(featSel{subjInd,sessInd}.featSeq.featP,[1 2]));
+featP(:,ind_nSpecFeatSel) = featSel{subjInd,sessInd}.featSeq.featP(:,ind_nSpecFeatSel,ind_nSpecFeatSelCond);
+featP(:,ind_specFeatSel) = featSel{subjInd,sessInd}.featSeq.featP(:,ind_specFeatSel,ind_specFeatSelCond);
+
+featIndStart = nan(size(featSel{subjInd,sessInd}.featSeq.featIndStart,[1 2]));
+featIndStart(:,ind_nSpecFeatSel) = featSel{subjInd,sessInd}.featSeq.featIndStart(:,ind_nSpecFeatSel,ind_nSpecFeatSelCond);
+featIndStart(:,ind_specFeatSel) = featSel{subjInd,sessInd}.featSeq.featIndStart(:,ind_specFeatSel,ind_specFeatSelCond);
+
+featQtile = nan(size(featSel{subjInd,sessInd}.featSeq.featQtile,[1 2]));
+featQtile(:,ind_nSpecFeatSel) = featSel{subjInd,sessInd}.featSeq.featQtile(:,ind_nSpecFeatSel,ind_nSpecFeatSelCond);
+featQtile(:,ind_specFeatSel) = featSel{subjInd,sessInd}.featSeq.featQtile(:,ind_specFeatSel,ind_specFeatSelCond);
+featVal = nan(size(featSel{subjInd,sessInd}.featSeq.featVal,[1 2]));
+featVal(:,ind_nSpecFeatSel) = featSel{subjInd,sessInd}.featSeq.featVal(:,ind_nSpecFeatSel,ind_nSpecFeatSelCond);
+featVal(:,ind_specFeatSel) = featSel{subjInd,sessInd}.featSeq.featVal(:,ind_specFeatSel,ind_specFeatSelCond);
+indInSeq = nan(size(featSel{subjInd,sessInd}.featSeq.featIndIn,[1 2]));
+indInSeq(:,ind_nSpecFeatSel) = featSel{subjInd,sessInd}.featSeq.featIndIn(:,ind_nSpecFeatSel,ind_nSpecFeatSelCond);
+indInSeq(:,ind_specFeatSel) = featSel{subjInd,sessInd}.featSeq.featIndIn(:,ind_specFeatSel,ind_specFeatSelCond);
+indIn = all(indInSeq,2);
+
+
 featSelIn = false(size(brain));
-featSelIn(roi) = featSel{subjInd,sessInd}.indIn(:,:,condPairInd);
+featSelIn(roi) = indIn;
 featSelSeqIn = false([length(featSel{subjInd,sessInd}.featSeq.featSelList) size(brain)]);
-featSelSeqIn(:,roi) = featSel{subjInd,sessInd}.featSeq.featIndIn(:,:,condPairInd)';
+featSelSeqIn(:,roi) = indInSeq';
 featSelSeqIn = permute(featSelSeqIn,[2 3 4 1]);
 featSelVal = nan([size(featSel{subjInd,sessInd}.featSeq.featVal,2) size(brain)]);
 featSelValThresholded = nan([size(featSel{subjInd,sessInd}.featSeq.featVal,2) size(brain)]);
 featInfo = featSel{subjInd,sessInd}.featSeq.featSelList;
-condInfo = featSel{subjInd,sessInd}.featSeq.condPairList(:,:,condPairInd);
 featLabel = cell(size(featInfo));
 for featInd = 1:size(featInfo,2)
     tmp = strsplit(featInfo{featInd},': ');
     featLabel(featInd) = tmp(1);
-    featSelVal(featInd,roi) = featSel{subjInd,sessInd}.featSeq.featVal(:,featInd,condPairInd);
-    featSelValThresholded(featInd,roi) = featSel{subjInd,sessInd}.featSeq.featVal(:,featInd,condPairInd);
+    featSelVal(featInd,roi) = featVal(:,featInd);
+    featSelValThresholded(featInd,roi) = featVal(:,featInd);
     featSelValThresholded(featInd,~featSelIn) = nan;
 end
 featSelVal = permute(featSelVal,[2 3 4 1]);
@@ -340,29 +357,33 @@ for featInd = 1:size(featInfo,2)
         ax.Box = 'off';
         
         if ~strcmp(thresh.threshMethod,'empirical')
-            featVals = featSel{subjInd,sessInd}.featSeq.featVal(:,featInd,condPairInd);
-            qtiles = featSel{subjInd,sessInd}.featSeq.featQtile(:,featInd,condPairInd);
-            ps = featSel{subjInd,sessInd}.featSeq.featP(:,featInd,condPairInd);
+            try
+                featVals = featVal(:,featInd);
+            catch
+                keyboard
+            end
+            qtiles = featQtile(:,featInd);
+            ps = featP(:,featInd);
             fdrs = nan(size(ps));
-            startInds = featSel{subjInd,sessInd}.featSeq.featIndStart(:,featInd,condPairInd);
+            startInds = logical(featIndStart(:,featInd));
             switch thresh.threshMethod
                 case '%ile'
-                    featVal = interp1(qtiles(~isnan(qtiles)&~isnan(featVals)),featVals(~isnan(qtiles)&~isnan(featVals)),qtile);
+                    featValThresh = interp1(qtiles(~isnan(qtiles)&~isnan(featVals)),featVals(~isnan(qtiles)&~isnan(featVals)),qtile);
                 case 'p'
-                    featVal = interp1(ps,featVals,thresh.threshVal);
+                    featValThresh = interp1(ps,featVals,thresh.threshVal);
                 case 'fdr'
                     fdrs(startInds) = mafdr(ps(startInds),'BHFDR',true);
                     [~,b] = sort(abs(fdrs-thresh.threshVal));
-                    featVal = mean(featVals(b(1:2)));
+                    featValThresh = mean(featVals(b(1:2)));
                 otherwise
                     error('X')
             end
             switch scale
                 case 'log'
-                    featVal = log(featVal);
+                    featValThresh = log(featValThresh);
                 case 'lin'
             end
-            hThresh = plot([1 1].*featVal,ylim,':k');
+            hThresh = plot([1 1].*featValThresh,ylim,':k');
             switch thresh.threshMethod
                 case {'p' 'fdr'}
                     legend([hBar hThresh],{'incl.' 'excl. (within fov)' 'excl. (outside fov)' [thresh.threshMethod '=' num2str(thresh.threshVal)]},'box','off');
@@ -382,8 +403,7 @@ end
 
 if 0
     figure('WindowStyle','docked');
-    featVal = log(featSel{subjInd,sessInd}.featSeq.featVal(featSel{subjInd,sessInd}.indIn(:,:,condPairInd),:,condPairInd));
-    corrplot(featVal,'varnames',featLabel)
+    corrplot(featVal(indIn,:),'varnames',featLabel)
 end
 
 %% Save figures
