@@ -38,14 +38,17 @@ p.featSel.respVecDiff.threshVal = 0.5; % threshMethod='p' or 'fdr'
 p.featSel.respVecDiff.percentile = 20; % threshMethod='%ile'
 % Feature Combination
 p.featSel.global.doIt = 1;
-p.featSel.global.method = 'all';
+p.featSel.global.method = 'custom2';
+% 'allData'-> featSel uses all three conditions, irrespective of the condition pairs to be decoded
+% 'custom1'-> featSel of active voxels uses all three conditions but featSel of discriminant voxels uses only the conditions to be decoded
+% 'custom2'-> featSel of active and most discriminant voxels uses only the conditions to be decoded
 
 %% Normalization parameters
 p.norm.doCartSpaceScale = 1;
 %% Display parameters
 figOption.save = 0; % save all figures
 figOption.subj = 1; % subjInd-> plots participants subjInd; +inf-> plots all participant (if verbose==0, will only plot subjInd==1 but still produce and save all the other figures)
-p.figOption.verbose  = 3;
+p.figOption.verbose  = 1;
 p.figOption.subjInd  = figOption.subj;
 p.figOption.sessInd  = 1;
 p.figOption.sliceInd = 10;

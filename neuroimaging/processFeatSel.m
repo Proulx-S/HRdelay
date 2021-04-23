@@ -51,8 +51,8 @@ d = dP; clear dP
 %% Retinotopic feature selection
 if p.featSel.fov.doIt && strcmp(p.featSel.fov.threshMethod,'empirical')
     [featSel_fov,d,p] = empiricalFov(d,p,fullfile(funPath,outDir));
+    % saves to empiricalFov.mat
 end
-% saved to empiricalFov.mat by empiricalFov.m
 
 
 %% Functional feature selection

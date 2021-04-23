@@ -226,7 +226,7 @@ if p.featSel.respVecDiff.doIt
 end
 
 
-%% Multivariate (combined) feature selection
+%% Sumarize feature selection output
 for i = 1:size(allFeatVal,2)
     allFeatVal{i} = permute(allFeatVal{i},[1 3 2]);
     allFeatP{i} = permute(allFeatP{i},[1 3 2]);
@@ -243,29 +243,30 @@ featSel.featSeq.featSelList = allFeatMethod;
 featSel.featSeq.condPairList = permute(condIndPairList,[1 3 2]);
 featSel.featSeq.info = 'vox X featSel X condPair';
 
-
-switch p.featSel.global.method
-    case 'all'
-        indIn = all(featSel.featSeq.featIndIn,2);
-        % Compute quantile
-        for featInd = 1:size(featSel.featSeq.featQtile,2)
-            for condIndPairInd = 1:size(featSel.featSeq.featQtile,3)
-                x = featSel.featSeq.featVal(:,featInd,condIndPairInd);
-                startInd = featSel.featSeq.featIndStart(:,featInd,condIndPairInd);
-%                 startInd = true(size(x));
-                [fx,x2] = ecdf(x(startInd));
-                x2 = x2(2:end); fx = fx(2:end);
-                [~,b] = ismember(x,x2);
-                featSel.featSeq.featQtile(b~=0,featInd,condIndPairInd) = fx(b(b~=0));
-            end
-        end
-    otherwise
-        error('X')
+% Compute quantile
+for featInd = 1:size(featSel.featSeq.featQtile,2)
+    for condIndPairInd = 1:size(featSel.featSeq.featQtile,3)
+        x = featSel.featSeq.featVal(:,featInd,condIndPairInd);
+        startInd = featSel.featSeq.featIndStart(:,featInd,condIndPairInd);
+        %                 startInd = true(size(x));
+        [fx,x2] = ecdf(x(startInd));
+        x2 = x2(2:end); fx = fx(2:end);
+        [~,b] = ismember(x,x2);
+        featSel.featSeq.featQtile(b~=0,featInd,condIndPairInd) = fx(b(b~=0));
+    end
 end
+
+% switch p.featSel.global.method
+%     case 'all'
+%         indIn = all(featSel.featSeq.featIndIn,2);
+%         
+%     otherwise
+%         error('X')
+% end
 %% Output
-featSel.indIn = indIn;
-featSel.condPairList = permute(condIndPairList,[1 3 2]);
-featSel.info = 'vox X featSel X condPair';
+% featSel.indIn = indIn;
+% featSel.condPairList = permute(condIndPairList,[1 3 2]);
+% featSel.info = 'vox X featSel X condPair';
 
 
 

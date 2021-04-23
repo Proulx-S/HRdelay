@@ -87,12 +87,6 @@ end
 dP = cell(size(d,2),length(sessList));
 for subjInd = 1:length(d)
     for sessInd = 1:length(sessList)
-        switch p.condPair
-            case {'grat1VSgrat2' 'grat1VSplaid' 'grat2VSplaid'}
-                featSel{subjInd,sessInd}.condPairCurInd = cellfun('length',featSel{subjInd,sessInd}.condPairList)==3;
-            otherwise
-                error('code that')
-        end
         dP{subjInd,sessInd} = d{subjInd}.(sessList{sessInd});
         d{subjInd}.(sessList{sessInd}) = [];
         dP{subjInd,sessInd}.featSel = featSel{subjInd,sessInd};
@@ -100,39 +94,95 @@ for subjInd = 1:length(d)
 end
 d = dP; clear dP
 
+%% Define feature selection
+featSelSteps_labelList = featSel{1,1}.featSeq.featSelList;
+for i = 1:length(featSelSteps_labelList)
+    tmp = strsplit(featSelSteps_labelList{i},':');
+    featSelSteps_labelList(i) = tmp(1);
+end
+featSelConds_labelList = featSel{1,1}.featSeq.condPairList;
+for i = 1:length(featSelConds_labelList)
+    featSelConds_labelList{i} = num2str(featSelConds_labelList{i});
+end
+switch p.featSel.global.method
+    case 'allData'
+        % Non-condition-specific featSel steps
+        ind_nSpecFeatSel = ismember(featSelSteps_labelList,{'retinoFov' 'act' 'respVecSig' 'vein' 'respVecDiff'});
+        % which condition set
+        ind_nSpecFeatSelCond = [1 2 3];
+        % Condition-specific fetSel steps
+        ind_specFeatSel = ismember(featSelSteps_labelList,{''});
+    case 'custom1'
+        % Non-condition-specific featSel steps
+        ind_nSpecFeatSel = ismember(featSelSteps_labelList,{'retinoFov' 'act' 'respVecSig' 'vein'});
+        % which condition set
+        ind_nSpecFeatSelCond = [1 2 3];
+        % Condition-specific fetSel steps
+        ind_specFeatSel = ismember(featSelSteps_labelList,{'respVecDiff'});
+        % which condition set
+        switch p.condPair
+            case 'grat1VSgrat2'
+                ind_specFeatSelCond = [1 2];
+            case 'grat1VSplaid'
+                ind_specFeatSelCond = [1 3];
+            case 'grat2VSplaid'
+                ind_specFeatSelCond = [2 3];
+            otherwise
+                error('X')
+        end
+    case 'custom2'
+        % Non-condition-specific featSel steps
+        ind_nSpecFeatSel = ismember(featSelSteps_labelList,{'retinoFov' 'vein'});
+        % which condition set
+        ind_nSpecFeatSelCond = [1 2 3];
+        % Condition-specific fetSel steps
+        ind_specFeatSel = ismember(featSelSteps_labelList,{'act' 'respVecSig' 'respVecDiff'});
+        % which condition set
+        switch p.condPair
+            case 'grat1VSgrat2'
+                ind_specFeatSelCond = [1 2];
+            case 'grat1VSplaid'
+                ind_specFeatSelCond = [1 3];
+            case 'grat2VSplaid'
+                ind_specFeatSelCond = [2 3];
+            otherwise
+                error('X')
+        end
+    otherwise
+        error('X')
+end
+ind_nSpecFeatSelCond = squeeze(ismember(featSelConds_labelList,num2str(ind_nSpecFeatSelCond)));
+ind_specFeatSelCond = squeeze(ismember(featSelConds_labelList,num2str(ind_specFeatSelCond)));
 
+for subjInd = 1:size(d,1)
+    for sessInd = 1:size(d,2)
+        featSel{subjInd,sessInd}.indIn = ...
+            all(featSel{subjInd,sessInd}.featSeq.featIndIn(:,ind_nSpecFeatSel,ind_nSpecFeatSelCond),2)...
+            & all(featSel{subjInd,sessInd}.featSeq.featIndIn(:,ind_specFeatSel,ind_specFeatSelCond),2);
+    end
+end
 
-% figure('WindowStyle','docked');
-% scatter(dP{1}.discrim_T2,dP{1}.waveDiscrim_T2)
-
-% %% Feature selection
-% featSel = cell(size(d));
-% for i = 1:numel(d)
-%         [subjInd,sessInd] = ind2sub(size(d),i);
-%         featSel{subjInd,sessInd} = getFeatSel(d{subjInd,sessInd},p,subjInd,sessInd);
-% %         resBS = [];
-% %         resWS = [];
-% %         return
-% end
 
 %% Example plot of trigonometric (polar) representation
 subjInd = p.figOption.subjInd;
 sessInd = p.figOption.sessInd;
-f = plotNorm(d{subjInd,sessInd},p,featSel{subjInd,sessInd});
-if figOption.save
-    error('code that')
-    filename = fullfile(pwd,mfilename);
-    if ~exist(filename,'dir'); mkdir(filename); end
-    filename = fullfile(filename,p.svmSpace);
-    f.Color = 'none';
-    set(findobj(f.Children,'type','Axes'),'color','none')
-    set(findobj(f.Children,'type','PolarAxes'),'color','none')
-    saveas(f,[filename '.svg']); if verbose; disp([filename '.svg']); end
-    f.Color = 'w';
-    set(findobj(f.Children,'type','Axes'),'color','w')
-    set(findobj(f.Children,'type','PolarAxes'),'color','w')
-    saveas(f,[filename '.fig']); if verbose; disp([filename '.fig']); end
-    saveas(f,[filename '.jpg']); if verbose; disp([filename '.jpg']); end
+if p.figOption.verbose>1
+    f = plotNorm(d{subjInd,sessInd},p,featSel{subjInd,sessInd});
+    if figOption.save
+        error('code that')
+        filename = fullfile(pwd,mfilename);
+        if ~exist(filename,'dir'); mkdir(filename); end
+        filename = fullfile(filename,p.svmSpace);
+        f.Color = 'none';
+        set(findobj(f.Children,'type','Axes'),'color','none')
+        set(findobj(f.Children,'type','PolarAxes'),'color','none')
+        saveas(f,[filename '.svg']); if verbose; disp([filename '.svg']); end
+        f.Color = 'w';
+        set(findobj(f.Children,'type','Axes'),'color','w')
+        set(findobj(f.Children,'type','PolarAxes'),'color','w')
+        saveas(f,[filename '.fig']); if verbose; disp([filename '.fig']); end
+        saveas(f,[filename '.jpg']); if verbose; disp([filename '.jpg']); end
+    end
 end
 
 %% Within-session SVM cross-validation (with cross-session feature selection)
@@ -195,7 +245,7 @@ for i = 1:numel(d)
     end
     
     % cross-session feature selection
-    featSelInd = featSel{subjInd,sessIndCross}.indIn(:,:,featSel{subjInd,sessIndCross}.condPairCurInd);
+    featSelInd = featSel{subjInd,sessIndCross}.indIn;
     if strcmp(dataType,'waveTrialSparseCat2')
         featSelInd = repmat(featSelInd,[1 12]);
     end
@@ -264,7 +314,7 @@ for i = 1:numel(d)
             error('X')
     end
     % same-session feature-selection
-    featSelInd = featSel{subjInd,trainInd}.indIn(:,:,featSel{subjInd,trainInd}.condPairCurInd);
+    featSelInd = featSel{subjInd,trainInd}.indIn;
     if strcmp(dataType,'waveTrialSparseCat2')
         featSelInd = repmat(featSelInd,[1 12]);
     end
@@ -320,7 +370,7 @@ for i = 1:numel(d)
             error('X')
     end
     % cross-session feature selection
-    featSelInd = featSel{subjInd,trainInd}.indIn(:,:,featSel{subjInd,trainInd}.condPairCurInd);
+    featSelInd = featSel{subjInd,trainInd}.indIn;
     if strcmp(dataType,'waveTrialSparseCat2')
         featSelInd = repmat(featSelInd,[1 12]);
     end
@@ -339,7 +389,7 @@ acc_fdr = mafdr([resBS_sess.acc_p],'BHFDR',true);
 for i = 1:numel(d)
     resBS_sess(i).acc_fdr = acc_fdr(i);
     resBS_sess(i).nVoxOrig = size(d{i}.sin,2);
-    resBS_sess(i).nVox = nnz(featSel{i}.indIn(:,:,featSel{i}.condPairCurInd));
+    resBS_sess(i).nVox = nnz(featSel{i}.indIn);
     resBS_sess(i).svmSpace = p.svmSpace;
     resBS_sess(i).norm = p.norm;
 end
@@ -354,7 +404,7 @@ acc_fdr = mafdr([resWS_sess.acc_p],'BHFDR',true);
 for i = 1:numel(d)
     resWS_sess(i).acc_fdr = acc_fdr(i);
     resWS_sess(i).nVoxOrig = size(d{i}.sin,2);
-    resWS_sess(i).nVox = nnz(featSel{i}.indIn(:,:,featSel{i}.condPairCurInd));
+    resWS_sess(i).nVox = nnz(featSel{i}.indIn);
     resWS_sess(i).svmSpace = p.svmSpace;
     resWS_sess(i).norm = p.norm;
 end
@@ -431,39 +481,38 @@ if verbose
     xlabel('between-session')
     ylabel('within-session')
     textLine = {};
-    if p.norm.doCartSpaceScale
-        textLine = [textLine {[p.svmSpace '; ' dataType]}];
+    if p.figOption.verbose>1
+        textLine = [textLine {[p.svmSpace '; ' p.condPair '; ' dataType]}];
     else
-        textLine = [textLine {[p.svmSpace '(noCartScale); ' dataType]}];
+        textLine = [textLine {[p.svmSpace '; ' p.condPair]}];
+    end
+    if p.figOption.verbose>1
+        textLine = [textLine {strjoin(featSel{figOption.subj,1}.featSeq.featSelList,'; ')}];
     end
     
-    
-    
-    textLine = [textLine {strjoin(featSel{figOption.subj,1}.featSeq.featSelList,'; ')}];
-%     textLine = [textLine {strjoin(featSel{figOption.subj,1}.info1,'; ')}];
-%     textLine = [textLine {strjoin(featSel{figOption.subj,1}.info2,'; ')}];
-    
+    if p.figOption.verbose>2
+        n    = nan([length(featSel{1}.featSeq.featSelList)+1 size(featSel)]);
+        %     n = nan([length(featSel{1}.n) size(featSel)]);
+        for sessInd = 1:numel(featSel)
+            tmp = nan(size(featSel{sessInd}.featSeq.featIndIn(:,:,1)));
+            tmp(:,ind_nSpecFeatSel) = featSel{sessInd}.featSeq.featIndIn(:,ind_nSpecFeatSel,ind_nSpecFeatSelCond);
+            tmp(:,ind_specFeatSel) = featSel{sessInd}.featSeq.featIndIn(:,ind_specFeatSel,ind_specFeatSelCond);
+            n(2:end,sessInd) = sum(cumsum(tmp,2)==1:length(ind_nSpecFeatSel),1);
+            %         n(2:end,sessInd) = sum(cumsum(featSel{sessInd}.featSeq.featIndIn(:,:,featSel{sessInd}.condPairCurInd),2) == 1:size(featSel{sessInd}.featSeq.featIndIn,2),1);
+            n(1,sessInd) = size(tmp,1);
+        end
+        nMin = min(n(:,:),[],2)';
+        nMin = cellstr(num2str(nMin'))';
+        nMean = round(mean(n(:,:),2)');
+        nMean = cellstr(num2str(nMean'))';
+        nMax = max(n(:,:),[],2)';
+        nMax = cellstr(num2str(nMax'))';
+        
+        textLine = [textLine {['min: ' strjoin(nMin,'; ')]}];
+        textLine = [textLine {['mean: ' strjoin(nMean,'; ')]}];
+        textLine = [textLine {['max: ' strjoin(nMax,'; ')]}];
+    end
 
-    
-    n    = nan([length(featSel{1}.featSeq.featSelList)+1 size(featSel)]);
-%     n = nan([length(featSel{1}.n) size(featSel)]);
-    for sessInd = 1:numel(featSel)
-        n(2:end,sessInd) = sum(cumsum(featSel{sessInd}.featSeq.featIndIn(:,:,featSel{sessInd}.condPairCurInd),2) == 1:size(featSel{sessInd}.featSeq.featIndIn,2),1);
-        n(1,sessInd) = size(featSel{sessInd}.featSeq.featIndIn,1);
-%         n(:,sessInd) = nnz(featSel{sessInd}.indIn(:,:,featSel{sessInd}.condPairCurInd));
-%         n(:,sessInd) = featSel{sessInd}.n;
-    end
-    nMin = min(n(:,:),[],2)';
-    nMin = cellstr(num2str(nMin'))';
-    nMean = round(mean(n(:,:),2)');
-    nMean = cellstr(num2str(nMean'))';
-    nMax = max(n(:,:),[],2)';
-    nMax = cellstr(num2str(nMax'))';
-    
-    textLine = [textLine {['min: ' strjoin(nMin,'; ')]}];
-    textLine = [textLine {['mean: ' strjoin(nMean,'; ')]}];
-    textLine = [textLine {['max: ' strjoin(nMax,'; ')]}];
-    
     textLine = strjoin(textLine,newline);
     title(textLine);
     uistack(patch([0 0 0.5 0.5 0],[0.5 0 0 0.5 0.5],[1 1 1].*0.7),'bottom')

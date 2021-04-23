@@ -23,7 +23,13 @@ p.svmSpace = 'cart_affineRot';
 p.svmSpace = 'cartNoAmp_affineRot';
 p.svmSpace = 'cartNoAmp_affineRot_affineCart';
 p.condPair = 'grat1VSgrat2';
+
+p.featSel.global.method = 'custom2';
+
 p.condPair = 'grat1VSplaid';
+p.condPair = 'grat2VSplaid';
+p.condPair = 'grat1VSgrat2';
+p.svmSpace = 'cartNoAmp';
 [resBS,resWS] = runDecoding(p,verbose);
 return
 
