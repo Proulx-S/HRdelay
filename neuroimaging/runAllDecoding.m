@@ -29,7 +29,7 @@ p.featSel.global.method = 'custom2';
 p.condPair = 'grat1VSplaid';
 p.condPair = 'grat2VSplaid';
 p.condPair = 'grat1VSgrat2';
-p.svmSpace = 'cartNoAmp';
+p.svmSpace = 'cart';
 [resBS,resWS] = runDecoding(p,verbose);
 return
 
