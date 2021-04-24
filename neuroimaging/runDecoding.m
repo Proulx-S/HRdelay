@@ -95,6 +95,9 @@ end
 d = dP; clear dP
 
 %% Define feature selection
+if ~strcmp(featSel{1,1}.featSeq.info2,p.featSel.global.method)
+    error(['p.featSel.global.method and featSel.featSeq.info2 not matching' newline 'Try reruning processFeatSel.m'])
+end
 featSelSteps_labelList = featSel{1,1}.featSeq.featSelList;
 featSelConds_labelList = featSel{1,1}.featSeq.condPairList;
 [ind_nSpecFeatSel,ind_nSpecFeatSelCond,ind_specFeatSel,ind_specFeatSelCond] = defineFeatSel(featSelSteps_labelList,featSelConds_labelList,p.featSel.global.method,p.condPair);
