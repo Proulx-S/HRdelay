@@ -273,14 +273,11 @@ if ~exist('statLabel','var') || isempty(statLabel)
 end
 
 % Compute stats
-%     voxIndList = find(ind);
 voxIndList = 1:size(d.sin,1);
 [x,y,~] = getXYK(d,p);
-%             [x,~] = polarSpaceNormalization(x,p.svmSpace);
+[x,~] = polarSpaceNormalization(x,p.svmSpace);
 
-%             [~,~,~,STATS] = ttest(real(x(y==1,ind)),real(x(y==2,ind)));
-%             featVal(ind) = abs(STATS.tstat);
-% Get stats for H0: no difference between conditions
+% dummy pass with the manova2.m custom wrapper to obtain design matrix
 ind = ismember(y,condIndPair);
 withinDesign = table({'real' 'imag'}','VariableNames',{'complex'});
 withinModel = 'complex';
@@ -291,6 +288,8 @@ rm = fitrm(t,'real,imag~cond','WithinDesign',withinDesign,'WithinModel',withinMo
 Xmat = rm.DesignMatrix;
 [TBL,A,C_MV,D,withinNames,betweenNames] = manova2(rm,withinModel,[],statLabel);
 
+% actual pass with the manova3.m custom wrapper for fast computation of only
+% the relevant stats
 featVal = nan(size(d.sin,1),1);
 pVal = nan(size(d.sin,1),1);
 featVal2 = nan(size(d.sin,1),1);
