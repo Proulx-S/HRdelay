@@ -38,10 +38,12 @@ p.featSel.respVecDiff.threshVal = 0.5; % threshMethod='p' or 'fdr'
 p.featSel.respVecDiff.percentile = 20; % threshMethod='%ile'
 % Feature Combination
 p.featSel.global.doIt = 1;
-p.featSel.global.method = 'custom2';
+p.featSel.global.method = 'custom3';
 % 'allData'-> featSel uses all three conditions, irrespective of the condition pairs to be decoded
 % 'custom1'-> featSel of active voxels uses all three conditions but featSel of discriminant voxels uses only the conditions to be decoded
 % 'custom2'-> featSel of active and most discriminant voxels uses only the conditions to be decoded
+% 'custom3'-> same as custom2, except that condStat for most discriminant
+% voxels is computed on response features that match that used for decoding
 
 %% Normalization parameters
 p.norm.doCartSpaceScale = 1;

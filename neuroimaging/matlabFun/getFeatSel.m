@@ -9,12 +9,39 @@ allFeatIndIn = cell(0);
 if p.featSel.respVecSig.doIt || p.featSel.respVecDiff.doIt
     statLabel = 'Hotelling'; % 'Pillai' 'Wilks' 'Hotelling' 'Roy'
     condIndPairList = [{[1 2 3]} {[1 2]} {[1 3]} {[2 3]}];
-    interceptStat = nan(size(d.sin,1),length(condIndPairList));
-    interceptP = nan(size(d.sin,1),length(condIndPairList));
-    condStat = nan(size(d.sin,1),length(condIndPairList));
-    condP = nan(size(d.sin,1),length(condIndPairList));
-    for condIndPairInd = 1:length(condIndPairList)
-        [condStat(:,condIndPairInd),condP(:,condIndPairInd),interceptStat(:,condIndPairInd),interceptP(:,condIndPairInd)] = getDiscrimStats(d,p,condIndPairList{condIndPairInd},statLabel);
+    switch p.featSel.global.method
+        case {'custom1' 'custom2'}
+            normLabel = 'cart';
+            condStat.(normLabel) = nan(size(d.sin,1),length(condIndPairList));
+            condP.(normLabel)    = nan(size(d.sin,1),length(condIndPairList));
+            interceptStat.(normLabel) = nan(size(d.sin,1),length(condIndPairList));
+            interceptP.(normLabel) = nan(size(d.sin,1),length(condIndPairList));
+            for condIndPairInd = 1:length(condIndPairList)
+                [condStat.(normLabel)(:,condIndPairInd),condP.(normLabel)(:,condIndPairInd),interceptStat.(normLabel)(:,condIndPairInd),interceptP.(normLabel)(:,condIndPairInd)] = getDiscrimStats(d,p,condIndPairList{condIndPairInd},statLabel);
+            end
+        case 'custom3'
+            normLabelList = {'cart' 'cartNoAmp' 'abs' 'real'};
+            for normFlagInd = 1:length(normLabelList)
+                normLabel = normLabelList{normFlagInd};
+                condStat.(normLabel) = nan(size(d.sin,1),length(condIndPairList));
+                condP.(normLabel)    = nan(size(d.sin,1),length(condIndPairList));
+                if strcmp(normLabel,'cart')
+                    % Output stats for voxel activation only when data represent the full response
+                    interceptStat.(normLabel) = nan(size(d.sin,1),length(condIndPairList));
+                    interceptP.(normLabel) = nan(size(d.sin,1),length(condIndPairList));
+                    for condIndPairInd = 1:length(condIndPairList)
+                        [condStat.(normLabel)(:,condIndPairInd),condP.(normLabel)(:,condIndPairInd),interceptStat.(normLabel)(:,condIndPairInd),interceptP.(normLabel)(:,condIndPairInd)] = getDiscrimStats(d,p,condIndPairList{condIndPairInd},statLabel,normLabel);
+                    end
+                else
+                    % Output only stats for condition difference when the
+                    % response features are reduced
+                    for condIndPairInd = 1:length(condIndPairList)
+                        [condStat.(normLabel)(:,condIndPairInd),condP.(normLabel)(:,condIndPairInd),~                                          ,~                                       ] = getDiscrimStats(d,p,condIndPairList{condIndPairInd},statLabel,normLabel);
+                    end
+                end
+            end
+        otherwise
+            error('X')
     end
 end
 
@@ -88,29 +115,30 @@ end
 
 %% Most significant response vectors
 if p.featSel.respVecSig.doIt
+    normLabel = 'cart';
     curInfo1 = {'respVecSig'};
     featVal = interceptStat; clear interceptStat
     pVal = interceptP; clear interceptP
 
-    featVal;
+    featVal.(normLabel);
     thresh = p.featSel.(char(curInfo1));
     curInfo2 = {thresh.threshMethod};
     startInd = indFovIn;
     switch thresh.threshMethod
         case {'p' 'fdr'}
-            pVal;
-            featVal;
+            pVal.(normLabel);
+            featVal.(normLabel);
             curThresh = thresh.threshVal;
             curInfo2 = {[curInfo2{1} '<' num2str(curThresh)]};
             
             if strcmp(thresh.threshMethod,'fdr')
-                fdr = nan(size(pVal));
-                for condIndPairInd = 1:size(pVal,2)
-                    fdr(startInd,condIndPairInd) = mafdr(pVal(startInd,condIndPairInd),'BHFDR',true);
+                fdr = nan(size(pVal.(normLabel)));
+                for condIndPairInd = 1:size(pVal.(normLabel),2)
+                    fdr(startInd,condIndPairInd) = mafdr(pVal.(normLabel)(startInd,condIndPairInd),'BHFDR',true);
                 end
                 curIndIn = fdr<=curThresh;
             else
-                curIndIn = pVal<=curThresh;
+                curIndIn = pVal.(normLabel)<=curThresh;
             end
         case '%ile'
             error('double-check that')
@@ -123,8 +151,8 @@ if p.featSel.respVecSig.doIt
         otherwise
             error('X')
     end
-    allFeatVal(end+1) = {uniformizeOutputs(featVal,condIndPairList)};
-    allFeatP(end+1) = {uniformizeOutputs(pVal,condIndPairList)};
+    allFeatVal(end+1) = {uniformizeOutputs(featVal.(normLabel),condIndPairList)};
+    allFeatP(end+1) = {uniformizeOutputs(pVal.(normLabel),condIndPairList)};
     allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
     allFeatIndStart(end+1) = {uniformizeOutputs(startInd,condIndPairList)};
     allFeatIndIn(end+1) = {uniformizeOutputs(curIndIn,condIndPairList)};
@@ -175,137 +203,161 @@ if p.featSel.respVecDiff.doIt
     thresh = p.featSel.(char(curInfo1));
     curInfo2 = {thresh.threshMethod};
     
-    switch thresh.threshMethod
-        case {'p' 'fdr'}
-            error('double-check that')
-            curThresh = thresh.threshVal;
-            curInfo2 = {[curInfo2{1} '<' num2str(curThresh)]};
-            
-            if strcmp(thresh.threshMethod,'fdr')
-                fdr = nan(size(pVal));
-                for condIndPairInd = 1:size(pVal,2)
-                    fdr(startInd,condIndPairInd) = mafdr(pVal(startInd,condIndPairInd),'BHFDR',true);
-                end
-                curIndIn = fdr<=curThresh;
-            else
-                curIndIn = pVal<=curThresh;
-            end
-        case '%ile'
-            curThresh = thresh.percentile;
-            curInfo2 = {[curInfo2{1} '>' num2str(curThresh)]};
-            
-            curIndIn = false(size(featVal));
-            for condIndPairInd = 1:length(condIndPairList)
-                % Compute discriminent voxel %tile threshold in a way that
-                % follows the use of p.featSel.global.method in
-                % runDecoding.m
-                [ind_nSpecFeatSel,ind_nSpecFeatSelCond,ind_specFeatSel,ind_specFeatSelCond] = defineFeatSel(allFeatMethod,condIndPairList,p.featSel.global.method,condIndPairInd);
-                startInd_nSpec = all(catcell(3,allFeatIndIn(ind_nSpecFeatSel)),3);
-                startInd_nSpec = startInd_nSpec(:,ind_nSpecFeatSelCond);
-                startInd_spec = all(catcell(3,allFeatIndIn(ind_specFeatSel)),3);
-                startInd_spec = startInd_spec(:,ind_specFeatSelCond);
-                startInd = startInd_nSpec & startInd_spec;
-                
-                curIndIn(:,condIndPairInd) = featVal(:,condIndPairInd)>=prctile(featVal(startInd,condIndPairInd),curThresh);
-            end
-        otherwise
-            error('X')
-    end
+    featSelInd = size(allFeatVal,2)+1;
+    allFeatVal = repmat(allFeatVal,[1 1 length(normLabelList)]);
+    allFeatP = repmat(allFeatP,[1 1 length(normLabelList)]);
+    allFeatMethod = repmat(allFeatMethod,[1 1 length(normLabelList)]);
+    allFeatIndStart = repmat(allFeatIndStart,[1 1 length(normLabelList)]);
+    allFeatIndIn = repmat(allFeatIndIn,[1 1 length(normLabelList)]);
     
-    allFeatVal(end+1) = {uniformizeOutputs(featVal,condIndPairList)};
-    allFeatP(end+1) = {uniformizeOutputs(pVal,condIndPairList)};
-    allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
-    allFeatIndStart(end+1) = {uniformizeOutputs(startInd,condIndPairList)};
-    allFeatIndIn(end+1) = {uniformizeOutputs(curIndIn,condIndPairList)};
+    for normLabelInd = 1:length(normLabelList)
+        normLabel = normLabelList{normLabelInd};
+        switch thresh.threshMethod
+            case {'p' 'fdr'}
+                error('double-check that')
+                curThresh = thresh.threshVal;
+                curInfo2 = {[curInfo2{1} '<' num2str(curThresh)]};
+                
+                if strcmp(thresh.threshMethod,'fdr')
+                    fdr = nan(size(pVal.(normLabel)));
+                    for condIndPairInd = 1:size(pVal.(normLabel),2)
+                        fdr(startInd,condIndPairInd) = mafdr(pVal.(normLabel)(startInd,condIndPairInd),'BHFDR',true);
+                    end
+                    curIndIn = fdr<=curThresh;
+                else
+                    curIndIn = pVal.(normLabel)<=curThresh;
+                end
+            case '%ile'
+                curThresh = thresh.percentile;
+                curInfo2 = {[curInfo2{1} '>' num2str(curThresh)]};
+                
+                curIndIn = false(size(featVal.(normLabel)));
+                for condIndPairInd = 1:length(condIndPairList)
+                    % Compute discriminent voxel %tile threshold in a way that
+                    % follows the use of p.featSel.global.method in
+                    % runDecoding.m
+                    [tmp1,ind_nSpecFeatSelCond,tmp2,ind_specFeatSelCond] = defineFeatSel(allFeatMethod(1,1:featSelInd-1,normLabelInd),condIndPairList,p.featSel.global.method,condIndPairInd);
+                    ind_nSpecFeatSel = [tmp1 false];
+                    ind_specFeatSel = [tmp2 false];
+                    
+                    startInd_nSpec = all(catcell(3,allFeatIndIn(1,ind_nSpecFeatSel,normLabelInd)),3);
+                    startInd_nSpec = startInd_nSpec(:,ind_nSpecFeatSelCond);
+                    startInd_spec = all(catcell(3,allFeatIndIn(1,ind_specFeatSel,normLabelInd)),3);
+                    startInd_spec = startInd_spec(:,ind_specFeatSelCond);
+                    startInd = startInd_nSpec & startInd_spec;
+                    
+                    curIndIn(:,condIndPairInd) = featVal.(normLabel)(:,condIndPairInd)>=prctile(featVal.(normLabel)(startInd,condIndPairInd),curThresh);
+                end
+            otherwise
+                error('X')
+        end
+        allFeatVal(1,featSelInd,normLabelInd) = {uniformizeOutputs(featVal.(normLabel),condIndPairList)};
+        allFeatP(1,featSelInd,normLabelInd) = {uniformizeOutputs(pVal.(normLabel),condIndPairList)};
+        allFeatMethod(1,featSelInd,normLabelInd) = {strjoin([curInfo1 curInfo2],': ')};
+        allFeatIndStart(1,featSelInd,normLabelInd) = {uniformizeOutputs(startInd,condIndPairList)};
+        allFeatIndIn(1,featSelInd,normLabelInd) = {uniformizeOutputs(curIndIn,condIndPairList)};
+    end
 end
 
 
 %% Sumarize feature selection output
-for i = 1:size(allFeatVal,2)
+for i = 1:numel(allFeatVal)
     allFeatVal{i} = permute(allFeatVal{i},[1 3 2]);
     allFeatP{i} = permute(allFeatP{i},[1 3 2]);
     allFeatIndStart{i} = permute(allFeatIndStart{i},[1 3 2]);
     allFeatIndIn{i} = permute(allFeatIndIn{i},[1 3 2]);
 end
-
-featSel.featSeq.featVal = catcell(2,allFeatVal);
-featSel.featSeq.featP = catcell(2,allFeatP);
-featSel.featSeq.featQtile = nan(size(featSel.featSeq.featVal));
-featSel.featSeq.featIndStart = catcell(2,allFeatIndStart);
-featSel.featSeq.featIndIn = catcell(2,allFeatIndIn);
-featSel.featSeq.featSelList = allFeatMethod;
-featSel.featSeq.condPairList = permute(condIndPairList,[1 3 2]);
-featSel.featSeq.info = 'vox X featSel X condPair';
-featSel.featSeq.info2 = p.featSel.global.method;
-
-% Compute quantile
-for featInd = 1:size(featSel.featSeq.featQtile,2)
-    for condIndPairInd = 1:size(featSel.featSeq.featQtile,3)
-        x = featSel.featSeq.featVal(:,featInd,condIndPairInd);
-        startInd = featSel.featSeq.featIndStart(:,featInd,condIndPairInd);
-        %                 startInd = true(size(x));
-        [fx,x2] = ecdf(x(startInd));
-        x2 = x2(2:end); fx = fx(2:end);
-        [~,b] = ismember(x,x2);
-        featSel.featSeq.featQtile(b~=0,featInd,condIndPairInd) = fx(b(b~=0));
+    
+for normLabelInd = 1:length(normLabelList)
+    normLabel = normLabelList{normLabelInd};
+    
+    featSel.featSeq.(normLabel).featVal = catcell(2,allFeatVal(:,:,normLabelInd));
+    featSel.featSeq.(normLabel).featP = catcell(2,allFeatP(:,:,normLabelInd));
+    featSel.featSeq.(normLabel).featQtile = nan(size(featSel.featSeq.(normLabel).featVal));
+    featSel.featSeq.(normLabel).featIndStart = catcell(2,allFeatIndStart(:,:,normLabelInd));
+    featSel.featSeq.(normLabel).featIndIn = catcell(2,allFeatIndIn(:,:,normLabelInd));
+    featSel.featSeq.(normLabel).featSelList = allFeatMethod(:,:,normLabelInd);
+    featSel.featSeq.(normLabel).condPairList = permute(condIndPairList,[1 3 2]);
+    featSel.featSeq.(normLabel).info = 'vox X featSel X condPair';
+    featSel.featSeq.(normLabel).info2 = p.featSel.global.method;
+    
+    % Compute quantile
+    for featInd = 1:size(featSel.featSeq.(normLabel).featQtile,2)
+        for condIndPairInd = 1:size(featSel.featSeq.(normLabel).featQtile,3)
+            x = featSel.featSeq.(normLabel).featVal(:,featInd,condIndPairInd);
+            startInd = featSel.featSeq.(normLabel).featIndStart(:,featInd,condIndPairInd);
+            [fx,x2] = ecdf(x(startInd));
+            x2 = x2(2:end); fx = fx(2:end);
+            [~,b] = ismember(x,x2);
+            featSel.featSeq.(normLabel).featQtile(b~=0,featInd,condIndPairInd) = fx(b(b~=0));
+        end
     end
 end
 
-% switch p.featSel.global.method
-%     case 'all'
-%         indIn = all(featSel.featSeq.featIndIn,2);
-%         
-%     otherwise
-%         error('X')
-% end
-%% Output
-% featSel.indIn = indIn;
-% featSel.condPairList = permute(condIndPairList,[1 3 2]);
-% featSel.info = 'vox X featSel X condPair';
 
 
-
-
-
-function [featVal,pVal,featVal2,pVal2] = getDiscrimStats(d,p,condIndPair,statLabel)
+function [featVal,pVal,featVal2,pVal2] = getDiscrimStats(d,p,condIndPair,statLabel,normFlag)
 if ~exist('statLabel','var') || isempty(statLabel)
     statLabel = 'Hotelling'; % 'Pillai' 'Wilks' 'Hotelling' 'Roy'
 end
 
 % Compute stats
-%     voxIndList = find(ind);
 voxIndList = 1:size(d.sin,1);
 [x,y,~] = getXYK(d,p);
-%             [x,~] = polarSpaceNormalization(x,p.svmSpace);
+if exist('normFlag','var') && ~isempty(normFlag) && ischar(normFlag)
+    switch normFlag
+        case {'cart' 'cartNoAmp'}
+            [x,~] = polarSpaceNormalization(x,normFlag);
+        case 'abs'
+            [x,~] = polarSpaceNormalization(x,'cartNoDelay');
+            x = abs(x);
+        case 'real'
+            [x,~] = polarSpaceNormalization(x,'cartNoDelay');
+            x = real(x);
+        otherwise
+            error('X')
+    end
+end
 
-%             [~,~,~,STATS] = ttest(real(x(y==1,ind)),real(x(y==2,ind)));
-%             featVal(ind) = abs(STATS.tstat);
 % Get stats for H0: no difference between conditions
 ind = ismember(y,condIndPair);
-withinDesign = table({'real' 'imag'}','VariableNames',{'complex'});
-withinModel = 'complex';
-voxInd = 1;
-t = table(cellstr(num2str(y(ind))),real(x(ind,voxIndList(voxInd))),imag(x(ind,voxIndList(voxInd))),...
-    'VariableNames',{'cond','real','imag'});
-rm = fitrm(t,'real,imag~cond','WithinDesign',withinDesign,'WithinModel',withinModel);
-Xmat = rm.DesignMatrix;
-[TBL,A,C_MV,D,withinNames,betweenNames] = manova2(rm,withinModel,[],statLabel);
-
 featVal = nan(size(d.sin,1),1);
 pVal = nan(size(d.sin,1),1);
 featVal2 = nan(size(d.sin,1),1);
 pVal2 = nan(size(d.sin,1),1);
-
-Ymat = permute(x(ind,:),[1 3 2]);
-Ymat = cat(2,real(Ymat),imag(Ymat));
-for voxInd = voxIndList
-    [stat,PVAL] = manova3(Xmat,Ymat(:,:,voxInd),C_MV,A,D,statLabel);
-    
-    featVal(voxInd) = stat(ismember(betweenNames,'cond'));
-    pVal(voxInd) = PVAL(ismember(betweenNames,'cond'));
-    
-    featVal2(voxInd) = stat(ismember(betweenNames,'(Intercept)'));
-    pVal2(voxInd) = PVAL(ismember(betweenNames,'(Intercept)'));
+switch normFlag
+    case {'cart' 'cartNoAmp'}
+        % get design matrix from a dummy run using the slow custom wrapper
+        % function manova2.m
+        withinDesign = table({'real' 'imag'}','VariableNames',{'complex'});
+        withinModel = 'complex';
+        voxInd = 1;
+        t = table(cellstr(num2str(y(ind))),real(x(ind,voxIndList(voxInd))),imag(x(ind,voxIndList(voxInd))),...
+            'VariableNames',{'cond','real','imag'});
+        rm = fitrm(t,'real,imag~cond','WithinDesign',withinDesign,'WithinModel',withinModel);
+        Xmat = rm.DesignMatrix;
+        [~,A,C_MV,D,~,betweenNames] = manova2(rm,withinModel,[],statLabel);
+        
+        % do the actual fit on every voxel using manova3.m custom wrapper function
+        Ymat = permute(x(ind,:),[1 3 2]);
+        Ymat = cat(2,real(Ymat),imag(Ymat));
+        for voxInd = voxIndList
+            [stat,PVAL] = manova3(Xmat,Ymat(:,:,voxInd),C_MV,A,D,statLabel);
+            
+            featVal(voxInd) = stat(ismember(betweenNames,'cond'));
+            pVal(voxInd) = PVAL(ismember(betweenNames,'cond'));
+            
+            featVal2(voxInd) = stat(ismember(betweenNames,'(Intercept)'));
+            pVal2(voxInd) = PVAL(ismember(betweenNames,'(Intercept)'));
+        end
+    case {'abs' 'real'}
+        parfor voxInd = voxIndList
+            [~,tbl,~] = anova1(x(ind,voxIndList(voxInd)),categorical(y(ind)),'off');
+            featVal(voxInd) = tbl{2,5};
+            pVal(voxInd) = tbl{2,6};
+        end
+    otherwise
+        error('X')
 end
 
 function [Value,pValue,ds] = getStats(X,A,B,C,D,SSE,statLabel,withinNames,betweenNames)

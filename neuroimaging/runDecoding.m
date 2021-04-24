@@ -95,17 +95,30 @@ end
 d = dP; clear dP
 
 %% Define feature selection
-if ~strcmp(featSel{1,1}.featSeq.info2,p.featSel.global.method)
+switch p.svmSpace
+    case {'cart'}
+        normLabel = 'cart';
+    case {'cartNoAmp'}
+        normLabel = 'cartNoAmp';
+    case {'cartNoDelay'}
+        normLabel = 'abs';
+    case 'cartReal'
+        normLabel = 'real';
+    otherwise
+        error('X')
+end
+        
+if ~strcmp(featSel{1,1}.featSeq.(normLabel).info2,p.featSel.global.method)
     error(['p.featSel.global.method and featSel.featSeq.info2 not matching' newline 'Try reruning processFeatSel.m'])
 end
-featSelSteps_labelList = featSel{1,1}.featSeq.featSelList;
-featSelConds_labelList = featSel{1,1}.featSeq.condPairList;
+featSelSteps_labelList = featSel{1,1}.featSeq.(normLabel).featSelList;
+featSelConds_labelList = featSel{1,1}.featSeq.(normLabel).condPairList;
 [ind_nSpecFeatSel,ind_nSpecFeatSelCond,ind_specFeatSel,ind_specFeatSelCond] = defineFeatSel(featSelSteps_labelList,featSelConds_labelList,p.featSel.global.method,p.condPair);
 for subjInd = 1:size(d,1)
     for sessInd = 1:size(d,2)
         featSel{subjInd,sessInd}.indIn = ...
-            all(featSel{subjInd,sessInd}.featSeq.featIndIn(:,ind_nSpecFeatSel,ind_nSpecFeatSelCond),2)...
-            & all(featSel{subjInd,sessInd}.featSeq.featIndIn(:,ind_specFeatSel,ind_specFeatSelCond),2);
+            all(featSel{subjInd,sessInd}.featSeq.(normLabel).featIndIn(:,ind_nSpecFeatSel,ind_nSpecFeatSelCond),2)...
+            & all(featSel{subjInd,sessInd}.featSeq.(normLabel).featIndIn(:,ind_specFeatSel,ind_specFeatSelCond),2);
     end
 end
 
@@ -434,16 +447,16 @@ if verbose
         textLine = [textLine {[p.svmSpace '; ' p.condPair]}];
     end
     if p.figOption.verbose>1
-        textLine = [textLine {strjoin(featSel{figOption.subj,1}.featSeq.featSelList,'; ')}];
+        textLine = [textLine {strjoin(featSel{figOption.subj,1}.featSeq.(normLabel).featSelList,'; ')}];
     end
     
     if p.figOption.verbose>2
-        n    = nan([length(featSel{1}.featSeq.featSelList)+1 size(featSel)]);
+        n    = nan([length(featSel{1}.featSeq.(normLabel).featSelList)+1 size(featSel)]);
         %     n = nan([length(featSel{1}.n) size(featSel)]);
         for sessInd = 1:numel(featSel)
-            tmp = nan(size(featSel{sessInd}.featSeq.featIndIn(:,:,1)));
-            tmp(:,ind_nSpecFeatSel) = featSel{sessInd}.featSeq.featIndIn(:,ind_nSpecFeatSel,ind_nSpecFeatSelCond);
-            tmp(:,ind_specFeatSel) = featSel{sessInd}.featSeq.featIndIn(:,ind_specFeatSel,ind_specFeatSelCond);
+            tmp = nan(size(featSel{sessInd}.featSeq.(normLabel).featIndIn(:,:,1)));
+            tmp(:,ind_nSpecFeatSel) = featSel{sessInd}.featSeq.(normLabel).featIndIn(:,ind_nSpecFeatSel,ind_nSpecFeatSelCond);
+            tmp(:,ind_specFeatSel) = featSel{sessInd}.featSeq.(normLabel).featIndIn(:,ind_specFeatSel,ind_specFeatSelCond);
             n(2:end,sessInd) = sum(cumsum(tmp,2)==1:length(ind_nSpecFeatSel),1);
             %         n(2:end,sessInd) = sum(cumsum(featSel{sessInd}.featSeq.featIndIn(:,:,featSel{sessInd}.condPairCurInd),2) == 1:size(featSel{sessInd}.featSeq.featIndIn,2),1);
             n(1,sessInd) = size(tmp,1);

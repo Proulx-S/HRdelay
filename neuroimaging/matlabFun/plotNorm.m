@@ -1,11 +1,14 @@
-function f0 = plotNorm(d,p,featSel,voxFlag)
+function f0 = plotNorm(d,p,featSel,voxFlag,normLabel)
 if ~exist('voxFlag','var')
     voxFlag = 0;
+end
+if ~exist('normLabel','var')
+    normLabel = 'cart';
 end
 
 % p.condPair = 'all';
 % condIndPairInd = find(cellfun('length',featSel.featSeq.condPairList)==3);
-featSelConds_labelList = featSel.featSeq.condPairList;
+featSelConds_labelList = featSel.featSeq.(normLabel).condPairList;
 for i = 1:length(featSelConds_labelList)
     featSelConds_labelList{i} = num2str(featSelConds_labelList{i});
 end
@@ -42,13 +45,13 @@ switch p.dataType
         error('X')
 end
 
-featSelList = featSel.featSeq.featSelList;
+featSelList = featSel.featSeq.(normLabel).featSelList;
 for featInd = 1:length(featSelList)
-    tmp = strsplit(featSel.featSeq.featSelList{featInd},': ');
+    tmp = strsplit(featSel.featSeq.(normLabel).featSelList{featInd},': ');
     featSelList(featInd) = tmp(1);
 end
 featInd = ismember(featSelList,'act');
-[~,b] = sort(featSel.featSeq.featVal(featSel.indIn,featInd,ind_nSpecFeatSelCond),'descend');
+[~,b] = sort(featSel.featSeq.(normLabel).featVal(featSel.indIn,featInd,ind_nSpecFeatSelCond),'descend');
 f0 = plotPolNormExample(X(:,featSel.indIn),y,p,b(1),voxFlag);
 % f1 = plotPolNormExampleVox(X,SVMspace,b(1));
 % f2 = plotPolNormExampleRep(X,y,SVMspace,b(1));

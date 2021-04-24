@@ -35,7 +35,7 @@ switch method
         else
             ind_specFeatSelCond = featSelConds_labelList{condPair};
         end
-    case 'custom2'
+    case {'custom2' 'custom3'}
         % Non-condition-specific featSel steps
         ind_nSpecFeatSel = ismember(featSelSteps_labelList,{'retinoFov' 'vein'});
         % which condition set

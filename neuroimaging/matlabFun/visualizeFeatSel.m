@@ -1,4 +1,7 @@
-function visualizeFeatSel(p)
+function visualizeFeatSel(p,normLabel)
+if ~exist('normLabel','var') || isempty(normLabel)
+    normLabel = 'cart';
+end
 if ~isfield(p,'figOption') || isempty(p.figOption)
     p.figOption.verbose = 1;
     p.figOption.subjInd = 1;
@@ -43,36 +46,36 @@ roi = pAll{subjInd}.voxProp.area.ind==pAll{subjInd}.voxProp.area.indList(ismembe
 
 
 
-[ind_nSpecFeatSel,ind_nSpecFeatSelCond,ind_specFeatSel,ind_specFeatSelCond] = defineFeatSel(featSel{subjInd,sessInd}.featSeq.featSelList,featSel{subjInd,sessInd}.featSeq.condPairList,p.featSel.global.method,condPair);
+[ind_nSpecFeatSel,ind_nSpecFeatSelCond,ind_specFeatSel,ind_specFeatSelCond] = defineFeatSel(featSel{subjInd,sessInd}.featSeq.(normLabel).featSelList,featSel{subjInd,sessInd}.featSeq.(normLabel).condPairList,p.featSel.global.method,condPair);
 
-featP = nan(size(featSel{subjInd,sessInd}.featSeq.featP,[1 2]));
-featP(:,ind_nSpecFeatSel) = featSel{subjInd,sessInd}.featSeq.featP(:,ind_nSpecFeatSel,ind_nSpecFeatSelCond);
-featP(:,ind_specFeatSel) = featSel{subjInd,sessInd}.featSeq.featP(:,ind_specFeatSel,ind_specFeatSelCond);
+featP = nan(size(featSel{subjInd,sessInd}.featSeq.(normLabel).featP,[1 2]));
+featP(:,ind_nSpecFeatSel) = featSel{subjInd,sessInd}.featSeq.(normLabel).featP(:,ind_nSpecFeatSel,ind_nSpecFeatSelCond);
+featP(:,ind_specFeatSel) = featSel{subjInd,sessInd}.featSeq.(normLabel).featP(:,ind_specFeatSel,ind_specFeatSelCond);
 
-featIndStart = nan(size(featSel{subjInd,sessInd}.featSeq.featIndStart,[1 2]));
-featIndStart(:,ind_nSpecFeatSel) = featSel{subjInd,sessInd}.featSeq.featIndStart(:,ind_nSpecFeatSel,ind_nSpecFeatSelCond);
-featIndStart(:,ind_specFeatSel) = featSel{subjInd,sessInd}.featSeq.featIndStart(:,ind_specFeatSel,ind_specFeatSelCond);
+featIndStart = nan(size(featSel{subjInd,sessInd}.featSeq.(normLabel).featIndStart,[1 2]));
+featIndStart(:,ind_nSpecFeatSel) = featSel{subjInd,sessInd}.featSeq.(normLabel).featIndStart(:,ind_nSpecFeatSel,ind_nSpecFeatSelCond);
+featIndStart(:,ind_specFeatSel) = featSel{subjInd,sessInd}.featSeq.(normLabel).featIndStart(:,ind_specFeatSel,ind_specFeatSelCond);
 
-featQtile = nan(size(featSel{subjInd,sessInd}.featSeq.featQtile,[1 2]));
-featQtile(:,ind_nSpecFeatSel) = featSel{subjInd,sessInd}.featSeq.featQtile(:,ind_nSpecFeatSel,ind_nSpecFeatSelCond);
-featQtile(:,ind_specFeatSel) = featSel{subjInd,sessInd}.featSeq.featQtile(:,ind_specFeatSel,ind_specFeatSelCond);
-featVal = nan(size(featSel{subjInd,sessInd}.featSeq.featVal,[1 2]));
-featVal(:,ind_nSpecFeatSel) = featSel{subjInd,sessInd}.featSeq.featVal(:,ind_nSpecFeatSel,ind_nSpecFeatSelCond);
-featVal(:,ind_specFeatSel) = featSel{subjInd,sessInd}.featSeq.featVal(:,ind_specFeatSel,ind_specFeatSelCond);
-indInSeq = nan(size(featSel{subjInd,sessInd}.featSeq.featIndIn,[1 2]));
-indInSeq(:,ind_nSpecFeatSel) = featSel{subjInd,sessInd}.featSeq.featIndIn(:,ind_nSpecFeatSel,ind_nSpecFeatSelCond);
-indInSeq(:,ind_specFeatSel) = featSel{subjInd,sessInd}.featSeq.featIndIn(:,ind_specFeatSel,ind_specFeatSelCond);
+featQtile = nan(size(featSel{subjInd,sessInd}.featSeq.(normLabel).featQtile,[1 2]));
+featQtile(:,ind_nSpecFeatSel) = featSel{subjInd,sessInd}.featSeq.(normLabel).featQtile(:,ind_nSpecFeatSel,ind_nSpecFeatSelCond);
+featQtile(:,ind_specFeatSel) = featSel{subjInd,sessInd}.featSeq.(normLabel).featQtile(:,ind_specFeatSel,ind_specFeatSelCond);
+featVal = nan(size(featSel{subjInd,sessInd}.featSeq.(normLabel).featVal,[1 2]));
+featVal(:,ind_nSpecFeatSel) = featSel{subjInd,sessInd}.featSeq.(normLabel).featVal(:,ind_nSpecFeatSel,ind_nSpecFeatSelCond);
+featVal(:,ind_specFeatSel) = featSel{subjInd,sessInd}.featSeq.(normLabel).featVal(:,ind_specFeatSel,ind_specFeatSelCond);
+indInSeq = nan(size(featSel{subjInd,sessInd}.featSeq.(normLabel).featIndIn,[1 2]));
+indInSeq(:,ind_nSpecFeatSel) = featSel{subjInd,sessInd}.featSeq.(normLabel).featIndIn(:,ind_nSpecFeatSel,ind_nSpecFeatSelCond);
+indInSeq(:,ind_specFeatSel) = featSel{subjInd,sessInd}.featSeq.(normLabel).featIndIn(:,ind_specFeatSel,ind_specFeatSelCond);
 indIn = all(indInSeq,2);
 
 
 featSelIn = false(size(brain));
 featSelIn(roi) = indIn;
-featSelSeqIn = false([length(featSel{subjInd,sessInd}.featSeq.featSelList) size(brain)]);
+featSelSeqIn = false([length(featSel{subjInd,sessInd}.featSeq.(normLabel).featSelList) size(brain)]);
 featSelSeqIn(:,roi) = indInSeq';
 featSelSeqIn = permute(featSelSeqIn,[2 3 4 1]);
-featSelVal = nan([size(featSel{subjInd,sessInd}.featSeq.featVal,2) size(brain)]);
-featSelValThresholded = nan([size(featSel{subjInd,sessInd}.featSeq.featVal,2) size(brain)]);
-featInfo = featSel{subjInd,sessInd}.featSeq.featSelList;
+featSelVal = nan([size(featSel{subjInd,sessInd}.featSeq.(normLabel).featVal,2) size(brain)]);
+featSelValThresholded = nan([size(featSel{subjInd,sessInd}.featSeq.(normLabel).featVal,2) size(brain)]);
+featInfo = featSel{subjInd,sessInd}.featSeq.(normLabel).featSelList;
 featLabel = cell(size(featInfo));
 for featInd = 1:size(featInfo,2)
     tmp = strsplit(featInfo{featInd},': ');
@@ -230,7 +233,7 @@ if 0
     f{end+1} = figure('WindowStyle','docked','color','w','visible',visibility);
     x = mean(d.sin(:,:,:,:),4);
     featInd = ismember(featLabel,'respVecSig');
-    ind = featSel{subjInd,sessInd}.featSeq.featIndIn(:,featInd,condPairInd);
+    ind = featSel{subjInd,sessInd}.featSeq.(normLabel).featIndIn(:,featInd,condPairInd);
     polarscatter(angle(x(ind)),abs(x(ind)),eps,'.k'); hold on
     polarscatter(angle(x(~ind)),abs(x(~ind)),eps,'.r');
     

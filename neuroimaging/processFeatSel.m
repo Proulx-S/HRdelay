@@ -17,7 +17,7 @@ else
     repoPath = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
 end
         funPath = fullfile(repoPath,'C-derived\DecodingHR\fun');
-            inDir  = 'd';
+            inDir   = 'd';
             outDir  = 'd';
 %make sure everything is forward slash for mac, linux pc compatibility
 for tmp = {'repoPath' 'funPath' 'inDir' 'outDir'}
