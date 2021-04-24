@@ -44,7 +44,7 @@ p.featSel.global.method = 'custom2';
 % 'custom2'-> featSel of active and most discriminant voxels uses only the conditions to be decoded
 
 %% Normalization parameters
-p.norm.doCartSpaceScale = 1;
+% p.norm.doCartSpaceScale = 1;
 %% Display parameters
 figOption.save = 0; % save all figures
 figOption.subj = 1; % subjInd-> plots participants subjInd; +inf-> plots all participant (if verbose==0, will only plot subjInd==1 but still produce and save all the other figures)
