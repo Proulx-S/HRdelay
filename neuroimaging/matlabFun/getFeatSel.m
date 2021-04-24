@@ -275,7 +275,7 @@ end
 % Compute stats
 voxIndList = 1:size(d.sin,1);
 [x,y,~] = getXYK(d,p);
-[x,~] = polarSpaceNormalization(x,p.svmSpace);
+[x,~] = polarSpaceNormalization(x,'cart');
 
 % dummy pass with the manova2.m custom wrapper to obtain design matrix
 ind = ismember(y,condIndPair);

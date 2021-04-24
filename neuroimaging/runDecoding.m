@@ -1,4 +1,4 @@
-function [resBS,resWS] = runDecoding(p,verbose,nPerm,figOption)
+function [resBS,resWS,f] = runDecoding(p,verbose,nPerm,figOption)
 if ~exist('verbose','var')
     verbose = 1;
 end
@@ -25,7 +25,8 @@ if isfield(p,'dataType') && ~isempty(p.dataType)
 else
     dataType = 'sin';
 end
- 
+f = [];
+
 
 
 %% Define paths
@@ -35,8 +36,8 @@ if ismac
 else
     repoPath = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
 end
-        funPath = fullfile(repoPath,'C-derived\DecodingHR\fun');
-            inDir  = 'd';
+funPath = fullfile(repoPath,'C-derived\DecodingHR\fun');
+inDir  = 'd';
 %make sure everything is forward slash for mac, linux pc compatibility
 for tmp = {'repoPath' 'funPath' 'inDir'}
     eval([char(tmp) '(strfind(' char(tmp) ',''\''))=''/'';']);
@@ -113,24 +114,26 @@ end
 %% Example plot of trigonometric (polar) representation
 subjInd = p.figOption.subjInd;
 sessInd = p.figOption.sessInd;
-if p.figOption.verbose>1
-    f = plotNorm(d{subjInd,sessInd},p,featSel{subjInd,sessInd});
-    if figOption.save
-        error('code that')
-        filename = fullfile(pwd,mfilename);
-        if ~exist(filename,'dir'); mkdir(filename); end
-        filename = fullfile(filename,p.svmSpace);
-        f.Color = 'none';
-        set(findobj(f.Children,'type','Axes'),'color','none')
-        set(findobj(f.Children,'type','PolarAxes'),'color','none')
-        saveas(f,[filename '.svg']); if verbose; disp([filename '.svg']); end
-        f.Color = 'w';
-        set(findobj(f.Children,'type','Axes'),'color','w')
-        set(findobj(f.Children,'type','PolarAxes'),'color','w')
-        saveas(f,[filename '.fig']); if verbose; disp([filename '.fig']); end
-        saveas(f,[filename '.jpg']); if verbose; disp([filename '.jpg']); end
-    end
+if p.figOption.verbose==1
+    f = [f plotNorm(d{subjInd,sessInd},p,featSel{subjInd,sessInd},[],0)];
+elseif p.figOption.verbose>1
+    f = [f plotNorm(d{subjInd,sessInd},p,featSel{subjInd,sessInd},[],1)];
 end
+% if p.figOption.verbose>=1 && figOption.save
+%     error('code that')
+%     filename = fullfile(pwd,mfilename);
+%     if ~exist(filename,'dir'); mkdir(filename); end
+%     filename = fullfile(filename,p.svmSpace);
+%     f.Color = 'none';
+%     set(findobj(f.Children,'type','Axes'),'color','none')
+%     set(findobj(f.Children,'type','PolarAxes'),'color','none')
+%     saveas(f,[filename '.svg']); if verbose; disp([filename '.svg']); end
+%     f.Color = 'w';
+%     set(findobj(f.Children,'type','Axes'),'color','w')
+%     set(findobj(f.Children,'type','PolarAxes'),'color','w')
+%     saveas(f,[filename '.fig']); if verbose; disp([filename '.fig']); end
+%     saveas(f,[filename '.jpg']); if verbose; disp([filename '.jpg']); end
+% end
 
 %% Within-session SVM cross-validation (with cross-session feature selection)
 svmModelK = cell(size(d));
@@ -338,10 +341,10 @@ for i = 1:numel(d)
     resBS_sess(i).nVoxOrig = size(d{i}.sin,2);
     resBS_sess(i).nVox = nnz(featSel{i}.indIn);
     resBS_sess(i).svmSpace = p.svmSpace;
-    resBS_sess(i).norm = p.norm;
+    resBS_sess(i).condPair = p.condPair;
 end
 resBS_sess = orderfields(resBS_sess,[1 2 3 4 5 6 7 8 9 15 10 11 12 13 14 16 17 18 19]);
-                                    
+
 % Within-sess
 resWS_sess = repmat(perfMetric,[size(d,1) size(d,2)]);
 for i = 1:numel(d)
@@ -353,7 +356,7 @@ for i = 1:numel(d)
     resWS_sess(i).nVoxOrig = size(d{i}.sin,2);
     resWS_sess(i).nVox = nnz(featSel{i}.indIn);
     resWS_sess(i).svmSpace = p.svmSpace;
-    resWS_sess(i).norm = p.norm;
+    resWS_sess(i).condPair = p.condPair;
 end
 resWS_sess = orderfields(resWS_sess,[1 2 3 4 5 6 7 8 9 15 10 11 12 13 14 16 17 18 19]);
 
@@ -423,7 +426,11 @@ if verbose
         end
     end
     
-    figure('WindowStyle','docked');
+    if p.figOption.verbose>1
+        f = [f figure('WindowStyle','docked','visible','on')];
+    else
+        f = [f figure('WindowStyle','docked','visible','off')];
+    end
     compareRes(resBS,resWS)
     xlabel('between-session')
     ylabel('within-session')
@@ -459,7 +466,7 @@ if verbose
         textLine = [textLine {['mean: ' strjoin(nMean,'; ')]}];
         textLine = [textLine {['max: ' strjoin(nMax,'; ')]}];
     end
-
+    
     textLine = strjoin(textLine,newline);
     title(textLine);
     uistack(patch([0 0 0.5 0.5 0],[0.5 0 0 0.5 0.5],[1 1 1].*0.7),'bottom')
@@ -589,7 +596,7 @@ for kInd = 1:length(kList)
     
     % Normalize
     [x,normTr(:,:,kInd).pol] = polarSpaceNormalization(x,p.svmSpace);
-    [x,normTr(:,:,kInd).svm] = cartSpaceNormalization(x,p.svmSpace,[],p.norm.doCartSpaceScale);
+    [x,normTr(:,:,kInd).svm] = cartSpaceNormalization(x,p.svmSpace);
     [x,~,~] = complex2svm(x,p.svmSpace);
     normTr(:,:,kInd).k = kList(kInd);
     normTr(:,:,kInd).svmSpace = p.svmSpace;
@@ -609,7 +616,7 @@ for kInd = 1:length(kList)
     svmModel(:,:,kInd).Paramters = model.Parameters;
     svmModel(:,:,kInd).info = '   yHat = x*w''-b   ';
     svmModel(:,:,kInd).svmSpace = p.svmSpace;
-    svmModel(:,:,kInd).norm = p.norm;
+    %     svmModel(:,:,kInd).norm = p.norm;
 end
 
 function [yHat,yHatTr] = SVMtest(Y,X,svmModel,nrmlz,K)
@@ -634,7 +641,7 @@ for kInd = 1:length(kList)
     % Normalize
     if ~exist('nrmlz','var') || isempty(nrmlz)
         [x,~] = polarSpaceNormalization(x,svmModel(kInd).svmSpace);
-        [x,~] = cartSpaceNormalization(x,svmModel(kInd).svmSpace,[],norm.doCartSpaceScale);
+        [x,~] = cartSpaceNormalization(x,svmModel(kInd).svmSpace);
     else
         [x,~] = polarSpaceNormalization(x,nrmlz(kInd),te);
         [x,~] = cartSpaceNormalization(x,nrmlz(kInd),te);
@@ -646,7 +653,7 @@ for kInd = 1:length(kList)
     yHat(te,kInd) = x(te,:)*w'-b;
     yHatTr(~te,kInd) = x(~te,:)*w'-b;
 end
-    
+
 
 
 % function [yTe,d,yHatTe] = xValSVM(x,y,k,SVMspace)
@@ -660,14 +667,14 @@ end
 % for kInd = 1:length(kList)
 %     % Split train and test
 %     te = k==kList(kInd);
-% 
+%
 %     % Polar space normalization
 %     x = polarSpaceNormalization(X,SVMspace,te);
-% 
+%
 % %     % Within-session feature selection
 % %     % get feature selection stats
 % %     featStat = getFeatStat_ws(x,y,te,SVMspace);
-% %     
+% %
 % %     % apply feature selection
 % %     switch SVMspace
 % %         case {'cart_HT' 'cartNoAmp_HT' 'cartNoDelay_HT'...
@@ -681,7 +688,7 @@ end
 % %         otherwise
 % %             error('X')
 % %     end
-% 
+%
 %     % Cocktail bank normalization
 %     switch SVMspace
 %         case {'hr' 'hrNoAmp'}
@@ -708,13 +715,13 @@ end
 %         otherwise
 %             error('x')
 %     end
-% 
+%
 %     % Train SVM
 %     model = svmtrain(y(~te,:),x(~te,:),'-t 0 -q');
 % %     w = model.sv_coef'*model.SVs;
 % %     b = model.rho;
 % %     yHat = cat(2,real(x(~te,:)),imag(x(~te,:)))*w';
-%     
+%
 %     % Test SVM
 % %     [yTr(~te,kInd), ~, yHatTr(~te,kInd)] = svmpredict(y(~te,:),x(~te,:),model,'-q');
 %     [yTe(te,1), ~, yHatTe(te,1)] = svmpredict(y(te,:),x(te,:),model,'-q');
@@ -749,7 +756,7 @@ nDim = size(x,2);
 % switch SVMspace
 %     case 'cart_HT'
 %         x = [real(x) imag(x)];
-%         
+%
 %         featStat = nan(1,nVox);
 %         x = cat(1,x(~te & y==1,:),x(~te & y==2,:));
 %         for voxInd = 1:nVox
@@ -758,7 +765,7 @@ nDim = size(x,2);
 %         end
 %     case 'cartNoAmp_HT'
 %         x = angle(x);
-%         
+%
 %         featStat = nan(1,size(x,2));
 %         for voxInd = 1:size(x,2)
 %             [~, F] = circ_htest(x(~te & y==1,voxInd), x(~te & y==2,voxInd));
@@ -766,12 +773,12 @@ nDim = size(x,2);
 %         end
 %     case {'polMag_T' 'cartNoDelay_HT'}
 %         x = abs(x);
-%         
+%
 %         [~,~,~,STATS] = ttest(x(~te & y==1,:),x(~te & y==2,:));
 %         featStat = STATS.tstat;
 %     case 'cartReal_T'
 %         x = real(x);
-%         
+%
 %         [~,~,~,STATS] = ttest(x(~te & y==1,:),x(~te & y==2,:));
 %         featStat = STATS.tstat;
 %     case {'cart' 'cartNoAmp' 'cartNoDelay'...
@@ -990,7 +997,7 @@ suptitle('voxels (repetitions averaged)')
 % x = x(:,:,:);
 % x = permute(x,[3 4 2 1]);
 % f = figure('WindowStyle','docked');
-% 
+%
 % %% Polar Normalization
 % subplot(2,2,1); clear hPP
 % % polarplot(angle(x(:)),abs(x(:)),'.'); hold on
@@ -1003,10 +1010,10 @@ suptitle('voxels (repetitions averaged)')
 % drawnow
 % hPP1 = hPP; clear hPP
 % ax1 = gca;
-% 
+%
 % % Normalize
 % x = polarSpaceNormalization(x,SVMspace);
-% 
+%
 % % Plot after
 % subplot(2,2,2);
 % % polarplot(angle(xAfter(:)),abs(xAfter(:)),'.'); hold on
@@ -1019,7 +1026,7 @@ suptitle('voxels (repetitions averaged)')
 % drawnow
 % hPP2 = hPP; clear hPP
 % ax2 = gca;
-% 
+%
 % ax = ax1;
 % ax.ThetaTickLabel = 12-ax.ThetaTick(1:end)/360*12;
 % ax.ThetaTickLabel(1,:) = '0 ';
@@ -1029,7 +1036,7 @@ suptitle('voxels (repetitions averaged)')
 % ax.RAxis.Label.String = 'amp (%BOLD)';
 % ax.RAxis.Label.Rotation = 80;
 % ax.Title.String = 'before polNorm';
-% 
+%
 % ax = ax2;
 % ax.ThetaTickLabel = (-wrapTo180(ax.ThetaTick(1:end))/360*12);
 % ax.ThetaTickLabel(1,:) = '0 ';
@@ -1037,7 +1044,7 @@ suptitle('voxels (repetitions averaged)')
 % % ax.ThetaAxis.Label.Rotation = 0;
 % % ax.ThetaAxis.Label.HorizontalAlignment = 'left';
 % ax.Title.String = 'after polNorm';
-% 
+%
 % %% Cartesian Normalization
 % subplot(2,2,3); clear hPP
 % for condInd = 1:size(x,3)
@@ -1058,7 +1065,7 @@ suptitle('voxels (repetitions averaged)')
 %     xLim(2) = +delta;
 % end
 % xlim(xLim)
-% 
+%
 % yLim = ylim;
 % if ~(yLim(1)<0)
 %     yLim(1) = -delta;
@@ -1067,18 +1074,18 @@ suptitle('voxels (repetitions averaged)')
 %     yLim(2) = +delta;
 % end
 % ylim(yLim)
-% 
+%
 % uistack(plot([0 0],ylim,'-k'),'bottom');
 % uistack(plot(xlim,[0 0],'-k'),'bottom');
 % grid on
 % title('before cartNorm')
 % xlabel('real')
 % ylabel('imag')
-% 
-% 
+%
+%
 % %normalize
 % x = cartSpaceNormalization(x,SVMspace);
-% 
+%
 % %after
 % subplot(2,2,4); clear hPP
 % for condInd = 1:size(x,3)
@@ -1087,7 +1094,7 @@ suptitle('voxels (repetitions averaged)')
 %     hScat(condInd).MarkerEdgeColor = 'w';
 % %     hScat(condInd).SizeData = 35;
 % end
-% 
+%
 % ax = gca;
 % ax.DataAspectRatio = [1 1 1];
 % ax.PlotBoxAspectRatio = [1 1 1];
@@ -1100,7 +1107,7 @@ suptitle('voxels (repetitions averaged)')
 %     xLim(2) = +delta;
 % end
 % xlim(xLim)
-% 
+%
 % yLim = ylim;
 % if ~(yLim(1)<0)
 %     yLim(1) = -delta;
@@ -1109,7 +1116,7 @@ suptitle('voxels (repetitions averaged)')
 %     yLim(2) = +delta;
 % end
 % ylim(yLim)
-% 
+%
 % uistack(plot([0 0],ylim,'-k'),'bottom');
 % uistack(plot(xlim,[0 0],'-k'),'bottom');
 % grid on
@@ -1117,7 +1124,7 @@ suptitle('voxels (repetitions averaged)')
 % xlabel('real')
 % ylabel('imag')
 % drawnow
-% 
+%
 % suptitle('repetitions (most active voxel)')
 
 
@@ -1195,7 +1202,7 @@ resSess.info = 'subj x sess';
 resSess.distT_fdr = resSess.distT_p;
 resSess.distT_fdr(:) = mafdr(resSess.distT_p(:),'BHFDR',true);
 resSess = orderfields(resSess,[1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 21 16 17 18 19 20]);
-                              
+
 
 resSubj.y = cell(size(resSess.y,1),1);
 resSubj.yHat = cell(size(resSess.yHat,1),1);
@@ -1221,10 +1228,10 @@ for subjInd = 1:size(resSubj.y,1)
     resSubj.auc(subjInd) = auc(1);
     resSubj.auc_CI5(subjInd) = nan;
     resSubj.auc_CI95(subjInd) = nan;
-%     [~,~,~,auc] = perfcurve(resSubj.y{subjInd},resSubj.yHat{subjInd},1,'NBOOT',2^10);
-%     resSubj.auc(subjInd) = auc(1);
-%     resSubj.auc_CI5(subjInd) = auc(2);
-%     resSubj.auc_CI95(subjInd) = auc(3);
+    %     [~,~,~,auc] = perfcurve(resSubj.y{subjInd},resSubj.yHat{subjInd},1,'NBOOT',2^10);
+    %     resSubj.auc(subjInd) = auc(1);
+    %     resSubj.auc_CI5(subjInd) = auc(2);
+    %     resSubj.auc_CI95(subjInd) = auc(3);
     
     [~,P,~,STATS] = ttest(resSubj.yHat{subjInd}(resSubj.y{subjInd}==1),resSubj.yHat{subjInd}(resSubj.y{subjInd}==2));
     resSubj.distT(subjInd) = STATS.tstat;

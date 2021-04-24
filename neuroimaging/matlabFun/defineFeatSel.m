@@ -1,6 +1,5 @@
 function [ind_nSpecFeatSel,ind_nSpecFeatSelCond,ind_specFeatSel,ind_specFeatSelCond] = defineFeatSel(featSelSteps_labelList,featSelConds_labelList,method,condPair)
 
-
 for i = 1:length(featSelSteps_labelList)
     tmp = strsplit(featSelSteps_labelList{i},':');
     featSelSteps_labelList(i) = tmp(1);

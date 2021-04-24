@@ -1,7 +1,11 @@
-function f0 = plotNorm(d,p,featSel,voxFlag)
-if ~exist('voxFlag','var')
+function f0 = plotNorm(d,p,featSel,voxFlag,visibilityFlag)
+if ~exist('voxFlag','var') || isempty(voxFlag)
     voxFlag = 0;
 end
+if ~exist('visibilityFlag','var')
+    visibilityFlag = 1;
+end
+
 
 % p.condPair = 'all';
 % condIndPairInd = find(cellfun('length',featSel.featSeq.condPairList)==3);
@@ -49,7 +53,7 @@ for featInd = 1:length(featSelList)
 end
 featInd = ismember(featSelList,'act');
 [~,b] = sort(featSel.featSeq.featVal(featSel.indIn,featInd,ind_nSpecFeatSelCond),'descend');
-f0 = plotPolNormExample(X(:,featSel.indIn),y,p,b(1),voxFlag);
+f0 = plotPolNormExample(X(:,featSel.indIn),y,p,b(1),voxFlag,visibilityFlag);
 % f1 = plotPolNormExampleVox(X,SVMspace,b(1));
 % f2 = plotPolNormExampleRep(X,y,SVMspace,b(1));
 
@@ -57,11 +61,19 @@ f0 = plotPolNormExample(X(:,featSel.indIn),y,p,b(1),voxFlag);
 % f2 = plotPolNormExample(x,SVMspace);
 
 
-function f = plotPolNormExample(x,y,p,b,voxFlag)
+function f = plotPolNormExample(x,y,p,b,voxFlag,visibilityFlag)
 if ~exist('voxFlag','var')
     voxFlag = 0;
 end
-f = figure('WindowStyle','docked');
+if ~exist('visibilityFlag','var')
+    visibilityFlag = 1;
+end
+
+if visibilityFlag
+    f = figure('WindowStyle','docked','visible','on');
+else
+    f = figure('WindowStyle','docked','visible','off');
+end
 
 %% Polar Normalization
 % Plot before
@@ -191,7 +203,7 @@ if ~voxFlag
     drawnow
     
     % Normalize
-    x = cartSpaceNormalization(x,p.svmSpace,[],p.norm.doCartSpaceScale);
+    x = cartSpaceNormalization(x,p.svmSpace);
     
     %Plot after
     subplot(2,2,4);

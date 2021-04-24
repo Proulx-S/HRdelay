@@ -1,4 +1,4 @@
-function [x,cartNorm] = cartSpaceNormalization(x,SVMspace,te,doCartSpaceScale)
+function [x,cartNorm] = cartSpaceNormalization(x,SVMspace,te)
 [x,sz] = reDim1(x);
 if ~exist('te','var') || isempty(te)
     te = false(size(x,1),1);
