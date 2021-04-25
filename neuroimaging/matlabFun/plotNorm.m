@@ -13,24 +13,6 @@ for i = 1:length(featSelConds_labelList)
 end
 ind_nSpecFeatSelCond = [1 2 3];
 ind_nSpecFeatSelCond = squeeze(ismember(featSelConds_labelList,num2str(ind_nSpecFeatSelCond)));
-switch p.dataType
-    case 'sin'
-        [X,y,~] = getXYK(d,p);
-    case 'waveTrialSparse' % do not average and use 1 tPts out of 12 in each stimulus cycle
-        error('double-check that')
-        [X,y,~,~] = getXYK_wave(d,SVMspace,'trialSparse');
-    case 'waveRun' % average within runs
-        error('double-check that')
-        [X,y,~,~] = getXYK_wave(d,SVMspace,'run');
-    case {'wave' 'waveTrialSparseCat2' 'waveTrialSparseRep'} % average within trials
-        error('double-check that')
-        [X,y,~,~] = getXYK_wave(d,SVMspace,'trial');
-    case 'waveFull' % do not average and use all tPts
-        error('double-check that')
-        [X,y,~,~] = getXYK_wave(d,SVMspace,'full');
-    otherwise
-        error('X')
-end
 
 featSelList = featSel.featSeq.featSelList;
 for featInd = 1:length(featSelList)
@@ -40,6 +22,7 @@ end
 featInd = ismember(featSelList,'act');
 
 %% Get data
+[X,y,~] = getXYK(d,p);
 
 %% Plot
 % select most active voxel
