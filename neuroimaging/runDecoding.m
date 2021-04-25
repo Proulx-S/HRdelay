@@ -27,7 +27,7 @@ else
 end
 f = [];
 
-
+% tic
 
 %% Define paths
 subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'};
@@ -95,6 +95,10 @@ for subjInd = 1:length(d)
 end
 d = dP; clear dP
 
+% line_num=dbstack; % get this line number
+% disp(['line ' num2str(line_num(1).line)]) % displays the line number
+% toc
+
 %% Define feature selection
 if ~strcmp(featSel{1,1}.featSeq.info2,p.featSel.global.method)
     error(['p.featSel.global.method and featSel.featSeq.info2 not matching' newline 'Try reruning processFeatSel.m'])
@@ -110,6 +114,9 @@ for subjInd = 1:size(d,1)
     end
 end
 
+% line_num=dbstack; % get this line number
+% disp(['line ' num2str(line_num(1).line)]) % displays the line number
+% toc
 
 %% Example plot of trigonometric (polar) representation
 subjInd = p.figOption.subjInd;
@@ -134,6 +141,11 @@ end
 %     saveas(f,[filename '.fig']); if verbose; disp([filename '.fig']); end
 %     saveas(f,[filename '.jpg']); if verbose; disp([filename '.jpg']); end
 % end
+
+% line_num=dbstack; % get this line number
+% disp(['line ' num2str(line_num(1).line)]) % displays the line number
+% toc
+
 
 %% Within-session SVM cross-validation (with cross-session feature selection)
 svmModelK = cell(size(d));
@@ -164,7 +176,6 @@ for i = 1:numel(d)
     if doPerm
         error('code that')
         disp(['for sess ' num2str(i) ' of ' num2str(numel(d))])
-        tic
     end
     
     switch dataType
@@ -217,6 +228,10 @@ for i = 1:numel(d)
     n(i) = nnz(featSelInd);
 end
 
+% line_num=dbstack; % get this line number
+% disp(['line ' num2str(line_num(1).line)]) % displays the line number
+% toc
+
 
 %% Within-session SVM training (and feature selection) + Cross-session SVM testing
 disp('Between-session SVM cross-validation')
@@ -234,7 +249,6 @@ for i = 1:numel(d)
     if doPerm
         error('code that')
         disp(['for sess ' num2str(i) ' of ' num2str(numel(d))])
-        tic
     end
     % get training data
     switch dataType
@@ -278,6 +292,11 @@ for i = 1:numel(d)
     % same session testing (not crossvalidated)
     [yHat_tr{subjInd,trainInd},~] = SVMtest(y,x,svmModel{subjInd,trainInd},nrmlz{subjInd,trainInd});
 end
+
+% line_num=dbstack; % get this line number
+% disp(['line ' num2str(line_num(1).line)]) % displays the line number
+% toc
+
 % Testing
 for i = 1:numel(d)
     if verbose
@@ -329,7 +348,11 @@ for i = 1:numel(d)
     [yHat{subjInd,testInd},~] = SVMtest(y,x,svmModel{subjInd,trainInd});
 end
 
-%% Compute performance metrics
+% line_num=dbstack; % get this line number
+% disp(['line ' num2str(line_num(1).line)]) % displays the line number
+% toc
+
+%% Compute performance metrics (SLOW 10sec/16sec)
 % Between-sess
 resBS_sess = repmat(perfMetric,[size(d,1) size(d,2)]);
 for i = 1:numel(d)
@@ -360,7 +383,11 @@ for i = 1:numel(d)
 end
 resWS_sess = orderfields(resWS_sess,[1 2 3 4 5 6 7 8 9 15 10 11 12 13 14 16 17 18 19]);
 
-%% Summarize group performances
+% line_num=dbstack; % get this line number
+% disp(['line ' num2str(line_num(1).line)]) % displays the line number
+% toc
+
+%% Summarize group performances (SLOW 4sec/16sec)
 [resBSsess,resBSsubj,resBSgroup] = summarizePerf(resBS_sess);
 [resWSsess,resWSsubj,resWSgroup] = summarizePerf(resWS_sess);
 fieldList = fields(resBSsubj);
@@ -381,6 +408,10 @@ resGroup.acc_wilcoxonP = P;
 [P,~,STATS] = signrank(resSubj.auc,0.5,'tail','right');
 resGroup.auc_wilcoxonSignedrank = STATS.signedrank;
 resGroup.auc_wilcoxonP = P;
+
+% line_num=dbstack; % get this line number
+% disp(['line ' num2str(line_num(1).line)]) % displays the line number
+% toc
 
 %% Print info and output
 if verbose
@@ -410,6 +441,10 @@ resBS.sess.nVoxOrig = nOrig;
 resWS.sess.nVoxOrig = n;
 resBS.sess.nVox = n;
 resWS.sess.nVox = n;
+
+% line_num=dbstack; % get this line number
+% disp(['line ' num2str(line_num(1).line)]) % displays the line number
+% toc
 
 %% Plot between-session vs within-session
 if verbose
@@ -471,6 +506,11 @@ if verbose
     title(textLine);
     uistack(patch([0 0 0.5 0.5 0],[0.5 0 0 0.5 0.5],[1 1 1].*0.7),'bottom')
 end
+
+% line_num=dbstack; % get this line number
+% disp(['line ' num2str(line_num(1).line)]) % displays the line number
+% toc
+
 
 function [ind2,info] = getFeatInd(featMap,featSelInfo,method,ind,dir)
 switch method
