@@ -6,27 +6,13 @@ if ~exist('visibilityFlag','var')
     visibilityFlag = 1;
 end
 
-
-% p.condPair = 'all';
-% condIndPairInd = find(cellfun('length',featSel.featSeq.condPairList)==3);
+%% Initate stuff
 featSelConds_labelList = featSel.featSeq.condPairList;
 for i = 1:length(featSelConds_labelList)
     featSelConds_labelList{i} = num2str(featSelConds_labelList{i});
 end
 ind_nSpecFeatSelCond = [1 2 3];
 ind_nSpecFeatSelCond = squeeze(ismember(featSelConds_labelList,num2str(ind_nSpecFeatSelCond)));
-% switch p.condPair
-%     case 'grat1VSgrat2'
-%         ind_specFeatSelCond = [1 2];
-%     case 'grat1VSplaid'
-%         ind_specFeatSelCond = [1 3];
-%     case 'grat2VSplaid'
-%         ind_specFeatSelCond = [2 3];
-%     otherwise
-%         error('X')
-% end
-% ind_specFeatSelCond = squeeze(ismember(featSelConds_labelList,num2str(ind_specFeatSelCond)));
-
 switch p.dataType
     case 'sin'
         [X,y,~] = getXYK(d,p);
@@ -52,6 +38,11 @@ for featInd = 1:length(featSelList)
     featSelList(featInd) = tmp(1);
 end
 featInd = ismember(featSelList,'act');
+
+%% Get data
+
+%% Plot
+% select most active voxel
 [~,b] = sort(featSel.featSeq.featVal(featSel.indIn,featInd,ind_nSpecFeatSelCond),'descend');
 f0 = plotPolNormExample(X(:,featSel.indIn),y,p,b(1),voxFlag,visibilityFlag);
 % f1 = plotPolNormExampleVox(X,SVMspace,b(1));
