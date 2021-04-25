@@ -20,13 +20,7 @@ if isstruct(p.svmSpace)
 else
     doPerm = 0;
 end
-if isfield(p,'dataType') && ~isempty(p.dataType)
-    dataType = p.dataType;
-else
-    dataType = 'sin';
-end
 f = [];
-
 % tic
 
 %% Define paths
@@ -81,7 +75,7 @@ sessList = fields(d{1});
 load(fullfile(funPath,inDir,'featSel.mat'),'featSel');
 if verbose
     disp('---');
-    disp(['SVM space: ' p.svmSpace '; on ' dataType]);
+    disp(['SVM space: ' p.svmSpace]);
 end
 
 %% Reorganize
@@ -177,47 +171,15 @@ for i = 1:numel(d)
         error('code that')
         disp(['for sess ' num2str(i) ' of ' num2str(numel(d))])
     end
-    
-    switch dataType
-        case 'sin'
-            [X,y,k] = getXYK(d{subjInd,sessInd},p);
-        case 'waveTrialSparse' % do not average and use 1 tPts out of 12 in each stimulus cycle
-            error('code that')
-            [X,y,k,~] = getXYK_wave(d{subjInd,sessInd},SVMspace,'trialSparse');
-        case 'waveTrialSparseCat2' % do not average and use 1 tPts out of 12 in each stimulus cycle, concatenating each tPts in the feature (vox) dimension
-            error('code that')
-            [X,y,k,~] = getXYK_wave(d{subjInd,sessInd},SVMspace,'trialSparseCat2');
-        case 'waveTrialSparseRep' % do not average and use 1 tPts out of 12 in each stimulus cycle, repeating svm training for each time points and averaging only the end model
-            error('code that')
-            [X,y,k,t] = getXYK_wave(d{subjInd,sessInd},SVMspace,'full');
-            tmp = repmat(1:12,[length(t)/12 1])';
-            t = tmp(:);
-        case 'waveRun' % average within runs
-            error('code that')
-            [X,y,k,~] = getXYK_wave(d{subjInd,sessInd},SVMspace,'run');
-        case 'wave' % average within trials
-            error('code that')
-            [X,y,k,~] = getXYK_wave(d{subjInd,sessInd},SVMspace,'trial');
-        case 'waveFull' % do not average and use all tPts
-            error('code that')
-            [X,y,k,~] = getXYK_wave(d{subjInd,sessInd},SVMspace,'full');
-        otherwise
-            error('X')
-    end
+    % get data
+    [X,y,k] = getXYK(d{subjInd,sessInd},p);
     
     % cross-session feature selection
     featSelInd = featSel{subjInd,sessIndCross}.indIn;
-    if strcmp(dataType,'waveTrialSparseCat2')
-        featSelInd = repmat(featSelInd,[1 12]);
-    end
     x = X(:,featSelInd);
     
     % k-fold training
-    if ~strcmp(dataType,'waveTrialSparseRep')
-        [svmModelK{i},nrmlzK{i}] = SVMtrain(y,x,p,k);
-    else
-        [svmModelK{i},nrmlzK{i}] = SVMtrain(y,x,p,k,t);
-    end
+    [svmModelK{i},nrmlzK{i}] = SVMtrain(y,x,p,k);
     % k-fold testing
     [yHatK{i},yHatK_tr{i}] = SVMtest(y,x,svmModelK{i},nrmlzK{i},k);
     yHatK{i} = nanmean(yHatK{i},2);
@@ -251,44 +213,12 @@ for i = 1:numel(d)
         disp(['for sess ' num2str(i) ' of ' num2str(numel(d))])
     end
     % get training data
-    switch dataType
-        case 'sin'
-            [X,y,~] = getXYK(d{subjInd,trainInd},p);
-        case 'waveTrialSparse' % do not average and use 1 tPts out of 12 in each stimulus cycle
-            error('code that')
-            [X,y,~,~] = getXYK_wave(d{subjInd,trainInd},SVMspace,'trialSparse');
-        case 'waveTrialSparseCat2' % do not average and use 1 tPts out of 12 in each stimulus cycle, concatenating each tPts in the feature (vox) dimension
-            error('code that')
-            [X,y,~,~] = getXYK_wave(d{subjInd,trainInd},SVMspace,'trialSparseCat2');
-        case 'waveTrialSparseRep' % do not average and use 1 tPts out of 12 in each stimulus cycle, repeating svm training for each time points and averaging only the end model
-            error('code that')
-            [X,y,~,t] = getXYK_wave(d{subjInd,trainInd},SVMspace,'full');
-            tmp = repmat(1:12,[length(t)/12 1])';
-            t = tmp(:);
-        case 'waveRun' % average within runs
-            error('code that')
-            [X,y,~,~] = getXYK_wave(d{subjInd,trainInd},SVMspace,'run');
-        case 'wave' % average within trials
-            error('code that')
-            [X,y,~,~] = getXYK_wave(d{subjInd,trainInd},SVMspace,'trial');
-        case 'waveFull' % do not average and use all tPts
-            error('code that')
-            [X,y,~,~] = getXYK_wave(d{subjInd,trainInd},SVMspace,'full');
-        otherwise
-            error('X')
-    end
+    [X,y,~] = getXYK(d{subjInd,trainInd},p);
     % same-session feature-selection
     featSelInd = featSel{subjInd,trainInd}.indIn;
-    if strcmp(dataType,'waveTrialSparseCat2')
-        featSelInd = repmat(featSelInd,[1 12]);
-    end
     x = X(:,featSelInd);
     % training
-    if ~strcmp(dataType,'waveTrialSparseRep')
-        [svmModel{subjInd,trainInd},nrmlz{subjInd,trainInd}] = SVMtrain(y,x,p);
-    else
-        [svmModel{subjInd,trainInd},nrmlz{subjInd,trainInd}] = SVMtrain(y,x,p,[],t);
-    end
+    [svmModel{subjInd,trainInd},nrmlz{subjInd,trainInd}] = SVMtrain(y,x,p);
     % same session testing (not crossvalidated)
     [yHat_tr{subjInd,trainInd},~] = SVMtest(y,x,svmModel{subjInd,trainInd},nrmlz{subjInd,trainInd});
 end
@@ -312,37 +242,9 @@ for i = 1:numel(d)
             error('X')
     end
     % get test data
-    switch dataType
-        case 'sin'
-            [X,y,~] = getXYK(d{subjInd,testInd},p);
-        case 'waveTrialSparse' % do not average and use 1 tPts out of 12 in each stimulus cycle
-            error('code that')
-            [X,y,~,~] = getXYK_wave(d{subjInd,testInd},SVMspace,'trialSparse');
-        case 'waveTrialSparseCat2' % do not average and use 1 tPts out of 12 in each stimulus cycle
-            error('code that')
-            [X,y,~,~] = getXYK_wave(d{subjInd,testInd},SVMspace,'trialSparseCat2');
-        case 'waveTrialSparseRep' % do not average and use 1 tPts out of 12 in each stimulus cycle, repeating svm training for each time points and averaging only the end model
-            error('code that')
-            [X,y,~,t] = getXYK_wave(d{subjInd,testInd},SVMspace,'full');
-            tmp = repmat(1:12,[length(t)/12 1])';
-            t = tmp(:);
-        case 'waveRun' % average within runs
-            error('code that')
-            [X,y,~,~] = getXYK_wave(d{subjInd,testInd},SVMspace,'run');
-        case 'wave' % average within trials
-            error('code that')
-            [X,y,~,~] = getXYK_wave(d{subjInd,testInd},SVMspace,'trial');
-        case 'waveFull' % do not average and use all tPts
-            error('code that')
-            [X,y,~,~] = getXYK_wave(d{subjInd,testInd},SVMspace,'full');
-        otherwise
-            error('X')
-    end
+    [X,y,~] = getXYK(d{subjInd,testInd},p);
     % cross-session feature selection
     featSelInd = featSel{subjInd,trainInd}.indIn;
-    if strcmp(dataType,'waveTrialSparseCat2')
-        featSelInd = repmat(featSelInd,[1 12]);
-    end
     x = X(:,featSelInd);
     % cross-session SVM testing
     [yHat{subjInd,testInd},~] = SVMtest(y,x,svmModel{subjInd,trainInd});
@@ -470,11 +372,7 @@ if verbose
     xlabel('between-session')
     ylabel('within-session')
     textLine = {};
-    if p.figOption.verbose>1
-        textLine = [textLine {[p.svmSpace '; ' p.condPair '; ' dataType]}];
-    else
-        textLine = [textLine {[p.svmSpace '; ' p.condPair]}];
-    end
+    textLine = [textLine {[p.svmSpace '; ' p.condPair]}];
     if p.figOption.verbose>1
         textLine = [textLine {strjoin(featSel{figOption.subj,1}.featSeq.featSelList,'; ')}];
     end
