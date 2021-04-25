@@ -10,7 +10,7 @@ end
 figOption_verbose = p.figOption.verbose;
 
 condPairList = {'grat1VSgrat2' 'grat1VSplaid' 'grat2VSplaid'};
-respFeatList = {'cart' 'cartNoAmp' 'cartNoDelay'};
+respFeatList = {'cartNoDelay' 'cart' 'cartNoAmp'};
 resBS = cell(length(condPairList),length(respFeatList));
 resWS = cell(length(condPairList),length(respFeatList));
 f = cell(length(condPairList),length(respFeatList));

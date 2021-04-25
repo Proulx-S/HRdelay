@@ -255,7 +255,7 @@ end
 % disp(['line ' num2str(line_num(1).line)]) % displays the line number
 % toc
 
-%% Extract channel timeseries
+%% Extract channel HR
 % Testing
 for i = 1:numel(d)
     if verbose
@@ -287,8 +287,10 @@ for i = 1:numel(d)
     end
 end
 
+
 %% Compute performance metrics (SLOW 10sec/16sec)
 % Between-sess
+disp('BS perfMetric: computing')
 resBS_sess = repmat(perfMetric,[size(d,1) size(d,2)]);
 for i = 1:numel(d)
     resBS_sess(i) = perfMetric(Y{i},yHat{i},K{i});
@@ -296,14 +298,34 @@ end
 acc_fdr = mafdr([resBS_sess.acc_p],'BHFDR',true);
 for i = 1:numel(d)
     resBS_sess(i).acc_fdr = acc_fdr(i);
-    resBS_sess(i).nVoxOrig = size(d{i}.sin,2);
+    resBS_sess(i).nVoxOrig = size(d{i}.sin,1);
     resBS_sess(i).nVox = nnz(featSel{i}.indIn);
     resBS_sess(i).svmSpace = p.svmSpace;
     resBS_sess(i).condPair = p.condPair;
 end
-resBS_sess = orderfields(resBS_sess,[1 2 3 4 5 6 7 8 9 15 10 11 12 13 14 16 17 18 19]);
+% resBS_sess = orderfields(resBS_sess,[1 2 3 4 5 6 7 8 9 15 10 11 12 13 14 16 17 18 19]);
+resBS_sess = orderfields(resBS_sess,[1 2 3 4 5 6 7 8 9 17 10 11 12 13 14 15 16 18 19 20 21]);
+disp('BS perfMetric: done')
+
+% Between-sess Channel HR
+resBShr_sess = repmat(perfMetric,[size(d,1) size(d,2)]);
+disp('BShr perfMetric: computing')
+for i = 1:numel(d)
+    disp(['sess' num2str(i) '/' num2str(numel(d))])
+    resBShr_sess(i) = perfMetric(Y{i},yHatHr{i},K{i});
+end
+for i = 1:numel(d)
+    resBShr_sess(i).acc_fdr = [];
+    resBShr_sess(i).nVoxOrig = size(d{i}.sin,1);
+    resBShr_sess(i).nVox = nnz(featSel{i}.indIn);
+    resBShr_sess(i).svmSpace = p.svmSpace;
+    resBShr_sess(i).condPair = p.condPair;
+end
+resBShr_sess = orderfields(resBShr_sess,[1 2 3 4 5 6 7 8 9 17 10 11 12 13 14 15 16 18 19 20 21]);
+disp('BShr perfMetric: done')
 
 % Within-sess
+disp('WS perfMetric: computing')
 resWS_sess = repmat(perfMetric,[size(d,1) size(d,2)]);
 for i = 1:numel(d)
     resWS_sess(i) = perfMetric(Y{i},yHatK{i},K{i});
@@ -311,38 +333,46 @@ end
 acc_fdr = mafdr([resWS_sess.acc_p],'BHFDR',true);
 for i = 1:numel(d)
     resWS_sess(i).acc_fdr = acc_fdr(i);
-    resWS_sess(i).nVoxOrig = size(d{i}.sin,2);
+    resWS_sess(i).nVoxOrig = size(d{i}.sin,1);
     resWS_sess(i).nVox = nnz(featSel{i}.indIn);
     resWS_sess(i).svmSpace = p.svmSpace;
     resWS_sess(i).condPair = p.condPair;
 end
-resWS_sess = orderfields(resWS_sess,[1 2 3 4 5 6 7 8 9 15 10 11 12 13 14 16 17 18 19]);
+resWS_sess = orderfields(resWS_sess,[1 2 3 4 5 6 7 8 9 17 10 11 12 13 14 15 16 18 19 20 21]);
+disp('WS perfMetric: done')
+
 
 % line_num=dbstack; % get this line number
 % disp(['line ' num2str(line_num(1).line)]) % displays the line number
 % toc
 
 %% Summarize group performances (SLOW 4sec/16sec)
+disp('perfMetric summary: computing')
 [resBSsess,resBSsubj,resBSgroup] = summarizePerf(resBS_sess);
+[resBShrSess,resBShrSubj,resBShrGroup] = summarizePerf(resBShr_sess);
 [resWSsess,resWSsubj,resWSgroup] = summarizePerf(resWS_sess);
-fieldList = fields(resBSsubj);
-for i = 1:length(fieldList)
-    if isnumeric(resBSsubj.(fieldList{i}))
-        resSubj.(fieldList{i}) = mean(cat(3,resWSsubj.(fieldList{i}),resBSsubj.(fieldList{i})),3);
-    end
-end
-[~,P,~,STATS] = ttest(resSubj.acc,0.5,'tail','right');
-resGroup.acc_T = STATS.tstat;
-resGroup.acc_P = P;
-[~,P,~,STATS] = ttest(resSubj.auc,0.5,'tail','right');
-resGroup.auc_T = STATS.tstat;
-resGroup.auc_P = P;
-[P,~,STATS] = signrank(resSubj.acc,0.5,'tail','right');
-resGroup.acc_wilcoxonSignedrank = STATS.signedrank;
-resGroup.acc_wilcoxonP = P;
-[P,~,STATS] = signrank(resSubj.auc,0.5,'tail','right');
-resGroup.auc_wilcoxonSignedrank = STATS.signedrank;
-resGroup.auc_wilcoxonP = P;
+disp('perfMetric summary: computing')
+
+% % Combine WS and BS
+% fieldList = fields(resBSsubj);
+% for i = 1:length(fieldList)
+%     if isnumeric(resBSsubj.(fieldList{i}))
+%         resSubj.(fieldList{i}) = mean(cat(3,resWSsubj.(fieldList{i}),resBSsubj.(fieldList{i})),3);
+%     end
+% end
+% [~,P,~,STATS] = ttest(resSubj.acc,0.5,'tail','right');
+% resGroup.acc_T = STATS.tstat;
+% resGroup.acc_P = P;
+% [~,P,~,STATS] = ttest(resSubj.auc,0.5,'tail','right');
+% resGroup.auc_T = STATS.tstat;
+% resGroup.auc_P = P;
+% [P,~,STATS] = signrank(resSubj.acc,0.5,'tail','right');
+% resGroup.acc_wilcoxonSignedrank = STATS.signedrank;
+% resGroup.acc_wilcoxonP = P;
+% [P,~,STATS] = signrank(resSubj.auc,0.5,'tail','right');
+% resGroup.auc_wilcoxonSignedrank = STATS.signedrank;
+% resGroup.auc_wilcoxonP = P;
+
 
 % line_num=dbstack; % get this line number
 % disp(['line ' num2str(line_num(1).line)]) % displays the line number
@@ -354,28 +384,31 @@ if verbose
     disp('*Within-session*')
     printRes2(resWSgroup)
     disp(' ')
-    disp('*Within+Between*')
-    printRes2(resGroup)
-    disp(' ')
+%     disp('*Within+Between*')
+%     printRes2(resGroup)
+%     disp(' ')
     disp('*Between-session*')
     printRes2(resBSgroup)
     disp('-----------------')
 end
+
 resBS.sess = resBSsess;
 resBS.sess.subjList = subjList;
 resBS.subj = resBSsubj;
 resBS.subj.subjList = subjList;
 resBS.group = resBSgroup;
+
+resBShr.sess = resBShrSess;
+resBShr.sess.subjList = subjList;
+resBShr.subj = resBShrSubj;
+resBShr.subj.subjList = subjList;
+resBShr.group = resBShrGroup;
+
 resWS.sess = resWSsess;
 resWS.sess.subjList = subjList;
 resWS.subj = resWSsubj;
 resWS.subj.subjList = subjList;
 resWS.group = resWSgroup;
-
-resBS.sess.nVoxOrig = nOrig;
-resWS.sess.nVoxOrig = n;
-resBS.sess.nVox = n;
-resWS.sess.nVox = n;
 
 % line_num=dbstack; % get this line number
 % disp(['line ' num2str(line_num(1).line)]) % displays the line number
@@ -383,6 +416,7 @@ resWS.sess.nVox = n;
 
 %% Plot between-session vs within-session
 if verbose
+    % Decoding
     sz = size(resWS.sess.acc);
     resBS_tmp = resBS;
     fieldList1 = fields(resBS_tmp);
@@ -402,8 +436,9 @@ if verbose
         f = [f figure('WindowStyle','docked','visible','off')];
     end
     compareRes(resBS,resWS)
-    xlabel('between-session')
-    ylabel('within-session')
+    ax = gca;
+    ax.XLabel.String = {'between-session' ax.XLabel.String};
+    ax.YLabel.String = {'within-session' ax.YLabel.String};
     textLine = {};
     textLine = [textLine {[p.svmSpace '; ' p.condPair]}];
     if p.figOption.verbose>1
@@ -436,7 +471,87 @@ if verbose
     textLine = strjoin(textLine,newline);
     title(textLine);
     uistack(patch([0 0 0.5 0.5 0],[0.5 0 0 0.5 0.5],[1 1 1].*0.7),'bottom')
+    
+    
+    
+    % Channel responses
+    figure('WindowStyle','docked');
+    y = squeeze(resBShr.subj.distT)';
+    y = y - mean(y,1);
+    plot(y); hold on
+    plot(mean(y,2),'k','linewidth',5);
+    
+    figure('WindowStyle','docked');
+    metric = 'auc';
+    y = permute(resBShr.sess.(metric),[3 1 2]);
+    y = y(:,:,1);
+    y = y - mean(y,1);
+    plot(y); hold on
+    plot(mean(y,2),'k','linewidth',5);
+    
+    
+    condList = unique(resBShr.sess.y{1});
+    yHat_mean = nan([size(resBShr.sess.y,1) 12 length(condList) size(resBShr.sess.y,2)]);
+    for subjInd = 1:size(resBShr.sess.y,1)
+        for sessInd = 1:size(resBShr.sess.y,2)
+            y    = resBShr.sess.y{subjInd,sessInd};
+            yHat = resBShr.sess.yHat{subjInd,sessInd};
+            % remove baseline
+            yHat = yHat - mean(yHat,2);
+            yHat = cat(3,yHat(y==1,:),yHat(y==2,:)); % rep x t x cond
+            % average rep
+            yHat_mean(subjInd,:,:,sessInd) = mean(yHat,1);
+        end
+    end
+    % average sess
+    yHat = mean(yHat_mean,4);
+    
+    %
+    figure('WindowStyle','docked');
+    condInd = 1;
+    plot(yHat(:,:,condInd)'); hold on
+    ax = gca;
+    ax.ColorOrderIndex = 1;
+    condInd = 2;
+    plot(yHat(:,:,condInd)',':','linewidth',2); hold on
+    
+    %
+    figure('WindowStyle','docked');
+    Y = -diff(yHat,[],3)';
+    Yav = mean(Y,2);
+    Yer = std(Y,[],2)./sqrt(size(Y,2));
+    errorbar(Yav,Yer)
+    
+    plot(diff(yHat,[],3)')
+    
+    
+    %
+    figure('WindowStyle','docked');
+    condInd = 1;
+    plot(yHat(:,:,condInd)','r'); hold on
+    condInd = 2;
+    plot(yHat(:,:,condInd)','k')
+    
+    figure('WindowStyle','docked');
+    Y = -diff(yHat,[],3)';
+%     plot(Y); hold on
+    Ymean = mean(Y,2);
+    Ysem = std(Y,[],2)./sqrt(size(Y,2));
+%     plot(mean(Y,2),'k','linewidth',5); hold on
+    errorbar(Ymean,Ysem,'k','linewidth',5); hold on
+    
+    
+    
+    
+    condInd = 1;
+    plot(yHat(:,:,condInd)','r'); hold on
+    condInd = 2;
+    plot(yHat(:,:,condInd)','k')
+    
+    
 end
+
+
 
 % line_num=dbstack; % get this line number
 % disp(['line ' num2str(line_num(1).line)]) % displays the line number
@@ -1031,158 +1146,6 @@ suptitle('voxels (repetitions averaged)')
 % suptitle('repetitions (most active voxel)')
 
 
-function res = perfMetric(y,yHat,k)
-warning('off','stats:perfcurve:SubSampleWithMissingClasses')
-averageWR = 1;
-if ~exist('y','var')
-    res = struct(...
-        'y',[],...
-        'yHat',[],...
-        'nObs',[],...
-        'hit',[],...
-        'acc',[],...
-        'acc_CI5',[],...
-        'acc_CI95',[],...
-        'acc_thresh',[],...
-        'acc_p',[],...);
-        'auc',[],...
-        'auc_CI5',[],...
-        'auc_CI95',[],...
-        'distT',[],...
-        'distT_p',[]);
-    return
-end
-
-if averageWR
-    nRun = length(unique(k))*length(unique(y));
-    y = mean(reshape(y,[length(y)/nRun nRun]),1)';
-    yHat = mean(reshape(yHat,[length(yHat)/nRun nRun]),1)';
-end
-
-res.y = {y};
-res.yHat = {yHat};
-res.nObs = length(y);
-% acc
-res.hit = sum((yHat<0)+1==y);
-res.acc = res.hit./res.nObs;
-[~,pci] = binofit(res.hit,res.nObs,0.1);
-res.acc_CI5 = pci(1);
-res.acc_CI95 = pci(2);
-[~,pci] = binofit(res.nObs/2,res.nObs,0.1);
-res.acc_thresh = pci(2);
-res.acc_p = binocdf(res.hit,res.nObs,0.5,'upper');
-% auc
-[~,~,~,auc] = perfcurve(y,yHat,1,'NBOOT',2^10);
-res.auc = auc(1);
-res.auc_CI5 = auc(2);
-res.auc_CI95 = auc(3);
-% distT
-[~,P,~,STATS] = ttest(yHat(y==1),yHat(y==2));
-res.distT = STATS.tstat;
-res.distT_p = P;
-
-
-function [resSess,resSubj,resGroup] = summarizePerf(res_sess)
-allField = fields(res_sess);
-for i = 1:length(allField)
-    if isnumeric(res_sess(1).(allField{i}))
-        resSess.(allField{i}) = nan(size(res_sess));
-        resSess.(allField{i})(:) = [res_sess.(allField{i})];
-    elseif iscell(res_sess(1).(allField{i}))
-        resSess.(allField{i}) = cell(size(res_sess));
-        resSess.(allField{i})(:) = [res_sess.(allField{i})];
-    elseif ischar(res_sess(1).(allField{i}))
-        resSess.(allField{i}) = cell(size(res_sess));
-        resSess.(allField{i})(:) = {res_sess.(allField{i})};
-    elseif isstruct(res_sess(1).(allField{i}))
-        resSess.(allField{i}) = cell(size(res_sess));
-        resSess.(allField{i})(:) = {res_sess.(allField{i})};
-    else
-        error('code that')
-    end
-end
-resSess.info = 'subj x sess';
-resSess.distT_fdr = resSess.distT_p;
-resSess.distT_fdr(:) = mafdr(resSess.distT_p(:),'BHFDR',true);
-resSess = orderfields(resSess,[1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 21 16 17 18 19 20]);
-
-
-resSubj.y = cell(size(resSess.y,1),1);
-resSubj.yHat = cell(size(resSess.yHat,1),1);
-for subjInd = 1:size(resSess.y,1)
-    resSubj.y{subjInd} = cell2mat(resSess.y(subjInd,:)');
-    resSubj.yHat{subjInd} = cell2mat(resSess.yHat(subjInd,:)');
-end
-resSubj.nObs = sum(resSess.nObs,2);
-resSubj.hit = sum(resSess.hit,2);
-resSubj.acc = resSubj.hit./resSubj.nObs;
-[~,pci] = binofit(resSubj.hit,resSubj.nObs,0.1);
-resSubj.acc_CI5 = pci(:,1);
-resSubj.acc_CI95 = pci(:,2);
-[~,pci] = binofit(resSubj.nObs/2,resSubj.nObs,0.1);
-resSubj.acc_thresh = pci(:,2);
-resSubj.acc_p = binocdf(resSubj.hit,resSubj.nObs,0.5,'upper');
-resSubj.acc_fdr = mafdr(resSubj.acc_p,'BHFDR',true);
-resSubj.auc = nan(size(resSubj.y));
-resSubj.distT = nan(size(resSubj.y));
-resSubj.distT_p = nan(size(resSubj.y));
-for subjInd = 1:size(resSubj.y,1)
-    [~,~,~,auc] = perfcurve(resSubj.y{subjInd},resSubj.yHat{subjInd},1);
-    resSubj.auc(subjInd) = auc(1);
-    resSubj.auc_CI5(subjInd) = nan;
-    resSubj.auc_CI95(subjInd) = nan;
-    %     [~,~,~,auc] = perfcurve(resSubj.y{subjInd},resSubj.yHat{subjInd},1,'NBOOT',2^10);
-    %     resSubj.auc(subjInd) = auc(1);
-    %     resSubj.auc_CI5(subjInd) = auc(2);
-    %     resSubj.auc_CI95(subjInd) = auc(3);
-    
-    [~,P,~,STATS] = ttest(resSubj.yHat{subjInd}(resSubj.y{subjInd}==1),resSubj.yHat{subjInd}(resSubj.y{subjInd}==2));
-    resSubj.distT(subjInd) = STATS.tstat;
-    resSubj.distT_p(subjInd) = P;
-end
-resSubj.nVoxOrig = round(mean(resSess.nVoxOrig,2));
-resSubj.nVox = round(mean(resSess.nVox,2));
-resSubj.svmSpace = resSess.svmSpace(:,1);
-
-resGroup.y = cell2mat(resSubj.y);
-resGroup.yHat = cell2mat(resSubj.yHat);
-resGroup.nObs = sum(resSubj.nObs,1);
-resGroup.hit = sum(resSubj.hit,1);
-
-resGroup.acc = resGroup.hit./resGroup.nObs;
-[~,pci] = binofit(resGroup.hit,resGroup.nObs,0.1);
-resGroup.acc_CI5 = pci(:,1);
-resGroup.acc_CI95 = pci(:,2);
-[~,pci] = binofit(resGroup.nObs/2,resGroup.nObs,0.1);
-resGroup.acc_thresh = pci(:,2);
-resGroup.acc_p = binocdf(resGroup.hit,resGroup.nObs,0.5,'upper');
-[~,P,~,STATS] = ttest(resSubj.acc,0.5,'tail','right');
-resGroup.acc_T = STATS.tstat;
-resGroup.acc_P = P;
-[P,~,STATS] = signrank(resSubj.acc,0.5,'tail','right');
-resGroup.acc_wilcoxonSignedrank = STATS.signedrank;
-resGroup.acc_wilcoxonP = P;
-
-[~,~,~,auc] = perfcurve(resGroup.y,resGroup.yHat,1,'NBOOT',2^11);
-resGroup.auc = auc(1);
-resGroup.auc_CI5 = auc(2);
-resGroup.auc_CI95 = auc(3);
-[~,P,~,STATS] = ttest(resSubj.auc,0.5,'tail','right');
-resGroup.auc_T = STATS.tstat;
-resGroup.auc_P = P;
-[P,~,STATS] = signrank(resSubj.auc,0.5,'tail','right');
-resGroup.auc_wilcoxonSignedrank = STATS.signedrank;
-resGroup.auc_wilcoxonP = P;
-
-[~,P,~,STATS] = ttest(resGroup.yHat(resGroup.y==1),resGroup.yHat(resGroup.y==2),'tail','right');
-resGroup.distT = STATS.tstat;
-resGroup.distT_p = P;
-[~,P,~,STATS] = ttest(resSubj.distT,0,'tail','right');
-resGroup.distT_T = STATS.tstat;
-resGroup.distT_P = P;
-resGroup.nVoxOrig = round(mean(resSubj.nVoxOrig,1));
-resGroup.nVox = round(mean(resSubj.nVox,1));
-resGroup.svmSpace = resSubj.svmSpace{1};
 
 function printRes(resSess,resSubj,resGroup)
 disp(['Session results:'])

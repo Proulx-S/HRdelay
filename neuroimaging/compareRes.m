@@ -43,3 +43,5 @@ switch metric
         plot(xlim,[1 1].*0,'-k')
         plot([1 1].*0,ylim,'-k')
 end
+xlabel(metric);
+ylabel(metric);
