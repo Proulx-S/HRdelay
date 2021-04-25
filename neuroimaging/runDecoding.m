@@ -202,6 +202,7 @@ svmModel = cell(size(d));
 nrmlz = cell(size(d));
 yHat_tr = cell(size(d));
 yHat = cell(size(d));
+yHatHr = cell(size(d));
 % Training
 for i = 1:numel(d)
     if verbose
@@ -247,12 +248,44 @@ for i = 1:numel(d)
     featSelInd = featSel{subjInd,trainInd}.indIn;
     x = X(:,featSelInd);
     % cross-session SVM testing
-    [yHat{subjInd,testInd},~] = SVMtest(y,x,svmModel{subjInd,trainInd});
+    [yHat{subjInd,testInd},~] = SVMtest(y,x,svmModel{subjInd,trainInd},[],[]);
 end
 
 % line_num=dbstack; % get this line number
 % disp(['line ' num2str(line_num(1).line)]) % displays the line number
 % toc
+
+%% Extract channel timeseries
+% Testing
+for i = 1:numel(d)
+    if verbose
+        disp(['-channel timeseries for sess ' num2str(i) '/' num2str(numel(d))])
+    end
+    [subjInd,testInd] = ind2sub(size(d),i);
+    switch testInd
+        case 1
+            trainInd = 2;
+        case 2
+            trainInd = 1;
+        otherwise
+            error('X')
+    end
+    % get test data
+    hrFlag = true;
+    [x,y,~] = getXYK(d{subjInd,testInd},p,hrFlag);
+    % cross-session feature selection
+    featSelInd = featSel{subjInd,trainInd}.indIn;
+    x = x(:,featSelInd,:);
+    % model weigths absolute value
+    curSvmModel = svmModel{subjInd,trainInd};
+    if length(curSvmModel.w)==2*size(x,2)
+        curSvmModel.w = abs(complex(curSvmModel.w(1:end/2),curSvmModel.w(end/2+1:end)));
+    end
+    for tInd = 1:size(x,3)
+        % cross-session SVM testing
+        [yHatHr{subjInd,testInd}(:,:,tInd),~] = SVMtest(y,x(:,:,tInd),curSvmModel,0,[]);
+    end
+end
 
 %% Compute performance metrics (SLOW 10sec/16sec)
 % Between-sess
@@ -568,7 +601,6 @@ yHatTr = nan([size(Y,1) length(kList)]);
 for kInd = 1:length(kList)
     x = X;
     SVMspace = svmModel(kInd).svmSpace;
-    norm = svmModel(kInd).norm;
     % Split train and test
     if kList(kInd)==0
         te = true(size(Y));
@@ -580,9 +612,14 @@ for kInd = 1:length(kList)
     if ~exist('nrmlz','var') || isempty(nrmlz)
         [x,~] = polarSpaceNormalization(x,svmModel(kInd).svmSpace);
         [x,~] = cartSpaceNormalization(x,svmModel(kInd).svmSpace);
-    else
+    elseif isstruct(nrmlz)
         [x,~] = polarSpaceNormalization(x,nrmlz(kInd),te);
         [x,~] = cartSpaceNormalization(x,nrmlz(kInd),te);
+    elseif nrmlz==0
+    elseif nrmlz==1
+        error('nope')
+    else
+        error('don''t know what this is')
     end
     [x,~,~] = complex2svm(x,SVMspace);
     
@@ -593,97 +630,25 @@ for kInd = 1:length(kList)
 end
 
 
-
-% function [yTe,d,yHatTe] = xValSVM(x,y,k,SVMspace)
-% X = x;
-% kList = unique(k);
-% % yTr = nan(length(y),length(kList));
-% yTe = nan(length(y),1);
-% % yHatTr = nan(length(y),length(kList));
-% yHatTe = nan(length(y),1);
-% d = nan(length(kList),1);
-% for kInd = 1:length(kList)
-%     % Split train and test
-%     te = k==kList(kInd);
-%
-%     % Polar space normalization
-%     x = polarSpaceNormalization(X,SVMspace,te);
-%
-% %     % Within-session feature selection
-% %     % get feature selection stats
-% %     featStat = getFeatStat_ws(x,y,te,SVMspace);
-% %
-% %     % apply feature selection
-% %     switch SVMspace
-% %         case {'cart_HT' 'cartNoAmp_HT' 'cartNoDelay_HT'...
-% %                 'cartReal_T'...
-% %                 'polMag_T'}
-% %             featStat = abs(featStat);
-% %             x = x(:,featStat>prctile(featStat,10));
-% %         case {'cart' 'cartNoAmp' 'cartNoDelay'...
-% %                 'cart_HTbSess' 'cartNoAmp_HTbSess' 'cartNoDelay_HTbSess'...
-% %                 'polMag'}
-% %         otherwise
-% %             error('X')
-% %     end
-%
-%     % Cocktail bank normalization
-%     switch SVMspace
-%         case {'hr' 'hrNoAmp'}
-%             x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
-%         case {'cart' 'cart_HT' 'cart_HTbSess'...
-%                 'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'}
-%             x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
-%             x = cat(2,real(x),imag(x));
-%         case {'cartReal' 'cartReal_T'}
-%             x = real(x);
-%             x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
-%         case 'cartImag'
-%             x = imag(x);
-%             x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
-%         case 'pol'
-%             x = cat(2,angle(x),abs(x));
-%             x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
-%         case {'polMag' 'polMag_T' 'cartNoDelay' 'cartNoDelay_HT'  'cartNoDelay_HTbSess'}
-%             x = abs(x);
-%             x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
-%         case 'polDelay'
-%             x = angle(x);
-%             x = x./std(x(~te,:),[],1) - mean(x(~te,:),1);
-%         otherwise
-%             error('x')
-%     end
-%
-%     % Train SVM
-%     model = svmtrain(y(~te,:),x(~te,:),'-t 0 -q');
-% %     w = model.sv_coef'*model.SVs;
-% %     b = model.rho;
-% %     yHat = cat(2,real(x(~te,:)),imag(x(~te,:)))*w';
-%
-%     % Test SVM
-% %     [yTr(~te,kInd), ~, yHatTr(~te,kInd)] = svmpredict(y(~te,:),x(~te,:),model,'-q');
-%     [yTe(te,1), ~, yHatTe(te,1)] = svmpredict(y(te,:),x(te,:),model,'-q');
-%     d(kInd) = size(x,2);
-% end
-
-
-
-
-
 function [x,nVox,nDim] = complex2svm(x,SVMspace)
 % Output SVM ready data
-nVox = size(x,2);
-switch SVMspace
-    case {'cart' 'cartNoAmp' 'cartNoAmp_affineRot' 'cartNoAmp_affineRot_affineCart' 'cart_roi' 'cart_affineRot'}
-        x = cat(2,real(x),imag(x));
-    case {'cartNoDelay' 'cartReal' 'cartReal_affineRot'}
-        x = real(x);
-    case {'cartNoAmpImag' 'cartImag' 'cartImag_affineRot' 'cartNoAmpImag_affineRot'}
-        x = imag(x);
-    otherwise
-        error('X')
+if ~isreal(x)
+    nVox = size(x,2);
+    switch SVMspace
+        case {'cart' 'cartNoAmp' 'cartNoAmp_affineRot' 'cartNoAmp_affineRot_affineCart' 'cart_roi' 'cart_affineRot'}
+            x = cat(2,real(x),imag(x));
+        case {'cartNoDelay' 'cartReal' 'cartReal_affineRot'}
+            x = real(x);
+        case {'cartNoAmpImag' 'cartImag' 'cartImag_affineRot' 'cartNoAmpImag_affineRot'}
+            x = imag(x);
+        otherwise
+            error('X')
+    end
+    nDim = size(x,2);
+else
+    nVox = size(x,2);
+    nDim = size(x,2);
 end
-nDim = size(x,2);
 
 
 
