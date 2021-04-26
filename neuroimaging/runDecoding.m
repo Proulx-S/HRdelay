@@ -1,4 +1,4 @@
-function [resBS,resWS,f] = runDecoding(p,verbose,nPerm,figOption)
+function [resBS,resBShr,resWS,f] = runDecoding(p,verbose,nPerm,figOption)
 if ~exist('verbose','var')
     verbose = 1;
 end
@@ -203,6 +203,7 @@ nrmlz = cell(size(d));
 yHat_tr = cell(size(d));
 yHat = cell(size(d));
 yHatHr = cell(size(d));
+yHatHr_nSpec = cell(size(d));
 % Training
 for i = 1:numel(d)
     if verbose
@@ -276,14 +277,21 @@ for i = 1:numel(d)
     % cross-session feature selection
     featSelInd = featSel{subjInd,trainInd}.indIn;
     x = x(:,featSelInd,:);
-    % model weigths absolute value
+    % transform w
     curSvmModel = svmModel{subjInd,trainInd};
-    if length(curSvmModel.w)==2*size(x,2)
-        curSvmModel.w = abs(complex(curSvmModel.w(1:end/2),curSvmModel.w(end/2+1:end)));
-    end
+%     if length(curSvmModel.w)==2*size(x,2)
+%         curSvmModel.w = abs(complex(curSvmModel.w(1:end/2),curSvmModel.w(end/2+1:end)));
+%     end
+    % get channel response
     for tInd = 1:size(x,3)
         % cross-session SVM testing
         [yHatHr{subjInd,testInd}(:,:,tInd),~] = SVMtest(y,x(:,:,tInd),curSvmModel,0,[]);
+    end
+    % get non-specific channel response
+    curSvmModel.w = abs(curSvmModel.w);
+    for tInd = 1:size(x,3)
+        % cross-session SVM testing
+        [yHatHr_nSpec{subjInd,testInd}(:,:,tInd),~] = SVMtest(y,x(:,:,tInd),curSvmModel,0,[]);
     end
 end
 
@@ -315,13 +323,16 @@ for i = 1:numel(d)
     resBShr_sess(i) = perfMetric(Y{i},yHatHr{i},K{i});
 end
 for i = 1:numel(d)
+    resBShr_sess(i).yHat_nSpec = {permute(yHatHr_nSpec{i},[1 3 2])};
+end
+for i = 1:numel(d)
     resBShr_sess(i).acc_fdr = [];
     resBShr_sess(i).nVoxOrig = size(d{i}.sin,1);
     resBShr_sess(i).nVox = nnz(featSel{i}.indIn);
     resBShr_sess(i).svmSpace = p.svmSpace;
     resBShr_sess(i).condPair = p.condPair;
 end
-resBShr_sess = orderfields(resBShr_sess,[1 2 3 4 5 6 7 8 9 17 10 11 12 13 14 15 16 18 19 20 21]);
+% resBShr_sess = orderfields(resBShr_sess,[1 2 3 4 5 6 7 8 9 17 10 11 12 13 14 15 16 18 19 20 21 22]);
 disp('BShr perfMetric: done')
 
 % Within-sess
@@ -471,84 +482,6 @@ if verbose
     textLine = strjoin(textLine,newline);
     title(textLine);
     uistack(patch([0 0 0.5 0.5 0],[0.5 0 0 0.5 0.5],[1 1 1].*0.7),'bottom')
-    
-    
-    
-    % Channel responses
-    figure('WindowStyle','docked');
-    y = squeeze(resBShr.subj.distT)';
-    y = y - mean(y,1);
-    plot(y); hold on
-    plot(mean(y,2),'k','linewidth',5);
-    
-    figure('WindowStyle','docked');
-    metric = 'auc';
-    y = permute(resBShr.sess.(metric),[3 1 2]);
-    y = y(:,:,1);
-    y = y - mean(y,1);
-    plot(y); hold on
-    plot(mean(y,2),'k','linewidth',5);
-    
-    
-    condList = unique(resBShr.sess.y{1});
-    yHat_mean = nan([size(resBShr.sess.y,1) 12 length(condList) size(resBShr.sess.y,2)]);
-    for subjInd = 1:size(resBShr.sess.y,1)
-        for sessInd = 1:size(resBShr.sess.y,2)
-            y    = resBShr.sess.y{subjInd,sessInd};
-            yHat = resBShr.sess.yHat{subjInd,sessInd};
-            % remove baseline
-            yHat = yHat - mean(yHat,2);
-            yHat = cat(3,yHat(y==1,:),yHat(y==2,:)); % rep x t x cond
-            % average rep
-            yHat_mean(subjInd,:,:,sessInd) = mean(yHat,1);
-        end
-    end
-    % average sess
-    yHat = mean(yHat_mean,4);
-    
-    %
-    figure('WindowStyle','docked');
-    condInd = 1;
-    plot(yHat(:,:,condInd)'); hold on
-    ax = gca;
-    ax.ColorOrderIndex = 1;
-    condInd = 2;
-    plot(yHat(:,:,condInd)',':','linewidth',2); hold on
-    
-    %
-    figure('WindowStyle','docked');
-    Y = -diff(yHat,[],3)';
-    Yav = mean(Y,2);
-    Yer = std(Y,[],2)./sqrt(size(Y,2));
-    errorbar(Yav,Yer)
-    
-    plot(diff(yHat,[],3)')
-    
-    
-    %
-    figure('WindowStyle','docked');
-    condInd = 1;
-    plot(yHat(:,:,condInd)','r'); hold on
-    condInd = 2;
-    plot(yHat(:,:,condInd)','k')
-    
-    figure('WindowStyle','docked');
-    Y = -diff(yHat,[],3)';
-%     plot(Y); hold on
-    Ymean = mean(Y,2);
-    Ysem = std(Y,[],2)./sqrt(size(Y,2));
-%     plot(mean(Y,2),'k','linewidth',5); hold on
-    errorbar(Ymean,Ysem,'k','linewidth',5); hold on
-    
-    
-    
-    
-    condInd = 1;
-    plot(yHat(:,:,condInd)','r'); hold on
-    condInd = 2;
-    plot(yHat(:,:,condInd)','k')
-    
-    
 end
 
 

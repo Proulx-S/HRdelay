@@ -10,8 +10,9 @@ end
 figOption_verbose = p.figOption.verbose;
 
 condPairList = {'grat1VSgrat2' 'grat1VSplaid' 'grat2VSplaid'};
-respFeatList = {'cartNoDelay' 'cart' 'cartNoAmp'};
+respFeatList = {'cartNoDelay' 'cartNoAmp' 'cart'};
 resBS = cell(length(condPairList),length(respFeatList));
+resBShr = cell(length(condPairList),length(respFeatList));
 resWS = cell(length(condPairList),length(respFeatList));
 f = cell(length(condPairList),length(respFeatList));
 for respFeatInd = 1:length(respFeatList)
@@ -23,6 +24,8 @@ for respFeatInd = 1:length(respFeatList)
             p.figOption.verbose = figOption_verbose;
         end
         p.condPair = condPairList{condPairInd};
-        [resBS{condPairInd,respFeatInd},resWS{condPairInd,respFeatInd},f{condPairInd,respFeatInd}] = runDecoding(p,verbose);
+        [resBS{condPairInd,respFeatInd},resBShr{condPairInd,respFeatInd},resWS{condPairInd,respFeatInd},f{condPairInd,respFeatInd}] = runDecoding(p,verbose);
+        
+        plotChannelHr(resBShr{condPairInd,respFeatInd})
     end
 end
