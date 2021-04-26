@@ -4,8 +4,7 @@ function plotChannelHr(res)
 
 condList = unique(res.sess.y{1});
 tList = 1:size(res.sess.yHat{1},2);
-yHat.spec  = nan([length(condList) length(condList) length(condList) 1 12 size(res.sess.y,1) size(res.sess.y,2)]);
-yHat.nSpec = nan([length(condList) length(condList) 1                1 12 size(res.sess.y,1) size(res.sess.y,2)]);
+chanHr  = nan([length(condList) length(condList) length(condList) 1 12 size(res.sess.y,1) size(res.sess.y,2)]);
 % chanCondA x chanCondB x stimCond x rep x t x subj x sess
 for subjInd = 1:size(res.sess.y,1)
     for sessInd = 1:size(res.sess.y,2)
@@ -15,32 +14,30 @@ for subjInd = 1:size(res.sess.y,1)
         spec  = res.sess.yHat{subjInd,sessInd};
         nSpec = res.sess.yHat_nSpec{subjInd,sessInd};
         
+        % hr = chanCondA x chanCondB x stimCond x rep x t
         hr = nan(length(condList),length(condList),length(condList),repN,length(tList));
         % add nSpec and spec together into hr
-        for respCondInd = 1:length(condList)
-            for chanCondAind = 1:length(condList)
-                for chanCondBind = 1:length(condList)
-                    if chanCondAind~=chanCondBind
-                        hr(chanCondAind,chanCondBind,respCondInd,:,:) = ...
-                            nSpec(y==condList(respCondInd),:)...
-                            + spec(y==condList(respCondInd),:);
+        for chanCondAind = 1:length(condList)
+            for chanCondBind = 1:length(condList)
+                for stimCondInd = 1:length(condList)
+                    if chanCondAind==chanCondBind
+                        hr(chanCondAind,chanCondBind,stimCondInd,:,:) = nSpec(y==condList(stimCondInd),:);
+                    else
+                        hr(chanCondAind,chanCondBind,stimCondInd,:,:) = spec(y==condList(stimCondInd),:);
                     end
                 end
             end
         end
         % remove baseline
         hr = hr - mean(hr,5);
-        % remove between-subject delays
-        %DOIT HERE
-        % split spec and nSpec back
-        hrSpec = hr - mean(hr,3);
-        hr = mean(hr,3);
+        figure('WindowStyle','docked');
+        
         % average reps and output
-        yHat.spec(:,:,:,:,:,subjInd,sessInd) = mean(hrSpec,4);
-        yHat.nSpec(:,:,:,:,:,subjInd,sessInd) = mean(hr,4);
+        chanHr(:,:,:,:,:,subjInd,sessInd) = mean(hr,4);
     end
 end
-% chanCondA x chanCondB x stimCond x rep x t x subj x sess
+% chanHr = chanCondA x chanCondB x stimCond x rep x t x subj x sess
+chanHr = mean(chanHr,7);
 
 % average sess
 yHat.spec = mean(yHat.spec,7); % chanCondA x chanCondB x stimCond x rep x t x subj
