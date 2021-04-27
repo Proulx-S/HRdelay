@@ -283,6 +283,22 @@ for i = 1:numel(d)
     x = x(:,featSelInd,:);
     % transform w
     curSvmModel = svmModel{subjInd,trainInd};
+    switch p.svmSpace
+        case 'cart'
+            error('Not clear what to do for that')
+        case 'cartNoAmp'
+            % complexify w
+            w = complex(curSvmModel.w(1:end/2),curSvmModel.w(end/2+1:end));
+            % defining the sign of wi according to its angle is what allows
+            % it to oppose the conditions to be compared a wi complex
+            % vector becomes its abolute value of sign determined by tha
+            % angle of the vector
+            curSvmModel.w = sign(angle(w)).*abs(w);
+        case 'cartNoDelay'
+            % nothing to do here, everything is real valued (originating in the abs value of xi reponse vectors)
+        otherwise
+            error('X')
+    end
 %     if length(curSvmModel.w)==2*size(x,2)
 %         curSvmModel.w = abs(complex(curSvmModel.w(1:end/2),curSvmModel.w(end/2+1:end)));
 %     end

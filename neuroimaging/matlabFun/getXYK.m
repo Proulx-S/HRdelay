@@ -38,3 +38,7 @@ x = catcell(1,x);
 y = catcell(1,y);
 k = catcell(1,k);
 info = 'run x vox x t';
+% if hrFlag
+%     % complexify hr
+%     x = complex(x,circshift(x,size(x,3)/4,3)); % size(x,3)/4 or -size(x,3)/4 ?
+% end
