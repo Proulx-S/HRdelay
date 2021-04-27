@@ -1,4 +1,4 @@
-function [resBS,resWS] = runAllDecoding(p,figOption,verbose)
+function [resBS,resBShr,resWS] = runAllDecoding(p,figOption,verbose)
 if ~exist('verbose','var')
     verbose = 1;
 end
@@ -24,8 +24,12 @@ for respFeatInd = 1:length(respFeatList)
             p.figOption.verbose = figOption_verbose;
         end
         p.condPair = condPairList{condPairInd};
-        [resBS{condPairInd,respFeatInd},resBShr{condPairInd,respFeatInd},resWS{condPairInd,respFeatInd},f{condPairInd,respFeatInd}] = runDecoding(p,verbose);
+        try
+            [resBS{condPairInd,respFeatInd},resBShr{condPairInd,respFeatInd},resWS{condPairInd,respFeatInd},f{condPairInd,respFeatInd}] = runDecoding(p,verbose);
+        catch
+            keyboard
+        end
     end
 end
-keyboard
-plotChannelHr(resBShr{condPairInd,respFeatInd})
+
+

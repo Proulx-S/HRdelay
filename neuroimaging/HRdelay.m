@@ -60,7 +60,10 @@ if 0
     processFeatSel(p,verbose)
     visualizeFeatSel(p)
 end
-[resBS,resWS] = runAllDecoding(p,figOption,verbose);
+[resBS,resBShr,resWS] = runAllDecoding(p,figOption,verbose);
+
+plotChannelHr(resBShr{condPairInd,respFeatInd})
+
 groupAna(p,figOption,verbose)
 
 
