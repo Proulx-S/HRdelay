@@ -1,64 +1,83 @@
 function plotChannelHr(res)
 
 
-
+%% Compile Hr
 condList = unique(res.sess.y{1});
-tList = 1:size(res.sess.yHat{1},2);
-chanHr  = nan([length(condList) length(condList) length(condList) 1 12 size(res.sess.y,1) size(res.sess.y,2)]);
-% chanCondA x chanCondB x stimCond x rep x t x subj x sess
+tList = (1:size(res.sess.yHat{1},2))-1;
+t = tList'./12.*2.*pi;
+X = [sin(t) cos(t) ones(size(t))];
+chan.hr     = nan([length(condList) length(condList) length(condList) length(tList) size(res.sess.y,1) size(res.sess.y,2)]);
+chan.sin    = nan([length(condList) length(condList) length(condList) 1             size(res.sess.y,1) size(res.sess.y,2)]);
+chan.base   = nan([length(condList) length(condList) length(condList) 1             size(res.sess.y,1) size(res.sess.y,2)]);
+chan.info1  = 'chanCondA x chanCondB x stimCond x t x subj x sess';
+chan.info2  = 'chanCondA x chanCondB: above diag -> cond-specific; below diag -> non-specific';
 for subjInd = 1:size(res.sess.y,1)
     for sessInd = 1:size(res.sess.y,2)
-        repN = length(res.sess.y{subjInd,sessInd})/length(condList);
-
+        
         y     = res.sess.y{subjInd,sessInd};
         spec  = res.sess.yHat{subjInd,sessInd};
         nSpec = res.sess.yHat_nSpec{subjInd,sessInd};
         
-        % hr = chanCondA x chanCondB x stimCond x rep x t
-        hr = nan(length(condList),length(condList),length(condList),repN,length(tList));
-        % add nSpec and spec together into hr
+        % hr = chanCondA x chanCondB x stimCond x t
         for chanCondAind = 1:length(condList)
             for chanCondBind = 1:length(condList)
                 for stimCondInd = 1:length(condList)
-                    if chanCondAind==chanCondBind
-                        hr(chanCondAind,chanCondBind,stimCondInd,:,:) = nSpec(y==condList(stimCondInd),:);
-                    else
-                        hr(chanCondAind,chanCondBind,stimCondInd,:,:) = spec(y==condList(stimCondInd),:);
+                    if chanCondAind<chanCondBind % upper triangle -> spec
+                        Y = mean(spec(y==condList(stimCondInd),:),1);
+                    elseif chanCondAind>chanCondBind % lower triangle -> nSpec
+                        Y = mean(nSpec(y==condList(stimCondInd),:),1);
+                    end
+                    % fit sin
+                    if chanCondAind~=chanCondBind
+                        beta = Y/X';
+                        % put in complex format
+                        chan.sin(chanCondAind,chanCondBind,stimCondInd,1,subjInd,sessInd) = complex(beta(1),beta(2));
+                        % remove baseline and output
+                        chan.hr(chanCondAind,chanCondBind,stimCondInd,:,subjInd,sessInd) = Y - beta(3);
                     end
                 end
             end
         end
-        % remove baseline
-        hr = hr - mean(hr,5);
-        figure('WindowStyle','docked');
-        
-        % average reps and output
-        chanHr(:,:,:,:,:,subjInd,sessInd) = mean(hr,4);
     end
 end
-% chanHr = chanCondA x chanCondB x stimCond x rep x t x subj x sess
-chanHr = mean(chanHr,7);
+%% Average sessions
+chan.hr   = mean(chan.hr,6);
+chan.sin  = mean(chan.sin,6);
 
-% average sess
-yHat.spec = mean(yHat.spec,7); % chanCondA x chanCondB x stimCond x rep x t x subj
-yHat.nSpec = mean(yHat.nSpec,7); % chanCondA x chanCondB x stimCond x rep x t x subj
-% summarize
-yHat.spec_av = mean(yHat.spec,6);
-yHat.spec_er = std(yHat.spec,[],6)./sqrt(size(yHat.spec,6));
-yHat.nSpec_av = mean(yHat.nSpec,6);
-yHat.nSpec_er = std(yHat.nSpec,[],6)./sqrt(size(yHat.nSpec,6));
+%% Remove subject effect on delay and amplitude
+for chanCondAind = 1:length(condList)
+    for chanCondBind = 1:length(condList)
+        if chanCondAind~=chanCondBind
+            hr = permute(chan.hr(chanCondAind,chanCondBind,:,:,:),[4 5 3 1 2]);
+            if chanCondAind<chanCondBind
+                % when processing cond-specific hr (upper triangle),
+                % normalize according to the non-specific hr (lower triangle)
+                hrSin = permute(chan.sin(chanCondBind,chanCondAind,:,:,:),[4 5 3 1 2]);
+            elseif chanCondAind>chanCondBind
+                % when processing non-specific hr (lower triangle),
+                % normalize according to itself
+                hrSin = permute(chan.sin(chanCondAind,chanCondBind,:,:,:),[4 5 3 1 2]);
+            end
+            hr = normHr(hr,hrSin);
+            chan.hr(chanCondAind,chanCondBind,:,:,:) = permute(hr,[4 5 3 1 2]);
+        end
+    end
+end
+
+%% Plot
+chan.hrAv = mean(chan.hr,5);
+chan.hrEr = std(chan.hr,[],5);
+chan.hrDiff = diff(chan.hr,[],3);
+chan.hrDiffAv = mean(chan.hrDiff,5);
+chan.hrDiffEr = std(chan.hrDiff,[],5);
 
 
-
-% chanCondA x chanCondB x stimCond x rep x t x subj
 figure('WindowStyle','docked');
-hEr = [];
-y_specAv = squeeze(yHat.spec_av(1,2,:,:))';
-y_specEr = squeeze(yHat.spec_er(1,2,:,:))';
-hEr = [hEr errorbar(y_specAv,y_specEr)]; hold on
-y_nSpecAv = squeeze(yHat.nSpec_av(1,2,:,:))';
-y_nSpecEr = squeeze(yHat.nSpec_er(1,2,:,:))';
-hEr = [hEr errorbar(y_nSpecAv,y_nSpecEr)]; hold on
-hEr(3).Color = 'k';
+av = squeeze(chan.hrDiffAv(1,2,:,:))';
+er = squeeze(chan.hrDiffEr(1,2,:,:))';
+errorbar(av,er); hold on
+av = squeeze(chan.hrAv(2,1,:,:))';
+er = squeeze(chan.hrEr(2,1,:,:))';
+errorbar(av,er)
 
 
