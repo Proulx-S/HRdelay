@@ -148,6 +148,8 @@ yHatK = cell(size(d));
 yHatK_tr = cell(size(d));
 Y = cell(size(d));
 K = cell(size(d));
+Yhr = cell(size(d));
+Khr = cell(size(d));
 nOrig = nan(size(d));
 n = nan(size(d));
 
@@ -272,8 +274,10 @@ for i = 1:numel(d)
             error('X')
     end
     % get test data
+    pTmp = p;
+    pTmp.condPair = 'all';
     hrFlag = true;
-    [x,y,~] = getXYK(d{subjInd,testInd},p,hrFlag);
+    [x,y,k] = getXYK(d{subjInd,testInd},pTmp,hrFlag);
     % cross-session feature selection
     featSelInd = featSel{subjInd,trainInd}.indIn;
     x = x(:,featSelInd,:);
@@ -293,6 +297,9 @@ for i = 1:numel(d)
         % cross-session SVM testing
         [yHatHr_nSpec{subjInd,testInd}(:,:,tInd),~] = SVMtest(y,x(:,:,tInd),curSvmModel,0,[]);
     end
+    % output
+    Yhr{i} = y;
+    Khr{i} = k;
 end
 
 
@@ -320,7 +327,7 @@ resBShr_sess = repmat(perfMetric,[size(d,1) size(d,2)]);
 disp('BShr perfMetric: computing')
 for i = 1:numel(d)
     disp(['sess' num2str(i) '/' num2str(numel(d))])
-    resBShr_sess(i) = perfMetric(Y{i},yHatHr{i},K{i});
+    resBShr_sess(i) = perfMetric(Yhr{i},yHatHr{i},Khr{i});
 end
 for i = 1:numel(d)
     resBShr_sess(i).yHat_nSpec = {permute(yHatHr_nSpec{i},[1 3 2])};
@@ -360,7 +367,7 @@ disp('WS perfMetric: done')
 %% Summarize group performances (SLOW 4sec/16sec)
 disp('perfMetric summary: computing')
 [resBSsess,resBSsubj,resBSgroup] = summarizePerf(resBS_sess);
-[resBShrSess,resBShrSubj,resBShrGroup] = summarizePerf(resBShr_sess);
+[resBShrSess,~,~] = summarizePerf(resBShr_sess);
 [resWSsess,resWSsubj,resWSgroup] = summarizePerf(resWS_sess);
 disp('perfMetric summary: computing')
 
@@ -411,9 +418,6 @@ resBS.group = resBSgroup;
 
 resBShr.sess = resBShrSess;
 resBShr.sess.subjList = subjList;
-resBShr.subj = resBShrSubj;
-resBShr.subj.subjList = subjList;
-resBShr.group = resBShrGroup;
 
 resWS.sess = resWSsess;
 resWS.sess.subjList = subjList;

@@ -34,6 +34,12 @@ resSess.distT_fdr = resSess.distT_p;
 resSess.distT_fdr(:) = mafdr(resSess.distT_p(:),'BHFDR',true);
 % resSess = orderfields(resSess,[1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 23 16 17 18 19 20 21 22]);
 
+% Continue only if having a pair of condtions
+if isempty(resSess.acc)
+    resSubj  = [];
+    resGroup = [];
+    return
+end
 
 resSubj.y = cell(size(resSess.y,1),1);
 resSubj.yHat = cell(size(resSess.yHat,1),1);

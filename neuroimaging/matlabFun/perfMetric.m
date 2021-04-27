@@ -36,6 +36,18 @@ end
 res.y = {y};
 res.nObs = length(y);
 res.yHat = {yHat};
+
+% Contitnue only if we have a pair of conditions
+if length(unique(y))>2
+    resTmp = perfMetric;
+    fieldList = fields(res);
+    for fieldInd = 1:length(fieldList)
+        resTmp.(fieldList{fieldInd}) = res.(fieldList{fieldInd});
+    end
+    res = resTmp;
+    return
+end
+
 % acc
 if size(yHat,2)==1
     res.hit = sum((yHat<0)+1==y);
