@@ -25,7 +25,7 @@ for respFeatInd = 1:length(respFeatList)
         end
         p.condPair = condPairList{condPairInd};
         [resBS{condPairInd,respFeatInd},resBShr{condPairInd,respFeatInd},resWS{condPairInd,respFeatInd},f{condPairInd,respFeatInd}] = runDecoding(p,verbose);
-        
-        plotChannelHr(resBShr{condPairInd,respFeatInd})
     end
 end
+keyboard
+plotChannelHr(resBShr{condPairInd,respFeatInd})
