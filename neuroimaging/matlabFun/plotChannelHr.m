@@ -10,7 +10,8 @@ chan.hr     = nan([length(condList) length(condList) length(condList) length(tLi
 chan.sin    = nan([length(condList) length(condList) length(condList) 1             size(res.sess.y,1) size(res.sess.y,2)]);
 chan.base   = nan([length(condList) length(condList) length(condList) 1             size(res.sess.y,1) size(res.sess.y,2)]);
 chan.info1  = 'chanCondA x chanCondB x stimCond x t x subj x sess';
-chan.info2  = 'chanCondA x chanCondB: above diag -> cond-specific; below diag -> non-specific';
+chan.info2  = 'chanCondA x chanCondB: above diag -> cond-specific channel; below diag -> non-specific channel';
+chan.info3  = 'cond([grat1VSgrat2 grat1VSplaid grat2VSplaid])';
 for subjInd = 1:size(res.sess.y,1)
     for sessInd = 1:size(res.sess.y,2)
         
@@ -64,20 +65,26 @@ for chanCondAind = 1:length(condList)
     end
 end
 
-%% Plot
+%% Remove non-specific response
+chan.hrNorm = chan.hr - mean(chan.hr,3);
+
+%% Summarize
 chan.hrAv = mean(chan.hr,5);
 chan.hrEr = std(chan.hr,[],5);
-chan.hrDiff = diff(chan.hr,[],3);
-chan.hrDiffAv = mean(chan.hrDiff,5);
-chan.hrDiffEr = std(chan.hrDiff,[],5);
+
+chan.hrNormAv = mean(chan.hrNorm,5);
+chan.hrNormEr = std(chan.hrNorm,[],5);
 
 
+%% Plot
 figure('WindowStyle','docked');
-av = squeeze(chan.hrDiffAv(1,2,:,:))';
-er = squeeze(chan.hrDiffEr(1,2,:,:))';
+av = squeeze(chan.hrNormAv(1,2,:,:))';
+er = squeeze(chan.hrNormEr(1,2,:,:))';
 errorbar(av,er); hold on
+ax = gca;
+ax.ColorOrderIndex = 1;
 av = squeeze(chan.hrAv(2,1,:,:))';
 er = squeeze(chan.hrEr(2,1,:,:))';
-errorbar(av,er)
+errorbar(av,er,'linestyle','--')
 
 
