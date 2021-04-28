@@ -60,11 +60,11 @@ if 0
     processFeatSel(p,verbose)
     visualizeFeatSel(p)
 end
-[resBS,resBShr,resWS,info] = runAllDecoding(p,figOption,verbose);
+[resBS,resBShr,resWS,f,info] = runAllDecoding(p,figOption,verbose);
 
 
 
-condPairInd = 1;
+condPairInd = 2;
 respFeatInd = 1;
 info.condPairList{condPairInd}
 info.respFeatList{respFeatInd}
