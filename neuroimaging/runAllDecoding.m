@@ -1,17 +1,23 @@
-function [resBS,resBShr,resWS,f,info] = runAllDecoding(p,figOption,verbose)
+function [resBS,resBShr,resWS,f,info] = runAllDecoding(p,condPairList,respFeatList,figOption,verbose)
 if ~exist('verbose','var')
     verbose = 1;
 end
-
 if ~exist('figOption','var') || isempty(figOption)
     figOption.save = 0;
     figOption.subj = 1; % 'all' or subjInd
 end
+if ~exist('condPairList','var') || isempty(condPairList)
+    condPairList = {'grat1VSgrat2' 'grat1VSplaid' 'grat2VSplaid'};
+end
+if ~exist('respFeatList','var') || isempty(respFeatList)
+    respFeatList = {'cart' 'cartNoDelay' 'cartNoAmp'};
+end
+
+
+
 figOption_verbose = p.figOption.verbose;
 
-condPairList = {'grat1VSgrat2' 'grat1VSplaid' 'grat2VSplaid'};
-% respFeatList = {'cartNoDelay' 'cartNoAmp' 'cart'};
-respFeatList = {'cart' 'cartNoDelay' 'cartNoAmp'};
+
 resBS = cell(length(condPairList),length(respFeatList));
 resBShr = cell(length(condPairList),length(respFeatList));
 resWS = cell(length(condPairList),length(respFeatList));

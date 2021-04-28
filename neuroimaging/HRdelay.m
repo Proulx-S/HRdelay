@@ -59,16 +59,17 @@ if 0
 %     processWaveletResponses(figOption,verbose)
     processFeatSel(p,verbose)
     visualizeFeatSel(p)
+    condPairList = {'grat1VSgrat2' 'grat1VSplaid' 'grat2VSplaid'};
+    respFeatList = {'cart' 'cartNoDelay' 'cartNoAmp'};
+    [resBS,resBShr,resWS,f,info] = runAllDecoding(p,condPairList,respFeatList,figOption,verbose);
+    set([f{:}],'visible','on')
 end
-[resBS,resBShr,resWS,f,info] = runAllDecoding(p,figOption,verbose);
+% save tmp resBS resBShr resWS f info
+load tmp resBS resBShr resWS info
 
+chan = processChanHr(resBShr,info);
+f = plotChanHr(chan);
 
-
-condPairInd = 2;
-respFeatInd = 1;
-info.condPairList{condPairInd}
-info.respFeatList{respFeatInd}
-plotChannelHr(resBShr{condPairInd,respFeatInd})
 
 groupAna(p,figOption,verbose)
 
