@@ -1,4 +1,4 @@
-function [resBS,resBShr,resWS,info] = runAllDecoding(p,figOption,verbose)
+function [resBS,resBShr,resWS,f,info] = runAllDecoding(p,figOption,verbose)
 if ~exist('verbose','var')
     verbose = 1;
 end
@@ -11,7 +11,7 @@ figOption_verbose = p.figOption.verbose;
 
 condPairList = {'grat1VSgrat2' 'grat1VSplaid' 'grat2VSplaid'};
 % respFeatList = {'cartNoDelay' 'cartNoAmp' 'cart'};
-respFeatList = {'cartNoDelay' 'cartNoAmp'};
+respFeatList = {'cart' 'cartNoDelay' 'cartNoAmp'};
 resBS = cell(length(condPairList),length(respFeatList));
 resBShr = cell(length(condPairList),length(respFeatList));
 resWS = cell(length(condPairList),length(respFeatList));

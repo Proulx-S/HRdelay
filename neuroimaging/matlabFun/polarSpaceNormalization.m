@@ -53,6 +53,11 @@ if computeNorm
     switch normSpace.thetaShift
         case 'vox'
             polNorm.thetaShift = angle(mean(x(~te,:),1));
+            
+            % identify and preserve neg response voxels
+            theta = angle(mean(mean(x(~te,:),1),2));
+            indNeg = wrapToPi(polNorm.thetaShift - theta+pi/2)<0;
+            polNorm.thetaShift(1,indNeg) = -wrapToPi( pi - polNorm.thetaShift(1,indNeg) );
         case 'roi'
             polNorm.thetaShift = angle(mean(mean(x(~te,:),1),2));
         case 'none'

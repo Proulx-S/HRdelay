@@ -258,6 +258,7 @@ end
 % disp(['line ' num2str(line_num(1).line)]) % displays the line number
 % toc
 
+if 1
 %% Extract channel HR
 % Testing
 for i = 1:numel(d)
@@ -285,7 +286,29 @@ for i = 1:numel(d)
     curSvmModel = svmModel{subjInd,trainInd};
     switch p.svmSpace
         case 'cart'
-            error('Not clear what to do for that')
+            % complexify x?
+            % realifiy w?
+            
+            % Quadrant-specific analysis:
+            % 1) +real
+            % 2) +real +imag
+            % 3) +imag
+            % 4) +imag -real
+            w = complex(curSvmModel.w(1:end/2),curSvmModel.w(end/2+1:end));
+%             figure('WindowStyle','docked');
+%             polarplot(w,'k.'); hold on
+            secAngle = 0:pi/4:pi/4*3;
+            wSec = zeros(length(secAngle),length(w));
+            for secInd = 1:length(secAngle)
+                indA = (wrapToPi(angle(w)-secAngle(secInd)) < pi/4/2 ...
+                    & wrapToPi(angle(w)-secAngle(secInd)) >= -pi/4/2);
+                indB = (wrapToPi(angle(w)-secAngle(secInd) - pi) < pi/4/2 ...
+                    & wrapToPi(angle(w)-secAngle(secInd) - pi) >= -pi/4/2);
+%                 polarplot(w(indA | indB),'.'); hold on
+                wSec(secInd,indA) = abs(w(1,indA));
+                wSec(secInd,indB) = -abs(w(1,indB));
+            end
+            curSvmModel.w = wSec;
         case 'cartNoAmp'
             % complexify w
             w = complex(curSvmModel.w(1:end/2),curSvmModel.w(end/2+1:end));
@@ -305,17 +328,18 @@ for i = 1:numel(d)
     % get channel response
     for tInd = 1:size(x,3)
         % cross-session SVM testing
-        [yHatHr{subjInd,testInd}(:,:,tInd),~] = SVMtest(y,x(:,:,tInd),curSvmModel,0,[]);
+        [yHatHr{subjInd,testInd}(:,:,tInd,:),~] = SVMtest(y,x(:,:,tInd),curSvmModel,0,[]);
     end
     % get non-specific channel response
     curSvmModel.w = abs(curSvmModel.w);
     for tInd = 1:size(x,3)
         % cross-session SVM testing
-        [yHatHr_nSpec{subjInd,testInd}(:,:,tInd),~] = SVMtest(y,x(:,:,tInd),curSvmModel,0,[]);
+        [yHatHr_nSpec{subjInd,testInd}(:,:,tInd,:),~] = SVMtest(y,x(:,:,tInd),curSvmModel,0,[]);
     end
     % output
     Yhr{i} = y;
     Khr{i} = k;
+end
 end
 
 
@@ -338,6 +362,7 @@ end
 resBS_sess = orderfields(resBS_sess,[1 2 3 4 5 6 7 8 9 17 10 11 12 13 14 15 16 18 19 20 21]);
 disp('BS perfMetric: done')
 
+if ~isempty(Yhr{1})
 % Between-sess Channel HR
 resBShr_sess = repmat(perfMetric,[size(d,1) size(d,2)]);
 disp('BShr perfMetric: computing')
@@ -346,7 +371,7 @@ for i = 1:numel(d)
     resBShr_sess(i) = perfMetric(Yhr{i},yHatHr{i},Khr{i});
 end
 for i = 1:numel(d)
-    resBShr_sess(i).yHat_nSpec = {permute(yHatHr_nSpec{i},[1 3 2])};
+    resBShr_sess(i).yHat_nSpec = {permute(yHatHr_nSpec{i},[1 3 4 2])};
 end
 for i = 1:numel(d)
     resBShr_sess(i).acc_fdr = [];
@@ -357,6 +382,7 @@ for i = 1:numel(d)
 end
 % resBShr_sess = orderfields(resBShr_sess,[1 2 3 4 5 6 7 8 9 17 10 11 12 13 14 15 16 18 19 20 21 22]);
 disp('BShr perfMetric: done')
+end
 
 % Within-sess
 disp('WS perfMetric: computing')
@@ -383,7 +409,9 @@ disp('WS perfMetric: done')
 %% Summarize group performances (SLOW 4sec/16sec)
 disp('perfMetric summary: computing')
 [resBSsess,resBSsubj,resBSgroup] = summarizePerf(resBS_sess);
-[resBShrSess,~,~] = summarizePerf(resBShr_sess);
+if exist('resBShr_sess','var')
+    [resBShrSess,~,~] = summarizePerf(resBShr_sess);
+end
 [resWSsess,resWSsubj,resWSgroup] = summarizePerf(resWS_sess);
 disp('perfMetric summary: computing')
 
@@ -432,8 +460,12 @@ resBS.subj = resBSsubj;
 resBS.subj.subjList = subjList;
 resBS.group = resBSgroup;
 
-resBShr.sess = resBShrSess;
-resBShr.sess.subjList = subjList;
+if exist('resBShrSess','var')
+    resBShr.sess = resBShrSess;
+    resBShr.sess.subjList = subjList;
+else
+    resBShr = [];
+end
 
 resWS.sess = resWSsess;
 resWS.sess.subjList = subjList;
@@ -664,8 +696,8 @@ if ~exist('K','var') || isempty(K) || all(K(:)==0)
 end
 kList = [svmModel.k];
 
-yHat = nan([size(Y,1) length(kList)]);
-yHatTr = nan([size(Y,1) length(kList)]);
+yHat = nan([size(Y,1) length(kList) size(svmModel(1).w,1)]);
+yHatTr = nan([size(Y,1) length(kList) size(svmModel(1).w,1)]);
 for kInd = 1:length(kList)
     x = X;
     SVMspace = svmModel(kInd).svmSpace;
@@ -693,8 +725,8 @@ for kInd = 1:length(kList)
     
     w = svmModel(kInd).w;
     b = svmModel(kInd).b;
-    yHat(te,kInd) = x(te,:)*w'-b;
-    yHatTr(~te,kInd) = x(~te,:)*w'-b;
+    yHat(te,kInd,:) = x(te,:)*w'-b;
+    yHatTr(~te,kInd,:) = x(~te,:)*w'-b;
 end
 
 

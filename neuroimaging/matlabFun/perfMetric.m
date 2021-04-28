@@ -28,9 +28,8 @@ if averageWR
     if nRun~=size(yHat,1)
         error('double-check that')
     end
-    yHat = mean(reshape(yHat,[size(yHat,1)/nRun nRun size(yHat,3)]),1);
-    yHat = permute(yHat,[2 3 1]); % run x t
-%     yHat = mean(reshape(yHat,[length(yHat)/nRun nRun]),1)';
+    yHat = mean(reshape(yHat,[size(yHat,1)/nRun nRun size(yHat,3) size(yHat,4)]),1);
+    yHat = permute(yHat,[2 3 4 1]); % run x t x wSect
 end
 
 res.y = {y};
