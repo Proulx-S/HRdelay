@@ -1,5 +1,24 @@
 clear all
 close all
+
+%% Display parameters
+figOption.save = 1; % save all figures
+figOption.subj = 1; % subjInd-> plots participants subjInd; +inf-> plots all participant (if verbose==0, will only plot subjInd==1 but still produce and save all the other figures)
+p.figOption.subjInd  = figOption.subj;
+p.figOption.sessInd  = 1;
+p.figOption.sliceInd = 12;
+p.figOption.verbose  = 2;
+p.figOption.save  = 2;
+p.termOption.verbose = 1;
+p.termOption.save = 1;
+
+%% Open diary
+if p.termOption.verbose && p.termOption.save
+    eval(['diary ' fullfile(pwd,[mfilename '-' datestr(now,'YYYYmmDD-hh_MM_ss') '.log'])])
+    disp(fullfile(pwd,[mfilename '.mat']))
+    disp(datestr(now))
+end
+
 %% Dependencies
 gitDependencyPath = '/Users/sebastienproulx/Documents/GitHub/utilities';
 matDependencyPath = '/Users/sebastienproulx/Dropbox/MATLAB';
@@ -43,39 +62,47 @@ p.featSel.global.method = 'custom2';
 % 'custom1'-> featSel of active voxels uses all three conditions but featSel of discriminant voxels uses only the conditions to be decoded
 % 'custom2'-> featSel of active and most discriminant voxels uses only the conditions to be decoded
 
-%% Normalization parameters
-% p.norm.doCartSpaceScale = 1;
+%% SVM channel parameters
+p.svm.condPairList = {'grat1VSgrat2' 'grat1VSplaid' 'grat2VSplaid'};
+p.svm.respFeatList = {'cart' 'cartNoDelay' 'cartNoAmp'};
+
 %% Display parameters
-figOption.save = 0; % save all figures
+figOption.save = 1; % save all figures
 figOption.subj = 1; % subjInd-> plots participants subjInd; +inf-> plots all participant (if verbose==0, will only plot subjInd==1 but still produce and save all the other figures)
-p.figOption.verbose  = 2;
 p.figOption.subjInd  = figOption.subj;
 p.figOption.sessInd  = 1;
 p.figOption.sliceInd = 10;
+p.figOption.verbose  = 2;
+p.figOption.save  = 2;
+p.termOption.verbose = 1;
+p.termOption.save = 1;
+
 if 0
     importData(verbose)
     applyAreaMask(figOption)
     processResponses(figOption,verbose)
 %     processWaveletResponses(figOption,verbose)
-    processFeatSel(p,verbose)
-    visualizeFeatSel(p)
-    condPairList = {'grat1VSgrat2' 'grat1VSplaid' 'grat2VSplaid'};
-    respFeatList = {'cart' 'cartNoDelay' 'cartNoAmp'};
-    [resBS,resBShr,resWS,f,info] = runAllDecoding(p,condPairList,respFeatList,figOption,verbose);
-    set([f{:}],'visible','on')
 end
-% save tmp resBS resBShr resWS f info
-load tmp resBS resBShr resWS info
-
+processFeatSel(p)
+visualizeFeatSel(p)
+[resBS,resBShr,resWS,f,info] = runAllDecoding(p,verbose);
+% set([f{:}],'visible','on')
 chan = processChanHr(resBShr,info);
-f = plotChanHr(chan);
+f = plotChanHr(p,chan);
 
+if p.termOption.save
+    disp(datestr(now))
+    diary off
+end
+return
 
 groupAna(p,figOption,verbose)
 
 
 
-return
+
+
+
 
 % runFit(verbose,figOption)
 runFit2(verbose,figOption)

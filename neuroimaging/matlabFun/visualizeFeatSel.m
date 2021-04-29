@@ -407,7 +407,7 @@ if 0
 end
 
 %% Save figures
-if 0
+if 1
     filename = fullfile(funPath,outDir,mfilename);
     
     if ~exist(filename,'dir'); mkdir(filename); end

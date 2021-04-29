@@ -1,11 +1,11 @@
-function processFeatSel(p,verbose)
-if ~exist('verbose','var')
-    verbose = 1;
-end
+function processFeatSel(p)
 if ~isfield(p,'figOption') || isempty(p.figOption)
     p.figOption.verbose = 1;
     p.figOption.subjInd = 1;
     p.figOption.sessInd = 1;
+end
+if ~isfield(p,'termOption') || isempty(p.figOption)
+    p.termOption.verbose = 1;
 end
 
 
@@ -29,7 +29,7 @@ clear tmp
 dAll = cell(size(subjList,1),1);
 for subjInd = 1:size(subjList,2)
     curFile = fullfile(funPath,inDir,[subjList{subjInd} '.mat']);
-    if verbose; disp(['loading: ' curFile]); end
+    if p.termOption.verbose; disp(['loading: ' curFile]); end
     load(curFile,'res');
     dAll{subjInd} = res;
 end

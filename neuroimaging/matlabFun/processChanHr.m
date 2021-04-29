@@ -1,5 +1,19 @@
 function chan = processChanHr(res,info)
 
+%% Define paths
+subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'};
+if ismac
+    repoPath = '/Users/sebastienproulx/OneDrive - McGill University/dataBig';
+else
+    repoPath = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
+end
+funPath = fullfile(repoPath,'D-tidy\DecodingHR\channelHr');
+outDir  = 'a';
+%make sure everything is forward slash for mac, linux pc compatibility
+for tmp = {'repoPath' 'funPath' 'outDir'}
+    eval([char(tmp) '(strfind(' char(tmp) ',''\''))=''/'';']);
+end
+clear tmp
 
 
 
@@ -112,31 +126,11 @@ chan.sin    = permute(chan.sin,[1 2 3 4 7 8 5 6]);
 chan.wSectList    = permute(chan.wSectList,[1 2 3 4 7 8 5 6]);
 chan.info1  = 'chanCondA x chanCondB x stimCond x t x respFeat x wSect x subj x sess';
 
-return
 
-% 
-% 
-% chan.hrAv = mean(chan.hr,6);
-% chan.hrEr = std(chan.hr,[],6)./sqrt(size(chan.hr,6));
-% 
-% chan.hrNormAv = mean(chan.hrNorm,6);
-% chan.hrNormEr = std(chan.hrNorm,[],6)./sqrt(size(chan.hrNorm,6));
-% 
-% 
-% 
-% %% Plot
-% f = cell(size(chan.hrAv,5));
-% for sectInd = 1:size(chan.hrAv,5)
-%     f{sectInd} = figure('WindowStyle','docked');
-%     av = squeeze(chan.hrNormAv(1,2,:,:,sectInd))';
-%     er = squeeze(chan.hrNormEr(1,2,:,:,sectInd))';
-%     errorbar(av,er,'CapSize',0); hold on
-%     ax = gca;
-%     ax.ColorOrderIndex = 1;
-%     av = squeeze(chan.hrAv(2,1,:,:,sectInd))';
-%     er = squeeze(chan.hrNormEr(2,1,:,:,sectInd))';
-%     errorbar(av,er,'linestyle','--','CapSize',0)
-%     title(chan.wSectList{sectInd})
-% end
-
+%% Save data
+fullpath = fullfile(funPath,outDir);
+if ~exist(fullpath,'dir'); mkdir(fullpath); end
+fullfilename = fullfile(fullpath,mfilename);
+save(fullfilename,'chan')
+if p.termOption.verbose; disp(['Saved to: ' fullfilename '.mat']); end
 
