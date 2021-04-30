@@ -86,8 +86,9 @@ end
 processFeatSel(p)
 visualizeFeatSel(p)
 [resBS,resBShr,resWS,f,info] = runAllDecoding(p,verbose);
+% load tmp resBS resBShr resWS f info
 % set([f{:}],'visible','on')
-chan = processChanHr(resBShr,info);
+chan = processChanHr(p,resBShr,info);
 f = plotChanHr(p,chan);
 
 if p.termOption.save
