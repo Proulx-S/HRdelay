@@ -10,7 +10,7 @@ p.figOption.sliceInd = 12;
 p.figOption.verbose  = 2;
 p.figOption.save  = 2;
 p.termOption.verbose = 1;
-p.termOption.save = 1;
+p.termOption.save = 0;
 
 %% Open diary
 if p.termOption.verbose && p.termOption.save

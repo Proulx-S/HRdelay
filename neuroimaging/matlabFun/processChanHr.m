@@ -1,4 +1,4 @@
-function chan = processChanHr(res,info)
+function chan = processChanHr(p,res,info)
 
 %% Define paths
 subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'};
