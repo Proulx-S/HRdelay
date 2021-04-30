@@ -90,6 +90,7 @@ visualizeFeatSel(p)
 % set([f{:}],'visible','on')
 chan = processChanHr(p,resBShr,info);
 f = plotChanHr(p,chan);
+statsChanHr(p,chan);
 
 if p.termOption.save
     disp(datestr(now))

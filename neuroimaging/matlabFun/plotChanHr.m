@@ -157,6 +157,7 @@ for respFeatInd = 1:length(respFeatList)
                             else
                                 suptitle([[chanCondAList{chanCondAind} 'VS' chanCondBList{chanCondBind}] ';  condition-specific channel;  ' [respFeatList{respFeatInd}]]);
                             end
+                            drawnow
                         end
                     end
                 end
@@ -186,36 +187,6 @@ if p.figOption.save
     end
 end
 
-
-
-
-function hrPlot(x,figOption)
-% Average sessions
-x.hr = mean(x.hr,4);
-% Remove random subject effet
-[x.hr] = normHr(x);
-
-t = (1:size(x.hr,3))-1;
-% offset = mean(x.hr(:));
-figure('WindowStyle','docked');
-for condInd = 1:size(x.hr,2)
-    y = squeeze(x.hr(:,condInd,:));
-%     y = y-yBase;
-%     h1 = plot(t,y); hold on
-%     h2 = plot(t,repmat(yBase,size(t))); hold on
-%     for i = 1:length(h1)
-%         h2(i).Color = h1(i).Color;
-%     end
-    yMean = mean(y,1);
-    yErr = std(y,[],1)./sqrt(size(y,1));
-    hErr(condInd) = errorbar(t,yMean,yErr); hold on
-end
-set(hErr,'CapSize',0)
-xlabel('time from stimulus onset (sec)')
-ylabel('%BOLD change')
-hLeg = legend({'grat1' 'grat2' 'plaid'});
-hLeg.Box = 'off';
-grid on
 
 
 
@@ -337,105 +308,6 @@ disp(['delay (ori2-ori1) = ' num2str(delay(2)-delay(1),'%0.3fs')])
 disp('***')
 
 
-function thetaSec = rad2sec(thetaRad)
-thetaSec = -thetaRad/pi*6;
 
-function sinRespStats(x)
-% Average sessions
-x.sin = mean(x.sin,4);
-% Center delay
-theta = wrapToPi(angle(x.sin)-angle(mean(x.sin(:))));
-rho = abs(x.sin);
-[u,v] = pol2cart(theta,rho);
-x.sin = complex(u,v);
-
-% Stats on 2D response vector (conservative)
-disp('---------------')
-disp('2D Response Vector')
-disp('---------------')
-disp('Grat vs Plaid:')
-X = cat(1,mean(x.sin(:,1:2),2),x.sin(:,3));
-stats = T2Hot2d([real(X) imag(X)],0.05);
-disp('Hotelling''s T^2 multivariate test')
-disp([' T^2=' num2str(stats.T2,'%0.2f')]);
-disp([' p=' num2str(stats.P,'%0.2f')]);
-disp('Ori1 vs Ori2:')
-X = cat(1,x.sin(:,1),x.sin(:,2));
-stats = T2Hot2d([real(X) imag(X)],0.05);
-disp(' Hotelling''s T^2 multivariate test')
-disp([' T^2=' num2str(stats.T2,'%0.2f') '; p=' num2str(stats.P,'%0.2f')]);
-
-
-disp('---------------')
-disp('Amplitude')
-disp('---------------')
-
-disp('Ori1 vs Ori2 vs Plaid (Friedman''s test for K-related-samples):')
-[P,TABLE,~] = friedman(abs(x.sin(:,1:3)),1,'off');
-disp(['Chi^2(df=3' num2str(TABLE{2,3}) ') = ' num2str(TABLE{2,5},'%0.1f')]);
-disp(['p            = ' num2str(P,'%0.3f')]);
-
-disp('Grat vs Plaid (one-tailed):')
-X = abs(mean(x.sin(:,1:2),2)); Y = abs(x.sin(:,3));
-[~,P,~,STATS] = ttest(X,Y,'tail','right');
-disp(' Student''s t-test')
-disp([' t=' num2str(STATS.tstat,'%0.2f') '; one-sided p=' num2str(P,'%0.2f')]);
-[P,~,STATS] = signrank(X,Y,'tail','right');
-disp(' Wilcoxon signed rank test')
-disp([' signed rank=' num2str(STATS.signedrank,'%0.2f') '; one-sided p=' num2str(P,'%0.2f')]);
-disp('Ori1 vs Ori2:')
-X = abs(x.sin(:,1)); Y = abs(x.sin(:,2));
-[~,P,~,STATS] = ttest(X,Y);
-disp(' Student''s t-test')
-disp([' t=' num2str(STATS.tstat,'%0.2f') '; p=' num2str(P,'%0.2f')]);
-[P,~,STATS] = signrank(X,Y);
-disp(' Wilcoxon signed rank test')
-disp([' signed rank=' num2str(STATS.signedrank,'%0.2f') '; p=' num2str(P,'%0.2f')]);
-
-allPairs = [1 2; 1 3; 2 3];
-P = nan(size(allPairs,1),1);
-sRank = nan(size(allPairs,1),1);
-for pairInd = 1:size(allPairs,1)
-    X = abs(x.sin(:,allPairs(pairInd,1))); Y = abs(x.sin(:,allPairs(pairInd,2)));
-    [P(pairInd),~,STATS] = signrank(X,Y);
-    sRank(pairInd) = STATS.signedrank;
-end
-
-
-
-disp('---------------')
-disp('Delay')
-disp('---------------')
-
-disp('Ori1 vs Ori2 vs Plaid (Friedman''s test for K-related-samples):')
-[P,TABLE,~] = friedman(angle(x.sin(:,1:3)),1,'off');
-disp(['Chi^2(df=3' num2str(TABLE{2,3}) ') = ' num2str(TABLE{2,5},'%0.1f')]);
-disp(['p            = ' num2str(P,'%0.3f')]);
-
-disp('Grat vs Plaid (one-tailed):')
-X = angle(mean(x.sin(:,1:2),2)); Y = angle(x.sin(:,3));
-[~,P,~,STATS] = ttest(X,Y,'tail','right');
-disp(' Student''s t-test')
-disp([' t=' num2str(STATS.tstat,'%0.2f') '; one-sided p=' num2str(P,'%0.2f')]);
-[P,~,STATS] = signrank(X,Y,'tail','right');
-disp(' Wilcoxon signed rank test')
-disp([' signed rank=' num2str(STATS.signedrank,'%0.2f') '; one-sided p=' num2str(P,'%0.2f')]);
-disp('Ori1 vs Ori2:')
-X = angle(x.sin(:,1)); Y = angle(x.sin(:,2));
-[~,P,~,STATS] = ttest(X,Y);
-disp(' Student''s t-test')
-disp([' t=' num2str(STATS.tstat,'%0.2f') '; p=' num2str(P,'%0.2f')]);
-[P,~,STATS] = signrank(X,Y);
-disp(' Wilcoxon signed rank test')
-disp([' signed rank=' num2str(STATS.signedrank,'%0.2f') '; p=' num2str(P,'%0.2f')]);
-
-allPairs = [1 2; 1 3; 2 3];
-P = nan(size(allPairs,1),1);
-sRank = nan(size(allPairs,1),1);
-for pairInd = 1:size(allPairs,1)
-    X = angle(x.sin(:,allPairs(pairInd,1))); Y = angle(x.sin(:,allPairs(pairInd,2)));
-    [P(pairInd),~,STATS] = signrank(X,Y);
-    sRank(pairInd) = STATS.signedrank;
-end
 
 

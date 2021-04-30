@@ -4,12 +4,22 @@ if ~exist('statLabel','var') || isempty(statLabel)
 end
 
 %% Run standard matlab manova
-if exist('By','var') && ~isempty(By)
-    ByFlag = 1;
-    [anovatbl,A,C,D] = manova(rm_WM,'WithinModel',withinModel,'By',By);
+if exist('withinModel','var')
+    if exist('By','var') && ~isempty(By)
+        ByFlag = 1;
+        [anovatbl,A,C,D] = manova(rm_WM,'WithinModel',withinModel,'By',By);
+    else
+        ByFlag = 0;
+        [anovatbl,A,C,D] = manova(rm_WM,'WithinModel',withinModel);
+    end
 else
-    ByFlag = 0;
-    [anovatbl,A,C,D] = manova(rm_WM,'WithinModel',withinModel);
+    if exist('By','var') && ~isempty(By)
+        ByFlag = 1;
+        [anovatbl,A,C,D] = manova(rm_WM,'By',By);
+    else
+        ByFlag = 0;
+        [anovatbl,A,C,D] = manova(rm_WM);
+    end
 end
 % [anovatbl,A,C,D] = manova(rm_WM);
 % % Keep only Hotelling
