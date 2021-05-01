@@ -81,12 +81,14 @@ if 0
     importData(verbose)
     applyAreaMask(figOption)
     processResponses(figOption,verbose)
-%     processWaveletResponses(figOption,verbose)
+    %     processWaveletResponses(figOption,verbose)
+    processFeatSel(p)
+    visualizeFeatSel(p)
+    [resBS,resBShr,resWS,f,info] = runAllDecoding(p,verbose);
 end
-processFeatSel(p)
-visualizeFeatSel(p)
-[resBS,resBShr,resWS,f,info] = runAllDecoding(p,verbose);
-% load tmp resBS resBShr resWS f info
+load tmp resBS resBShr resWS f info
+plotAllDecoding(p,resBS,info)
+statsAllDecoding(p,resBS,info)
 % set([f{:}],'visible','on')
 chan = processChanHr(p,resBShr,info);
 f = plotChanHr(p,chan);
