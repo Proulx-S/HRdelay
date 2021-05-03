@@ -31,7 +31,11 @@ else
     repoPath = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
 end
 funPath = fullfile(repoPath,'C-derived\DecodingHR\fun');
-inDir  = 'd';
+if p.perm.doIt
+    inDir  = 'dPerm';
+else
+    inDir  = 'd';
+end
 %make sure everything is forward slash for mac, linux pc compatibility
 for tmp = {'repoPath' 'funPath' 'inDir'}
     eval([char(tmp) '(strfind(' char(tmp) ',''\''))=''/'';']);

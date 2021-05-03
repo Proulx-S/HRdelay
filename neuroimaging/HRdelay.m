@@ -6,7 +6,7 @@ figOption.save = 1; % save all figures
 figOption.subj = 1; % subjInd-> plots participants subjInd; +inf-> plots all participant (if verbose==0, will only plot subjInd==1 but still produce and save all the other figures)
 p.figOption.subjInd  = figOption.subj;
 p.figOption.sessInd  = 1;
-p.figOption.sliceInd = 12;
+p.figOption.sliceInd = 7;
 p.figOption.verbose  = 2;
 p.figOption.save  = 2;
 p.termOption.verbose = 1;
@@ -80,19 +80,31 @@ p.termOption.save = 1;
 if 0
     importData(verbose)
     applyAreaMask(figOption)
-    processResponses(figOption,verbose)
+    processResponses(p,figOption,verbose)
     %     processWaveletResponses(figOption,verbose)
-    processFeatSel(p)
-    visualizeFeatSel(p)
-    [resBS,resBShr,resWS,f,info] = runAllDecoding(p,verbose);
 end
-load tmp resBS resBShr resWS f info
+processFeatSel(p)
+visualizeFeatSel(p)
+[resBS,resBShr,resWS,f,info] = runAllDecoding(p,verbose);
 plotAllDecoding(p,resBS,info)
 statsAllDecoding(p,resBS,info)
-% set([f{:}],'visible','on')
 chan = processChanHr(p,resBShr,info);
 f = plotChanHr(p,chan);
 statsChanHr(p,chan);
+
+
+tic
+p.perm.doIt = 1;
+p.perm.n = 5;
+p.figOption.verbose = 0;
+processResponses(p,figOption,verbose)
+processFeatSel(p)
+[resBS,resBShr,resWS,f,info] = runAllDecoding(p,verbose);
+toc
+
+
+
+
 
 if p.termOption.save
     disp(datestr(now))

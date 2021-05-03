@@ -17,8 +17,14 @@ else
     repoPath = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
 end
         funPath = fullfile(repoPath,'C-derived\DecodingHR\fun');
+        if p.perm.doIt
+            inDir   = 'dPerm';
+            outDir  = 'dPerm';
+            outDir2 = 'd';
+        else
             inDir  = 'd';
             outDir  = 'd';
+        end
 %make sure everything is forward slash for mac, linux pc compatibility
 for tmp = {'repoPath' 'funPath' 'inDir' 'outDir'}
     eval([char(tmp) '(strfind(' char(tmp) ',''\''))=''/'';']);
@@ -50,7 +56,18 @@ d = dP; clear dP
 
 %% Retinotopic feature selection
 if p.featSel.fov.doIt && strcmp(p.featSel.fov.threshMethod,'empirical')
-    [featSel_fov,d,p] = empiricalFov(d,p,fullfile(funPath,outDir));
+    if p.perm.doIt
+        % Not actually using permuted data. But it does not acutally
+        % matters, because permuting does not change the result here. This
+        % step is base on the response delay irrespective of stimulus
+        % condition (delay computed after averaging across repetutions and
+        % stimulus conditions). Loading the precomputed empirical FOV
+        % therefore yields the same result as recomputing it, but save
+        % loads of time.
+        [featSel_fov,d,p] = empiricalFov(d,p,fullfile(funPath,outDir2));
+    else
+        [featSel_fov,d,p] = empiricalFov(d,p,fullfile(funPath,outDir));
+    end
     % saves to empiricalFov.mat
 end
 
