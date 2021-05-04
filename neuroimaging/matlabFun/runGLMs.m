@@ -55,8 +55,12 @@ if verbose; disp('Extract hr'); end
 res1 = fitHrMixed(d,p);
 if verbose; disp('Extract sin responses'); end
 res2 = fitSinMixed(d,p);
-if verbose; disp('Compute stats'); end
-res3 = fitSinFixed(d,p);
+if ~p.perm.doIt
+    if verbose; disp('Compute stats'); end
+    res3 = fitSinFixed(d,p);
+else
+    res3.F = nan(size(res2.hr,1),1);
+end
 
 res.sin = res2.hr; res2.hr = [];
 res.sinBase = res2.base; res2.base = [];

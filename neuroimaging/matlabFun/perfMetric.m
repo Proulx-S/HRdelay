@@ -1,6 +1,9 @@
-function res = perfMetric(y,yHat,k)
+function res = perfMetric(y,yHat,k,liteFlag)
 warning('off','stats:perfcurve:SubSampleWithMissingClasses')
 averageWR = 1;
+if ~exist('liteFlag','var')
+    liteFlag = false;
+end
 if ~exist('y','var')
     res = struct(...
         'y',[],...
@@ -46,6 +49,18 @@ if length(unique(y))>2
     res = resTmp;
     return
 end
+
+% Lite version
+if liteFlag
+    res = perfMetric;
+    for tInd = 1:size(yHat,2)
+        % auc
+        [~,~,~,auc] = perfcurve(y,yHat(:,tInd),1);
+        res.auc(:,tInd) = auc(1);
+    end
+    return
+end
+
 
 % acc
 if size(yHat,2)==1

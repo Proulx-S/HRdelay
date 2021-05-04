@@ -64,6 +64,7 @@ if actuallyRun
         for sessInd = 1:size(d.fun,2)
             disp([subj ': processing responses (sess' num2str(sessInd) '/' num2str(size(d.fun,2)) ')'])
             sess = ['sess' num2str(sessInd)];
+            p.perm = pMaster.perm;
             res.(sess) = runGLMs(d.fun(1,sessInd),p,0);
             dDtrd.(sess) = rmfield(d.fun(sessInd),{'data' 'design' 'extraRegr'});
             dDtrd.(sess).data = res.(sess).dataDtrd;
@@ -80,13 +81,15 @@ if actuallyRun
         end
         save(fullfile(funPath,outDir,[subj '.mat']),'res')
         clear res
-        disp([subj ': saving detrended data'])
-        if ~exist(fullfile(funPath,outDir),'dir')
-            mkdir(fullfile(funPath,outDir))
+        if ~pMaster.perm.doIt
+            disp([subj ': saving detrended data'])
+            if ~exist(fullfile(funPath,outDir),'dir')
+                mkdir(fullfile(funPath,outDir))
+            end
+            save(fullfile(funPath,outDir,[subj '_dDtrd.mat']),'dDtrd')
+            disp([subj ': saved to ''' fullfile(funPath,outDir) ''''])
         end
-        save(fullfile(funPath,outDir,[subj '_dDtrd.mat']),'dDtrd')
         clear dDtrd
-        disp([subj ': saved to ''' fullfile(funPath,outDir) ''''])
     end
 end
 

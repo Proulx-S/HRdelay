@@ -28,6 +28,10 @@ addpath(genpath(fullfile(pwd,'matlabFun')));
 % rmpath(genpath(fullfile(matDependencyPath,'HotellingT2')));
 verbose = 1; % prints more info
 
+%% Meta data
+p.meta.subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'}';
+
+
 %% Feature selection parameters
 % Within visual field region of the stimulus
 p.featSel.fov.doIt = 1;
@@ -36,7 +40,7 @@ p.featSel.fov.areaLabel = 'v1';
 p.featSel.fov.threshVal = [0.75 7]; % threshMethod='ecc'
 p.featSel.fov.percentile = 20; % threshMethod='ecc'
 % Most activated voxels
-p.featSel.act.doIt = 1;
+p.featSel.act.doIt = 0;
 p.featSel.act.threshMethod = 'fdr'; % '%ile' 'p' 'fdr'
 p.featSel.act.threshVal = 0.05; % threshMethod='p' or 'fdr'
 p.featSel.act.percentile = 20; % threshMethod='%ile'
@@ -83,24 +87,41 @@ if 0
     processResponses(p,figOption,verbose)
     %     processWaveletResponses(figOption,verbose)
 end
-processFeatSel(p)
-visualizeFeatSel(p)
-[resBS,resBShr,resWS,f,info] = runAllDecoding(p,verbose);
-plotAllDecoding(p,resBS,info)
-statsAllDecoding(p,resBS,info)
-chan = processChanHr(p,resBShr,info);
-f = plotChanHr(p,chan);
-statsChanHr(p,chan);
+if 0
+    processFeatSel(p)
+    visualizeFeatSel(p)
+    [resBS,resBShr,resWS,f,info] = runAllDecoding(p,verbose);
+    plotAllDecoding(p,resBS,info)
+    statsAllDecoding(p,resBS,info)
+    chan = processChanHr(p,resBShr,info);
+    f = plotChanHr(p,chan);
+    statsChanHr(p,chan);
+end
 
 
-tic
-p.perm.doIt = 1;
-p.perm.n = 5;
-p.figOption.verbose = 0;
-processResponses(p,figOption,verbose)
-processFeatSel(p)
-[resBS,resBShr,resWS,f,info] = runAllDecoding(p,verbose);
-toc
+pPerm = p;
+pPerm.perm.doIt = 1;
+pPerm.perm.n = 5;
+pPerm.figOption.verbose = 0;
+pPerm.svm.condPairList = p.svm.condPairList(1);
+resPerm.perfMetric = nan(length(pPerm.meta.subjList),length(pPerm.svm.condPairList),length(pPerm.svm.respFeatList),pPerm.perm.n);
+for permInd = 1:pPerm.perm.n
+    tic
+    processResponses(pPerm,figOption,verbose)
+    toc
+    processFeatSel(pPerm)
+    toc
+    [resBS,~,~,~,info] = runAllDecoding(pPerm,verbose);
+    toc
+    
+    for condPairInd = 1:length(pPerm.svm.condPairList)
+        for respFeatInd = 1:length(pPerm.svm.respFeatList)
+            resPerm.perfMetric(:,condPairInd,respFeatInd,permInd) = resBS{condPairInd,respFeatInd}.subj.auc;
+        end
+    end
+    
+    toc
+end
 
 
 

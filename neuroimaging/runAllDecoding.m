@@ -57,31 +57,32 @@ info.condPairList = condPairList';
 info.respFeatList = respFeatList;
 info.info = 'condPair x respFeat';
 
-
-%% Save data
-fullpath = fullfile(funPath,outDir);
-if ~exist(fullpath,'dir'); mkdir(fullpath); end
-fullfilename = fullfile(fullpath,'decoding');
-save(fullfilename,'resBS','f','p','info');
-fullfilename = fullfile(fullpath,'channels');
-save(fullfilename,'resBShr','f','p','info');
-
-%% Save figures
-if p.figOption.verbose
-    f = mat2cell([f{:}],1,ones(1,numel([f{:}])));
-    fullfilename = fullfile(fullpath,'decodingFig');
-    for i = 1:numel(f)
-        curF = f{i};
-        curF.Color = 'none';
-        set(findobj(curF.Children,'type','Axes'),'color','none')
-        curFile = [fullfilename '_' num2str(i)];
-        curExt = 'svg';
-        saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
-        curF.Color = 'w';
-        curExt = 'fig';
-        saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
-        curExt = 'jpg';
-        saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
+if ~p.perm.doIt
+    %% Save data
+    fullpath = fullfile(funPath,outDir);
+    if ~exist(fullpath,'dir'); mkdir(fullpath); end
+    fullfilename = fullfile(fullpath,'decoding');
+    save(fullfilename,'resBS','f','p','info');
+    fullfilename = fullfile(fullpath,'channels');
+    save(fullfilename,'resBShr','f','p','info');
+    
+    %% Save figures
+    if p.figOption.verbose
+        f = mat2cell([f{:}],1,ones(1,numel([f{:}])));
+        fullfilename = fullfile(fullpath,'decodingFig');
+        for i = 1:numel(f)
+            curF = f{i};
+            curF.Color = 'none';
+            set(findobj(curF.Children,'type','Axes'),'color','none')
+            curFile = [fullfilename '_' num2str(i)];
+            curExt = 'svg';
+            saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
+            curF.Color = 'w';
+            curExt = 'fig';
+            saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
+            curExt = 'jpg';
+            saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
+        end
     end
 end
 
