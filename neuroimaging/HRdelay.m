@@ -87,18 +87,17 @@ if 0
     processResponses(p,figOption,verbose)
     %     processWaveletResponses(figOption,verbose)
 end
-if 1
+if 0
     processFeatSel(p)
 end
 if 0
     visualizeFeatSel(p)
 end
-if 1
+if 0
     [resBS,resBShr,resWS,f,info] = runAllDecoding(p,verbose);
     plotAllDecoding(p,resBS,info)
     statsAllDecoding(p,resBS,info)
 end
-return
 if 0
     chan = processChanHr(p,resBShr,info);
     f = plotChanHr(p,chan);
@@ -114,11 +113,11 @@ if 1
     for permInd = 1:pPerm.perm.n
         tic
         processResponses(pPerm,figOption,verbose)
-        toc
+        t1 = toc;
         processFeatSel(pPerm)
-        toc
+        t2 = toc;
         [resBS,~,~,~,info] = runAllDecoding(pPerm,verbose);
-        toc
+        t3 = toc;
         for condPairInd = 1:length(pPerm.svm.condPairList)
             for respFeatInd = 1:length(pPerm.svm.respFeatList)
                 resPerm.perfMetric(:,condPairInd,respFeatInd,permInd) = resBS{condPairInd,respFeatInd}.auc;

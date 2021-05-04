@@ -55,12 +55,8 @@ if verbose; disp('Extract hr'); end
 res1 = fitHrMixed(d,p);
 if verbose; disp('Extract sin responses'); end
 res2 = fitSinMixed(d,p);
-if ~p.perm.doIt
-    if verbose; disp('Compute stats'); end
-    res3 = fitSinFixed(d,p);
-else
-    res3.F = nan(size(res2.hr,1),1);
-end
+if verbose; disp('Compute stats'); end
+res3 = fitSinFixed(d,p);
 
 res.sin = res2.hr; res2.hr = [];
 res.sinBase = res2.base; res2.base = [];
@@ -144,65 +140,67 @@ F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
 f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n' 'yErr' 'yErrSS' 'yErrSS_n'});
 % imagesc(F.(testLabel).F(:,:,10))
 
-testLabel = 'cond1v2v3';
-fullLabel = 'full';
-nullLabel = 'cond1v2v3null';
-condInd = [1 2 3];
-runInd = ismember(d.condLabel,condInd);
-
-f.(nullLabel) = getYhat(f.(nullLabel),p);
-f.(nullLabel) = getSS(f.(nullLabel),'yHat');
-f.(nullLabel) = getYerr(f.(nullLabel),d);
-f.(nullLabel) = getSS(f.(nullLabel),'yErr');
-
-F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
-f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n' 'yErr' 'yErrSS' 'yErrSS_n'});
-% imagesc(F.(testLabel).F(:,:,10))
-
-
-testLabel = 'cond1v2';
-fullLabel = 'full';
-nullLabel = 'cond1v2null';
-condInd = [1 2];
-runInd = ismember(d.condLabel,condInd);
-
-f.(nullLabel) = getYhat(f.(nullLabel),p);
-f.(nullLabel) = getSS(f.(nullLabel),'yHat');
-f.(nullLabel) = getYerr(f.(nullLabel),d);
-f.(nullLabel) = getSS(f.(nullLabel),'yErr');
-
-F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
-f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n' 'yErr' 'yErrSS' 'yErrSS_n'});
-% imagesc(F.(testLabel).F(:,:,10))
-
-testLabel = 'cond1v3';
-fullLabel = 'full';
-nullLabel = 'cond1v3null';
-condInd = [1 3];
-runInd = ismember(d.condLabel,condInd);
-
-f.(nullLabel) = getYhat(f.(nullLabel),p);
-f.(nullLabel) = getSS(f.(nullLabel),'yHat');
-f.(nullLabel) = getYerr(f.(nullLabel),d);
-f.(nullLabel) = getSS(f.(nullLabel),'yErr');
-
-F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
-f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n' 'yErr' 'yErrSS' 'yErrSS_n'});
-
-
-testLabel = 'cond2v3';
-fullLabel = 'full';
-nullLabel = 'cond2v3null';
-condInd = [2 3];
-runInd = ismember(d.condLabel,condInd);
-
-f.(nullLabel) = getYhat(f.(nullLabel),p);
-f.(nullLabel) = getSS(f.(nullLabel),'yHat');
-f.(nullLabel) = getYerr(f.(nullLabel),d);
-f.(nullLabel) = getSS(f.(nullLabel),'yErr');
-
-F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
-f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n' 'yErr' 'yErrSS' 'yErrSS_n'});
+if ~p.perm.doIt
+    testLabel = 'cond1v2v3';
+    fullLabel = 'full';
+    nullLabel = 'cond1v2v3null';
+    condInd = [1 2 3];
+    runInd = ismember(d.condLabel,condInd);
+    
+    f.(nullLabel) = getYhat(f.(nullLabel),p);
+    f.(nullLabel) = getSS(f.(nullLabel),'yHat');
+    f.(nullLabel) = getYerr(f.(nullLabel),d);
+    f.(nullLabel) = getSS(f.(nullLabel),'yErr');
+    
+    F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
+    f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n' 'yErr' 'yErrSS' 'yErrSS_n'});
+    % imagesc(F.(testLabel).F(:,:,10))
+    
+    
+    testLabel = 'cond1v2';
+    fullLabel = 'full';
+    nullLabel = 'cond1v2null';
+    condInd = [1 2];
+    runInd = ismember(d.condLabel,condInd);
+    
+    f.(nullLabel) = getYhat(f.(nullLabel),p);
+    f.(nullLabel) = getSS(f.(nullLabel),'yHat');
+    f.(nullLabel) = getYerr(f.(nullLabel),d);
+    f.(nullLabel) = getSS(f.(nullLabel),'yErr');
+    
+    F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
+    f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n' 'yErr' 'yErrSS' 'yErrSS_n'});
+    % imagesc(F.(testLabel).F(:,:,10))
+    
+    testLabel = 'cond1v3';
+    fullLabel = 'full';
+    nullLabel = 'cond1v3null';
+    condInd = [1 3];
+    runInd = ismember(d.condLabel,condInd);
+    
+    f.(nullLabel) = getYhat(f.(nullLabel),p);
+    f.(nullLabel) = getSS(f.(nullLabel),'yHat');
+    f.(nullLabel) = getYerr(f.(nullLabel),d);
+    f.(nullLabel) = getSS(f.(nullLabel),'yErr');
+    
+    F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
+    f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n' 'yErr' 'yErrSS' 'yErrSS_n'});
+    
+    
+    testLabel = 'cond2v3';
+    fullLabel = 'full';
+    nullLabel = 'cond2v3null';
+    condInd = [2 3];
+    runInd = ismember(d.condLabel,condInd);
+    
+    f.(nullLabel) = getYhat(f.(nullLabel),p);
+    f.(nullLabel) = getSS(f.(nullLabel),'yHat');
+    f.(nullLabel) = getYerr(f.(nullLabel),d);
+    f.(nullLabel) = getSS(f.(nullLabel),'yErr');
+    
+    F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
+    f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n' 'yErr' 'yErrSS' 'yErrSS_n'});
+end
 
 res.F = F;
 % res.dataDtrd = f.actNull.yErr;

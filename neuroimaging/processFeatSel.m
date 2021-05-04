@@ -70,8 +70,8 @@ if p.featSel.fov.doIt && strcmp(p.featSel.fov.threshMethod,'empirical')
         [featSel_fov,d,p] = empiricalFov(d,p,fullfile(funPath,outDir2));
     else
         [featSel_fov,d,p] = empiricalFov(d,p,fullfile(funPath,outDir));
+        % saves to empiricalFov.mat
     end
-    % saves to empiricalFov.mat
 end
 
 
