@@ -1,4 +1,4 @@
-function processResponses(pMaster,figOption,verbose)
+function processResponses(figOption,verbose)
 actuallyRun = 1;
 if ~actuallyRun
     disp(['skipping ' mfilename])
@@ -29,11 +29,7 @@ else
 end
         funPath = fullfile(repoPath,'C-derived\DecodingHR\fun');
             inDir  = 'c';
-            if pMaster.perm.doIt
-                outDir = 'dPerm';
-            else
-                outDir = 'd';
-            end
+            outDir = 'd';
 %make sure everything is forward slash for mac, linux pc compatibility
 for tmp = {'repoPath' 'funPath' 'inDir' 'outDir'}
     eval([char(tmp) '(strfind(' char(tmp) ',''\''))=''/'';']);
@@ -47,19 +43,6 @@ if actuallyRun
         subj = subjList{subjInd};
         disp([subj ': loading'])
         load(fullfile(funPath,inDir,[subj '.mat']),'d','p')
-        if pMaster.perm.doIt
-            for sessInd = 1:length(d.fun)
-                repLabelList = unique(d.fun(sessInd).repLabel);
-                for repLabelInd = 1:length(repLabelList)
-                    % get labels from one repetition
-                    ind = d.fun(sessInd).repLabel==repLabelList(repLabelInd);
-                    tmpLabel = d.fun(sessInd).condLabel(ind);
-                    % shuffle them
-                    d.fun(sessInd).condLabel(ind) = tmpLabel(randperm(nnz(ind)));
-                end
-            end
-        end
-        
         % Run GLMs
         for sessInd = 1:size(d.fun,2)
             disp([subj ': processing responses (sess' num2str(sessInd) '/' num2str(size(d.fun,2)) ')'])

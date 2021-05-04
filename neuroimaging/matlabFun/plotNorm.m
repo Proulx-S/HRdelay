@@ -19,15 +19,13 @@ for featInd = 1:length(featSelList)
     tmp = strsplit(featSel.featSeq.featSelList{featInd},': ');
     featSelList(featInd) = tmp(1);
 end
+featInd = ismember(featSelList,'act');
 
 %% Get data
 [X,y,~] = getXYK(d,p);
 
 %% Plot
 % select most active voxel
-% featInd = ismember(featSelList,'act');
-featInd = ismember(featSelList,'respVecSig');
-% featInd = ismember(featSelList,'respVecDiff');
 [~,b] = sort(featSel.featSeq.featVal(featSel.indIn,featInd,ind_nSpecFeatSelCond),'descend');
 f0 = plotPolNormExample(X(:,featSel.indIn),y,p,b(1),voxFlag,visibilityFlag);
 % f1 = plotPolNormExampleVox(X,SVMspace,b(1));

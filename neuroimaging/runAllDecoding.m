@@ -12,11 +12,7 @@ else
     repoPath = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
 end
 funPath = fullfile(repoPath,'D-tidy\DecodingHR\decodingOutput');
-if p.perm.doIt
-    outDir  = 'aPerm';
-else
-    outDir  = 'a';
-end
+outDir  = 'a';
 %make sure everything is forward slash for mac, linux pc compatibility
 for tmp = {'repoPath' 'funPath' 'outDir'}
     eval([char(tmp) '(strfind(' char(tmp) ',''\''))=''/'';']);
