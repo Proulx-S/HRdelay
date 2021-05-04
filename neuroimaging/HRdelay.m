@@ -40,7 +40,7 @@ p.featSel.fov.areaLabel = 'v1';
 p.featSel.fov.threshVal = [0.75 7]; % threshMethod='ecc'
 p.featSel.fov.percentile = 20; % threshMethod='ecc'
 % Most activated voxels
-p.featSel.act.doIt = 0;
+p.featSel.act.doIt = 1;
 p.featSel.act.threshMethod = 'fdr'; % '%ile' 'p' 'fdr'
 p.featSel.act.threshVal = 0.05; % threshMethod='p' or 'fdr'
 p.featSel.act.percentile = 20; % threshMethod='%ile'
@@ -87,40 +87,44 @@ if 0
     processResponses(p,figOption,verbose)
     %     processWaveletResponses(figOption,verbose)
 end
-if 0
+if 1
     processFeatSel(p)
+end
+if 0
     visualizeFeatSel(p)
+end
+if 1
     [resBS,resBShr,resWS,f,info] = runAllDecoding(p,verbose);
     plotAllDecoding(p,resBS,info)
     statsAllDecoding(p,resBS,info)
+end
+return
+if 0
     chan = processChanHr(p,resBShr,info);
     f = plotChanHr(p,chan);
     statsChanHr(p,chan);
 end
-
-
-pPerm = p;
-pPerm.perm.doIt = 1;
-pPerm.perm.n = 5;
-pPerm.figOption.verbose = 0;
-pPerm.svm.condPairList = p.svm.condPairList(1);
-resPerm.perfMetric = nan(length(pPerm.meta.subjList),length(pPerm.svm.condPairList),length(pPerm.svm.respFeatList),pPerm.perm.n);
-for permInd = 1:pPerm.perm.n
-    tic
-    processResponses(pPerm,figOption,verbose)
-    toc
-    processFeatSel(pPerm)
-    toc
-    [resBS,~,~,~,info] = runAllDecoding(pPerm,verbose);
-    toc
-    
-    for condPairInd = 1:length(pPerm.svm.condPairList)
-        for respFeatInd = 1:length(pPerm.svm.respFeatList)
-            resPerm.perfMetric(:,condPairInd,respFeatInd,permInd) = resBS{condPairInd,respFeatInd}.subj.auc;
+if 1
+    pPerm = p;
+    pPerm.perm.doIt = 1;
+    pPerm.perm.n = 5;
+    pPerm.figOption.verbose = 0;
+    pPerm.svm.condPairList = p.svm.condPairList(1);
+    resPerm.perfMetric = nan(length(pPerm.meta.subjList),length(pPerm.svm.condPairList),length(pPerm.svm.respFeatList),pPerm.perm.n);
+    for permInd = 1:pPerm.perm.n
+        tic
+        processResponses(pPerm,figOption,verbose)
+        toc
+        processFeatSel(pPerm)
+        toc
+        [resBS,~,~,~,info] = runAllDecoding(pPerm,verbose);
+        toc
+        for condPairInd = 1:length(pPerm.svm.condPairList)
+            for respFeatInd = 1:length(pPerm.svm.respFeatList)
+                resPerm.perfMetric(:,condPairInd,respFeatInd,permInd) = resBS{condPairInd,respFeatInd}.auc;
+            end
         end
     end
-    
-    toc
 end
 
 

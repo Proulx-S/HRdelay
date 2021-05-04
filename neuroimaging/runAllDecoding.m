@@ -2,6 +2,9 @@ function [resBS,resBShr,resWS,f,info] = runAllDecoding(p,verbose)
 if ~exist('verbose','var')
     verbose = 1;
 end
+if ~isfield(p,'perm')
+    p.perm.doIt = 0;
+end
 
 
 %% Define paths

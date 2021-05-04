@@ -324,10 +324,13 @@ end
 disp('BS perfMetric: computing')
 resBS_sess = repmat(perfMetric,[size(d,1) size(d,2)]);
 if p.perm.doIt
-    for i = 1:numel(d)
-        resBS_sess(i) = perfMetric(Y{i},yHat{i},K{i},1);
+    for i = 1:size(d,1)
+        k = cat(1,K{i,1},K{i,2}+max(K{i,1}));
+        y = cat(1,Y{i,:});
+        yhat = cat(1,yHat{i,:});
+        resBS_sess(i) = perfMetric(y,yhat,k,1);
     end
-    resBS.auc = nan(size(resBS_sess));
+    resBS.auc = nan(size(resBS_sess,1),1);
     resBS.auc(:) = [resBS_sess.auc];
     resBShr = [];
     resWS = [];
@@ -335,7 +338,7 @@ if p.perm.doIt
     return
 else
     for i = 1:numel(d)
-        resBS_sess(i) = perfMetric(Y{i},yHat{i},K{i},1);
+        resBS_sess(i) = perfMetric(Y{i},yHat{i},K{i});
     end
 end
 acc_fdr = mafdr([resBS_sess.acc_p],'BHFDR',true);

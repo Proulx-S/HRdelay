@@ -4,6 +4,9 @@ if ~isfield(p,'figOption') || isempty(p.figOption)
     p.figOption.subjInd = 1;
     p.figOption.sessInd = 1;
 end
+if ~isfield(p,'perm')
+    p.perm.doIt = 0;
+end
 if ~isfield(p,'termOption') || isempty(p.figOption)
     p.termOption.verbose = 1;
 end
