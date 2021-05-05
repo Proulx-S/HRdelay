@@ -7,10 +7,10 @@ figOption.subj = 1; % subjInd-> plots participants subjInd; +inf-> plots all par
 p.figOption.subjInd  = figOption.subj;
 p.figOption.sessInd  = 1;
 p.figOption.sliceInd = 7;
-p.figOption.verbose  = 2;
-p.figOption.save  = 2;
+p.figOption.verbose  = 1;
+p.figOption.save  = 0;
 p.termOption.verbose = 1;
-p.termOption.save = 0;
+p.termOption.save = 1;
 
 %% Open diary
 if p.termOption.verbose && p.termOption.save
@@ -81,19 +81,22 @@ p.figOption.save  = 2;
 p.termOption.verbose = 1;
 p.termOption.save = 1;
 
+p.perm.doIt = 0;
 if 0
     importData(verbose)
     applyAreaMask(figOption)
-    processResponses(p,figOption,verbose)
     %     processWaveletResponses(figOption,verbose)
 end
-if 0
+if 1
+    processResponses(p,figOption,verbose)
+end
+if 1
     processFeatSel(p)
 end
-if 0
+if 1
     visualizeFeatSel(p)
 end
-if 0
+if 1
     [resBS,resBShr,resWS,f,info] = runAllDecoding(p,verbose);
     plotAllDecoding(p,resBS,info)
     statsAllDecoding(p,resBS,info)
@@ -103,6 +106,11 @@ if 0
     f = plotChanHr(p,chan);
     statsChanHr(p,chan);
 end
+if p.termOption.save
+    disp(datestr(now))
+    diary off
+end
+return
 if 1
     pPerm = p;
     pPerm.perm.doIt = 1;

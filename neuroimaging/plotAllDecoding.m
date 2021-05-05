@@ -1,6 +1,6 @@
 function plotAllDecoding(p,res,info)
 
-nBoot = 100;
+nBoot = 2^12;
 metric = 'auc';
 condPairList = info.condPairList;
 respFeatList = info.respFeatList;

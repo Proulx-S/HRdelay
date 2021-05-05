@@ -32,6 +32,9 @@ for subjInd = 1:length(subjList)
 end
 load(fullfile(funPath,inDir,'featSel.mat'));
 
+%% Plot GLM designs
+showGLMdesign(featSel{1}.GLMs)
+
 
 
 %% Initialize subj, sess and masks

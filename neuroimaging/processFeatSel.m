@@ -85,6 +85,11 @@ for sessInd = 1:size(d,2)
         p.sessInd = sessInd;
         disp(['subj' num2str(subjInd) '; sess' num2str(sessInd)])
         [featSel{subjInd,sessInd}] = getFeatSel(d{subjInd,sessInd},p,featSel_fov{subjInd,sessInd});
+        featSel{subjInd,sessInd}.GLMs.random.sinDesign = d{subjInd,sessInd}.sinDesign;
+        featSel{subjInd,sessInd}.GLMs.random.hrDesign = d{subjInd,sessInd}.hrDesign;
+        featSel{subjInd,sessInd}.GLMs.random.infoDesign = d{subjInd,sessInd}.infoDesign;
+        featSel{subjInd,sessInd}.GLMs.fixed.sinDesign = d{subjInd,sessInd}.featSel.F.act.design.full;
+        
     end
 end
 % save to featSel.mat
