@@ -16,7 +16,7 @@ for runInd = 1:size(d.data,1)
     timeSz = size(d.data{runInd},4);
     polyDeg = round(timeSz*p.tr/60/2);
     d.poly{runInd,1} = constructpolynomialmatrix(timeSz,0:polyDeg);
-    d.poly{runInd,1}(:,2:end) = d.poly{runInd,1}(:,2:end) - min(d.poly{runInd,1}(:,2:end),[],1);
+    d.poly{runInd,1}(:,2:end) = d.poly{runInd,1}(:,2:end) - min(d.poly{runInd,1}(:,2:end),[],1) - 1;
     d.poly{runInd,1}(:,2:end) = d.poly{runInd,1}(:,2:end) ./ max(d.poly{runInd,1}(:,2:end),[],1);
     d.polyInfo{runInd,1} = cellstr(num2str((0:polyDeg)','poly%d'))';
     p.timeSz(runInd,1) = timeSz;
@@ -140,67 +140,67 @@ F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
 f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n' 'yErr' 'yErrSS' 'yErrSS_n'});
 % imagesc(F.(testLabel).F(:,:,10))
 
-if ~p.perm.doIt
-    testLabel = 'cond1v2v3';
-    fullLabel = 'full';
-    nullLabel = 'cond1v2v3null';
-    condInd = [1 2 3];
-    runInd = ismember(d.condLabel,condInd);
-    
-    f.(nullLabel) = getYhat(f.(nullLabel),p);
-    f.(nullLabel) = getSS(f.(nullLabel),'yHat');
-    f.(nullLabel) = getYerr(f.(nullLabel),d);
-    f.(nullLabel) = getSS(f.(nullLabel),'yErr');
-    
-    F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
-    f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n' 'yErr' 'yErrSS' 'yErrSS_n'});
-    % imagesc(F.(testLabel).F(:,:,10))
-    
-    
-    testLabel = 'cond1v2';
-    fullLabel = 'full';
-    nullLabel = 'cond1v2null';
-    condInd = [1 2];
-    runInd = ismember(d.condLabel,condInd);
-    
-    f.(nullLabel) = getYhat(f.(nullLabel),p);
-    f.(nullLabel) = getSS(f.(nullLabel),'yHat');
-    f.(nullLabel) = getYerr(f.(nullLabel),d);
-    f.(nullLabel) = getSS(f.(nullLabel),'yErr');
-    
-    F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
-    f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n' 'yErr' 'yErrSS' 'yErrSS_n'});
-    % imagesc(F.(testLabel).F(:,:,10))
-    
-    testLabel = 'cond1v3';
-    fullLabel = 'full';
-    nullLabel = 'cond1v3null';
-    condInd = [1 3];
-    runInd = ismember(d.condLabel,condInd);
-    
-    f.(nullLabel) = getYhat(f.(nullLabel),p);
-    f.(nullLabel) = getSS(f.(nullLabel),'yHat');
-    f.(nullLabel) = getYerr(f.(nullLabel),d);
-    f.(nullLabel) = getSS(f.(nullLabel),'yErr');
-    
-    F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
-    f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n' 'yErr' 'yErrSS' 'yErrSS_n'});
-    
-    
-    testLabel = 'cond2v3';
-    fullLabel = 'full';
-    nullLabel = 'cond2v3null';
-    condInd = [2 3];
-    runInd = ismember(d.condLabel,condInd);
-    
-    f.(nullLabel) = getYhat(f.(nullLabel),p);
-    f.(nullLabel) = getSS(f.(nullLabel),'yHat');
-    f.(nullLabel) = getYerr(f.(nullLabel),d);
-    f.(nullLabel) = getSS(f.(nullLabel),'yErr');
-    
-    F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
-    f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n' 'yErr' 'yErrSS' 'yErrSS_n'});
-end
+% if ~p.perm.doIt
+%     testLabel = 'cond1v2v3';
+%     fullLabel = 'full';
+%     nullLabel = 'cond1v2v3null';
+%     condInd = [1 2 3];
+%     runInd = ismember(d.condLabel,condInd);
+%     
+%     f.(nullLabel) = getYhat(f.(nullLabel),p);
+%     f.(nullLabel) = getSS(f.(nullLabel),'yHat');
+%     f.(nullLabel) = getYerr(f.(nullLabel),d);
+%     f.(nullLabel) = getSS(f.(nullLabel),'yErr');
+%     
+%     F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
+%     f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n' 'yErr' 'yErrSS' 'yErrSS_n'});
+%     % imagesc(F.(testLabel).F(:,:,10))
+%     
+%     
+%     testLabel = 'cond1v2';
+%     fullLabel = 'full';
+%     nullLabel = 'cond1v2null';
+%     condInd = [1 2];
+%     runInd = ismember(d.condLabel,condInd);
+%     
+%     f.(nullLabel) = getYhat(f.(nullLabel),p);
+%     f.(nullLabel) = getSS(f.(nullLabel),'yHat');
+%     f.(nullLabel) = getYerr(f.(nullLabel),d);
+%     f.(nullLabel) = getSS(f.(nullLabel),'yErr');
+%     
+%     F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
+%     f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n' 'yErr' 'yErrSS' 'yErrSS_n'});
+%     % imagesc(F.(testLabel).F(:,:,10))
+%     
+%     testLabel = 'cond1v3';
+%     fullLabel = 'full';
+%     nullLabel = 'cond1v3null';
+%     condInd = [1 3];
+%     runInd = ismember(d.condLabel,condInd);
+%     
+%     f.(nullLabel) = getYhat(f.(nullLabel),p);
+%     f.(nullLabel) = getSS(f.(nullLabel),'yHat');
+%     f.(nullLabel) = getYerr(f.(nullLabel),d);
+%     f.(nullLabel) = getSS(f.(nullLabel),'yErr');
+%     
+%     F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
+%     f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n' 'yErr' 'yErrSS' 'yErrSS_n'});
+%     
+%     
+%     testLabel = 'cond2v3';
+%     fullLabel = 'full';
+%     nullLabel = 'cond2v3null';
+%     condInd = [2 3];
+%     runInd = ismember(d.condLabel,condInd);
+%     
+%     f.(nullLabel) = getYhat(f.(nullLabel),p);
+%     f.(nullLabel) = getSS(f.(nullLabel),'yHat');
+%     f.(nullLabel) = getYerr(f.(nullLabel),d);
+%     f.(nullLabel) = getSS(f.(nullLabel),'yErr');
+%     
+%     F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
+%     f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n' 'yErr' 'yErrSS' 'yErrSS_n'});
+% end
 
 res.F = F;
 % res.dataDtrd = f.actNull.yErr;
@@ -308,6 +308,7 @@ res.base = cat(5,...
 
 res.info = 'x X y X x X rep X cond';
 res.design = f.full.design{1};
+res.design(f.full.censorPts{1},:) = 0;
 
 
 function res = fitHrMixed(d,p)
@@ -372,8 +373,9 @@ baseData = cell(size(d.data));
 for runInd = 1:size(f.full.betas,1)
     designInfo = f.full.designInfo{runInd};
     baseInfo = designInfo(4,:);
-    baseInd = all(ismember(baseInfo,'poly0'),1);
-    baseData{runInd} = f.full.betas{runInd}(:,:,:,baseInd);
+    baseLabel = cellstr(num2str((0:p.polyDeg(runInd))','poly%d'))';
+    baseInd = all(ismember(baseInfo,baseLabel),1);
+    baseData{runInd} = mean(f.full.betas{runInd}(:,:,:,baseInd),4);
 end
 baseData = cat(5,...
     cat(4,baseData{d.condLabel==1}),...
@@ -384,6 +386,8 @@ res.hr = res.hr + baseData;
 res.base = baseData;
 res.info = 'x X y X x X rep X cond X t';
 res.design = f.full.design{1};
+res.design(f.full.censorPts{1},:) = 0;
+
 % tmp = permute(res.hr,[6 4 5 1 2 3]);
 % tmp = mean(tmp(:,:,:,:),4);
 % plot(tmp(:,:))

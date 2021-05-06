@@ -33,9 +33,13 @@ end
 load(fullfile(funPath,inDir,'featSel.mat'));
 
 %% Plot GLM designs
-showGLMdesign(featSel{1}.GLMs)
+f = showGLMdesign(featSel{1}.GLMs);
+f{1}.Children.DataAspectRatio = [2 10 1];
+f{2}.Children.DataAspectRatio = [2 10 1];
 
-
+f{1}.Children.Units = 'centimeter';
+f{2}.Children.Units = 'centimeter';
+f{1}.Children.Position(4) = f{2}.Children.Position(4);
 
 %% Initialize subj, sess and masks
 subjInd = p.figOption.subjInd;
@@ -111,7 +115,6 @@ else
     save(filename,'cMap_F','cMap_vein');
 end
 
-f = {};
 %% Plot Brain
 f{end+1} = figure('WindowStyle','docked','color','w','visible',visibility);
 axBak = plotIm(axes,brain(:,:,slice));
