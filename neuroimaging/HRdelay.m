@@ -87,13 +87,13 @@ if 0
     applyAreaMask(figOption)
     %     processWaveletResponses(figOption,verbose)
 end
-if 1
+if 0
     processResponses(p,figOption,verbose)
 end
-if 1
+if 0
     processFeatSel(p)
 end
-if 1
+if 0
     visualizeFeatSel(p)
 end
 if 1

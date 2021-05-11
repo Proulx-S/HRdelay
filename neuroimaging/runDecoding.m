@@ -1,11 +1,11 @@
-function [resBS,resBShr,resWS,f] = runDecoding(p,verbose,nPerm,figOption)
+function [resBS,resBShr,resWS,f] = runDecoding(p,verbose)
 if ~exist('verbose','var')
     verbose = 1;
 end
-if ~exist('figOption','var') || isempty(figOption)
-    figOption.save = 0;
-    figOption.subj = 1; % 'all' or subjInd
-end
+% if ~exist('figOption','var') || isempty(figOption)
+%     figOption.save = 0;
+%     figOption.subj = 1; % 'all' or subjInd
+% end
 if ~isfield(p,'svmSpace') || isempty(p.svmSpace)
     p.svmSpace = 'cart'; % 'cart_HTbSess' 'cartNoAmp_HTbSess' 'cartNoDelay_HTbSess'
     % 'hr' 'hrNoAmp' 'cart' 'cartNoAmp' cartNoAmp_HT 'cartReal', 'cartImag', 'pol', 'polMag' 'polMag_T' or 'polDelay'
@@ -233,6 +233,7 @@ end
 % disp(['line ' num2str(line_num(1).line)]) % displays the line number
 % toc
 
+if 0
 if ~p.perm.doIt
     %% Extract channel HR
     % Testing
@@ -303,7 +304,11 @@ if ~p.perm.doIt
         % get channel response
         for tInd = 1:size(x,3)
             % cross-session SVM testing
+            try
             [yHatHr{subjInd,testInd}(:,:,tInd,:),~] = SVMtest(y,x(:,:,tInd),curSvmModel,0,[]);
+            catch
+                keyboard
+            end
         end
         % get non-specific channel response
         curSvmModel.w = abs(curSvmModel.w);
@@ -316,7 +321,7 @@ if ~p.perm.doIt
         Khr{i} = k;
     end
 end
-
+end
 
 
 %% Compute performance metrics (SLOW 10sec/16sec)
@@ -496,7 +501,7 @@ if verbose
     textLine = {};
     textLine = [textLine {[p.svmSpace '; ' p.condPair]}];
     if p.figOption.verbose>1
-        textLine = [textLine {strjoin(featSel{figOption.subj,1}.featSeq.featSelList,'; ')}];
+        textLine = [textLine {strjoin(featSel{p.figOption.subjInd,1}.featSeq.featSelList,'; ')}];
     end
     
     if p.figOption.verbose>2
@@ -716,7 +721,11 @@ for kInd = 1:length(kList)
     
     w = svmModel(kInd).w;
     b = svmModel(kInd).b;
-    yHat(te,kInd,:) = x(te,:)*w'-b;
+    try
+        yHat(te,kInd,:) = x(te,:)*w'-b;
+    catch
+        keyboard
+    end
     yHatTr(~te,kInd,:) = x(~te,:)*w'-b;
 end
 
@@ -727,7 +736,13 @@ if ~isreal(x)
     nVox = size(x,2);
     switch SVMspace
         case {'cart' 'cartNoAmp' 'cartNoAmp_affineRot' 'cartNoAmp_affineRot_affineCart' 'cart_roi' 'cart_affineRot'}
+%             xExp = nan(size(x,1),size(x,2),size(x,2));
+%             for runInd = 1:size(x,1)
+%                 xExp(runInd,:,:) = real(x(runInd,:))' * imag(x(runInd,:));
+%             end
+%             x = cat(2,real(x),imag(x),xExp(:,:)); clear xExp
             x = cat(2,real(x),imag(x));
+            
         case {'cartNoDelay' 'cartReal' 'cartReal_affineRot'}
             x = real(x);
         case {'cartNoAmpImag' 'cartImag' 'cartImag_affineRot' 'cartNoAmpImag_affineRot'}
@@ -740,48 +755,6 @@ else
     nVox = size(x,2);
     nDim = size(x,2);
 end
-
-
-
-
-
-% function featStat = getFeatStat_ws(x,y,te,SVMspace)
-% nVox = size(x,2);
-% switch SVMspace
-%     case 'cart_HT'
-%         x = [real(x) imag(x)];
-%
-%         featStat = nan(1,nVox);
-%         x = cat(1,x(~te & y==1,:),x(~te & y==2,:));
-%         for voxInd = 1:nVox
-%             stats = T2Hot2d(x(:,[0 nVox]+voxInd));
-%             featStat(voxInd) = stats.T2;
-%         end
-%     case 'cartNoAmp_HT'
-%         x = angle(x);
-%
-%         featStat = nan(1,size(x,2));
-%         for voxInd = 1:size(x,2)
-%             [~, F] = circ_htest(x(~te & y==1,voxInd), x(~te & y==2,voxInd));
-%             featStat(voxInd) = F;
-%         end
-%     case {'polMag_T' 'cartNoDelay_HT'}
-%         x = abs(x);
-%
-%         [~,~,~,STATS] = ttest(x(~te & y==1,:),x(~te & y==2,:));
-%         featStat = STATS.tstat;
-%     case 'cartReal_T'
-%         x = real(x);
-%
-%         [~,~,~,STATS] = ttest(x(~te & y==1,:),x(~te & y==2,:));
-%         featStat = STATS.tstat;
-%     case {'cart' 'cartNoAmp' 'cartNoDelay'...
-%             'cart_HTbSess' 'cartNoAmp_HTbSess' 'cartNoDelay_HTbSess'...
-%             'polMag'}
-%     otherwise
-%         error('X')
-% end
-
 
 
 function f = plotPolNormExampleVox(x,SVMspace,b)

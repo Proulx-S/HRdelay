@@ -29,6 +29,11 @@ hEbM = errorbar(x,y,yNeg,yPox,xNeg,xPos,'^'); hold on
 hEbM.MarkerFaceColor = 'w';
 hEbM.Color = 'k';
 
+
+x = mean(X.sess.(metric)(:));
+y = mean(Y.sess.(metric)(:));
+plot(x,y,'MarkerFaceColor','w','MarkerEdgeColor','k','linestyle','none','marker','s','markersize',10);
+
 switch metric
     case {'acc' 'auc'}
         xlim([0 1])
