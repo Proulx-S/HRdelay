@@ -43,8 +43,9 @@ resBS = cell(length(condPairList),length(respFeatList));
 resBShr = cell(length(condPairList),length(respFeatList));
 resWS = cell(length(condPairList),length(respFeatList));
 f = cell(length(condPairList),length(respFeatList));
+p.complexSpace = p.svm.complexSpace;
 for respFeatInd = 1:length(respFeatList)
-    p.svmSpace = respFeatList{respFeatInd};
+    p.chanSpace = respFeatList{respFeatInd};
     for condPairInd = 1:length(condPairList)
         if condPairInd~=1
             p.figOption.verbose = 0;
@@ -72,7 +73,7 @@ if ~p.perm.doIt
     %% Save figures
     if p.figOption.verbose
         f = mat2cell([f{:}],1,ones(1,numel([f{:}])));
-        fullfilename = fullfile(fullpath,'decodingFig');
+        fullfilename = fullfile(p.figOption.finalDir,'decodingFig');
         for i = 1:numel(f)
             curF = f{i};
             curF.Color = 'none';

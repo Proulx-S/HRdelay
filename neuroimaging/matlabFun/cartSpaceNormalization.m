@@ -1,11 +1,11 @@
-function [x,cartNorm] = cartSpaceNormalization(x,SVMspace,te)
+function [x,cartNorm] = cartSpaceNormalization(x,chanSpace,te)
 [x,sz] = reDim1(x);
 if ~exist('te','var') || isempty(te)
     te = false(size(x,1),1);
 end
-if isstruct(SVMspace)
-    cartNorm = SVMspace.svm;
-    SVMspace = SVMspace.svmSpace;
+if isstruct(chanSpace)
+    cartNorm = chanSpace.svm;
+    chanSpace = chanSpace.chanSpace;
     computeNorm = false;
 else
     computeNorm = true;
@@ -13,7 +13,7 @@ end
 
 if computeNorm
     % Specify norm
-    switch SVMspace
+    switch chanSpace
         case {'cart' 'cartNoAmp' 'cartNoAmp_affineRot' 'cart_roi' 'cart_affineRot'}
 %             if doCartSpaceScale
                 normSpace.realShift = 'vox';

@@ -1,4 +1,4 @@
-function plotAllDecoding(p,res,info)
+function f = plotAllDecoding(p,res,info)
 
 nBoot = 2^12;
 metric = 'auc';
@@ -29,7 +29,7 @@ yErLow = yAv-yBoot_90CI(:,:,1);
 yErHigh = yBoot_90CI(:,:,2)-yAv;
 % yEr = std(y,[],3);
 
-figure('WindowStyle','docked');
+f = figure('WindowStyle','docked');
 hBar = bar(yAv); hold on
 for i = 1:length(condPairList)
 % for i = 1:length(respFeatList)
@@ -49,7 +49,21 @@ uistack(hP,'bottom')
 % legend(hBar,respFeatList)
 legend(hBar,condPairList)
 
-
+%% Save
+if p.figOption.save
+    fullfilename = fullfile(p.figOption.finalDir,'decodingSummary');
+    curF = f;
+    curF.Color = 'none';
+    set(findobj(curF.Children,'type','Axes'),'color','none')
+    curFile = fullfilename;
+    curExt = 'svg';
+    saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
+    curF.Color = 'w';
+    curExt = 'fig';
+    saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
+    curExt = 'jpg';
+    saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
+end
 
 function [yBoot_90CI,yBoot_95CI] = bootThat(y,nBoot)
 nSubj = size(y,3);
@@ -71,4 +85,5 @@ yBoot = permute(yBoot,[2:length(sz) 1]);
 sz = size(yBoot);
 yBoot_90CI = prctile(yBoot,[5 95],length(sz));
 yBoot_95CI = prctile(yBoot,[2.5 97.5],length(sz));
+
 

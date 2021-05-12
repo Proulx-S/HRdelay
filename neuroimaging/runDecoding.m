@@ -6,8 +6,8 @@ end
 %     figOption.save = 0;
 %     figOption.subj = 1; % 'all' or subjInd
 % end
-if ~isfield(p,'svmSpace') || isempty(p.svmSpace)
-    p.svmSpace = 'cart'; % 'cart_HTbSess' 'cartNoAmp_HTbSess' 'cartNoDelay_HTbSess'
+if ~isfield(p,'chanSpace') || isempty(p.chanSpace)
+    p.chanSpace = 'cart'; % 'cart_HTbSess' 'cartNoAmp_HTbSess' 'cartNoDelay_HTbSess'
     % 'hr' 'hrNoAmp' 'cart' 'cartNoAmp' cartNoAmp_HT 'cartReal', 'cartImag', 'pol', 'polMag' 'polMag_T' or 'polDelay'
 end
 f = [];
@@ -48,7 +48,8 @@ sessList = fields(d{1});
 load(fullfile(funPath,inDir,'featSel.mat'),'featSel');
 if verbose
     disp('---');
-    disp(['SVM space: ' p.svmSpace]);
+    disp(['Channel space: ' p.chanSpace '-' p.condPair]);
+    disp(['Complex space: ' p.complexSpace]);
 end
 
 %% Reorganize
@@ -97,7 +98,7 @@ end
 %     error('code that')
 %     filename = fullfile(pwd,mfilename);
 %     if ~exist(filename,'dir'); mkdir(filename); end
-%     filename = fullfile(filename,p.svmSpace);
+%     filename = fullfile(filename,p.chanSpace);
 %     f.Color = 'none';
 %     set(findobj(f.Children,'type','Axes'),'color','none')
 %     set(findobj(f.Children,'type','PolarAxes'),'color','none')
@@ -233,8 +234,9 @@ end
 % disp(['line ' num2str(line_num(1).line)]) % displays the line number
 % toc
 
-if 0
-if ~p.perm.doIt
+if ~p.perm.doIt...
+        && strcmp(p.svm.kernel.type,'lin')...
+        && strcmp(p.svm.complexSpace,'bouboulisDeg1');
     %% Extract channel HR
     % Testing
     for i = 1:numel(d)
@@ -260,7 +262,7 @@ if ~p.perm.doIt
         x = x(:,featSelInd,:);
         % transform w
         curSvmModel = svmModel{subjInd,trainInd};
-        switch p.svmSpace
+        switch p.chanSpace
             case 'cart'
                 % complexify x?
                 % realifiy w?
@@ -321,7 +323,6 @@ if ~p.perm.doIt
         Khr{i} = k;
     end
 end
-end
 
 
 %% Compute performance metrics (SLOW 10sec/16sec)
@@ -351,11 +352,13 @@ for i = 1:numel(d)
     resBS_sess(i).acc_fdr = acc_fdr(i);
     resBS_sess(i).nVoxOrig = size(d{i}.sin,1);
     resBS_sess(i).nVox = nnz(featSel{i}.indIn);
-    resBS_sess(i).svmSpace = p.svmSpace;
+    resBS_sess(i).chanSpace = p.chanSpace;
+    resBS_sess(i).complexSpace = p.complexSpace;
+    resBS_sess(i).svmKernel = p.svm.kernel.type;
     resBS_sess(i).condPair = p.condPair;
 end
 % resBS_sess = orderfields(resBS_sess,[1 2 3 4 5 6 7 8 9 15 10 11 12 13 14 16 17 18 19]);
-resBS_sess = orderfields(resBS_sess,[1 2 3 4 5 6 7 8 9 17 10 11 12 13 14 15 16 18 19 20 21]);
+% resBS_sess = orderfields(resBS_sess,[1 2 3 4 5 6 7 8 9 17 10 11 12 13 14 15 16 18 19 20 21]);
 disp('BS perfMetric: done')
 
 if ~isempty(Yhr{1})
@@ -373,7 +376,7 @@ for i = 1:numel(d)
     resBShr_sess(i).acc_fdr = [];
     resBShr_sess(i).nVoxOrig = size(d{i}.sin,1);
     resBShr_sess(i).nVox = nnz(featSel{i}.indIn);
-    resBShr_sess(i).svmSpace = p.svmSpace;
+    resBShr_sess(i).chanSpace = p.chanSpace;
     resBShr_sess(i).condPair = p.condPair;
 end
 % resBShr_sess = orderfields(resBShr_sess,[1 2 3 4 5 6 7 8 9 17 10 11 12 13 14 15 16 18 19 20 21 22]);
@@ -391,10 +394,12 @@ for i = 1:numel(d)
     resWS_sess(i).acc_fdr = acc_fdr(i);
     resWS_sess(i).nVoxOrig = size(d{i}.sin,1);
     resWS_sess(i).nVox = nnz(featSel{i}.indIn);
-    resWS_sess(i).svmSpace = p.svmSpace;
+    resWS_sess(i).chanSpace = p.chanSpace;
+    resWS_sess(i).complexSpace = p.complexSpace;
+    resWS_sess(i).svmKernel = p.svm.kernel.type;
     resWS_sess(i).condPair = p.condPair;
 end
-resWS_sess = orderfields(resWS_sess,[1 2 3 4 5 6 7 8 9 17 10 11 12 13 14 15 16 18 19 20 21]);
+% resWS_sess = orderfields(resWS_sess,[1 2 3 4 5 6 7 8 9 17 10 11 12 13 14 15 16 18 19 20 21]);
 disp('WS perfMetric: done')
 
 
@@ -499,7 +504,7 @@ if verbose
     ax.XLabel.String = {'between-session' ax.XLabel.String};
     ax.YLabel.String = {'within-session' ax.YLabel.String};
     textLine = {};
-    textLine = [textLine {[p.svmSpace '; ' p.condPair]}];
+    textLine = [textLine {[p.chanSpace '; ' p.condPair]}];
     if p.figOption.verbose>1
         textLine = [textLine {strjoin(featSel{p.figOption.subjInd,1}.featSeq.featSelList,'; ')}];
     end
@@ -560,7 +565,7 @@ info = [method dir num2str(featSelInfo.(method))];
 
 function [x,y,k,t] = getXYK_wave(dP,p,opt)
 % Define x(data), y(label) and k(xValFolds)
-switch p.svmSpace
+switch p.chanSpace
     case {'cart' 'cart_HT' 'cart_HTbSess'...
             'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'...
             'cartNoAmpImag'...
@@ -648,13 +653,12 @@ else
     kList = unique(K);
 end
 
-
 normTr.k = [];
-normTr.svmSpace = '';
+normTr.chanSpace = '';
 normTr.pol = struct('rhoScale',[],'thetaShift',[]);
 normTr.svm = struct('scale',[],'shift',[]);
 normTr = repmat(normTr,[1 1 length(kList)]);
-svmModel = repmat(struct('k',[],'svmSpace',[],'norm',[],'w',[],'b',[],'Paramters',[],'info',[]),[1 1 length(kList)]);
+svmModel = repmat(struct('k',[],'chanSpace',[],'norm',[],'w',[],'b',[],'Paramters',[],'info',[]),[1 1 length(kList)]);
 for kInd = 1:length(kList)
     % Split train and test
     te = K==kList(kInd);
@@ -662,28 +666,40 @@ for kInd = 1:length(kList)
     x = X(~te,:);
     
     % Normalize
-    [x,normTr(:,:,kInd).pol] = polarSpaceNormalization(x,p.svmSpace);
-    [x,normTr(:,:,kInd).svm] = cartSpaceNormalization(x,p.svmSpace);
-    [x,~,~] = complex2svm(x,p.svmSpace);
+    [x,normTr(:,:,kInd).pol] = polarSpaceNormalization(x,p.chanSpace);
+    [x,normTr(:,:,kInd).svm] = cartSpaceNormalization(x,p.chanSpace);
+    [x,~,~] = complex2svm(x,p.chanSpace,p.complexSpace);
     normTr(:,:,kInd).k = kList(kInd);
-    normTr(:,:,kInd).svmSpace = p.svmSpace;
+    normTr(:,:,kInd).chanSpace = p.chanSpace;
     
     % Train
-    model = svmtrain(y,x,'-t 0 -q');
-    w = model.sv_coef'*model.SVs;
-    b = model.rho;
-    toUnitNorm = norm(w);
-    w = w./toUnitNorm;
-    b = b./toUnitNorm;
-    
+    switch p.svm.kernel.type
+        case 'lin'
+            model = svmtrain(y,x,'-t 0 -q');
+            w = model.sv_coef'*model.SVs;
+            b = model.rho;
+            toUnitNorm = norm(w);
+            w = w./toUnitNorm;
+            b = b./toUnitNorm;
+            svmModel(:,:,kInd).model = [];
+            svmModel(:,:,kInd).info = '   yHat = x*w''-b   ';
+        case 'rbf'
+            model = svmtrain(y,x,'-t 2 -q');
+            w = nan(1,size(x,2));
+            b = nan;
+            svmModel(:,:,kInd).model = model;
+            svmModel(:,:,kInd).info = '   [~,~,yHat] = svmpredict(y,x,model,''-q'')   ';
+        otherwise
+            error('X')
+    end
     % Store
     svmModel(:,:,kInd).k = kList(kInd);
     svmModel(:,:,kInd).w = w;
     svmModel(:,:,kInd).b = b;
+    svmModel(:,:,kInd).kernel = p.svm.kernel.type;
     svmModel(:,:,kInd).Paramters = model.Parameters;
-    svmModel(:,:,kInd).info = '   yHat = x*w''-b   ';
-    svmModel(:,:,kInd).svmSpace = p.svmSpace;
-    %     svmModel(:,:,kInd).norm = p.norm;
+    svmModel(:,:,kInd).chanSpace = p.chanSpace;
+    svmModel(:,:,kInd).complexSpace = p.complexSpace;
 end
 
 function [yHat,yHatTr] = SVMtest(Y,X,svmModel,nrmlz,K)
@@ -696,7 +712,9 @@ yHat = nan([size(Y,1) length(kList) size(svmModel(1).w,1)]);
 yHatTr = nan([size(Y,1) length(kList) size(svmModel(1).w,1)]);
 for kInd = 1:length(kList)
     x = X;
-    SVMspace = svmModel(kInd).svmSpace;
+    chanSpace    = svmModel(kInd).chanSpace;
+    complexSpace = svmModel(kInd).complexSpace;
+    kernel = svmModel(kInd).kernel;
     % Split train and test
     if kList(kInd)==0
         te = true(size(Y));
@@ -706,8 +724,8 @@ for kInd = 1:length(kList)
     
     % Normalize
     if ~exist('nrmlz','var') || isempty(nrmlz)
-        [x,~] = polarSpaceNormalization(x,svmModel(kInd).svmSpace);
-        [x,~] = cartSpaceNormalization(x,svmModel(kInd).svmSpace);
+        [x,~] = polarSpaceNormalization(x,svmModel(kInd).chanSpace);
+        [x,~] = cartSpaceNormalization(x,svmModel(kInd).chanSpace);
     elseif isstruct(nrmlz)
         [x,~] = polarSpaceNormalization(x,nrmlz(kInd),te);
         [x,~] = cartSpaceNormalization(x,nrmlz(kInd),te);
@@ -717,32 +735,42 @@ for kInd = 1:length(kList)
     else
         error('don''t know what this is')
     end
-    [x,~,~] = complex2svm(x,SVMspace);
+    [x,~,~] = complex2svm(x,chanSpace,complexSpace);
     
-    w = svmModel(kInd).w;
-    b = svmModel(kInd).b;
-    try
-        yHat(te,kInd,:) = x(te,:)*w'-b;
-    catch
-        keyboard
+    switch kernel
+        case 'lin'
+            w = svmModel(kInd).w;
+            b = svmModel(kInd).b;
+            yHat(te,kInd,:) = x(te,:)*w'-b;
+            yHatTr(~te,kInd,:) = x(~te,:)*w'-b;
+        case 'rbf'
+            svmModel(kInd).info
+            [~,~,yHat(te,kInd,:)] = svmpredict(Y(te),x(te,:),svmModel(kInd).model,'-q');
+            [~,~,yHatTr(~te,kInd,:)] = svmpredict(Y(~te),x(~te,:),svmModel(kInd).model,'-q');
+        otherwise
+            error('X')
     end
-    yHatTr(~te,kInd,:) = x(~te,:)*w'-b;
 end
 
 
-function [x,nVox,nDim] = complex2svm(x,SVMspace)
+function [x,nVox,nDim] = complex2svm(x,chanSpace,complexSpace)
 % Output SVM ready data
 if ~isreal(x)
     nVox = size(x,2);
-    switch SVMspace
+    switch chanSpace
         case {'cart' 'cartNoAmp' 'cartNoAmp_affineRot' 'cartNoAmp_affineRot_affineCart' 'cart_roi' 'cart_affineRot'}
-%             xExp = nan(size(x,1),size(x,2),size(x,2));
-%             for runInd = 1:size(x,1)
-%                 xExp(runInd,:,:) = real(x(runInd,:))' * imag(x(runInd,:));
-%             end
-%             x = cat(2,real(x),imag(x),xExp(:,:)); clear xExp
-            x = cat(2,real(x),imag(x));
-            
+            switch complexSpace
+                case 'bouboulisDeg1'
+                    x = cat(2,real(x),imag(x));
+                case 'bouboulisDeg2'
+                    xExp = nan(size(x,1),size(x,2),size(x,2));
+                    for runInd = 1:size(x,1)
+                        xExp(runInd,:,:) = real(x(runInd,:))' * imag(x(runInd,:));
+                    end
+                    x = cat(2,real(x),imag(x),xExp(:,:)); clear xExp
+                otherwise
+                    error('X')
+            end
         case {'cartNoDelay' 'cartReal' 'cartReal_affineRot'}
             x = real(x);
         case {'cartNoAmpImag' 'cartImag' 'cartImag_affineRot' 'cartNoAmpImag_affineRot'}

@@ -1,6 +1,7 @@
 clear all
 close all
 
+finalSubDir = 'boubouDeg1_lin';
 %% Display parameters
 figOption.save = 1; % save all figures
 figOption.subj = 1; % subjInd-> plots participants subjInd; +inf-> plots all participant (if verbose==0, will only plot subjInd==1 but still produce and save all the other figures)
@@ -9,13 +10,19 @@ p.figOption.sessInd  = 1;
 p.figOption.sliceInd = 7;
 p.figOption.verbose  = 1;
 p.figOption.save  = 0;
+p.figOption.finalDir = fullfile('/Users/sebastienproulx/McGill University/Farivar Lab - Dissertations/Sebastien/Manuscripts/aa - in preparation/SP_Neuroimage_HRdelay/matlabFigOutputs',finalSubDir); if ~exist(p.figOption.finalDir,'dir'); mkdir(p.figOption.finalDir); end
 p.termOption.verbose = 1;
 p.termOption.save = 1;
+p.termOption.finalDir = fullfile('/Users/sebastienproulx/McGill University/Farivar Lab - Dissertations/Sebastien/Manuscripts/aa - in preparation/SP_Neuroimage_HRdelay/matlabTermOutputs',finalSubDir); if ~exist(p.termOption.finalDir,'dir'); mkdir(p.figOption.finalDir); end
 
 %% Open diary
+if ~exist(p.termOption.finalDir,'dir')
+    mkdir(p.termOption.finalDir)
+end
 if p.termOption.verbose && p.termOption.save
-    eval(['diary ' fullfile(pwd,[mfilename '-' datestr(now,'YYYYmmDD-hh_MM_ss') '.log'])])
-    disp(fullfile(pwd,[mfilename '.mat']))
+    cmd = ['diary ''' fullfile(p.termOption.finalDir,[mfilename '-' datestr(now,'YYYYmmDD-hh_MM_ss') '.log'''])];
+    eval(cmd)
+    disp(fullfile(p.termOption.finalDir,[mfilename '.mat']))
     disp(datestr(now))
 end
 
@@ -66,7 +73,11 @@ p.featSel.global.method = 'custom2';
 % 'custom1'-> featSel of active voxels uses all three conditions but featSel of discriminant voxels uses only the conditions to be decoded
 % 'custom2'-> featSel of active and most discriminant voxels uses only the conditions to be decoded
 
-%% SVM channel parameters
+%% SVM parameters
+p.svm.kernel.type = 'lin';
+p.svm.complexSpace = 'bouboulisDeg1'; % 'bouboulisDeg1' 'bouboulisDeg2'
+
+%% Channel parameters
 p.svm.condPairList = {'grat1VSgrat2' 'grat1VSplaid' 'grat2VSplaid'};
 p.svm.respFeatList = {'cart' 'cartNoDelay' 'cartNoAmp'};
 
@@ -98,7 +109,7 @@ if 0
 end
 if 1
     [resBS,resBShr,resWS,f,info] = runAllDecoding(p,verbose);
-    plotAllDecoding(p,resBS,info)
+    plotAllDecoding(p,resBS,info);
     statsAllDecoding(p,resBS,info)
 end
 if 0
