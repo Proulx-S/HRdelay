@@ -4,6 +4,9 @@ if ~isfield(p,'figOption') || isempty(p.figOption)
     p.figOption.subjInd = 1;
     p.figOption.sessInd = 1;
 end
+if ~isfield(p,'perm')
+    p.perm.doIt = 0;
+end
 if ~isfield(p,'termOption') || isempty(p.figOption)
     p.termOption.verbose = 1;
 end
@@ -50,8 +53,19 @@ d = dP; clear dP
 
 %% Retinotopic feature selection
 if p.featSel.fov.doIt && strcmp(p.featSel.fov.threshMethod,'empirical')
-    [featSel_fov,d,p] = empiricalFov(d,p,fullfile(funPath,outDir));
-    % saves to empiricalFov.mat
+    if p.perm.doIt
+        % Not actually using permuted data. But it does not acutally
+        % matters, because permuting does not change the result here. This
+        % step is base on the response delay irrespective of stimulus
+        % condition (delay computed after averaging across repetutions and
+        % stimulus conditions). Loading the precomputed empirical FOV
+        % therefore yields the same result as recomputing it, but save
+        % loads of time.
+        [featSel_fov,d,p] = empiricalFov(d,p,fullfile(funPath,outDir2));
+    else
+        [featSel_fov,d,p] = empiricalFov(d,p,fullfile(funPath,outDir));
+        % saves to empiricalFov.mat
+    end
 end
 
 
@@ -65,6 +79,11 @@ for sessInd = 1:size(d,2)
         p.sessInd = sessInd;
         disp(['subj' num2str(subjInd) '; sess' num2str(sessInd)])
         [featSel{subjInd,sessInd}] = getFeatSel(d{subjInd,sessInd},p,featSel_fov{subjInd,sessInd});
+        featSel{subjInd,sessInd}.GLMs.random.sinDesign = d{subjInd,sessInd}.sinDesign;
+        featSel{subjInd,sessInd}.GLMs.random.hrDesign = d{subjInd,sessInd}.hrDesign;
+        featSel{subjInd,sessInd}.GLMs.random.infoDesign = d{subjInd,sessInd}.infoDesign;
+        featSel{subjInd,sessInd}.GLMs.fixed.sinDesign = d{subjInd,sessInd}.featSel.F.act.design.full;
+        
     end
 end
 % save to featSel.mat

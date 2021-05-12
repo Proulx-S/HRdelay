@@ -95,7 +95,9 @@ for subjInd = 1:size(resSubj.y,1)
 end
 resSubj.nVoxOrig = round(median(resSess.nVoxOrig,2));
 resSubj.nVox = round(median(resSess.nVox,2));
-resSubj.svmSpace = resSess.svmSpace(:,1);
+resSubj.chanSpace = resSess.chanSpace(:,1);
+resSubj.complexSpace = resSess.complexSpace(:,1);
+resSubj.svmKernel = resSess.svmKernel(:,1);
 
 resGroup.y = cell2mat(resSubj.y);
 resGroup.yHat = cell2mat(resSubj.yHat);
@@ -167,4 +169,4 @@ for tInd = 1:size(resGroup.yHat,2)
 end
 resGroup.nVoxOrig = round(median(resSubj.nVoxOrig,1));
 resGroup.nVox = round(median(resSubj.nVox,1));
-resGroup.svmSpace = resSubj.svmSpace{1};
+resGroup.chanSpace = resSubj.chanSpace{1};

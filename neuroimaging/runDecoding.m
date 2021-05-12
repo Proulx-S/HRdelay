@@ -1,24 +1,14 @@
-function [resBS,resBShr,resWS,f] = runDecoding(p,verbose,nPerm,figOption)
+function [resBS,resBShr,resWS,f] = runDecoding(p,verbose)
 if ~exist('verbose','var')
     verbose = 1;
 end
-if ~exist('figOption','var') || isempty(figOption)
-    figOption.save = 0;
-    figOption.subj = 1; % 'all' or subjInd
-end
-if ~isfield(p,'svmSpace') || isempty(p.svmSpace)
-    p.svmSpace = 'cart'; % 'cart_HTbSess' 'cartNoAmp_HTbSess' 'cartNoDelay_HTbSess'
+% if ~exist('figOption','var') || isempty(figOption)
+%     figOption.save = 0;
+%     figOption.subj = 1; % 'all' or subjInd
+% end
+if ~isfield(p,'chanSpace') || isempty(p.chanSpace)
+    p.chanSpace = 'cart'; % 'cart_HTbSess' 'cartNoAmp_HTbSess' 'cartNoDelay_HTbSess'
     % 'hr' 'hrNoAmp' 'cart' 'cartNoAmp' cartNoAmp_HT 'cartReal', 'cartImag', 'pol', 'polMag' 'polMag_T' or 'polDelay'
-end
-if isstruct(p.svmSpace)
-    doPerm = 1;
-    res = p.svmSpace;
-    p.svmSpace = res.summary.svmSpace;
-    if ~exist('nPerm','var') || isempty(nPerm)
-        nPerm = 100;
-    end
-else
-    doPerm = 0;
 end
 f = [];
 % tic
@@ -39,27 +29,6 @@ end
 clear tmp
 
 
-if doPerm
-    error('double-check that')
-    filename = fullfile(pwd,mfilename);
-    filename = fullfile(filename,[p.svmSpace '_' num2str(nPerm) 'perm']);
-    if exist([filename '.mat'],'file')
-        load(filename)
-        if verbose
-            disp('permutation found on disk, skipping')
-            disp('Group results:')
-            disp(['  hit    =' num2str(res.summary.hit) '/' num2str(res.summary.nObs)])
-            disp(['  acc    =' num2str(res.summary.acc*100,'%0.2f%%')])
-            disp(' permutation test stats')
-            disp(['  thresh =' num2str(res.perm.summary.accThresh*100,'%0.2f%%')])
-            disp(['  p      =' num2str(res.perm.summary.p,'%0.3f')])
-        end
-        return
-    else
-        disp(['running ' num2str(nPerm) ' permutations']);
-    end
-end
-
 
 %% Load data
 dAll = cell(size(subjList,1),1);
@@ -75,7 +44,8 @@ sessList = fields(d{1});
 load(fullfile(funPath,inDir,'featSel.mat'),'featSel');
 if verbose
     disp('---');
-    disp(['SVM space: ' p.svmSpace]);
+    disp(['Channel space: ' p.chanSpace '-' p.condPair]);
+    disp(['Complex space: ' p.complexSpace]);
 end
 
 %% Reorganize
@@ -124,7 +94,7 @@ end
 %     error('code that')
 %     filename = fullfile(pwd,mfilename);
 %     if ~exist(filename,'dir'); mkdir(filename); end
-%     filename = fullfile(filename,p.svmSpace);
+%     filename = fullfile(filename,p.chanSpace);
 %     f.Color = 'none';
 %     set(findobj(f.Children,'type','Axes'),'color','none')
 %     set(findobj(f.Children,'type','PolarAxes'),'color','none')
@@ -153,43 +123,49 @@ Khr = cell(size(d));
 nOrig = nan(size(d));
 n = nan(size(d));
 
-disp('Within-session SVM cross-validation')
-disp('with between-session feature selection')
-for i = 1:numel(d)
-    if verbose
-        disp(['-training and testing sess ' num2str(i) '/' num2str(numel(d))])
+if ~p.perm.doIt
+    disp('Within-session SVM cross-validation')
+    disp('with between-session feature selection')
+    for i = 1:numel(d)
+        if verbose
+            disp(['-training and testing sess ' num2str(i) '/' num2str(numel(d))])
+        end
+        [subjInd,sessInd] = ind2sub(size(d),i);
+        switch sessInd
+            case 1
+                sessIndCross = 2;
+            case 2
+                sessIndCross = 1;
+            otherwise
+                error('X')
+        end
+        
+        % get data
+        [X,y,k] = getXYK(d{subjInd,sessInd},p);
+        
+        % cross-session feature selection
+        featSelInd = featSel{subjInd,sessIndCross}.indIn;
+        x = X(:,featSelInd);
+        
+        % k-fold training
+        [svmModelK{i},nrmlzK{i}] = SVMtrain(y,x,p,k);
+        % k-fold testing
+        [yHatK{i},yHatK_tr{i}] = SVMtest(y,x,svmModelK{i},nrmlzK{i},k);
+        yHatK{i} = nanmean(yHatK{i},2);
+        % output
+        Y{i} = y;
+        K{i} = k;
+        nOrig(i) = length(featSelInd);
+        n(i) = nnz(featSelInd);
     end
-    [subjInd,sessInd] = ind2sub(size(d),i);
-    switch sessInd
-        case 1
-            sessIndCross = 2;
-        case 2
-            sessIndCross = 1;
-        otherwise
-            error('X')
+else
+    for i = 1:numel(d)
+        [subjInd,sessInd] = ind2sub(size(d),i);
+        % get data
+        [~,y,k] = getXYK(d{subjInd,sessInd},p);
+        Y{i} = y;
+        K{i} = k;
     end
-    
-    if doPerm
-        error('code that')
-        disp(['for sess ' num2str(i) ' of ' num2str(numel(d))])
-    end
-    % get data
-    [X,y,k] = getXYK(d{subjInd,sessInd},p);
-    
-    % cross-session feature selection
-    featSelInd = featSel{subjInd,sessIndCross}.indIn;
-    x = X(:,featSelInd);
-    
-    % k-fold training
-    [svmModelK{i},nrmlzK{i}] = SVMtrain(y,x,p,k);
-    % k-fold testing
-    [yHatK{i},yHatK_tr{i}] = SVMtest(y,x,svmModelK{i},nrmlzK{i},k);
-    yHatK{i} = nanmean(yHatK{i},2);
-    % output
-    Y{i} = y;
-    K{i} = k;
-    nOrig(i) = length(featSelInd);
-    n(i) = nnz(featSelInd);
 end
 
 % line_num=dbstack; % get this line number
@@ -212,10 +188,6 @@ for i = 1:numel(d)
         disp(['-training sess ' num2str(i) '/' num2str(numel(d))])
     end
     [subjInd,trainInd] = ind2sub(size(d),i);
-    if doPerm
-        error('code that')
-        disp(['for sess ' num2str(i) ' of ' num2str(numel(d))])
-    end
     % get training data
     [X,y,~] = getXYK(d{subjInd,trainInd},p);
     % same-session feature-selection
@@ -258,88 +230,94 @@ end
 % disp(['line ' num2str(line_num(1).line)]) % displays the line number
 % toc
 
-if 1
-%% Extract channel HR
-% Testing
-for i = 1:numel(d)
-    if verbose
-        disp(['-channel timeseries for sess ' num2str(i) '/' num2str(numel(d))])
-    end
-    [subjInd,testInd] = ind2sub(size(d),i);
-    switch testInd
-        case 1
-            trainInd = 2;
-        case 2
-            trainInd = 1;
-        otherwise
-            error('X')
-    end
-    % get test data
-    pTmp = p;
-    pTmp.condPair = 'all';
-    hrFlag = true;
-    [x,y,k] = getXYK(d{subjInd,testInd},pTmp,hrFlag);
-    % cross-session feature selection
-    featSelInd = featSel{subjInd,trainInd}.indIn;
-    x = x(:,featSelInd,:);
-    % transform w
-    curSvmModel = svmModel{subjInd,trainInd};
-    switch p.svmSpace
-        case 'cart'
-            % complexify x?
-            % realifiy w?
-            
-            % Quadrant-specific analysis:
-            % 1) +real
-            % 2) +real +imag
-            % 3) +imag
-            % 4) +imag -real
-            w = complex(curSvmModel.w(1:end/2),curSvmModel.w(end/2+1:end));
-%             figure('WindowStyle','docked');
-%             polarplot(w,'k.'); hold on
-            secAngle = 0:pi/4:pi/4*3;
-            wSec = zeros(length(secAngle),length(w));
-            for secInd = 1:length(secAngle)
-                indA = (wrapToPi(angle(w)-secAngle(secInd)) < pi/4/2 ...
-                    & wrapToPi(angle(w)-secAngle(secInd)) >= -pi/4/2);
-                indB = (wrapToPi(angle(w)-secAngle(secInd) - pi) < pi/4/2 ...
-                    & wrapToPi(angle(w)-secAngle(secInd) - pi) >= -pi/4/2);
-%                 polarplot(w(indA | indB),'.'); hold on
-                wSec(secInd,indA) = abs(w(1,indA));
-                wSec(secInd,indB) = -abs(w(1,indB));
+if ~p.perm.doIt...
+        && strcmp(p.svm.kernel.type,'lin')...
+        && strcmp(p.svm.complexSpace,'bouboulisDeg1');
+    %% Extract channel HR
+    % Testing
+    for i = 1:numel(d)
+        if verbose
+            disp(['-channel timeseries for sess ' num2str(i) '/' num2str(numel(d))])
+        end
+        [subjInd,testInd] = ind2sub(size(d),i);
+        switch testInd
+            case 1
+                trainInd = 2;
+            case 2
+                trainInd = 1;
+            otherwise
+                error('X')
+        end
+        % get test data
+        pTmp = p;
+        pTmp.condPair = 'all';
+        hrFlag = true;
+        [x,y,k] = getXYK(d{subjInd,testInd},pTmp,hrFlag);
+        % cross-session feature selection
+        featSelInd = featSel{subjInd,trainInd}.indIn;
+        x = x(:,featSelInd,:);
+        % transform w
+        curSvmModel = svmModel{subjInd,trainInd};
+        switch p.chanSpace
+            case 'cart'
+                % complexify x?
+                % realifiy w?
+                
+                % Quadrant-specific analysis:
+                % 1) +real
+                % 2) +real +imag
+                % 3) +imag
+                % 4) +imag -real
+                w = complex(curSvmModel.w(1:end/2),curSvmModel.w(end/2+1:end));
+                %             figure('WindowStyle','docked');
+                %             polarplot(w,'k.'); hold on
+                secAngle = 0:pi/4:pi/4*3;
+                wSec = zeros(length(secAngle),length(w));
+                for secInd = 1:length(secAngle)
+                    indA = (wrapToPi(angle(w)-secAngle(secInd)) < pi/4/2 ...
+                        & wrapToPi(angle(w)-secAngle(secInd)) >= -pi/4/2);
+                    indB = (wrapToPi(angle(w)-secAngle(secInd) - pi) < pi/4/2 ...
+                        & wrapToPi(angle(w)-secAngle(secInd) - pi) >= -pi/4/2);
+                    %                 polarplot(w(indA | indB),'.'); hold on
+                    wSec(secInd,indA) = abs(w(1,indA));
+                    wSec(secInd,indB) = -abs(w(1,indB));
+                end
+                curSvmModel.w = wSec;
+            case 'cartNoAmp'
+                % complexify w
+                w = complex(curSvmModel.w(1:end/2),curSvmModel.w(end/2+1:end));
+                % defining the sign of wi according to its angle is what allows
+                % it to oppose the conditions to be compared a wi complex
+                % vector becomes its abolute value of sign determined by tha
+                % angle of the vector
+                curSvmModel.w = sign(angle(w)).*abs(w);
+            case 'cartNoDelay'
+                % nothing to do here, everything is real valued (originating in the abs value of xi reponse vectors)
+            otherwise
+                error('X')
+        end
+        %     if length(curSvmModel.w)==2*size(x,2)
+        %         curSvmModel.w = abs(complex(curSvmModel.w(1:end/2),curSvmModel.w(end/2+1:end)));
+        %     end
+        % get channel response
+        for tInd = 1:size(x,3)
+            % cross-session SVM testing
+            try
+            [yHatHr{subjInd,testInd}(:,:,tInd,:),~] = SVMtest(y,x(:,:,tInd),curSvmModel,0,[]);
+            catch
+                keyboard
             end
-            curSvmModel.w = wSec;
-        case 'cartNoAmp'
-            % complexify w
-            w = complex(curSvmModel.w(1:end/2),curSvmModel.w(end/2+1:end));
-            % defining the sign of wi according to its angle is what allows
-            % it to oppose the conditions to be compared a wi complex
-            % vector becomes its abolute value of sign determined by tha
-            % angle of the vector
-            curSvmModel.w = sign(angle(w)).*abs(w);
-        case 'cartNoDelay'
-            % nothing to do here, everything is real valued (originating in the abs value of xi reponse vectors)
-        otherwise
-            error('X')
+        end
+        % get non-specific channel response
+        curSvmModel.w = abs(curSvmModel.w);
+        for tInd = 1:size(x,3)
+            % cross-session SVM testing
+            [yHatHr_nSpec{subjInd,testInd}(:,:,tInd,:),~] = SVMtest(y,x(:,:,tInd),curSvmModel,0,[]);
+        end
+        % output
+        Yhr{i} = y;
+        Khr{i} = k;
     end
-%     if length(curSvmModel.w)==2*size(x,2)
-%         curSvmModel.w = abs(complex(curSvmModel.w(1:end/2),curSvmModel.w(end/2+1:end)));
-%     end
-    % get channel response
-    for tInd = 1:size(x,3)
-        % cross-session SVM testing
-        [yHatHr{subjInd,testInd}(:,:,tInd,:),~] = SVMtest(y,x(:,:,tInd),curSvmModel,0,[]);
-    end
-    % get non-specific channel response
-    curSvmModel.w = abs(curSvmModel.w);
-    for tInd = 1:size(x,3)
-        % cross-session SVM testing
-        [yHatHr_nSpec{subjInd,testInd}(:,:,tInd,:),~] = SVMtest(y,x(:,:,tInd),curSvmModel,0,[]);
-    end
-    % output
-    Yhr{i} = y;
-    Khr{i} = k;
-end
 end
 
 
@@ -347,19 +325,36 @@ end
 % Between-sess
 disp('BS perfMetric: computing')
 resBS_sess = repmat(perfMetric,[size(d,1) size(d,2)]);
-for i = 1:numel(d)
-    resBS_sess(i) = perfMetric(Y{i},yHat{i},K{i});
+if p.perm.doIt
+    for i = 1:size(d,1)
+        k = cat(1,K{i,1},K{i,2}+max(K{i,1}));
+        y = cat(1,Y{i,:});
+        yhat = cat(1,yHat{i,:});
+        resBS_sess(i) = perfMetric(y,yhat,k,1);
+    end
+    resBS.auc = nan(size(resBS_sess,1),1);
+    resBS.auc(:) = [resBS_sess.auc];
+    resBShr = [];
+    resWS = [];
+    f = [];
+    return
+else
+    for i = 1:numel(d)
+        resBS_sess(i) = perfMetric(Y{i},yHat{i},K{i});
+    end
 end
 acc_fdr = mafdr([resBS_sess.acc_p],'BHFDR',true);
 for i = 1:numel(d)
     resBS_sess(i).acc_fdr = acc_fdr(i);
     resBS_sess(i).nVoxOrig = size(d{i}.sin,1);
     resBS_sess(i).nVox = nnz(featSel{i}.indIn);
-    resBS_sess(i).svmSpace = p.svmSpace;
+    resBS_sess(i).chanSpace = p.chanSpace;
+    resBS_sess(i).complexSpace = p.complexSpace;
+    resBS_sess(i).svmKernel = p.svm.kernel.type;
     resBS_sess(i).condPair = p.condPair;
 end
 % resBS_sess = orderfields(resBS_sess,[1 2 3 4 5 6 7 8 9 15 10 11 12 13 14 16 17 18 19]);
-resBS_sess = orderfields(resBS_sess,[1 2 3 4 5 6 7 8 9 17 10 11 12 13 14 15 16 18 19 20 21]);
+% resBS_sess = orderfields(resBS_sess,[1 2 3 4 5 6 7 8 9 17 10 11 12 13 14 15 16 18 19 20 21]);
 disp('BS perfMetric: done')
 
 if ~isempty(Yhr{1})
@@ -377,7 +372,7 @@ for i = 1:numel(d)
     resBShr_sess(i).acc_fdr = [];
     resBShr_sess(i).nVoxOrig = size(d{i}.sin,1);
     resBShr_sess(i).nVox = nnz(featSel{i}.indIn);
-    resBShr_sess(i).svmSpace = p.svmSpace;
+    resBShr_sess(i).chanSpace = p.chanSpace;
     resBShr_sess(i).condPair = p.condPair;
 end
 % resBShr_sess = orderfields(resBShr_sess,[1 2 3 4 5 6 7 8 9 17 10 11 12 13 14 15 16 18 19 20 21 22]);
@@ -395,10 +390,12 @@ for i = 1:numel(d)
     resWS_sess(i).acc_fdr = acc_fdr(i);
     resWS_sess(i).nVoxOrig = size(d{i}.sin,1);
     resWS_sess(i).nVox = nnz(featSel{i}.indIn);
-    resWS_sess(i).svmSpace = p.svmSpace;
+    resWS_sess(i).chanSpace = p.chanSpace;
+    resWS_sess(i).complexSpace = p.complexSpace;
+    resWS_sess(i).svmKernel = p.svm.kernel.type;
     resWS_sess(i).condPair = p.condPair;
 end
-resWS_sess = orderfields(resWS_sess,[1 2 3 4 5 6 7 8 9 17 10 11 12 13 14 15 16 18 19 20 21]);
+% resWS_sess = orderfields(resWS_sess,[1 2 3 4 5 6 7 8 9 17 10 11 12 13 14 15 16 18 19 20 21]);
 disp('WS perfMetric: done')
 
 
@@ -503,9 +500,9 @@ if verbose
     ax.XLabel.String = {'between-session' ax.XLabel.String};
     ax.YLabel.String = {'within-session' ax.YLabel.String};
     textLine = {};
-    textLine = [textLine {[p.svmSpace '; ' p.condPair]}];
+    textLine = [textLine {[p.chanSpace '; ' p.condPair]}];
     if p.figOption.verbose>1
-        textLine = [textLine {strjoin(featSel{figOption.subj,1}.featSeq.featSelList,'; ')}];
+        textLine = [textLine {strjoin(featSel{p.figOption.subjInd,1}.featSeq.featSelList,'; ')}];
     end
     
     if p.figOption.verbose>2
@@ -564,7 +561,7 @@ info = [method dir num2str(featSelInfo.(method))];
 
 function [x,y,k,t] = getXYK_wave(dP,p,opt)
 % Define x(data), y(label) and k(xValFolds)
-switch p.svmSpace
+switch p.chanSpace
     case {'cart' 'cart_HT' 'cart_HTbSess'...
             'cartNoAmp' 'cartNoAmp_HT' 'cartNoAmp_HTbSess'...
             'cartNoAmpImag'...
@@ -652,13 +649,12 @@ else
     kList = unique(K);
 end
 
-
 normTr.k = [];
-normTr.svmSpace = '';
+normTr.chanSpace = '';
 normTr.pol = struct('rhoScale',[],'thetaShift',[]);
 normTr.svm = struct('scale',[],'shift',[]);
 normTr = repmat(normTr,[1 1 length(kList)]);
-svmModel = repmat(struct('k',[],'svmSpace',[],'norm',[],'w',[],'b',[],'Paramters',[],'info',[]),[1 1 length(kList)]);
+svmModel = repmat(struct('k',[],'chanSpace',[],'norm',[],'w',[],'b',[],'Paramters',[],'info',[]),[1 1 length(kList)]);
 for kInd = 1:length(kList)
     % Split train and test
     te = K==kList(kInd);
@@ -666,28 +662,40 @@ for kInd = 1:length(kList)
     x = X(~te,:);
     
     % Normalize
-    [x,normTr(:,:,kInd).pol] = polarSpaceNormalization(x,p.svmSpace);
-    [x,normTr(:,:,kInd).svm] = cartSpaceNormalization(x,p.svmSpace);
-    [x,~,~] = complex2svm(x,p.svmSpace);
+    [x,normTr(:,:,kInd).pol] = polarSpaceNormalization(x,p.chanSpace);
+    [x,normTr(:,:,kInd).svm] = cartSpaceNormalization(x,p.chanSpace);
+    [x,~,~] = complex2svm(x,p.chanSpace,p.complexSpace);
     normTr(:,:,kInd).k = kList(kInd);
-    normTr(:,:,kInd).svmSpace = p.svmSpace;
+    normTr(:,:,kInd).chanSpace = p.chanSpace;
     
     % Train
-    model = svmtrain(y,x,'-t 0 -q');
-    w = model.sv_coef'*model.SVs;
-    b = model.rho;
-    toUnitNorm = norm(w);
-    w = w./toUnitNorm;
-    b = b./toUnitNorm;
-    
+    switch p.svm.kernel.type
+        case 'lin'
+            model = svmtrain(y,x,'-t 0 -q');
+            w = model.sv_coef'*model.SVs;
+            b = model.rho;
+            toUnitNorm = norm(w);
+            w = w./toUnitNorm;
+            b = b./toUnitNorm;
+            svmModel(:,:,kInd).model = [];
+            svmModel(:,:,kInd).info = '   yHat = x*w''-b   ';
+        case 'rbf'
+            model = svmtrain(y,x,'-t 2 -q');
+            w = nan(1,size(x,2));
+            b = nan;
+            svmModel(:,:,kInd).model = model;
+            svmModel(:,:,kInd).info = '   [~,~,yHat] = svmpredict(y,x,model,''-q'')   ';
+        otherwise
+            error('X')
+    end
     % Store
     svmModel(:,:,kInd).k = kList(kInd);
     svmModel(:,:,kInd).w = w;
     svmModel(:,:,kInd).b = b;
+    svmModel(:,:,kInd).kernel = p.svm.kernel.type;
     svmModel(:,:,kInd).Paramters = model.Parameters;
-    svmModel(:,:,kInd).info = '   yHat = x*w''-b   ';
-    svmModel(:,:,kInd).svmSpace = p.svmSpace;
-    %     svmModel(:,:,kInd).norm = p.norm;
+    svmModel(:,:,kInd).chanSpace = p.chanSpace;
+    svmModel(:,:,kInd).complexSpace = p.complexSpace;
 end
 
 function [yHat,yHatTr] = SVMtest(Y,X,svmModel,nrmlz,K)
@@ -700,7 +708,9 @@ yHat = nan([size(Y,1) length(kList) size(svmModel(1).w,1)]);
 yHatTr = nan([size(Y,1) length(kList) size(svmModel(1).w,1)]);
 for kInd = 1:length(kList)
     x = X;
-    SVMspace = svmModel(kInd).svmSpace;
+    chanSpace    = svmModel(kInd).chanSpace;
+    complexSpace = svmModel(kInd).complexSpace;
+    kernel = svmModel(kInd).kernel;
     % Split train and test
     if kList(kInd)==0
         te = true(size(Y));
@@ -710,8 +720,8 @@ for kInd = 1:length(kList)
     
     % Normalize
     if ~exist('nrmlz','var') || isempty(nrmlz)
-        [x,~] = polarSpaceNormalization(x,svmModel(kInd).svmSpace);
-        [x,~] = cartSpaceNormalization(x,svmModel(kInd).svmSpace);
+        [x,~] = polarSpaceNormalization(x,svmModel(kInd).chanSpace);
+        [x,~] = cartSpaceNormalization(x,svmModel(kInd).chanSpace);
     elseif isstruct(nrmlz)
         [x,~] = polarSpaceNormalization(x,nrmlz(kInd),te);
         [x,~] = cartSpaceNormalization(x,nrmlz(kInd),te);
@@ -721,22 +731,42 @@ for kInd = 1:length(kList)
     else
         error('don''t know what this is')
     end
-    [x,~,~] = complex2svm(x,SVMspace);
+    [x,~,~] = complex2svm(x,chanSpace,complexSpace);
     
-    w = svmModel(kInd).w;
-    b = svmModel(kInd).b;
-    yHat(te,kInd,:) = x(te,:)*w'-b;
-    yHatTr(~te,kInd,:) = x(~te,:)*w'-b;
+    switch kernel
+        case 'lin'
+            w = svmModel(kInd).w;
+            b = svmModel(kInd).b;
+            yHat(te,kInd,:) = x(te,:)*w'-b;
+            yHatTr(~te,kInd,:) = x(~te,:)*w'-b;
+        case 'rbf'
+            svmModel(kInd).info
+            [~,~,yHat(te,kInd,:)] = svmpredict(Y(te),x(te,:),svmModel(kInd).model,'-q');
+            [~,~,yHatTr(~te,kInd,:)] = svmpredict(Y(~te),x(~te,:),svmModel(kInd).model,'-q');
+        otherwise
+            error('X')
+    end
 end
 
 
-function [x,nVox,nDim] = complex2svm(x,SVMspace)
+function [x,nVox,nDim] = complex2svm(x,chanSpace,complexSpace)
 % Output SVM ready data
 if ~isreal(x)
     nVox = size(x,2);
-    switch SVMspace
+    switch chanSpace
         case {'cart' 'cartNoAmp' 'cartNoAmp_affineRot' 'cartNoAmp_affineRot_affineCart' 'cart_roi' 'cart_affineRot'}
-            x = cat(2,real(x),imag(x));
+            switch complexSpace
+                case 'bouboulisDeg1'
+                    x = cat(2,real(x),imag(x));
+                case 'bouboulisDeg2'
+                    xExp = nan(size(x,1),size(x,2),size(x,2));
+                    for runInd = 1:size(x,1)
+                        xExp(runInd,:,:) = real(x(runInd,:))' * imag(x(runInd,:));
+                    end
+                    x = cat(2,real(x),imag(x),xExp(:,:)); clear xExp
+                otherwise
+                    error('X')
+            end
         case {'cartNoDelay' 'cartReal' 'cartReal_affineRot'}
             x = real(x);
         case {'cartNoAmpImag' 'cartImag' 'cartImag_affineRot' 'cartNoAmpImag_affineRot'}
@@ -749,48 +779,6 @@ else
     nVox = size(x,2);
     nDim = size(x,2);
 end
-
-
-
-
-
-% function featStat = getFeatStat_ws(x,y,te,SVMspace)
-% nVox = size(x,2);
-% switch SVMspace
-%     case 'cart_HT'
-%         x = [real(x) imag(x)];
-%
-%         featStat = nan(1,nVox);
-%         x = cat(1,x(~te & y==1,:),x(~te & y==2,:));
-%         for voxInd = 1:nVox
-%             stats = T2Hot2d(x(:,[0 nVox]+voxInd));
-%             featStat(voxInd) = stats.T2;
-%         end
-%     case 'cartNoAmp_HT'
-%         x = angle(x);
-%
-%         featStat = nan(1,size(x,2));
-%         for voxInd = 1:size(x,2)
-%             [~, F] = circ_htest(x(~te & y==1,voxInd), x(~te & y==2,voxInd));
-%             featStat(voxInd) = F;
-%         end
-%     case {'polMag_T' 'cartNoDelay_HT'}
-%         x = abs(x);
-%
-%         [~,~,~,STATS] = ttest(x(~te & y==1,:),x(~te & y==2,:));
-%         featStat = STATS.tstat;
-%     case 'cartReal_T'
-%         x = real(x);
-%
-%         [~,~,~,STATS] = ttest(x(~te & y==1,:),x(~te & y==2,:));
-%         featStat = STATS.tstat;
-%     case {'cart' 'cartNoAmp' 'cartNoDelay'...
-%             'cart_HTbSess' 'cartNoAmp_HTbSess' 'cartNoDelay_HTbSess'...
-%             'polMag'}
-%     otherwise
-%         error('X')
-% end
-
 
 
 function f = plotPolNormExampleVox(x,SVMspace,b)

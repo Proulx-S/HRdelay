@@ -1,0 +1,1021 @@
+/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/HRdelay.mat
+11-May-2021 17:37:21
+<a href="matlab: opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/runAllDecoding.m',56,1)">56  </a>        [resBS{condPairInd,respFeatInd},resBShr{condPairInd,respFeatInd},resWS{condPairInd,respFeatInd},f{condPairInd,respFeatInd}] = runDecoding(p,verbose);
+[resBS{condPairInd,respFeatInd},resBShr{condPairInd,respFeatInd},resWS{condPairInd,respFeatInd},f{condPairInd,respFeatInd}] = runDecoding(p,verbose);
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/02jp.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/03sk.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/04sp.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/05bm.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/06sb.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/07bj.mat
+---
+SVM space: cart
+{Reference to non-existent field 'svmSpace'.
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('plotNorm>plotPolNormExample', '/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/matlabFun/plotNorm.m', 86)" style="font-weight:bold">plotNorm>plotPolNormExample</a> (<a href="matlab: opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/matlabFun/plotNorm.m',86,0)">line 86</a>)
+x = polarSpaceNormalization(x,p.svmSpace);
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('plotNorm', '/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/matlabFun/plotNorm.m', 32)" style="font-weight:bold">plotNorm</a> (<a href="matlab: opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/matlabFun/plotNorm.m',32,0)">line 32</a>)
+f0 =
+plotPolNormExample(X(:,featSel.indIn),y,p,b(1),voxFlag,visibilityFlag);
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('runDecoding', '/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/runDecoding.m', 94)" style="font-weight:bold">runDecoding</a> (<a href="matlab: opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/runDecoding.m',94,0)">line 94</a>)
+    f = [f
+    plotNorm(d{subjInd,sessInd},p,featSel{subjInd,sessInd},[],1)];} 
+opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/matlabFun/plotNorm.m',86,0)
+[resBS{condPairInd,respFeatInd},resBShr{condPairInd,respFeatInd},resWS{condPairInd,respFeatInd},f{condPairInd,respFeatInd}] = runDecoding(p,verbose);
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/02jp.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/03sk.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/04sp.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/05bm.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/06sb.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/07bj.mat
+---
+SVM space: cart
+Within-session SVM cross-validation
+with between-session feature selection
+-training and testing sess 1/12
+{Reference to non-existent field 'complexSpace'.
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('runDecoding>SVMtrain', '/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/runDecoding.m', 666)" style="font-weight:bold">runDecoding>SVMtrain</a> (<a href="matlab: opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/runDecoding.m',666,0)">line 666</a>)
+    [x,~,~] = complex2svm(x,p.chanSpace,p.complexSpace);
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('runDecoding', '/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/runDecoding.m', 154)" style="font-weight:bold">runDecoding</a> (<a href="matlab: opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/runDecoding.m',154,0)">line 154</a>)
+        [svmModelK{i},nrmlzK{i}] = SVMtrain(y,x,p,k);
+} 
+opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/runDecoding.m',666,0)
+p.svm.complexSpace = 'bouboulisDeg1'; % 'bouboulisDeg1' 'bouboulisDeg2'
+p.complexSpace = p.svm.complexSpace;
+[resBS{condPairInd,respFeatInd},resBShr{condPairInd,respFeatInd},resWS{condPairInd,respFeatInd},f{condPairInd,respFeatInd}] = runDecoding(p,verbose);
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/02jp.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/03sk.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/04sp.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/05bm.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/06sb.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/07bj.mat
+---
+SVM space: cart
+Within-session SVM cross-validation
+with between-session feature selection
+-training and testing sess 1/12
+<a href="matlab: opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/runDecoding.m',666,1)">666 </a>    [x,~,~] = complex2svm(x,p.chanSpace,p.complexSpace);
+if system_dependent('IsDebugMode')==1, dbstep in; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+p
+{Unrecognized function or variable 'p'.
+} 
+complexSpace
+
+complexSpace =
+
+    'bouboulisDeg1'
+
+complexSpace
+
+complexSpace =
+
+    'bouboulisDeg1'
+
+dbquit
+[resBS{condPairInd,respFeatInd},resBShr{condPairInd,respFeatInd},resWS{condPairInd,respFeatInd},f{condPairInd,respFeatInd}] = runDecoding(p,verbose);
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/02jp.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/03sk.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/04sp.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/05bm.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/06sb.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/07bj.mat
+---
+SVM space: cart
+Within-session SVM cross-validation
+with between-session feature selection
+-training and testing sess 1/12
+<a href="matlab: opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/runDecoding.m',666,1)">666 </a>    [x,~,~] = complex2svm(x,p.chanSpace,p.complexSpace);
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbcont; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+{Reference to non-existent field 'svmSpace'.
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('polarSpaceNormalization', '/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/matlabFun/polarSpaceNormalization.m', 8)" style="font-weight:bold">polarSpaceNormalization</a> (<a href="matlab: opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/matlabFun/polarSpaceNormalization.m',8,0)">line 8</a>)
+    SVMspace = SVMspace.svmSpace;
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('runDecoding>SVMtest', '/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/runDecoding.m', 720)" style="font-weight:bold">runDecoding>SVMtest</a> (<a href="matlab: opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/runDecoding.m',720,0)">line 720</a>)
+        [x,~] = polarSpaceNormalization(x,nrmlz(kInd),te);
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('runDecoding', '/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/runDecoding.m', 156)" style="font-weight:bold">runDecoding</a> (<a href="matlab: opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/runDecoding.m',156,0)">line 156</a>)
+        [yHatK{i},yHatK_tr{i}] =
+        SVMtest(y,x,svmModelK{i},nrmlzK{i},k);
+} 
+opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/runDecoding.m',720,0)
+opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/matlabFun/polarSpaceNormalization.m',8,0)
+[resBS{condPairInd,respFeatInd},resBShr{condPairInd,respFeatInd},resWS{condPairInd,respFeatInd},f{condPairInd,respFeatInd}] = runDecoding(p,verbose);
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/02jp.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/03sk.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/04sp.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/05bm.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/06sb.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/07bj.mat
+---
+SVM space: cart
+<a href="matlab: opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/matlabFun/polarSpaceNormalization.m',6,1)">6   </a>if isstruct(chanSpace)
+if system_dependent('IsDebugMode')==1, dbstep; end
+dbquit
+[resBS{condPairInd,respFeatInd},resBShr{condPairInd,respFeatInd},resWS{condPairInd,respFeatInd},f{condPairInd,respFeatInd}] = runDecoding(p,verbose);
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/02jp.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/03sk.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/04sp.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/05bm.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/06sb.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/07bj.mat
+---
+SVM space: cart
+<a href="matlab: opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/matlabFun/polarSpaceNormalization.m',6,1)">6   </a>if isstruct(chanSpace)
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep out; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbcont; end
+Within-session SVM cross-validation
+with between-session feature selection
+-training and testing sess 1/12
+{Reference to non-existent field 'svmSpace'.
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('cartSpaceNormalization', '/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/matlabFun/cartSpaceNormalization.m', 8)" style="font-weight:bold">cartSpaceNormalization</a> (<a href="matlab: opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/matlabFun/cartSpaceNormalization.m',8,0)">line 8</a>)
+    SVMspace = SVMspace.svmSpace;
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('runDecoding>SVMtest', '/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/runDecoding.m', 721)" style="font-weight:bold">runDecoding>SVMtest</a> (<a href="matlab: opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/runDecoding.m',721,0)">line 721</a>)
+        [x,~] = cartSpaceNormalization(x,nrmlz(kInd),te);
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('runDecoding', '/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/runDecoding.m', 156)" style="font-weight:bold">runDecoding</a> (<a href="matlab: opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/runDecoding.m',156,0)">line 156</a>)
+        [yHatK{i},yHatK_tr{i}] =
+        SVMtest(y,x,svmModelK{i},nrmlzK{i},k);
+} 
+opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/matlabFun/cartSpaceNormalization.m',8,0)
+[resBS{condPairInd,respFeatInd},resBShr{condPairInd,respFeatInd},resWS{condPairInd,respFeatInd},f{condPairInd,respFeatInd}] = runDecoding(p,verbose);
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/02jp.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/03sk.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/04sp.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/05bm.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/06sb.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/07bj.mat
+---
+SVM space: cart
+Within-session SVM cross-validation
+with between-session feature selection
+-training and testing sess 1/12
+{Unable to resolve the name p.svm.kernel.type.
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('runDecoding>SVMtest', '/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/runDecoding.m', 730)" style="font-weight:bold">runDecoding>SVMtest</a> (<a href="matlab: opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/runDecoding.m',730,0)">line 730</a>)
+    switch p.svm.kernel.type
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('runDecoding', '/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/runDecoding.m', 156)" style="font-weight:bold">runDecoding</a> (<a href="matlab: opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/runDecoding.m',156,0)">line 156</a>)
+        [yHatK{i},yHatK_tr{i}] =
+        SVMtest(y,x,svmModelK{i},nrmlzK{i},k);
+} 
+opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/runDecoding.m',730,0)
+opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/runDecoding.m',730,0)
+[resBS{condPairInd,respFeatInd},resBShr{condPairInd,respFeatInd},resWS{condPairInd,respFeatInd},f{condPairInd,respFeatInd}] = runDecoding(p,verbose);
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/02jp.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/03sk.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/04sp.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/05bm.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/06sb.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/07bj.mat
+---
+SVM space: cart
+Within-session SVM cross-validation
+with between-session feature selection
+-training and testing sess 1/12
+<a href="matlab: opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/runDecoding.m',731,1)">731 </a>    switch p.svm.kernel.type
+p.svm.kernel.type
+{Unable to resolve the name p.svm.kernel.type.
+} 
+kernel
+{Unrecognized function or variable 'kernel'.
+} 
+svmModel(kInd)
+
+ans = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+               k: 1
+        svmSpace: []
+            norm: []
+               w: [1×1530 double]
+               b: 8.1493e-08
+       Paramters: [5×1 double]
+            info: '   yHat = x*w'-b   '
+          kernel: 'lin'
+       chanSpace: 'cart'
+    complexSpace: 'bouboulisDeg1'
+
+svmModel(kInd).kernel
+
+ans =
+
+    'lin'
+
+kernel = svmModel(kInd).kernel;
+dbquit
+[resBS{condPairInd,respFeatInd},resBShr{condPairInd,respFeatInd},resWS{condPairInd,respFeatInd},f{condPairInd,respFeatInd}] = runDecoding(p,verbose);
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/02jp.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/03sk.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/04sp.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/05bm.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/06sb.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/07bj.mat
+---
+SVM space: cart
+Within-session SVM cross-validation
+with between-session feature selection
+-training and testing sess 1/12
+<a href="matlab: opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/runDecoding.m',732,1)">732 </a>    switch kernel
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep out; end
+if system_dependent('IsDebugMode')==1, dbstep out; end
+-training and testing sess 2/12
+-training and testing sess 3/12
+-training and testing sess 4/12
+-training and testing sess 5/12
+-training and testing sess 6/12
+-training and testing sess 7/12
+-training and testing sess 8/12
+-training and testing sess 9/12
+-training and testing sess 10/12
+-training and testing sess 11/12
+-training and testing sess 12/12
+Between-session SVM cross-validation
+with feature selection from the training session
+-training sess 1/12
+-training sess 2/12
+-training sess 3/12
+-training sess 4/12
+-training sess 5/12
+-training sess 6/12
+-training sess 7/12
+-training sess 8/12
+-training sess 9/12
+-training sess 10/12
+-training sess 11/12
+-training sess 12/12
+-testing sess 1/12
+-testing sess 2/12
+-testing sess 3/12
+-testing sess 4/12
+-testing sess 5/12
+-testing sess 6/12
+-testing sess 7/12
+-testing sess 8/12
+-testing sess 9/12
+-testing sess 10/12
+-testing sess 11/12
+-testing sess 12/12
+BS perfMetric: computing
+BS perfMetric: done
+WS perfMetric: computing
+WS perfMetric: done
+perfMetric summary: computing
+{Reference to non-existent field 'svmSpace'.
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('summarizePerf', '/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/matlabFun/summarizePerf.m', 98)" style="font-weight:bold">summarizePerf</a> (<a href="matlab: opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/matlabFun/summarizePerf.m',98,0)">line 98</a>)
+resSubj.svmSpace = resSess.svmSpace(:,1);
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('runDecoding', '/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/runDecoding.m', 407)" style="font-weight:bold">runDecoding</a> (<a href="matlab: opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/runDecoding.m',407,0)">line 407</a>)
+[resBSsess,resBSsubj,resBSgroup] = summarizePerf(resBS_sess);
+} 
+opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/runDecoding.m',407,0)
+opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/matlabFun/summarizePerf.m',98,0)
+[resBS{condPairInd,respFeatInd},resBShr{condPairInd,respFeatInd},resWS{condPairInd,respFeatInd},f{condPairInd,respFeatInd}] = runDecoding(p,verbose);
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/02jp.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/03sk.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/04sp.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/05bm.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/06sb.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/07bj.mat
+---
+SVM space: cart
+Within-session SVM cross-validation
+with between-session feature selection
+-training and testing sess 1/12
+-training and testing sess 2/12
+-training and testing sess 3/12
+-training and testing sess 4/12
+-training and testing sess 5/12
+-training and testing sess 6/12
+-training and testing sess 7/12
+-training and testing sess 8/12
+-training and testing sess 9/12
+-training and testing sess 10/12
+-training and testing sess 11/12
+-training and testing sess 12/12
+Between-session SVM cross-validation
+with feature selection from the training session
+-training sess 1/12
+-training sess 2/12
+-training sess 3/12
+-training sess 4/12
+-training sess 5/12
+-training sess 6/12
+-training sess 7/12
+-training sess 8/12
+-training sess 9/12
+-training sess 10/12
+-training sess 11/12
+-training sess 12/12
+-testing sess 1/12
+-testing sess 2/12
+-testing sess 3/12
+-testing sess 4/12
+-testing sess 5/12
+-testing sess 6/12
+-testing sess 7/12
+-testing sess 8/12
+-testing sess 9/12
+-testing sess 10/12
+-testing sess 11/12
+-testing sess 12/12
+BS perfMetric: computing
+BS perfMetric: done
+WS perfMetric: computing
+WS perfMetric: done
+perfMetric summary: computing
+<a href="matlab: opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/matlabFun/summarizePerf.m',98,1)">98  </a>resSubj.svmSpace = resSess.svmSpace(:,1);
+resSess
+
+resSess = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+             y: {6×2 cell}
+          yHat: {6×2 cell}
+          nObs: [6×2 double]
+           hit: [6×2 double]
+           acc: [6×2 double]
+       acc_CI5: [6×2 double]
+      acc_CI95: [6×2 double]
+    acc_thresh: [6×2 double]
+         acc_p: [6×2 double]
+       acc_fdr: [6×2 double]
+           auc: [6×2 double]
+       auc_CI5: [6×2 double]
+      auc_CI95: [6×2 double]
+         distT: [6×2 double]
+       distT_p: [6×2 double]
+      distMean: [6×2 double]
+       distStd: [6×2 double]
+      nVoxOrig: [6×2 double]
+          nVox: [6×2 double]
+     chanSpace: {6×2 cell}
+      condPair: {6×2 cell}
+          info: 'subj x sess'
+     distT_fdr: [6×2 double]
+
+resSess.svmSpace
+{Reference to non-existent field 'svmSpace'.
+} 
+resSess
+
+resSess = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+             y: {6×2 cell}
+          yHat: {6×2 cell}
+          nObs: [6×2 double]
+           hit: [6×2 double]
+           acc: [6×2 double]
+       acc_CI5: [6×2 double]
+      acc_CI95: [6×2 double]
+    acc_thresh: [6×2 double]
+         acc_p: [6×2 double]
+       acc_fdr: [6×2 double]
+           auc: [6×2 double]
+       auc_CI5: [6×2 double]
+      auc_CI95: [6×2 double]
+         distT: [6×2 double]
+       distT_p: [6×2 double]
+      distMean: [6×2 double]
+       distStd: [6×2 double]
+      nVoxOrig: [6×2 double]
+          nVox: [6×2 double]
+     chanSpace: {6×2 cell}
+      condPair: {6×2 cell}
+          info: 'subj x sess'
+     distT_fdr: [6×2 double]
+
+resSess
+
+resSess = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+             y: {6×2 cell}
+          yHat: {6×2 cell}
+          nObs: [6×2 double]
+           hit: [6×2 double]
+           acc: [6×2 double]
+       acc_CI5: [6×2 double]
+      acc_CI95: [6×2 double]
+    acc_thresh: [6×2 double]
+         acc_p: [6×2 double]
+       acc_fdr: [6×2 double]
+           auc: [6×2 double]
+       auc_CI5: [6×2 double]
+      auc_CI95: [6×2 double]
+         distT: [6×2 double]
+       distT_p: [6×2 double]
+      distMean: [6×2 double]
+       distStd: [6×2 double]
+      nVoxOrig: [6×2 double]
+          nVox: [6×2 double]
+     chanSpace: {6×2 cell}
+      condPair: {6×2 cell}
+          info: 'subj x sess'
+     distT_fdr: [6×2 double]
+
+res_sess
+
+res_sess = 
+
+  6×2 <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> array with fields:
+
+    y
+    yHat
+    nObs
+    hit
+    acc
+    acc_CI5
+    acc_CI95
+    acc_thresh
+    acc_p
+    acc_fdr
+    auc
+    auc_CI5
+    auc_CI95
+    distT
+    distT_p
+    distMean
+    distStd
+    nVoxOrig
+    nVox
+    chanSpace
+    condPair
+
+dbquit
+[resBS{condPairInd,respFeatInd},resBShr{condPairInd,respFeatInd},resWS{condPairInd,respFeatInd},f{condPairInd,respFeatInd}] = runDecoding(p,verbose);
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/02jp.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/03sk.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/04sp.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/05bm.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/06sb.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/07bj.mat
+---
+SVM space: cart
+Within-session SVM cross-validation
+with between-session feature selection
+-training and testing sess 1/12
+-training and testing sess 2/12
+-training and testing sess 3/12
+-training and testing sess 4/12
+-training and testing sess 5/12
+-training and testing sess 6/12
+-training and testing sess 7/12
+-training and testing sess 8/12
+-training and testing sess 9/12
+-training and testing sess 10/12
+-training and testing sess 11/12
+-training and testing sess 12/12
+Between-session SVM cross-validation
+with feature selection from the training session
+-training sess 1/12
+-training sess 2/12
+-training sess 3/12
+-training sess 4/12
+-training sess 5/12
+-training sess 6/12
+-training sess 7/12
+-training sess 8/12
+-training sess 9/12
+-training sess 10/12
+-training sess 11/12
+-training sess 12/12
+-testing sess 1/12
+-testing sess 2/12
+-testing sess 3/12
+-testing sess 4/12
+-testing sess 5/12
+-testing sess 6/12
+-testing sess 7/12
+-testing sess 8/12
+-testing sess 9/12
+-testing sess 10/12
+-testing sess 11/12
+-testing sess 12/12
+BS perfMetric: computing
+BS perfMetric: done
+WS perfMetric: computing
+WS perfMetric: done
+perfMetric summary: computing
+<a href="matlab: opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/runDecoding.m',407,1)">407 </a>[resBSsess,resBSsubj,resBSgroup] = summarizePerf(resBS_sess);
+resBS_sess
+
+resBS_sess = 
+
+  6×2 <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> array with fields:
+
+    y
+    yHat
+    nObs
+    hit
+    acc
+    acc_CI5
+    acc_CI95
+    acc_thresh
+    acc_p
+    acc_fdr
+    auc
+    auc_CI5
+    auc_CI95
+    distT
+    distT_p
+    distMean
+    distStd
+    nVoxOrig
+    nVox
+    chanSpace
+    condPair
+
+p.complexSpace
+
+ans =
+
+    'bouboulisDeg1'
+
+p
+
+p = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+       figOption: [1×1 struct]
+      termOption: [1×1 struct]
+            meta: [1×1 struct]
+         featSel: [1×1 struct]
+             svm: [1×1 struct]
+            perm: [1×1 struct]
+     complexChan: 'bouboulisDeg1'
+       chanSpace: 'cart'
+        condPair: 'grat1VSgrat2'
+    complexSpace: 'bouboulisDeg1'
+
+p.svm
+
+ans = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+          kernel: [1×1 struct]
+     complexChan: 'bouboulisDeg1'
+    condPairList: {1×3 cell}
+    respFeatList: {'cart'  'cartNoDelay'  'cartNoAmp'}
+    complexSpace: 'bouboulisDeg1'
+
+p.svm.kernel
+
+ans = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+    type: 'lin'
+
+p.svm.kernel.type
+
+ans =
+
+    'lin'
+
+p
+
+p = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+       figOption: [1×1 struct]
+      termOption: [1×1 struct]
+            meta: [1×1 struct]
+         featSel: [1×1 struct]
+             svm: [1×1 struct]
+            perm: [1×1 struct]
+     complexChan: 'bouboulisDeg1'
+       chanSpace: 'cart'
+        condPair: 'grat1VSgrat2'
+    complexSpace: 'bouboulisDeg1'
+
+p.svm
+
+ans = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+          kernel: [1×1 struct]
+     complexChan: 'bouboulisDeg1'
+    condPairList: {1×3 cell}
+    respFeatList: {'cart'  'cartNoDelay'  'cartNoAmp'}
+    complexSpace: 'bouboulisDeg1'
+
+p.svm.kernel
+
+ans = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+    type: 'lin'
+
+p.svm.kernel.type
+
+ans =
+
+    'lin'
+
+p.svm.kernel.typedb
+{Reference to non-existent field 'typedb'.
+} 
+dbquit
+[resBS{condPairInd,respFeatInd},resBShr{condPairInd,respFeatInd},resWS{condPairInd,respFeatInd},f{condPairInd,respFeatInd}] = runDecoding(p,verbose);
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/02jp.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/03sk.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/04sp.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/05bm.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/06sb.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/07bj.mat
+---
+SVM space: cart
+Within-session SVM cross-validation
+with between-session feature selection
+-training and testing sess 1/12
+-training and testing sess 2/12
+-training and testing sess 3/12
+-training and testing sess 4/12
+-training and testing sess 5/12
+-training and testing sess 6/12
+-training and testing sess 7/12
+-training and testing sess 8/12
+-training and testing sess 9/12
+-training and testing sess 10/12
+-training and testing sess 11/12
+-training and testing sess 12/12
+Between-session SVM cross-validation
+with feature selection from the training session
+-training sess 1/12
+-training sess 2/12
+-training sess 3/12
+-training sess 4/12
+-training sess 5/12
+-training sess 6/12
+-training sess 7/12
+-training sess 8/12
+-training sess 9/12
+-training sess 10/12
+-training sess 11/12
+-training sess 12/12
+-testing sess 1/12
+-testing sess 2/12
+-testing sess 3/12
+-testing sess 4/12
+-testing sess 5/12
+-testing sess 6/12
+-testing sess 7/12
+-testing sess 8/12
+-testing sess 9/12
+-testing sess 10/12
+-testing sess 11/12
+-testing sess 12/12
+BS perfMetric: computing
+BS perfMetric: done
+WS perfMetric: computing
+WS perfMetric: done
+perfMetric summary: computing
+<a href="matlab: opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/runDecoding.m',411,1)">411 </a>[resBSsess,resBSsubj,resBSgroup] = summarizePerf(resBS_sess);
+[resBSsess,resBSsubj,resBSgroup] = summarizePerf(resBS_sess);
+<a href="matlab: opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/matlabFun/summarizePerf.m',98,1)">98  </a>resSubj.svmSpace = resSess.chanSpace(:,1);
+if system_dependent('IsDebugMode')==1, dbstep out; end
+{Reference to non-existent field 'kernel'.
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('summarizePerf', '/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/matlabFun/summarizePerf.m', 100)" style="font-weight:bold">summarizePerf</a> (<a href="matlab: opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/matlabFun/summarizePerf.m',100,0)">line 100</a>)
+resSubj.kernel = resSess.kernel(:,1);
+} 
+opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/matlabFun/summarizePerf.m',100,0)
+opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/matlabFun/summarizePerf.m',100,0)
+[resBSsess,resBSsubj,resBSgroup] = summarizePerf(resBS_sess);
+{Reference to non-existent field 'kernel'.
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('summarizePerf', '/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/matlabFun/summarizePerf.m', 100)" style="font-weight:bold">summarizePerf</a> (<a href="matlab: opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/matlabFun/summarizePerf.m',100,0)">line 100</a>)
+resSubj.kernel = resSess.kernel(:,1);
+} 
+resBS_sess
+
+resBS_sess = 
+
+  6×2 <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> array with fields:
+
+    y
+    yHat
+    nObs
+    hit
+    acc
+    acc_CI5
+    acc_CI95
+    acc_thresh
+    acc_p
+    auc
+    auc_CI5
+    auc_CI95
+    distT
+    distT_p
+    distMean
+    distStd
+    acc_fdr
+    nVoxOrig
+    nVox
+    chanSpace
+    complexSpace
+    svmKernel
+    condPair
+
+[resBSsess,resBSsubj,resBSgroup] = summarizePerf(resBS_sess);
+{Reference to non-existent field 'kernel'.
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('summarizePerf', '/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/matlabFun/summarizePerf.m', 100)" style="font-weight:bold">summarizePerf</a> (<a href="matlab: opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/matlabFun/summarizePerf.m',100,0)">line 100</a>)
+resSubj.kernel = resSess.kernel(:,1);
+} 
+opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/matlabFun/summarizePerf.m',100,0)
+dbquit
+[resBS{condPairInd,respFeatInd},resBShr{condPairInd,respFeatInd},resWS{condPairInd,respFeatInd},f{condPairInd,respFeatInd}] = runDecoding(p,verbose);
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/02jp.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/03sk.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/04sp.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/05bm.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/06sb.mat
+loading: /Users/sebastienproulx/OneDrive - McGill University/dataBig/C-derived/DecodingHR/fun/d/07bj.mat
+---
+SVM space: cart
+Within-session SVM cross-validation
+with between-session feature selection
+-training and testing sess 1/12
+-training and testing sess 2/12
+-training and testing sess 3/12
+-training and testing sess 4/12
+-training and testing sess 5/12
+-training and testing sess 6/12
+-training and testing sess 7/12
+-training and testing sess 8/12
+-training and testing sess 9/12
+-training and testing sess 10/12
+-training and testing sess 11/12
+-training and testing sess 12/12
+Between-session SVM cross-validation
+with feature selection from the training session
+-training sess 1/12
+-training sess 2/12
+-training sess 3/12
+-training sess 4/12
+-training sess 5/12
+-training sess 6/12
+-training sess 7/12
+-training sess 8/12
+-training sess 9/12
+-training sess 10/12
+-training sess 11/12
+-training sess 12/12
+-testing sess 1/12
+-testing sess 2/12
+-testing sess 3/12
+-testing sess 4/12
+-testing sess 5/12
+-testing sess 6/12
+-testing sess 7/12
+-testing sess 8/12
+-testing sess 9/12
+-testing sess 10/12
+-testing sess 11/12
+-testing sess 12/12
+BS perfMetric: computing
+BS perfMetric: done
+WS perfMetric: computing
+WS perfMetric: done
+perfMetric summary: computing
+<a href="matlab: opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/runDecoding.m',411,1)">411 </a>[resBSsess,resBSsubj,resBSgroup] = summarizePerf(resBS_sess);
+[resBSsess,resBSsubj,resBSgroup] = summarizePerf(resBS_sess);
+if system_dependent('IsDebugMode')==1, dbcont; end
+perfMetric summary: computing
+-----------------
+*Within-session*
+FixedEffect
+ -auc    =61.38; 90%CI=0.518 0.707
+ -acc    =61.27; 90%CI=0.541 0.681
+RandomEffect
+ -student on distT
+  T=3.10; ones-sided P=0.013
+ -student on auc
+  T=2.66; ones-sided P=0.022
+ -student on acc
+  T=2.19; ones-sided P=0.040
+ -wilcoxon on auc
+  sRank=19.00; ones-sided P=0.047
+ -wilcoxon on acc
+  sRank=14.00; ones-sided P=0.062
+ 
+*Between-session*
+FixedEffect
+ -auc    =65.56; 90%CI=0.556 0.741
+ -acc    =62.68; 90%CI=0.555 0.695
+RandomEffect
+ -student on distT
+  T=2.71; ones-sided P=0.021
+ -student on auc
+  T=3.16; ones-sided P=0.013
+ -student on acc
+  T=2.21; ones-sided P=0.039
+ -wilcoxon on auc
+  sRank=20.00; ones-sided P=0.031
+ -wilcoxon on acc
+  sRank=14.00; ones-sided P=0.062
+-----------------
+dbquit
+[resBS{condPairInd,respFeatInd},resBShr{condPairInd,respFeatInd},resWS{condPairInd,respFeatInd},f{condPairInd,respFeatInd}] = runDecoding(p,verbose);
+{Unrecognized function or variable 'condPairInd'.
+} 
+~exist(p.figOption.finalFigDir,'dir')
+{Reference to non-existent field 'finalFigDir'.
+} 
+p.figOption.finalFigDir = '/Users/sebastienproulx/McGill University/Farivar Lab - Dissertations/Sebastien/Manuscripts/aa - in preparation/SP_Neuroimage_HRdelay/matlabFig/bouboulisDeg1_lin';
+~exist(p.figOption.finalFigDir,'dir')
+
+ans =
+
+  <a href="matlab:helpPopup logical" style="font-weight:bold">logical</a>
+
+   1
+
+mkdir(p.figOption.finalFigDir)
+p.termOption
+
+ans = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+    verbose: 1
+       save: 1
+
+fullpath
+{Unrecognized function or variable 'fullpath'.
+} 
+HRdelay
+{Error: <a href="matlab: opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/HRdelay.m',4,15)">File: HRdelay.m Line: 4 Column: 15</a>
+Invalid expression. Check for missing or extra characters.
+} 
+opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/HRdelay.m',4,15)
+HRdelay
+
+finalSubDir =
+
+    'boubouDeg1_lin'
+
+{Error using <a href="matlab:matlab.internal.language.introspective.errorDocCallback('diary')" style="font-weight:bold">diary</a>
+Too many input arguments.
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('HRdelay', '/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/HRdelay.m', 23)" style="font-weight:bold">HRdelay</a> (<a href="matlab: opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/HRdelay.m',23,0)">line 23</a>)
+    eval(['diary ' fullfile(p.figOption.finalDir,[mfilename
+    '-' datestr(now,'YYYYmmDD-hh_MM_ss') '.log'])])
+} 
+opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/HRdelay.m',23,0)
+HRdelay
+
+finalSubDir =
+
+    'boubouDeg1_lin'
+
+[Warning: Directory already exists.] 
+[> In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('HRdelay', '/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/HRdelay.m', 20)" style="font-weight:bold">HRdelay</a> (<a href="matlab: opentoline('/Users/sebastienproulx/Documents/GitHub/McGill/neuroimaging/HRdelay.m',20,0)">line 20</a>)] 
+p.figOption.finalDir
+
+ans =
+
+    '/Users/sebastienproulx/McGill University/Farivar Lab - Dissertations/Sebastien/Manuscripts/aa - in preparation/SP_Neuroimage_HRdelay/matlabFigOutputs/boubouDeg1_lin'
+
+mfilename
+
+ans =
+
+    'HRdelay'
+
+['diary ' fullfile(p.figOption.finalDir,[mfilename '-' datestr(now,'YYYYmmDD-hh_MM_ss') '.log'])]
+
+ans =
+
+    'diary /Users/sebastienproulx/McGill University/Farivar Lab - Dissertations/Sebastien/Manuscripts/aa - in preparation/SP_Neuroimage_HRdelay/matlabFigOutputs/boubouDeg1_lin/HRdelay-20210511-18_10_24.log'
+
+cmd
+{Unrecognized function or variable 'cmd'.
+} 
+cmd = ['diary ' fullfile(p.figOption.finalDir,[mfilename '-' datestr(now,'YYYYmmDD-hh_MM_ss') '.log'])];
+cmd
+
+cmd =
+
+    'diary /Users/sebastienproulx/McGill University/Farivar Lab - Dissertations/Sebastien/Manuscripts/aa - in preparation/SP_Neuroimage_HRdelay/matlabFigOutputs/boubouDeg1_lin/HRdelay-20210511-18_11_31.log'
+
+cmd = ['diary ''' fullfile(p.figOption.finalDir,[mfilename '-' datestr(now,'YYYYmmDD-hh_MM_ss') '.log'''])];
+cmd
+
+cmd =
+
+    'diary '/Users/sebastienproulx/McGill University/Farivar Lab - Dissertations/Sebastien/Manuscripts/aa - in preparation/SP_Neuroimage_HRdelay/matlabFigOutputs/boubouDeg1_lin/HRdelay-20210511-18_11_54.log''
+
+cmd = ['diary ''''' fullfile(p.figOption.finalDir,[mfilename '-' datestr(now,'YYYYmmDD-hh_MM_ss') '.log'''''])];
+cmd
+
+cmd =
+
+    'diary ''/Users/sebastienproulx/McGill University/Farivar Lab - Dissertations/Sebastien/Manuscripts/aa - in preparation/SP_Neuroimage_HRdelay/matlabFigOutputs/boubouDeg1_lin/HRdelay-20210511-18_12_16.log'''
+
+eval(['diary ' cmd])
+{Error using <a href="matlab:matlab.internal.language.introspective.errorDocCallback('diary')" style="font-weight:bold">diary</a>
+Too many input arguments.
+} 
+['diary ' cmd]
+
+ans =
+
+    'diary diary ''/Users/sebastienproulx/McGill University/Farivar Lab - Dissertations/Sebastien/Manuscripts/aa - in preparation/SP_Neuroimage_HRdelay/matlabFigOutputs/boubouDeg1_lin/HRdelay-20210511-18_12_16.log'''
+
+eval(cmd)
+{Error using <a href="matlab:matlab.internal.language.introspective.errorDocCallback('diary')" style="font-weight:bold">diary</a>
+Too many input arguments.
+} 
+cmd = ['diary ''''' fullfile(p.figOption.finalDir,[mfilename '-' datestr(now,'YYYYmmDD-hh_MM_ss') '.log'''''])];
+cmd
+
+cmd =
+
+    'diary ''/Users/sebastienproulx/McGill University/Farivar Lab - Dissertations/Sebastien/Manuscripts/aa - in preparation/SP_Neuroimage_HRdelay/matlabFigOutputs/boubouDeg1_lin/HRdelay-20210511-18_12_49.log'''
+
+diary ''/Users/sebastienproulx/McGill University/Farivar Lab - Dissertations/Sebastien/Manuscripts/aa - in preparation/SP_Neuroimage_HRdelay/matlabFigOutputs/boubouDeg1_lin/HRdelay-20210511-18_12_49.log''
+{Error using <a href="matlab:matlab.internal.language.introspective.errorDocCallback('diary')" style="font-weight:bold">diary</a>
+Too many input arguments.
+} 
+diary '/Users/sebastienproulx/McGill University/Farivar Lab - Dissertations/Sebastien/Manuscripts/aa - in preparation/SP_Neuroimage_HRdelay/matlabFigOutputs/boubouDeg1_lin/HRdelay-20210511-18_12_49.log'

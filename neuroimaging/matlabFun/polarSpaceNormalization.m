@@ -1,17 +1,17 @@
-function [x,polNorm] = polarSpaceNormalization(x,SVMspace,te,phaseOffset)
+function [x,polNorm] = polarSpaceNormalization(x,chanSpace,te,phaseOffset)
 [x,sz] = reDim1(x);
 if ~exist('te','var') || isempty(te)
     te = false(size(x,1),1);
 end
-if isstruct(SVMspace)
-    polNorm = SVMspace.pol;
-    SVMspace = SVMspace.svmSpace;
+if isstruct(chanSpace)
+    polNorm = chanSpace.pol;
+    chanSpace = chanSpace.chanSpace;
     computeNorm = false;
 else
     computeNorm = true;
 end
 
-switch SVMspace
+switch chanSpace
     case {'cart_affineRot' 'cartImag_affineRot' 'cartReal_affineRot'}
         normSpace.rhoScale = 'vox';
         normSpace.thetaShift = 'roi';

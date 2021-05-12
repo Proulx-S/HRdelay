@@ -81,7 +81,7 @@ if voxFlag
 end
 
 % Normalize
-x = polarSpaceNormalization(x,p.svmSpace);
+x = polarSpaceNormalization(x,p.chanSpace);
 
 if voxFlag
     subplot(2,2,4);
@@ -136,7 +136,7 @@ if ~voxFlag
     if ~all(yLim==[0 0])
         ylim(yLim);
     end
-    % switch p.svmSpace
+    % switch p.chanSpace
     %     case {'cart' 'cartReal'}
     %         xlim(lim);
     %         ylim(lim);
@@ -177,7 +177,7 @@ if ~voxFlag
     drawnow
     
     % Normalize
-    x = cartSpaceNormalization(x,p.svmSpace);
+    x = cartSpaceNormalization(x,p.chanSpace);
     
     %Plot after
     subplot(2,2,4);
@@ -203,7 +203,7 @@ if ~voxFlag
     if ~all(yLim==[0 0])
         ylim(yLim);
     end
-    % switch p.svmSpace
+    % switch p.chanSpace
     %     case {'cart' 'cartReal'}
     %     case 'cartNoAmp'
     %     case 'cartNoDelay'
