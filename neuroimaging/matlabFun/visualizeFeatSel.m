@@ -24,6 +24,10 @@ for tmp = {'repoPath' 'funPath' 'inDir' 'outDir'}
 end
 clear tmp
 
+%% Load empiricalFOV figure
+load(fullfile(funPath,'d','empiricalFov'),'f')
+saveas(f,fullfile(funPath,outDir,[mfilename '_empiricalFov.fig']));
+
 %% Load data
 pAll = cell(size(subjList));
 for subjInd = 1:length(subjList)
