@@ -8,7 +8,7 @@ figOption.subj = 1; % subjInd-> plots participants subjInd; +inf-> plots all par
 p.figOption.subjInd  = figOption.subj;
 p.figOption.sessInd  = 1;
 p.figOption.sliceInd = 7;
-p.figOption.verbose  = 1;
+p.figOption.verbose  = 2;
 p.figOption.save  = 0;
 p.figOption.finalDir = fullfile('/Users/sebastienproulx/McGill University/Farivar Lab - Dissertations/Sebastien/Manuscripts/aa - in preparation/SP_Neuroimage_HRdelay/matlabFigOutputs',finalSubDir); if ~exist(p.figOption.finalDir,'dir'); mkdir(p.figOption.finalDir); end
 p.termOption.verbose = 1;
@@ -106,6 +106,9 @@ if 0
 end
 if 0
     visualizeFeatSel(p)
+end
+if 1
+    visualizeOthers(p)
 end
 if 1
     [resBS,resBShr,resWS,f,info] = runAllDecoding(p,verbose);
