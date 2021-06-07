@@ -101,7 +101,7 @@ end
 if 1
     processResponses(p,figOption,verbose)
 end
-if 0
+if 1
     processFeatSel(p)
 end
 if 0
