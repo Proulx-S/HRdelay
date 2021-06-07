@@ -45,28 +45,29 @@ for runInd = 1:size(d.data,1)
     v.base{runInd} = d.base{runInd};
     v.map{runInd} = v.var{runInd}./v.base{runInd};
     
-    % Percent BOLD
+end
+
+%% Convert to percent BOLD
+for runInd = 1:size(d.data,1)
     d.data{runInd} = (d.data{runInd}-d.base{runInd}) ./ d.base{runInd} .* 100;
     d.dataDtrd{runInd} = d.dataDtrd{runInd} ./ d.base{runInd} .* 100;
 end
-
+    
 %% 
 if verbose; disp('Extract hr'); end
 res1 = fitHrMixed(d,p);
-if verbose; disp('Extract sin responses'); end
+if verbose; disp('Extract sin responses and fixed-effect stats'); end
 res2 = fitSinMixed(d,p);
-if verbose; disp('Compute stats'); end
-res3 = fitSinFixed(d,p);
 
 res.sin = res2.hr; res2.hr = [];
 res.sinBase = res2.base; res2.base = [];
 res.hr = res1.hr; res1.hr = [];
 res.hrBase = res1.base; res1.base = [];
 res.info = 'x X y X z X rep X cond X t';
-res.sinDesign = res2.design; clear res2
+res.sinDesign = res2.design;
 res.hrDesign = res1.design; clear res1
 res.infoDesign = 't X regressor';
-res.featSel.F = res3.F; clear res3
+res.featSel.F = res2.F; clear res2
 res.featSel.vein.map = cat(5,...
     cat(4,v.map{d.condLabel==1 & ~d.excl}),...
     cat(4,v.map{d.condLabel==2 & ~d.excl}),...
@@ -138,72 +139,8 @@ f.(nullLabel) = getSS(f.(nullLabel),'yErr');
 
 F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
 f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n' 'yErr' 'yErrSS' 'yErrSS_n'});
-% imagesc(F.(testLabel).F(:,:,10))
-
-% if ~p.perm.doIt
-%     testLabel = 'cond1v2v3';
-%     fullLabel = 'full';
-%     nullLabel = 'cond1v2v3null';
-%     condInd = [1 2 3];
-%     runInd = ismember(d.condLabel,condInd);
-%     
-%     f.(nullLabel) = getYhat(f.(nullLabel),p);
-%     f.(nullLabel) = getSS(f.(nullLabel),'yHat');
-%     f.(nullLabel) = getYerr(f.(nullLabel),d);
-%     f.(nullLabel) = getSS(f.(nullLabel),'yErr');
-%     
-%     F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
-%     f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n' 'yErr' 'yErrSS' 'yErrSS_n'});
-%     % imagesc(F.(testLabel).F(:,:,10))
-%     
-%     
-%     testLabel = 'cond1v2';
-%     fullLabel = 'full';
-%     nullLabel = 'cond1v2null';
-%     condInd = [1 2];
-%     runInd = ismember(d.condLabel,condInd);
-%     
-%     f.(nullLabel) = getYhat(f.(nullLabel),p);
-%     f.(nullLabel) = getSS(f.(nullLabel),'yHat');
-%     f.(nullLabel) = getYerr(f.(nullLabel),d);
-%     f.(nullLabel) = getSS(f.(nullLabel),'yErr');
-%     
-%     F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
-%     f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n' 'yErr' 'yErrSS' 'yErrSS_n'});
-%     % imagesc(F.(testLabel).F(:,:,10))
-%     
-%     testLabel = 'cond1v3';
-%     fullLabel = 'full';
-%     nullLabel = 'cond1v3null';
-%     condInd = [1 3];
-%     runInd = ismember(d.condLabel,condInd);
-%     
-%     f.(nullLabel) = getYhat(f.(nullLabel),p);
-%     f.(nullLabel) = getSS(f.(nullLabel),'yHat');
-%     f.(nullLabel) = getYerr(f.(nullLabel),d);
-%     f.(nullLabel) = getSS(f.(nullLabel),'yErr');
-%     
-%     F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
-%     f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n' 'yErr' 'yErrSS' 'yErrSS_n'});
-%     
-%     
-%     testLabel = 'cond2v3';
-%     fullLabel = 'full';
-%     nullLabel = 'cond2v3null';
-%     condInd = [2 3];
-%     runInd = ismember(d.condLabel,condInd);
-%     
-%     f.(nullLabel) = getYhat(f.(nullLabel),p);
-%     f.(nullLabel) = getSS(f.(nullLabel),'yHat');
-%     f.(nullLabel) = getYerr(f.(nullLabel),d);
-%     f.(nullLabel) = getSS(f.(nullLabel),'yErr');
-%     
-%     F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd);
-%     f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n' 'yErr' 'yErrSS' 'yErrSS_n'});
-% end
 
 res.F = F;
-% res.dataDtrd = f.actNull.yErr;
 
 function [res,baseData,dataDtrd] = fitSinMixed(d,p,opt)
 if ~exist('opt','var')
@@ -255,6 +192,33 @@ p.designInfo2 = cellstr(num2str(sort(unique(d.condLabel)),'cond%d'))';
 %% Mixed-effect fit
 f = fitMixed(d,p,opt);
 
+
+%% F stats
+if ~opt.extraOutput
+    f.reduced = getRedModel(f.full);
+    f.full = getYhat(f.full,p);
+    f.full = getSS(f.full,'yHat');
+    f.full = getYerr(f.full,d);
+    f.full = getSS(f.full,'yErr');
+    
+    
+    testLabel = 'act';
+    fullLabel = 'full';
+    nullLabel = 'reduced';
+    condInd = [1 2 3];
+    runInd = ismember(d.condLabel,condInd);
+    
+    f.(nullLabel) = getYhat(f.(nullLabel),p);
+    f.(nullLabel) = getSS(f.(nullLabel),'yHat');
+    f.(nullLabel) = getYerr(f.(nullLabel),d);
+    f.(nullLabel) = getSS(f.(nullLabel),'yErr');
+    
+    F.(testLabel) = getF(f.(fullLabel),f.(nullLabel),runInd,1);
+    f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n' 'yErr' 'yErrSS' 'yErrSS_n'});
+    % imagesc(F.(testLabel).F(:,:,10))
+end
+
+%% Extra output
 if opt.extraOutput
     modelName = 'full';
     fTmp = f.(modelName);
@@ -309,6 +273,22 @@ res.base = cat(5,...
 res.info = 'x X y X x X rep X cond';
 res.design = f.full.design{1};
 res.design(f.full.censorPts{1},:) = 0;
+if ~opt.extraOutput
+    res.F = F;
+end
+
+
+function fModel = getRedModel(fModel)
+for runInd = 1:size(fModel.betas,1)
+    redRegrInd = cellfun('isempty',fModel.designInfo{runInd}(1,:));
+    fModel.betas{runInd}(:,:,:,redRegrInd) = [];
+    fModel.design{runInd}(:,redRegrInd) = [];
+    fModel.designInfo{runInd}(:,redRegrInd) = [];
+end
+fModel.info='reduced model';
+
+
+
 
 
 function res = fitHrMixed(d,p)
@@ -599,7 +579,10 @@ else
     end
 end
 
-function F = getF(fFull,fRed,runInd)
+function F = getF(fFull,fRed,runInd,randEffectFlag)
+if ~exist('randEffectFlag','var')
+    randEffectFlag = false;
+end
 % Process design matrix just for explicit outputs
 % censor points
 for i = 1:length(runInd)
@@ -615,10 +598,17 @@ for i = 1:length(runInd)
 end
 
 censorPts = catcell(1,fFull.censorPts(runInd));
-designFull = catcell(1,fFull.design(runInd));
-designFull = designFull(~censorPts,:);
-designRed = catcell(1,fRed.design(runInd));
-designRed = designRed(~censorPts,:);
+if randEffectFlag
+    designFull = blkdiag(fFull.design{runInd});
+    designFull = designFull(~censorPts,:);
+    designRed = blkdiag(fRed.design{runInd});
+    designRed = designRed(~censorPts,:);
+else
+    designFull = catcell(1,fFull.design(runInd));
+    designFull = designFull(~censorPts,:);
+    designRed = catcell(1,fRed.design(runInd));
+    designRed = designRed(~censorPts,:);
+end
 
 pFull = nnz(any(designFull,1));
 pRed = nnz(any(designRed,1));
@@ -751,6 +741,22 @@ for runInd = 1:size(design,1)
     res.(modelName).designInfo{runInd} = tmp.designInfo;
 end
 res.(modelName).info = modelLabel;
+
+% % Model 2
+% modelName = 'actNull';
+% modelLabel = 'Activation null model';
+% tmp = cat(2,motion,poly);
+% for runInd = 1:size(design,1)
+%     design{runInd} = cat(2,tmp{runInd,:});
+% end
+% clear tmp
+% designInfo = cat(2,motionInfo,polyInfo);
+% res.(modelName) = computeOLS(d.data,design,designInfo,p.censorPts);
+% res.(modelName).info = modelLabel;
+% % imagesc(catcell(1,res.(modelName).design))
+% % res.(modelName).designInfo'
+
+
 
 % if opt.extraOutput
 %     modelName = 'null';

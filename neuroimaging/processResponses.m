@@ -1,4 +1,4 @@
-function processResponses(figOption,verbose)
+function processResponses(pMaster,figOption,verbose)
 actuallyRun = 1;
 if ~actuallyRun
     disp(['skipping ' mfilename])
@@ -56,7 +56,7 @@ if actuallyRun
         % Add info to res
         res.sess1.voxProp = d.voxProp;
         res.sess2.voxProp = d.voxProp;
-        
+        db
         % Save
         disp([subj ': saving responses'])
         if ~exist(fullfile(funPath,outDir),'dir')

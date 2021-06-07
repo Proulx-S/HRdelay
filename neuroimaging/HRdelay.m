@@ -98,7 +98,7 @@ if 0
     applyAreaMask(figOption)
     %     processWaveletResponses(figOption,verbose)
 end
-if 0
+if 1
     processResponses(p,figOption,verbose)
 end
 if 0
@@ -107,10 +107,10 @@ end
 if 0
     visualizeFeatSel(p)
 end
-if 1
+if 0
     visualizeOthers(p)
 end
-if 1
+if 0
     [resBS,resBShr,resWS,f,info] = runAllDecoding(p,verbose);
     plotAllDecoding(p,resBS,info);
     statsAllDecoding(p,resBS,info)
