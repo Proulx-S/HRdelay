@@ -72,7 +72,6 @@ if p.featSel.act.doIt
                 curIndIn = pVal<=curThresh;
             end
         case '%ile'
-            error('double-check that')
             pVal = featVal.p;
             featVal = featVal.F;
             curThresh = thresh.percentile;

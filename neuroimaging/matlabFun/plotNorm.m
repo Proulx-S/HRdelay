@@ -19,7 +19,7 @@ for featInd = 1:length(featSelList)
     tmp = strsplit(featSel.featSeq.featSelList{featInd},': ');
     featSelList(featInd) = tmp(1);
 end
-featInd = ismember(featSelList,'act');
+featInd = ismember(featSelList,'respVecSig');
 
 %% Get data
 [X,y,~] = getXYK(d,p);

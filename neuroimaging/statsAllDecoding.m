@@ -23,6 +23,9 @@ condPairList{2} = 'gratVSplaid';
 condPairList(3) = [];
 
 
+% set intercept to chance
+y = y-0.5;
+
 disp('ranova: respFeat[cartNoDelay,cartNoAmp] X condPair[grat1VSgrat2,gratVSplaid]')
 t = table(squeeze(y(1,1,:)),squeeze(y(1,2,:)),squeeze(y(2,1,:)),squeeze(y(2,2,:)));
 t.Properties.VariableNames = {'cartNoDelay_grat1VSgrat2'...
@@ -50,6 +53,35 @@ for respFeatInd = 1:length(respFeatList)
 end
 
 
+for condPairInd = 1:length(condPairList)
+    disp(['ranova (condPair[' condPairList{condPairInd} ']): respFeat[cartNoDelay,cartNoAmp]'])
+    ind = ~cellfun('isempty',strfind(t.Properties.VariableNames,condPairList{condPairInd}));
+    t2 = t(:,ind);
+    withinDesign2 = withinDesign(ind,1);
+    withinModel2 = 'respFeat';
+    rm = fitrm(t2,[t2.Properties.VariableNames{1} '-' t2.Properties.VariableNames{end} '~1'],'WithinDesign',withinDesign2);
+    tbl = ranova(rm,'WithinModel',withinModel2);
+    disp(tbl(:,[2 4 5]))
+end
+
+
+
+%%
+disp('ranova: respFeat[cartNoDelay,cart] X condPair[grat1VSgrat2,gratVSplaid]')
+t = table(squeeze(y(1,1,:)),squeeze(y(1,2,:)),squeeze(y(3,1,:)),squeeze(y(3,2,:)));
+t.Properties.VariableNames = {'cartNoDelay_grat1VSgrat2'...
+    'cartNoDelay_gratVSplaid'...
+    'cart_grat1VSgrat2'...
+    'cart_gratVSplaid'};
+withinDesign = table(categorical({'cartNoDelay' 'cartNoDelay' 'cart' 'cart'}')...
+    ,categorical({'grat1VSgrat2' 'gratVSplaid' 'grat1VSgrat2' 'gratVSplaid'}'));
+withinDesign.Properties.VariableNames = {'respFeat' 'condPair'};
+withinModel = 'respFeat*condPair';
+rm = fitrm(t,'cartNoDelay_grat1VSgrat2-cart_gratVSplaid~1','WithinDesign',withinDesign);
+tbl = ranova(rm,'WithinModel',withinModel);
+disp(tbl(:,[2 4 5]))
+
+%Planned comparison
 for condPairInd = 1:length(condPairList)
     disp(['ranova (condPair[' condPairList{condPairInd} ']): respFeat[cartNoDelay,cartNoAmp]'])
     ind = ~cellfun('isempty',strfind(t.Properties.VariableNames,condPairList{condPairInd}));

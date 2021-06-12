@@ -1,3 +1,9 @@
+%% To do
+% -Output final stat on just decoding
+% -Output visualization of all subjects
+% -ROI response analysis
+
+%%
 clear all
 close all
 
@@ -59,13 +65,13 @@ p.featSel.fov.areaLabel = 'v1';
 p.featSel.fov.threshVal = [0.75 7]; % threshMethod='ecc'
 p.featSel.fov.percentile = 20; % threshMethod='ecc'
 % Activated voxels (fixed-effect)
-p.featSel.act.doIt = 1;
+p.featSel.act.doIt = 0;
 p.featSel.act.threshMethod = '%ile'; % '%ile' 'p' 'fdr'
 p.featSel.act.threshVal = 0.05; % threshMethod='p' or 'fdr'
 p.featSel.act.percentile = 20; % threshMethod='%ile'
 % Activated voxels (random-effect)
 p.featSel.respVecSig.doIt = 1;
-p.featSel.respVecSig.threshMethod = 'fdr'; % '%ile' 'p' 'fdr'
+p.featSel.respVecSig.threshMethod = 'p'; % '%ile' 'p' 'fdr'
 p.featSel.respVecSig.threshVal = 0.05; % threshMethod='p' or 'fdr'
 p.featSel.respVecSig.percentile = 20; % threshMethod='%ile'
 % Less likely-to-be-vein voxels

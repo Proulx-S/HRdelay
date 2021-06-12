@@ -18,12 +18,16 @@ else
     f = figure('WindowStyle','docked','visible','off');
 end
 
-hPolFov = polarplot(angle(mean(xFov,1)),abs(mean(xFov,1)),'.k'); hold on
-hPolFov.MarkerFaceColor = [1 1 1].*0.5;
-hPolFov.MarkerEdgeColor = [1 1 1].*0.5;
+hPolFov = polarplot(angle(mean(xFov,1)),abs(mean(xFov,1)),'.'); hold on
+hPolFov.MarkerFaceColor = 'k';
+hPolFov.MarkerEdgeColor = 'k';
+% hPolFov.MarkerFaceColor = [1 1 1].*0.5;
+% hPolFov.MarkerEdgeColor = [1 1 1].*0.5;
 hPolFov.MarkerSize = eps;
 
-hPolAct = polarplot(angle(mean(xAct,1)),abs(mean(xAct,1)),'.k'); hold on
+hPolAct = polarplot(angle(mean(xAct,1)),abs(mean(xAct,1)),'.'); hold on
+hPolAct.MarkerFaceColor = 'w';
+hPolAct.MarkerEdgeColor = 'w';
 % hPolAct.MarkerFaceColor = [1 1 1].*0.5
 % hPolAct.MarkerEdgeColor = [1 1 1].*0.5
 hPolAct.MarkerSize = eps;
@@ -54,7 +58,6 @@ for yInd = 1:length(yList)
     hPol1vox{yInd} = polarplot(angle(x(yList(yInd)==y,b)),abs(x(yList(yInd)==y,b)),'.'); hold on
 end
 set([hPol1vox{:}],'MarkerSize',15)
-
 tickVal = [0:0.1:0.9 1:9 10:10:100];
 ax.RAxis.TickValues = log(tickVal+1);
 
@@ -79,5 +82,5 @@ legend([hPolFov hPolAct hPol1vox{:}],{'fov vox' 'selected fov vox' 'grat1' 'grat
 f.Color = 'w';
 ax.Box = 'off';
 
-
+ax.Color = [1 1 1].*0.6;
 
