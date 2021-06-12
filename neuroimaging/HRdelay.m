@@ -122,14 +122,15 @@ end
 if 1
     processFeatSel(p)
 end
-if 1
+if 0
     visualizeFeatSel(p)
 end
-if 1
+if 0
     visualizeOthers(p)
 end
 if 1
     [resBS,resBShr,resWS,f,info] = runAllDecoding(p,verbose);
+    save tmp p resBS info
     plotAllDecoding(p,resBS,info);
     statsAllDecoding(p,resBS,info)
 end

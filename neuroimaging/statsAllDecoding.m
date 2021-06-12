@@ -22,6 +22,77 @@ y = cat(2,y(:,1,:),mean(y(:,2:3,:),2));
 condPairList{2} = 'gratVSplaid';
 condPairList(3) = [];
 
+%% All bars
+ttest_T = nan(size(y,[1 2]));
+ttest_P = nan(size(y,[1 2]));
+ttest_FDR = nan(size(y,[1 2]));
+wlcxn_R = nan(size(y,[1 2]));
+wlcxn_P = nan(size(y,[1 2]));
+wlcxn_FDR = nan(size(y,[1 2]));
+ttest2_T = nan([size(y,1) 1]);
+ttest2_P = nan([size(y,1) 1]);
+ttest2_FDR = nan([size(y,1) 1]);
+wlcxn2_R = nan([size(y,1) 1]);
+wlcxn2_P = nan([size(y,1) 1]);
+wlcxn2_FDR = nan([size(y,1) 1]);
+for respFeatInd = 1:length(respFeatList)
+    [~,ttest2_P(respFeatInd,1),~,STATS] = ttest(squeeze(sum(y(respFeatInd,:,:).*[1 2]./3,2)),0.5,'tail','right');
+    ttest2_T(respFeatInd,1) = STATS.tstat;
+    [wlcxn2_P(respFeatInd,1),~,STATS] = signrank(squeeze(sum(y(respFeatInd,:,:).*[1 2]./3,2)),0.5,'tail','right');
+    wlcxn2_R(respFeatInd,1) = STATS.signedrank;
+    for condPairInd = 1:length(condPairList)
+        [~,ttest_P(respFeatInd,condPairInd),~,STATS] = ttest(squeeze(y(respFeatInd,condPairInd,:)),0.5,'tail','right');
+        ttest_T(respFeatInd,condPairInd) = STATS.tstat;
+        [wlcxn_P(respFeatInd,condPairInd),~,STATS] = signrank(squeeze(y(respFeatInd,condPairInd,:)),0.5,'tail','right');
+        wlcxn_R(respFeatInd,condPairInd) = STATS.signedrank;
+    end
+end
+tmp = ttest_P([1 2],:);
+tmp(:) = mafdr(tmp(:),'BHFDR','true');
+ttest_FDR([1 2],:) = tmp;
+tmp = wlcxn_P([1 2],:);
+tmp(:) = mafdr(tmp(:),'BHFDR','true');
+wlcxn_FDR([1 2],:) = tmp;
+tmp = ttest_P([3],:);
+tmp(:) = mafdr(tmp(:),'BHFDR','true');
+ttest_FDR([3],:) = tmp;
+tmp = wlcxn_P([3],:);
+tmp(:) = mafdr(tmp(:),'BHFDR','true');
+wlcxn_FDR([3],:) = tmp;
+tmp = ttest2_P([1 2],:);
+tmp(:) = mafdr(tmp(:),'BHFDR','true');
+ttest2_FDR([1 2],:) = tmp;
+tmp = wlcxn2_P([1 2],:);
+tmp(:) = mafdr(tmp(:),'BHFDR','true');
+wlcxn2_FDR([1 2],:) = tmp;
+
+disp('---')
+for respFeatInd = 1:length(respFeatList)
+    disp(['respFeat[' respFeatList{respFeatInd} '], condPair[all]'])
+    disp(['t test    : T   =' num2str(ttest2_T(respFeatInd,1)) ', one-sided p(fdr)=' num2str(ttest2_P(respFeatInd,1)) '(' num2str(ttest2_FDR(respFeatInd,1)) ')'])
+    disp(['wlcxn test: rank=' num2str(wlcxn2_R(respFeatInd,1)) '    , one-sided p(fdr)=' num2str(wlcxn2_P(respFeatInd,1)) '(' num2str(wlcxn2_FDR(respFeatInd,1)) ')'])
+    disp(' ')
+    for condPairInd = 1:length(condPairList)
+        disp(['respFeat[' respFeatList{respFeatInd} '], condPair[' condPairList{condPairInd} ']'])
+        disp(['t test    : T   =' num2str(ttest_T(respFeatInd,condPairInd)) ', one-sided p(fdr)=' num2str(ttest_P(respFeatInd,condPairInd)) '(' num2str(ttest_FDR(respFeatInd,condPairInd)) ')'])
+        disp(['wlcxn test: rank=' num2str(wlcxn_R(respFeatInd,condPairInd)) '    , one-sided p(fdr)=' num2str(wlcxn_P(respFeatInd,condPairInd)) '(' num2str(wlcxn_FDR(respFeatInd,condPairInd)) ')'])
+        disp(' ')
+    end
+end
+disp('---')
+disp(' ')
+
+disp('---')
+disp('cartNoAmp')
+y2 = (y(:,1,:)+y(:,2,:)*2)/3;
+[~,ttest_P2,~,STATS] = ttest(squeeze(y2(2,:,:)),0.5,'tail','right');
+disp(['ttest (all): T=' num2str(STATS.tstat) ', p=' num2str(mafdr(ttest_P(2,:),'BHFDR','true'))])
+disp(['ttest (grat1VSgrat2 gratVSplaid): ' num2str(mafdr(ttest_P(2,:),'BHFDR','true'))])
+
+ttest_T2 = STATS.tstat;
+[wlcxn_P2,~,STATS] = signrank(squeeze(y2(2,:,:)),0.5,'tail','right');
+wlcxn_R2 = STATS.signedrank;
+
 
 % set intercept to chance
 y = y-0.5;
