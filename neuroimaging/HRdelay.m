@@ -2,6 +2,13 @@ clear all
 close all
 
 finalSubDir = 'boubouDeg1_lin';
+if ~ispc
+    p.paths.home = '/Users/sebastienproulx';
+else
+    p.paths.home = 'C:\Users\sebas';
+end
+p.paths.repo.out = 'McGill University/Farivar Lab - Dissertations/Sebastien/Manuscripts/aa - in preparation/SP_Neuroimage_HRdelay';
+
 %% Display parameters
 figOption.save = 1; % save all figures
 figOption.subj = 1; % subjInd-> plots participants subjInd; +inf-> plots all participant (if verbose==0, will only plot subjInd==1 but still produce and save all the other figures)
@@ -10,19 +17,11 @@ p.figOption.sessInd  = 1;
 p.figOption.sliceInd = 7;
 p.figOption.verbose  = 2;
 p.figOption.save  = 0;
-if ~ispc
-    p.figOption.finalDir = fullfile('/Users/sebastienproulx/McGill University/Farivar Lab - Dissertations/Sebastien/Manuscripts/aa - in preparation/SP_Neuroimage_HRdelay/matlabFigOutputs',finalSubDir); if ~exist(p.figOption.finalDir,'dir'); mkdir(p.figOption.finalDir); end
-else
-    p.figOption.finalDir = fullfile('C:\Users\sebas\McGill University\Farivar Lab - Dissertations\Sebastien\Manuscripts\aa - in preparation\SP_Neuroimage_HRdelay\matlabFigOutputs',finalSubDir); if ~exist(p.figOption.finalDir,'dir'); mkdir(p.figOption.finalDir); end
-end
+p.figOption.finalDir = fullfile(p.paths.home,p.paths.repo.out,'matlabFigOutputs',finalSubDir); if ~exist(p.figOption.finalDir,'dir'); mkdir(p.figOption.finalDir); end
 
 p.termOption.verbose = 1;
 p.termOption.save = 1;
-if ~ispc
-    p.termOption.finalDir = fullfile('/Users/sebastienproulx/McGill University/Farivar Lab - Dissertations/Sebastien/Manuscripts/aa - in preparation/SP_Neuroimage_HRdelay/matlabTermOutputs',finalSubDir); if ~exist(p.termOption.finalDir,'dir'); mkdir(p.figOption.finalDir); end
-else
-    p.termOption.finalDir = fullfile('C:\Users\sebas\McGill University\Farivar Lab - Dissertations\Sebastien\Manuscripts\aa - in preparation\SP_Neuroimage_HRdelay\matlabTermOutputs',finalSubDir); if ~exist(p.figOption.finalDir,'dir'); mkdir(p.figOption.finalDir); end
-end
+p.termOption.finalDir = fullfile(p.paths.home,p.paths.repo.out,'matlabTermOutputs',finalSubDir); if ~exist(p.termOption.finalDir,'dir'); mkdir(p.figOption.finalDir); end
 
 %% Open diary
 if ~exist(p.termOption.finalDir,'dir')
@@ -36,13 +35,14 @@ if p.termOption.verbose && p.termOption.save
 end
 
 %% Input Data
-p.repoPath = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
+p.paths.repo.in = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
 
 %% Dependencies
-gitDependencyPath = '/Users/sebastienproulx/Documents/GitHub/utilities';
-matDependencyPath = '/Users/sebastienproulx/Dropbox/MATLAB';
+gitDependencyPath = fullfile(p.paths.home,'Documents/GitHub/utilities');
+matDependencyPath = fullfile(p.paths.home,'Dropbox/MATLAB');
 addpath(genpath(fullfile(gitDependencyPath,'circstat-matlab')));
 addpath(genpath(fullfile(gitDependencyPath,'RAMBiNo')));
+addpath(genpath(fullfile(gitDependencyPath,'BrewerMap')));
 addpath(genpath(fullfile(pwd,'matlabFun')));
 % rmpath(genpath(fullfile(matDependencyPath,'HotellingT2')));
 verbose = 1; % prints more info
@@ -119,10 +119,10 @@ end
 if 1
     visualizeFeatSel(p)
 end
-if 0
+if 1
     visualizeOthers(p)
 end
-if 0
+if 1
     [resBS,resBShr,resWS,f,info] = runAllDecoding(p,verbose);
     plotAllDecoding(p,resBS,info);
     statsAllDecoding(p,resBS,info)

@@ -9,7 +9,7 @@ condPair = 'grat1VSgrat2';
 
 %% Define paths
 subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'}';
-repoPath = p.repoPath;
+repoPath = p.paths.repo.in;
         funPath = fullfile(repoPath,'C-derived\DecodingHR\fun');
             inDir  = 'd';
             inDirX = 'c';
@@ -110,7 +110,7 @@ else
         cMap_F = brewermap(256,'reds');
         cMap_vein = brewermap(256,'blues');
     catch
-        error(['Please put this toolbox in Matlab path:' newline 'https://github.com/DrosteEffect/BrewerMap'])
+        error(['Please put this toolbox in .../GitHub/utilities/ (or wherever as long as it ends up in your Matlab path):' newline 'https://github.com/DrosteEffect/BrewerMap'])
     end
     save(filename,'cMap_F','cMap_vein');
 end

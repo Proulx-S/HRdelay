@@ -131,5 +131,5 @@ end
 % toc
 
 
-f = [f plotNorm(d{subjInd,sessInd},p,featSel{subjInd,sessInd},[],0)];
+% f = [f plotNorm(d{subjInd,sessInd},p,featSel{subjInd,sessInd},[],0)];
 
