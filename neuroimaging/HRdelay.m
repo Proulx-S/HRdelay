@@ -122,10 +122,10 @@ end
 if 1
     processFeatSel(p)
 end
-if 0
+if 1
     visualizeFeatSel(p)
 end
-if 0
+if 1
     visualizeOthers(p)
 end
 if 1

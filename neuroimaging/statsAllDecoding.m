@@ -154,7 +154,7 @@ disp(tbl(:,[2 4 5]))
 
 %Planned comparison
 for condPairInd = 1:length(condPairList)
-    disp(['ranova (condPair[' condPairList{condPairInd} ']): respFeat[cartNoDelay,cartNoAmp]'])
+    disp(['ranova (condPair[' condPairList{condPairInd} ']): respFeat[cartNoDelay,cart]'])
     ind = ~cellfun('isempty',strfind(t.Properties.VariableNames,condPairList{condPairInd}));
     t2 = t(:,ind);
     withinDesign2 = withinDesign(ind,1);
