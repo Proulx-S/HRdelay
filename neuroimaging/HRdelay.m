@@ -10,10 +10,19 @@ p.figOption.sessInd  = 1;
 p.figOption.sliceInd = 7;
 p.figOption.verbose  = 2;
 p.figOption.save  = 0;
-p.figOption.finalDir = fullfile('/Users/sebastienproulx/McGill University/Farivar Lab - Dissertations/Sebastien/Manuscripts/aa - in preparation/SP_Neuroimage_HRdelay/matlabFigOutputs',finalSubDir); if ~exist(p.figOption.finalDir,'dir'); mkdir(p.figOption.finalDir); end
+if ~ispc
+    p.figOption.finalDir = fullfile('/Users/sebastienproulx/McGill University/Farivar Lab - Dissertations/Sebastien/Manuscripts/aa - in preparation/SP_Neuroimage_HRdelay/matlabFigOutputs',finalSubDir); if ~exist(p.figOption.finalDir,'dir'); mkdir(p.figOption.finalDir); end
+else
+    p.figOption.finalDir = fullfile('C:\Users\sebas\McGill University\Farivar Lab - Dissertations\Sebastien\Manuscripts\aa - in preparation\SP_Neuroimage_HRdelay\matlabFigOutputs',finalSubDir); if ~exist(p.figOption.finalDir,'dir'); mkdir(p.figOption.finalDir); end
+end
+
 p.termOption.verbose = 1;
 p.termOption.save = 1;
-p.termOption.finalDir = fullfile('/Users/sebastienproulx/McGill University/Farivar Lab - Dissertations/Sebastien/Manuscripts/aa - in preparation/SP_Neuroimage_HRdelay/matlabTermOutputs',finalSubDir); if ~exist(p.termOption.finalDir,'dir'); mkdir(p.figOption.finalDir); end
+if ~ispc
+    p.termOption.finalDir = fullfile('/Users/sebastienproulx/McGill University/Farivar Lab - Dissertations/Sebastien/Manuscripts/aa - in preparation/SP_Neuroimage_HRdelay/matlabTermOutputs',finalSubDir); if ~exist(p.termOption.finalDir,'dir'); mkdir(p.figOption.finalDir); end
+else
+    p.termOption.finalDir = fullfile('C:\Users\sebas\McGill University\Farivar Lab - Dissertations\Sebastien\Manuscripts\aa - in preparation\SP_Neuroimage_HRdelay\matlabTermOutputs',finalSubDir); if ~exist(p.figOption.finalDir,'dir'); mkdir(p.figOption.finalDir); end
+end
 
 %% Open diary
 if ~exist(p.termOption.finalDir,'dir')
@@ -25,6 +34,9 @@ if p.termOption.verbose && p.termOption.save
     disp(fullfile(p.termOption.finalDir,[mfilename '.mat']))
     disp(datestr(now))
 end
+
+%% Input Data
+p.repoPath = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
 
 %% Dependencies
 gitDependencyPath = '/Users/sebastienproulx/Documents/GitHub/utilities';
@@ -46,12 +58,12 @@ p.featSel.fov.threshMethod = 'empirical'; % 'empirical' 'ecc'
 p.featSel.fov.areaLabel = 'v1';
 p.featSel.fov.threshVal = [0.75 7]; % threshMethod='ecc'
 p.featSel.fov.percentile = 20; % threshMethod='ecc'
-% Most activated voxels
+% Activated voxels (fixed-effect)
 p.featSel.act.doIt = 1;
-p.featSel.act.threshMethod = 'fdr'; % '%ile' 'p' 'fdr'
+p.featSel.act.threshMethod = '%ile'; % '%ile' 'p' 'fdr'
 p.featSel.act.threshVal = 0.05; % threshMethod='p' or 'fdr'
 p.featSel.act.percentile = 20; % threshMethod='%ile'
-% Most significant response vectors
+% Activated voxels (random-effect)
 p.featSel.respVecSig.doIt = 1;
 p.featSel.respVecSig.threshMethod = 'fdr'; % '%ile' 'p' 'fdr'
 p.featSel.respVecSig.threshVal = 0.05; % threshMethod='p' or 'fdr'
@@ -98,13 +110,13 @@ if 0
     applyAreaMask(figOption)
     %     processWaveletResponses(figOption,verbose)
 end
-if 1
+if 0
     processResponses(p,figOption,verbose)
 end
 if 1
     processFeatSel(p)
 end
-if 0
+if 1
     visualizeFeatSel(p)
 end
 if 0
