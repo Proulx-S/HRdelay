@@ -15,7 +15,7 @@ switch chanSpace
     case {'cart_affineRot' 'cartImag_affineRot' 'cartReal_affineRot'}
         normSpace.rhoScale = 'vox';
         normSpace.thetaShift = 'roi';
-    case 'cart_roi'
+    case 'cartRoi'
         normSpace.rhoScale = 'roi';
         normSpace.thetaShift = 'roi';
     case {'cart' 'cartReal' 'cartImag'}

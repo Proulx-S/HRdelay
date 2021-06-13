@@ -1,13 +1,14 @@
 %% To do
-% -Output final stat on just decoding
+% -Permutation test
 % -Output visualization of all subjects
 % -ROI response analysis
 
 %%
 clear all
-% close all
+close all
 
-finalSubDir = 'boubouDeg1_lin';
+p.anaID = '2021-06-13';
+finalSubDir = [p.anaID '_boubouDeg1_lin'];
 if ~ispc
     p.paths.home = '/Users/sebastienproulx';
 else
@@ -28,6 +29,10 @@ p.figOption.finalDir = fullfile(p.paths.home,p.paths.repo.out,'matlabFigOutputs'
 p.termOption.verbose = 1;
 p.termOption.save = 1;
 p.termOption.finalDir = fullfile(p.paths.home,p.paths.repo.out,'matlabTermOutputs',finalSubDir); if ~exist(p.termOption.finalDir,'dir'); mkdir(p.figOption.finalDir); end
+
+%% Permutation Test
+p.perm.doIt = 1;
+p.perm.n = 16;
 
 %% Open diary
 if ~exist(p.termOption.finalDir,'dir')
@@ -112,30 +117,36 @@ p.figOption.save  = 2;
 p.termOption.verbose = 1;
 p.termOption.save = 1;
 
-p.perm.doIt = 0;
 if 0
     importData(verbose)
     applyAreaMask(figOption)
     %     processWaveletResponses(figOption,verbose)
 end
 if 0
-    processResponses(p,figOption,verbose)
+    extractResponses(p,figOption,verbose)
 end
-if 0
+if 1
+    processFov(p)
     processFeatSel(p)
+    [resBS,resBShr,resWS,f,info] = runAllDecoding(p,verbose);
 end
 if 1
     visualizeFeatSel(p)
-end
-if 1
     visualizeOthers(p)
-end
-if 1
-    [resBS,resBShr,resWS,f,info] = runAllDecoding(p,verbose);
-    save tmp p resBS info
     plotAllDecoding(p,resBS,info);
     statsAllDecoding(p,resBS,info)
 end
+if p.perm.doIt
+    disp('************************')
+    disp('running permutation test')
+    disp('************************')
+    for permInd = 1:p.perm.n
+        permuteLabels(p)
+        processFeatSel(p)
+        [resBS,resBShr,resWS,f,info] = runAllDecoding(p,verbose);
+    end
+end
+
 if 0
     chan = processChanHr(p,resBShr,info);
     f = plotChanHr(p,chan);

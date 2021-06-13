@@ -1,4 +1,4 @@
-function processFeatSel(p)
+function processFov(p)
 if ~isfield(p,'figOption') || isempty(p.figOption)
     p.figOption.verbose = 1;
     p.figOption.subjInd = 1;
@@ -13,12 +13,8 @@ end
 
 
 %% Define paths
-subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'};
-if ismac
-    repoPath = '/Users/sebastienproulx/OneDrive - McGill University/dataBig';
-else
-    repoPath = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
-end
+subjList = p.meta.subjList;
+repoPath = p.paths.repo.in;
         funPath = fullfile(repoPath,'C-derived\DecodingHR\fun');
             inDir  = 'd';
             outDir  = 'd';
@@ -29,8 +25,8 @@ end
 clear tmp
 
 %% Load data
-dAll = cell(size(subjList,1),1);
-for subjInd = 1:size(subjList,2)
+dAll = cell(length(subjList),1);
+for subjInd = 1:length(subjList)
     curFile = fullfile(funPath,inDir,[subjList{subjInd} '.mat']);
     if p.termOption.verbose; disp(['loading: ' curFile]); end
     load(curFile,'res');

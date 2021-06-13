@@ -1,6 +1,6 @@
 function [featSel_areaAndFov,d,p] = empiricalFov(d,p,outPath)
 filePath = fullfile(outPath,mfilename);
-forceFlag = 0;
+forceFlag = 1;
 
 %% Initiate params
 p.featSel.fov.empirical.padFac             = 1.2;
