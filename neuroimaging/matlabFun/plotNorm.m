@@ -154,7 +154,9 @@ if ~voxFlag
     if ~(xLim(2)>0)
         xLim(2) = +delta;
     end
-    xlim(xLim)
+    if ~all(xLim==[0 0])
+        xlim(xLim)
+    end
     
     yLim = ylim;
     if ~(yLim(1)<0)

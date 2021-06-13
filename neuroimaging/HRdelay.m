@@ -5,7 +5,7 @@
 
 %%
 clear all
-close all
+% close all
 
 finalSubDir = 'boubouDeg1_lin';
 if ~ispc
@@ -94,10 +94,12 @@ p.featSel.global.method = 'custom2';
 %% SVM parameters
 p.svm.kernel.type = 'lin';
 p.svm.complexSpace = 'bouboulisDeg1'; % 'bouboulisDeg1' 'bouboulisDeg2'
+p.svm.doWithin = 0;
 
 %% Channel parameters
 p.svm.condPairList = {'grat1VSgrat2' 'grat1VSplaid' 'grat2VSplaid'};
-p.svm.respFeatList = {'cart' 'cartNoDelay' 'cartNoAmp'};
+% p.svm.respFeatList = {'cartNoDelay' 'delay' 'cart'};
+p.svm.respFeatList = {'delay' 'cartNoDelay' 'cart'};
 
 %% Display parameters
 figOption.save = 1; % save all figures
@@ -119,7 +121,7 @@ end
 if 0
     processResponses(p,figOption,verbose)
 end
-if 1
+if 0
     processFeatSel(p)
 end
 if 1

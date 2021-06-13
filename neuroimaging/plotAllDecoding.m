@@ -15,8 +15,8 @@ end
 % yInfo = 'condPair x respFeat x subj';
 y = permute(y,[2 1 3]);
 yInfo = 'respFeat x condPair x subj';
-y = y([2 3 1],:,:);
-respFeatList = respFeatList([2 3 1]);
+% y = y([2 3 1],:,:);
+% respFeatList = respFeatList([2 3 1]);
 
 y = cat(2,y(:,1,:),mean(y(:,2:3,:),2));
 % y = cat(1,y(1,:,:),mean(y(2:3,:,:),1));

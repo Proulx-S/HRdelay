@@ -21,7 +21,7 @@ switch chanSpace
     case {'cart' 'cartReal' 'cartImag'}
         normSpace.rhoScale = 'vox';
         normSpace.thetaShift = 'vox';
-    case {'cartNoAmp' 'cartNoAmpImag'}
+    case {'cartNoAmp' 'cartNoAmpImag' 'delay'}
         normSpace.rhoScale = 'rm';
         normSpace.thetaShift = 'vox';
     case {'cartNoAmp_affineRot' 'cartNoAmp_affineRot_affineCart' 'cartNoAmpImag_affineRot'}
@@ -54,10 +54,12 @@ if computeNorm
         case 'vox'
             polNorm.thetaShift = angle(mean(x(~te,:),1));
             
-            % identify and preserve neg response voxels
-            theta = angle(mean(mean(x(~te,:),1),2));
-            indNeg = wrapToPi(polNorm.thetaShift - theta+pi/2)<0;
-            polNorm.thetaShift(1,indNeg) = -wrapToPi( pi - polNorm.thetaShift(1,indNeg) );
+            if ~strcmp(chanSpace,'delay')
+                % identify and preserve neg response voxels
+                theta = angle(mean(mean(x(~te,:),1),2));
+                indNeg = wrapToPi(polNorm.thetaShift - theta+pi/2)<0;
+                polNorm.thetaShift(1,indNeg) = -wrapToPi( pi - polNorm.thetaShift(1,indNeg) );
+            end
         case 'roi'
             polNorm.thetaShift = angle(mean(mean(x(~te,:),1),2));
         case 'none'
@@ -94,7 +96,15 @@ switch normSpace.thetaShift
     otherwise
         error('X')
 end
-[u,v] = pol2cart(theta,rho); clear theta rho
+% theta spread
+if ~strcmp(chanSpace,'delay')
+    [u,v] = pol2cart(theta,rho); clear theta rho
+else
+    %tricky trick to keep data packed in complex numbers: put angle in the
+    %imaginary part of x
+    u = 0;
+    v = theta;
+end
 x = complex(u,v); clear u v
 
 x = reDim2(x,sz);

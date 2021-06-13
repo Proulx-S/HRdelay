@@ -111,67 +111,68 @@ end
 % toc
 
 
-%% Within-session SVM cross-validation (with cross-session feature selection)
-svmModelK = cell(size(d));
-nrmlzK = cell(size(d));
-yHatK = cell(size(d));
-yHatK_tr = cell(size(d));
-Y = cell(size(d));
-K = cell(size(d));
-Yhr = cell(size(d));
-Khr = cell(size(d));
-nOrig = nan(size(d));
-n = nan(size(d));
-
-if ~p.perm.doIt
-    disp('Within-session SVM cross-validation')
-    disp('with between-session feature selection')
-    for i = 1:numel(d)
-        if verbose
-            disp(['-training and testing sess ' num2str(i) '/' num2str(numel(d))])
+if p.svm.doWithin
+    %% Within-session SVM cross-validation (with cross-session feature selection)
+    svmModelK = cell(size(d));
+    nrmlzK = cell(size(d));
+    yHatK = cell(size(d));
+    yHatK_tr = cell(size(d));
+    Y = cell(size(d));
+    K = cell(size(d));
+    Yhr = cell(size(d));
+    Khr = cell(size(d));
+    nOrig = nan(size(d));
+    n = nan(size(d));
+    
+    if ~p.perm.doIt
+        disp('Within-session SVM cross-validation')
+        disp('with between-session feature selection')
+        for i = 1:numel(d)
+            if verbose
+                disp(['-training and testing sess ' num2str(i) '/' num2str(numel(d))])
+            end
+            [subjInd,sessInd] = ind2sub(size(d),i);
+            switch sessInd
+                case 1
+                    sessIndCross = 2;
+                case 2
+                    sessIndCross = 1;
+                otherwise
+                    error('X')
+            end
+            
+            % get data
+            [X,y,k] = getXYK(d{subjInd,sessInd},p);
+            
+            % cross-session feature selection
+            featSelInd = featSel{subjInd,sessIndCross}.indIn;
+            x = X(:,featSelInd);
+            
+            % k-fold training
+            [svmModelK{i},nrmlzK{i}] = SVMtrain(y,x,p,k);
+            % k-fold testing
+            [yHatK{i},yHatK_tr{i}] = SVMtest(y,x,svmModelK{i},nrmlzK{i},k);
+            yHatK{i} = nanmean(yHatK{i},2);
+            % output
+            Y{i} = y;
+            K{i} = k;
+            nOrig(i) = length(featSelInd);
+            n(i) = nnz(featSelInd);
         end
-        [subjInd,sessInd] = ind2sub(size(d),i);
-        switch sessInd
-            case 1
-                sessIndCross = 2;
-            case 2
-                sessIndCross = 1;
-            otherwise
-                error('X')
+    else
+        for i = 1:numel(d)
+            [subjInd,sessInd] = ind2sub(size(d),i);
+            % get data
+            [~,y,k] = getXYK(d{subjInd,sessInd},p);
+            Y{i} = y;
+            K{i} = k;
         end
-        
-        % get data
-        [X,y,k] = getXYK(d{subjInd,sessInd},p);
-        
-        % cross-session feature selection
-        featSelInd = featSel{subjInd,sessIndCross}.indIn;
-        x = X(:,featSelInd);
-        
-        % k-fold training
-        [svmModelK{i},nrmlzK{i}] = SVMtrain(y,x,p,k);
-        % k-fold testing
-        [yHatK{i},yHatK_tr{i}] = SVMtest(y,x,svmModelK{i},nrmlzK{i},k);
-        yHatK{i} = nanmean(yHatK{i},2);
-        % output
-        Y{i} = y;
-        K{i} = k;
-        nOrig(i) = length(featSelInd);
-        n(i) = nnz(featSelInd);
     end
-else
-    for i = 1:numel(d)
-        [subjInd,sessInd] = ind2sub(size(d),i);
-        % get data
-        [~,y,k] = getXYK(d{subjInd,sessInd},p);
-        Y{i} = y;
-        K{i} = k;
-    end
+    
+    % line_num=dbstack; % get this line number
+    % disp(['line ' num2str(line_num(1).line)]) % displays the line number
+    % toc
 end
-
-% line_num=dbstack; % get this line number
-% disp(['line ' num2str(line_num(1).line)]) % displays the line number
-% toc
-
 
 %% Within-session SVM training (and feature selection) + Cross-session SVM testing
 disp('Between-session SVM cross-validation')
@@ -182,6 +183,14 @@ yHat_tr = cell(size(d));
 yHat = cell(size(d));
 yHatHr = cell(size(d));
 yHatHr_nSpec = cell(size(d));
+if ~p.svm.doWithin
+    Y = cell(size(d));
+    K = cell(size(d));
+    Yhr = cell(size(d));
+    Khr = cell(size(d));
+    nOrig = nan(size(d));
+    n = nan(size(d));
+end
 % Training
 for i = 1:numel(d)
     if verbose
@@ -189,7 +198,7 @@ for i = 1:numel(d)
     end
     [subjInd,trainInd] = ind2sub(size(d),i);
     % get training data
-    [X,y,~] = getXYK(d{subjInd,trainInd},p);
+    [X,y,k] = getXYK(d{subjInd,trainInd},p);
     % same-session feature-selection
     featSelInd = featSel{subjInd,trainInd}.indIn;
     x = X(:,featSelInd);
@@ -197,6 +206,11 @@ for i = 1:numel(d)
     [svmModel{subjInd,trainInd},nrmlz{subjInd,trainInd}] = SVMtrain(y,x,p);
     % same session testing (not crossvalidated)
     [yHat_tr{subjInd,trainInd},~] = SVMtest(y,x,svmModel{subjInd,trainInd},nrmlz{subjInd,trainInd});
+    
+    Y{i} = y;
+    K{i} = k;
+    nOrig(i) = length(featSelInd);
+    n(i) = nnz(featSelInd);
 end
 
 % line_num=dbstack; % get this line number
@@ -293,6 +307,10 @@ if ~p.perm.doIt...
                 curSvmModel.w = sign(angle(w)).*abs(w);
             case 'cartNoDelay'
                 % nothing to do here, everything is real valued (originating in the abs value of xi reponse vectors)
+            case 'delay'
+                % nothing to do here, everything is real valued (originating in the angle value of xi reponse vectors)
+                % BUT note that this angle is stored in the imaginary part
+                % of the xi
             otherwise
                 error('X')
         end
@@ -379,25 +397,26 @@ end
 disp('BShr perfMetric: done')
 end
 
-% Within-sess
-disp('WS perfMetric: computing')
-resWS_sess = repmat(perfMetric,[size(d,1) size(d,2)]);
-for i = 1:numel(d)
-    resWS_sess(i) = perfMetric(Y{i},yHatK{i},K{i});
+if p.svm.doWithin
+    % Within-sess
+    disp('WS perfMetric: computing')
+    resWS_sess = repmat(perfMetric,[size(d,1) size(d,2)]);
+    for i = 1:numel(d)
+        resWS_sess(i) = perfMetric(Y{i},yHatK{i},K{i});
+    end
+    acc_fdr = mafdr([resWS_sess.acc_p],'BHFDR',true);
+    for i = 1:numel(d)
+        resWS_sess(i).acc_fdr = acc_fdr(i);
+        resWS_sess(i).nVoxOrig = size(d{i}.sin,1);
+        resWS_sess(i).nVox = nnz(featSel{i}.indIn);
+        resWS_sess(i).chanSpace = p.chanSpace;
+        resWS_sess(i).complexSpace = p.complexSpace;
+        resWS_sess(i).svmKernel = p.svm.kernel.type;
+        resWS_sess(i).condPair = p.condPair;
+    end
+    % resWS_sess = orderfields(resWS_sess,[1 2 3 4 5 6 7 8 9 17 10 11 12 13 14 15 16 18 19 20 21]);
+    disp('WS perfMetric: done')
 end
-acc_fdr = mafdr([resWS_sess.acc_p],'BHFDR',true);
-for i = 1:numel(d)
-    resWS_sess(i).acc_fdr = acc_fdr(i);
-    resWS_sess(i).nVoxOrig = size(d{i}.sin,1);
-    resWS_sess(i).nVox = nnz(featSel{i}.indIn);
-    resWS_sess(i).chanSpace = p.chanSpace;
-    resWS_sess(i).complexSpace = p.complexSpace;
-    resWS_sess(i).svmKernel = p.svm.kernel.type;
-    resWS_sess(i).condPair = p.condPair;
-end
-% resWS_sess = orderfields(resWS_sess,[1 2 3 4 5 6 7 8 9 17 10 11 12 13 14 15 16 18 19 20 21]);
-disp('WS perfMetric: done')
-
 
 % line_num=dbstack; % get this line number
 % disp(['line ' num2str(line_num(1).line)]) % displays the line number
@@ -409,8 +428,11 @@ disp('perfMetric summary: computing')
 if exist('resBShr_sess','var')
     [resBShrSess,~,~] = summarizePerf(resBShr_sess);
 end
-[resWSsess,resWSsubj,resWSgroup] = summarizePerf(resWS_sess);
-disp('perfMetric summary: computing')
+
+if p.svm.doWithin
+    [resWSsess,resWSsubj,resWSgroup] = summarizePerf(resWS_sess);
+    disp('perfMetric summary: computing')
+end
 
 % % Combine WS and BS
 % fieldList = fields(resBSsubj);
@@ -440,14 +462,16 @@ disp('perfMetric summary: computing')
 %% Print info and output
 if verbose
     disp('-----------------')
-    disp('*Within-session*')
-    printRes2(resWSgroup)
-    disp(' ')
-%     disp('*Within+Between*')
-%     printRes2(resGroup)
-%     disp(' ')
-    disp('*Between-session*')
-    printRes2(resBSgroup)
+    if p.svm.doWithin
+        disp('*Within-session*')
+        printRes2(resWSgroup)
+        disp(' ')
+        %     disp('*Within+Between*')
+        %     printRes2(resGroup)
+        %     disp(' ')
+        disp('*Between-session*')
+        printRes2(resBSgroup)
+    end
     disp('-----------------')
 end
 
@@ -464,75 +488,80 @@ else
     resBShr = [];
 end
 
-resWS.sess = resWSsess;
-resWS.sess.subjList = subjList;
-resWS.subj = resWSsubj;
-resWS.subj.subjList = subjList;
-resWS.group = resWSgroup;
+if p.svm.doWithin
+    resWS.sess = resWSsess;
+    resWS.sess.subjList = subjList;
+    resWS.subj = resWSsubj;
+    resWS.subj.subjList = subjList;
+    resWS.group = resWSgroup;
+else
+    resWS = [];
+end
 
 % line_num=dbstack; % get this line number
 % disp(['line ' num2str(line_num(1).line)]) % displays the line number
 % toc
 
-%% Plot between-session vs within-session
-if verbose
-    % Decoding
-    sz = size(resWS.sess.acc);
-    resBS_tmp = resBS;
-    fieldList1 = fields(resBS_tmp);
-    for i1 = 1:length(fieldList1)
-        fieldList2 = fields(resBS_tmp.(fieldList1{i1}));
-        for i2 = 1:length(fieldList2)
-            tmp = resBS_tmp.(fieldList1{i1}).(fieldList2{i2});
-            if all(size(tmp) == sz)
-                resBS_tmp.(fieldList1{i1}).(fieldList2{i2}) = tmp(:,[2 1]);
+if p.svm.doWithin
+    %% Plot between-session vs within-session
+    if verbose
+        % Decoding
+        sz = size(resWS.sess.acc);
+        resBS_tmp = resBS;
+        fieldList1 = fields(resBS_tmp);
+        for i1 = 1:length(fieldList1)
+            fieldList2 = fields(resBS_tmp.(fieldList1{i1}));
+            for i2 = 1:length(fieldList2)
+                tmp = resBS_tmp.(fieldList1{i1}).(fieldList2{i2});
+                if all(size(tmp) == sz)
+                    resBS_tmp.(fieldList1{i1}).(fieldList2{i2}) = tmp(:,[2 1]);
+                end
             end
         end
-    end
-    
-    if p.figOption.verbose>1
-        f = [f figure('WindowStyle','docked','visible','on')];
-    else
-        f = [f figure('WindowStyle','docked','visible','off')];
-    end
-    compareRes(resBS,resWS)
-    ax = gca;
-    ax.XLabel.String = {'between-session' ax.XLabel.String};
-    ax.YLabel.String = {'within-session' ax.YLabel.String};
-    textLine = {};
-    textLine = [textLine {[p.chanSpace '; ' p.condPair]}];
-    if p.figOption.verbose>1
-        textLine = [textLine {strjoin(featSel{p.figOption.subjInd,1}.featSeq.featSelList,'; ')}];
-    end
-    
-    if p.figOption.verbose>2
-        n    = nan([length(featSel{1}.featSeq.featSelList)+1 size(featSel)]);
-        %     n = nan([length(featSel{1}.n) size(featSel)]);
-        for sessInd = 1:numel(featSel)
-            tmp = nan(size(featSel{sessInd}.featSeq.featIndIn(:,:,1)));
-            tmp(:,ind_nSpecFeatSel) = featSel{sessInd}.featSeq.featIndIn(:,ind_nSpecFeatSel,ind_nSpecFeatSelCond);
-            tmp(:,ind_specFeatSel) = featSel{sessInd}.featSeq.featIndIn(:,ind_specFeatSel,ind_specFeatSelCond);
-            n(2:end,sessInd) = sum(cumsum(tmp,2)==1:length(ind_nSpecFeatSel),1);
-            %         n(2:end,sessInd) = sum(cumsum(featSel{sessInd}.featSeq.featIndIn(:,:,featSel{sessInd}.condPairCurInd),2) == 1:size(featSel{sessInd}.featSeq.featIndIn,2),1);
-            n(1,sessInd) = size(tmp,1);
-        end
-        nMin = min(n(:,:),[],2)';
-        nMin = cellstr(num2str(nMin'))';
-        nMean = round(mean(n(:,:),2)');
-        nMean = cellstr(num2str(nMean'))';
-        nMax = max(n(:,:),[],2)';
-        nMax = cellstr(num2str(nMax'))';
         
-        textLine = [textLine {['min: ' strjoin(nMin,'; ')]}];
-        textLine = [textLine {['mean: ' strjoin(nMean,'; ')]}];
-        textLine = [textLine {['max: ' strjoin(nMax,'; ')]}];
+        if p.figOption.verbose>1
+            f = [f figure('WindowStyle','docked','visible','on')];
+        else
+            f = [f figure('WindowStyle','docked','visible','off')];
+        end
+        compareRes(resBS,resWS)
+        ax = gca;
+        ax.XLabel.String = {'between-session' ax.XLabel.String};
+        ax.YLabel.String = {'within-session' ax.YLabel.String};
+        textLine = {};
+        textLine = [textLine {[p.chanSpace '; ' p.condPair]}];
+        if p.figOption.verbose>1
+            textLine = [textLine {strjoin(featSel{p.figOption.subjInd,1}.featSeq.featSelList,'; ')}];
+        end
+        
+        if p.figOption.verbose>2
+            n    = nan([length(featSel{1}.featSeq.featSelList)+1 size(featSel)]);
+            %     n = nan([length(featSel{1}.n) size(featSel)]);
+            for sessInd = 1:numel(featSel)
+                tmp = nan(size(featSel{sessInd}.featSeq.featIndIn(:,:,1)));
+                tmp(:,ind_nSpecFeatSel) = featSel{sessInd}.featSeq.featIndIn(:,ind_nSpecFeatSel,ind_nSpecFeatSelCond);
+                tmp(:,ind_specFeatSel) = featSel{sessInd}.featSeq.featIndIn(:,ind_specFeatSel,ind_specFeatSelCond);
+                n(2:end,sessInd) = sum(cumsum(tmp,2)==1:length(ind_nSpecFeatSel),1);
+                %         n(2:end,sessInd) = sum(cumsum(featSel{sessInd}.featSeq.featIndIn(:,:,featSel{sessInd}.condPairCurInd),2) == 1:size(featSel{sessInd}.featSeq.featIndIn,2),1);
+                n(1,sessInd) = size(tmp,1);
+            end
+            nMin = min(n(:,:),[],2)';
+            nMin = cellstr(num2str(nMin'))';
+            nMean = round(mean(n(:,:),2)');
+            nMean = cellstr(num2str(nMean'))';
+            nMax = max(n(:,:),[],2)';
+            nMax = cellstr(num2str(nMax'))';
+            
+            textLine = [textLine {['min: ' strjoin(nMin,'; ')]}];
+            textLine = [textLine {['mean: ' strjoin(nMean,'; ')]}];
+            textLine = [textLine {['max: ' strjoin(nMax,'; ')]}];
+        end
+        
+        textLine = strjoin(textLine,newline);
+        title(textLine);
+        uistack(patch([0 0 0.5 0.5 0],[0.5 0 0 0.5 0.5],[1 1 1].*0.7),'bottom')
     end
-    
-    textLine = strjoin(textLine,newline);
-    title(textLine);
-    uistack(patch([0 0 0.5 0.5 0],[0.5 0 0 0.5 0.5],[1 1 1].*0.7),'bottom')
 end
-
 
 
 % line_num=dbstack; % get this line number
@@ -769,7 +798,7 @@ if ~isreal(x)
             end
         case {'cartNoDelay' 'cartReal' 'cartReal_affineRot'}
             x = real(x);
-        case {'cartNoAmpImag' 'cartImag' 'cartImag_affineRot' 'cartNoAmpImag_affineRot'}
+        case {'delay' 'cartNoAmpImag' 'cartImag' 'cartImag_affineRot' 'cartNoAmpImag_affineRot'}
             x = imag(x);
         otherwise
             error('X')

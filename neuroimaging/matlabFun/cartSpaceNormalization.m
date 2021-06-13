@@ -20,43 +20,26 @@ if computeNorm
                 normSpace.imagShift = 'vox';
                 normSpace.realScale = 'vox';
                 normSpace.imagScale = 'vox';
-%             else
-%                 normSpace.realShift = 'roi';
-%                 normSpace.imagShift = 'roi';
-%                 normSpace.realScale = 'none';
-%                 normSpace.imagScale = 'none';
-%             end
         case {'cartNoDelay' 'cartReal' 'cartReal_affineRot'}
-%             normSpace.realShift = 'vox';
-%             normSpace.imagShift = 'rm';
-%             if doCartSpaceScale
                 normSpace.realShift = 'vox';
                 normSpace.imagShift = 'rm';
                 normSpace.realScale = 'vox';
                 normSpace.imagScale = 'rm';
-%             else
-%                 normSpace.realShift = 'roi';
-%                 normSpace.imagShift = 'roi';
-%                 normSpace.realScale = 'none';
-%                 normSpace.imagScale = 'rm';
-%             end
         case {'cartImag' 'cartNoAmpImag' 'cartImag_affineRot' 'cartNoAmpImag_affineRot'}
-%             if doCartSpaceScale
                 normSpace.realShift = 'rm';
                 normSpace.imagShift = 'vox';
                 normSpace.realScale = 'rm';
                 normSpace.imagScale = 'vox';
-%             else
-%                 normSpace.realShift = 'roi';
-%                 normSpace.imagShift = 'roi';
-%                 normSpace.realScale = 'rm';
-%                 normSpace.imagScale = 'none';
-%             end
         case 'cartNoAmp_affineRot_affineCart'
             normSpace.realShift = 'roi';
             normSpace.imagShift = 'roi';
             normSpace.realScale = 'roi';
             normSpace.imagScale = 'roi';
+        case 'delay'
+            normSpace.realShift = 'rm';
+            normSpace.imagShift = 'vox';
+            normSpace.realScale = 'rm';
+            normSpace.imagScale = 'vox';
         otherwise
             error('X')
     end
@@ -127,56 +110,24 @@ if ~isnan(cartNorm.realShift)
 else
     u = 0;
 end
-% switch normSpace.realShift
-%     case {'roi' 'vox' 'none'}
-%         u = u - cartNorm.realShift;
-%     case 'rm'
-%         u = 0;
-%     otherwise
-%         error('X')
-% end
 %imag shift
 if ~isnan(cartNorm.imagShift)
     v = v - cartNorm.imagShift;
 else
     v = 0;
 end
-% switch normSpace.imagShift
-%     case {'roi' 'vox' 'none'}
-%         v = v - cartNorm.imagShift;
-%     case 'rm'
-%         v = 0;
-%     otherwise
-%         error('X')
-% end
 %real scale
 if ~isnan(cartNorm.realScale)
     u = u ./ cartNorm.realScale;
 else
     u = 0;
 end
-% switch normSpace.realScale
-%     case {'roi' 'vox' 'none'}
-%         u = u ./ cartNorm.realScale;
-%     case 'rm'
-%         u = 0;
-%     otherwise
-%         error('X')
-% end
 %imag scale
 if ~isnan(cartNorm.imagScale)
     v = v ./ cartNorm.imagScale;
 else
     v = 0;
 end
-% switch normSpace.imagScale
-%     case {'roi' 'vox' 'none'}
-%         v = v ./ cartNorm.imagScale;
-%     case 'rm'
-%         v = 0;
-%     otherwise
-%         error('X')
-% end
 x = complex(u,v);
 
 x = reDim2(x,sz);
