@@ -99,11 +99,27 @@ tmp = wlcxn_P(ind,:);
 tmp(:) = mafdr(tmp(:),'BHFDR','true');
 wlcxn_FDR2(ind,:) = tmp;
 
-[wlcxn_P2,~,STATS] = signrank(squeeze(y2(2,:,:)),0.5,'tail','right');
-wlcxn_R2 = STATS.signedrank;
+disp('---(2) Delay response feature only')
+for levelInd = 1:length(respFeatList)
+    if ind(levelInd)
+        disp(['respFeat[' respFeatList{levelInd} '], condPair[all]'])
+        disp(['t test    : T   =' num2str(ttestAll_T(levelInd,1)) ', one-sided p(fdr)=' num2str(ttestAll_P(levelInd,1)) '(' num2str(ttestAll_FDR2(levelInd,1)) ')'])
+        disp(['wlcxn test: rank=' num2str(wlcxnAll_R(levelInd,1)) '    , one-sided p(fdr)=' num2str(wlcxnAll_P(levelInd,1)) '(' num2str(wlcxnAll_FDR2(levelInd,1)) ')'])
         disp(' ')
+        for condPairInd = 1:length(condPairList)
+            disp(['respFeat[' respFeatList{levelInd} '], condPair[' condPairList{condPairInd} ']'])
+            disp(['t test    : T   =' num2str(ttest_T(levelInd,condPairInd)) ', one-sided p(fdr)=' num2str(ttest_P(levelInd,condPairInd)) '(' num2str(ttest_FDR2(levelInd,condPairInd)) ')'])
+            disp(['wlcxn test: rank=' num2str(wlcxn_R(levelInd,condPairInd)) '    , one-sided p(fdr)=' num2str(wlcxn_P(levelInd,condPairInd)) '(' num2str(wlcxn_FDR2(levelInd,condPairInd)) ')'])
+            disp(' ')
+        end
+    end
+end
+disp('---')
+disp(' ')
 
 
+%%%%%%%%%
+%% Anovas
 % set intercept to chance
 y = y-0.5;
 
