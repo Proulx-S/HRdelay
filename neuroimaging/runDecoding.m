@@ -14,14 +14,10 @@ f = [];
 % tic
 
 %% Define paths
-subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'};
-if ismac
-    repoPath = '/Users/sebastienproulx/OneDrive - McGill University/dataBig';
-else
-    repoPath = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
-end
-funPath = fullfile(repoPath,'C-derived\DecodingHR\fun');
-inDir  = 'd';
+subjList = p.meta.subjList;
+repoPath = p.paths.repo.in;
+    funPath = fullfile(repoPath,'C-derived\DecodingHR\fun');
+        inDir  = ['d_' p.anaID];
 %make sure everything is forward slash for mac, linux pc compatibility
 for tmp = {'repoPath' 'funPath' 'inDir'}
     eval([char(tmp) '(strfind(' char(tmp) ',''\''))=''/'';']);
@@ -32,7 +28,7 @@ clear tmp
 
 %% Load data
 dAll = cell(size(subjList,1),1);
-for subjInd = 1:size(subjList,2)
+for subjInd = 1:length(subjList)
     curFile = fullfile(funPath,inDir,[subjList{subjInd} '.mat']);
     if verbose; disp(['loading: ' curFile]); end
     load(curFile,'res');
@@ -52,7 +48,11 @@ end
 dP = cell(size(d,2),length(sessList));
 for subjInd = 1:length(d)
     for sessInd = 1:length(sessList)
-        dP{subjInd,sessInd} = d{subjInd}.(sessList{sessInd});
+        try
+            dP{subjInd,sessInd} = d{subjInd}.(sessList{sessInd});
+        catch
+            keyboard
+        end
         d{subjInd}.(sessList{sessInd}) = [];
         dP{subjInd,sessInd}.featSel = featSel{subjInd,sessInd};
     end

@@ -7,14 +7,14 @@
 clear all
 close all
 
-p.anaID = '2021-06-13';
-finalSubDir = [p.anaID '_boubouDeg1_lin'];
+p.anaID = '2021-06-14';
+finalSubDir = p.anaID;
 if ~ispc
     p.paths.home = '/Users/sebastienproulx';
 else
     p.paths.home = 'C:\Users\sebas';
 end
-p.paths.repo.out = 'McGill University/Farivar Lab - Dissertations/Sebastien/Manuscripts/aa - in preparation/SP_Neuroimage_HRdelay';
+p.paths.repo.out = fullfile('McGill University/Farivar Lab - Dissertations/Sebastien/Manuscripts/aa - in preparation/SP_Neuroimage_HRdelay',p.anaID); if ~exist(p.paths.repo.out,'dir'); mkdir(p.paths.repo.out); end
 
 %% Display parameters
 figOption.save = 1; % save all figures
@@ -55,7 +55,12 @@ addpath(genpath(fullfile(gitDependencyPath,'circstat-matlab')));
 addpath(genpath(fullfile(gitDependencyPath,'RAMBiNo')));
 addpath(genpath(fullfile(gitDependencyPath,'BrewerMap')));
 addpath(genpath(fullfile(pwd,'matlabFun')));
-% rmpath(genpath(fullfile(matDependencyPath,'HotellingT2')));
+% Matlab toolboxes:
+% -Image Processing
+% -Statistics and Machine Learning
+% -Mapping
+% -Curve Fitting
+% -Bioinformatics
 verbose = 1; % prints more info
 
 %% Meta data
@@ -122,7 +127,7 @@ if 0
     applyAreaMask(figOption)
     %     processWaveletResponses(figOption,verbose)
 end
-if 0
+if 1
     extractResponses(p,figOption,verbose)
 end
 if 1

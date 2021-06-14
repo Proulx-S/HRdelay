@@ -13,15 +13,11 @@ end
 
 
 %% Define paths
-subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'};
-if ismac
-    repoPath = '/Users/sebastienproulx/OneDrive - McGill University/dataBig';
-else
-    repoPath = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
-end
-        funPath = fullfile(repoPath,'C-derived\DecodingHR\fun');
-            inDir  = 'd';
-            outDir  = 'd';
+subjList = p.meta.subjList;
+repoPath = p.paths.repo.in;
+    funPath = fullfile(repoPath,'C-derived\DecodingHR\fun');
+        inDir  = ['d_' p.anaID];
+        outDir  = ['d_' p.anaID];
 %make sure everything is forward slash for mac, linux pc compatibility
 for tmp = {'repoPath' 'funPath' 'inDir' 'outDir'}
     eval([char(tmp) '(strfind(' char(tmp) ',''\''))=''/'';']);
@@ -30,7 +26,7 @@ clear tmp
 
 %% Load data
 dAll = cell(size(subjList,1),1);
-for subjInd = 1:size(subjList,2)
+for subjInd = 1:length(subjList)
     curFile = fullfile(funPath,inDir,[subjList{subjInd} '.mat']);
     if p.termOption.verbose; disp(['loading: ' curFile]); end
     load(curFile,'res');
@@ -53,19 +49,40 @@ d = dP; clear dP
 
 %% Retinotopic feature selection
 if p.featSel.fov.doIt && strcmp(p.featSel.fov.threshMethod,'empirical')
-%     if p.perm.doIt
-%         % Not actually using permuted data. But it does not acutally
-%         % matters, because permuting does not change the result here. This
-%         % step is base on the response delay irrespective of stimulus
-%         % condition (delay computed after averaging across repetutions and
-%         % stimulus conditions). Loading the precomputed empirical FOV
-%         % therefore yields the same result as recomputing it, but save
-%         % loads of time.
-%         [featSel_fov,d,p] = empiricalFov(d,p,fullfile(funPath,outDir2));
-%     else
-        [featSel_fov,d,p] = empiricalFov(d,p,fullfile(funPath,outDir));
-        % saves to empiricalFov.mat
-%     end
+    filePath = fullfile(funPath,outDir,'processFov');
+    load(filePath,'cont','voxProp','pEmpirical','featSel_areaAndFov')
+    
+    %Pack cont into featSel_areaAndFov and voxProp into d
+    for subjInd = 1:size(d,1)
+        for sessInd = 1:size(d,2)
+            featSel_areaAndFov{subjInd,sessInd}.cont.L = cont.L{subjInd,sessInd};
+            featSel_areaAndFov{subjInd,sessInd}.cont.R = cont.R{subjInd,sessInd};
+            d{subjInd,sessInd}.voxProp.L = voxProp{subjInd,sessInd}.L;
+            d{subjInd,sessInd}.voxProp.R = voxProp{subjInd,sessInd}.R;
+        end
+    end
+    %Pack pEmirical into p
+    p.featSel.fov.empricalFov = pEmpirical;
+    
+    featSel_fov = featSel_areaAndFov; clear featSel_areaAndFov
+    
+    
+    
+%     
+%     
+% %     if p.perm.doIt
+% %         % Not actually using permuted data. But it does not acutally
+% %         % matters, because permuting does not change the result here. This
+% %         % step is base on the response delay irrespective of stimulus
+% %         % condition (delay computed after averaging across repetutions and
+% %         % stimulus conditions). Loading the precomputed empirical FOV
+% %         % therefore yields the same result as recomputing it, but save
+% %         % loads of time.
+% %         [featSel_fov,d,p] = empiricalFov(d,p,fullfile(funPath,outDir2));
+% %     else
+%         [featSel_fov,d,p] = empiricalFov(d,p,fullfile(funPath,outDir));
+%         % saves to empiricalFov.mat
+% %     end
 end
 
 

@@ -8,14 +8,10 @@ end
 
 
 %% Define paths
-subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'};
-if ismac
-    repoPath = '/Users/sebastienproulx/OneDrive - McGill University/dataBig';
-else
-    repoPath = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
-end
-funPath = fullfile(repoPath,'D-tidy\DecodingHR\decodingOutput');
-outDir  = 'a';
+subjList = p.meta.subjList;
+repoPath = p.paths.repo.in;
+    funPath = fullfile(repoPath,'C-derived\DecodingHR\fun');
+        outDir  = ['e_' p.anaID];
 %make sure everything is forward slash for mac, linux pc compatibility
 for tmp = {'repoPath' 'funPath' 'outDir'}
     eval([char(tmp) '(strfind(' char(tmp) ',''\''))=''/'';']);

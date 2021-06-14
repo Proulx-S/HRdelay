@@ -21,7 +21,7 @@ subjList = p.meta.subjList;
 repoPath = p.paths.repo.in;
         funPath = fullfile(repoPath,'C-derived\DecodingHR\fun');
             inDir  = 'c';
-            outDir = 'd';
+            outDir = ['d_' p.anaID];
 %make sure everything is forward slash for mac, linux pc compatibility
 for tmp = {'repoPath' 'funPath' 'inDir' 'outDir'}
     eval([char(tmp) '(strfind(' char(tmp) ',''\''))=''/'';']);

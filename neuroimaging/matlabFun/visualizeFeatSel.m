@@ -8,12 +8,12 @@ condPair = 'grat1VSgrat2';
 
 
 %% Define paths
-subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'}';
+subjList = p.meta.subjList;
 repoPath = p.paths.repo.in;
         funPath = fullfile(repoPath,'C-derived\DecodingHR\fun');
-            inDir  = 'd';
+            inDir  = ['d_' p.anaID];
             inDirX = 'c';
-            outDir  = 'd';
+            outDir  = ['d_' p.anaID];
 %make sure everything is forward slash for mac, linux pc compatibility
 for tmp = {'repoPath' 'funPath' 'inDir' 'outDir'}
     eval([char(tmp) '(strfind(' char(tmp) ',''\''))=''/'';']);
@@ -21,8 +21,7 @@ end
 clear tmp
 
 %% Load empiricalFOV figure
-load(fullfile(funPath,'d','empiricalFov'),'f')
-saveas(f,fullfile(funPath,outDir,[mfilename '_empiricalFov.fig']));
+openfig(fullfile(p.figOption.finalDir,'processFOV_summary.fig'))
 
 %% Load data
 pAll = cell(size(subjList));
@@ -115,34 +114,34 @@ else
     save(filename,'cMap_F','cMap_vein');
 end
 
-%%
-condPairInd = 1;
-featSel{1}.featSeq.condPairList(condPairInd)
-indIn1 = all(featSel{1}.featSeq.featIndIn(:,1,condPairInd),2);
-indIn2 = all(featSel{1}.featSeq.featIndIn(:,2,condPairInd),2);
-indIn3 = all(featSel{1}.featSeq.featIndIn(:,3,condPairInd),2);
-
-nnz(indIn1&indIn2)/nnz(indIn1)
-nnz(indIn1&indIn3)/nnz(indIn1)
-
-
-nnz(indIn1)
-nnz(indIn2)/nnz(indIn1)
-nnz(indIn3)
-nnz(indIn1&indIn2)
-
-
-x = featSel{1}.featSeq.featVal(indIn1,2,condPairInd);
-y = featSel{1}.featSeq.featVal(indIn1,3,condPairInd);
-
-figure('windowstyle','docked')
-hScat = scatter(x,y);
-hScat.MarkerEdgeColor = 'none';
-hScat.MarkerFaceColor = 'k';
-alpha(hScat,0.1)
-ax = gca
-ax.XAxis.Scale = 'log'
-ax.YAxis.Scale = 'log'
+% %%
+% condPairInd = 1;
+% % featSel{1}.featSeq.condPairList(condPairInd)
+% indIn1 = all(featSel{1}.featSeq.featIndIn(:,1,condPairInd),2);
+% indIn2 = all(featSel{1}.featSeq.featIndIn(:,2,condPairInd),2);
+% indIn3 = all(featSel{1}.featSeq.featIndIn(:,3,condPairInd),2);
+% 
+% % nnz(indIn1&indIn2)/nnz(indIn1)
+% % nnz(indIn1&indIn3)/nnz(indIn1)
+% % 
+% % 
+% % nnz(indIn1)
+% % nnz(indIn2)/nnz(indIn1)
+% % nnz(indIn3)
+% % nnz(indIn1&indIn2)
+% 
+% 
+% x = featSel{1}.featSeq.featVal(indIn1,2,condPairInd);
+% y = featSel{1}.featSeq.featVal(indIn1,3,condPairInd);
+% 
+% figure('windowstyle','docked')
+% hScat = scatter(x,y);
+% hScat.MarkerEdgeColor = 'none';
+% hScat.MarkerFaceColor = 'k';
+% alpha(hScat,0.1)
+% ax = gca;
+% ax.XAxis.Scale = 'log';
+% ax.YAxis.Scale = 'log';
 
 
 %% Plot Brain
