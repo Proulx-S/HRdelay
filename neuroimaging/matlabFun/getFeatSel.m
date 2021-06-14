@@ -9,7 +9,7 @@ allFeatIndIn = cell(0);
 if p.featSel.respVecSig.doIt || p.featSel.respVecDiff.doIt
     statLabel = 'Hotelling'; % 'Pillai' 'Wilks' 'Hotelling' 'Roy'
     switch p.featSel.global.method
-        case 'all'
+        case 'allData'
             condIndPairList = [{[1 2 3]}];
         case {'custom1' 'custom2'}
             condIndPairList = [{[1 2 3]} {[1 2]} {[1 3]} {[2 3]}];

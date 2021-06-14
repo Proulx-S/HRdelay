@@ -7,7 +7,7 @@
 clear all
 close all
 
-p.anaID = '2021-06-14_custom1';
+p.anaID = '2021-06-14_allData';
 finalSubDir = p.anaID;
 if ~ispc
     p.paths.home = '/Users/sebastienproulx';
@@ -96,7 +96,7 @@ p.featSel.respVecDiff.threshVal = 0.5; % threshMethod='p' or 'fdr'
 p.featSel.respVecDiff.percentile = 20; % threshMethod='%ile'
 % Feature Combination
 p.featSel.global.doIt = 1;
-p.featSel.global.method = 'custom1';
+p.featSel.global.method = 'allData';
 % 'allData'-> featSel uses all three conditions, irrespective of the condition pairs to be decoded
 % 'custom1'-> featSel of active voxels uses all three conditions but featSel of discriminant voxels uses only the conditions to be decoded
 % 'custom2'-> featSel of active and most discriminant voxels uses only the conditions to be decoded

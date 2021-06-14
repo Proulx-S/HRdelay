@@ -12,6 +12,8 @@ switch method
         ind_nSpecFeatSelCond = [1 2 3];
         % Condition-specific fetSel steps
         ind_specFeatSel = ismember(featSelSteps_labelList,{''});
+        % which condition set
+        ind_specFeatSelCond = [1 2 3];
     case 'custom1'
         % Non-condition-specific featSel steps
         ind_nSpecFeatSel = ismember(featSelSteps_labelList,{'retinoFov' 'act' 'respVecSig' 'vein'});
