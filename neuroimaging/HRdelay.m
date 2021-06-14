@@ -7,7 +7,7 @@
 clear all
 close all
 
-p.anaID = '2021-06-14';
+p.anaID = '2021-06-14_custom1';
 finalSubDir = p.anaID;
 if ~ispc
     p.paths.home = '/Users/sebastienproulx';
@@ -28,7 +28,7 @@ p.figOption.finalDir = fullfile(p.paths.home,p.paths.repo.out,'matlabFigOutputs'
 
 p.termOption.verbose = 1;
 p.termOption.save = 1;
-p.termOption.finalDir = fullfile(p.paths.home,p.paths.repo.out,'matlabTermOutputs',finalSubDir); if ~exist(p.termOption.finalDir,'dir'); mkdir(p.figOption.finalDir); end
+p.termOption.finalDir = fullfile(p.paths.home,p.paths.repo.out,'matlabTermOutputs',finalSubDir); if ~exist(p.termOption.finalDir,'dir'); mkdir(p.termOption.finalDir); end
 
 %% Permutation Test
 p.perm.doIt = 1;
@@ -96,7 +96,7 @@ p.featSel.respVecDiff.threshVal = 0.5; % threshMethod='p' or 'fdr'
 p.featSel.respVecDiff.percentile = 20; % threshMethod='%ile'
 % Feature Combination
 p.featSel.global.doIt = 1;
-p.featSel.global.method = 'custom2';
+p.featSel.global.method = 'custom1';
 % 'allData'-> featSel uses all three conditions, irrespective of the condition pairs to be decoded
 % 'custom1'-> featSel of active voxels uses all three conditions but featSel of discriminant voxels uses only the conditions to be decoded
 % 'custom2'-> featSel of active and most discriminant voxels uses only the conditions to be decoded
@@ -127,7 +127,7 @@ if 0
     applyAreaMask(figOption)
     %     processWaveletResponses(figOption,verbose)
 end
-if 1
+if 0
     extractResponses(p,figOption,verbose)
 end
 if 1
@@ -136,11 +136,12 @@ if 1
     [resBS,resBShr,resWS,f,info] = runAllDecoding(p,verbose);
 end
 if 1
-    visualizeFeatSel(p)
-    visualizeOthers(p)
+%     visualizeFeatSel(p)
+%     visualizeOthers(p)
     plotAllDecoding(p,resBS,info);
     statsAllDecoding(p,resBS,info)
 end
+return
 if p.perm.doIt
     disp('************************')
     disp('running permutation test')

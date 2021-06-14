@@ -4,11 +4,11 @@ nBoot = 2^13;
 metric = 'auc';
 condPairList = info.condPairList;
 respFeatList = info.respFeatList;
-n = size(res{1,1}.subj.(metric),1);
+n = size(res{1,1}.(metric),1);
 y = nan(length(condPairList),length(respFeatList),n);
 for respFeatInd = 1:length(respFeatList)
     for condPairInd = 1:length(condPairList)
-        y(condPairInd,respFeatInd,:) = res{condPairInd,respFeatInd}.subj.(metric);
+        y(condPairInd,respFeatInd,:) = res{condPairInd,respFeatInd}.(metric);
     end
 end
 

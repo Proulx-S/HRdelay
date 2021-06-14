@@ -11,7 +11,16 @@ end
 subjList = p.meta.subjList;
 repoPath = p.paths.repo.in;
     funPath = fullfile(repoPath,'C-derived\DecodingHR\fun');
-        outDir  = ['e_' p.anaID];
+        inDir  = ['d'];
+        inDir2  = ['e_' p.anaID];
+        outDir = ['f_' p.anaID];
+paths.subjList = subjList;
+paths.repoPath = repoPath;
+paths.funPath = funPath;
+paths.inDir = inDir;
+paths.inDir2 = inDir2;
+paths.outDir = outDir;
+
 %make sure everything is forward slash for mac, linux pc compatibility
 for tmp = {'repoPath' 'funPath' 'outDir'}
     eval([char(tmp) '(strfind(' char(tmp) ',''\''))=''/'';']);
@@ -45,7 +54,7 @@ for respFeatInd = 1:length(respFeatList)
             p.figOption.verbose = figOption_verbose;
         end
         p.condPair = condPairList{condPairInd};
-        [resBS{condPairInd,respFeatInd},resBShr{condPairInd,respFeatInd},resWS{condPairInd,respFeatInd},f{condPairInd,respFeatInd}] = runDecoding(p,verbose);
+        [resBS{condPairInd,respFeatInd},resBShr{condPairInd,respFeatInd},resWS{condPairInd,respFeatInd},f{condPairInd,respFeatInd}] = runDecoding(p,verbose,paths);
     end
 end
 p.figOption.verbose = figOption_verbose;

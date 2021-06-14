@@ -1,4 +1,4 @@
-function [resBS,resBShr,resWS,f] = runDecoding(p,verbose)
+function [resBS,resBShr,resWS,f] = runDecoding(p,verbose,paths)
 if ~exist('verbose','var')
     verbose = 1;
 end
@@ -14,12 +14,13 @@ f = [];
 % tic
 
 %% Define paths
-subjList = p.meta.subjList;
-repoPath = p.paths.repo.in;
-    funPath = fullfile(repoPath,'C-derived\DecodingHR\fun');
-        inDir  = ['d_' p.anaID];
+subjList = paths.subjList;
+repoPath = paths.repoPath;
+    funPath = paths.funPath;
+        inDir  = paths.inDir;
+        inDir2  = paths.inDir2;
 %make sure everything is forward slash for mac, linux pc compatibility
-for tmp = {'repoPath' 'funPath' 'inDir'}
+for tmp = {'repoPath' 'funPath' 'inDir' 'inDir2'}
     eval([char(tmp) '(strfind(' char(tmp) ',''\''))=''/'';']);
 end
 clear tmp
@@ -37,7 +38,7 @@ end
 d = dAll; clear dAll
 sessList = fields(d{1});
 % Load feature slection
-load(fullfile(funPath,inDir,'featSel.mat'),'featSel');
+load(fullfile(funPath,inDir2,'featSel.mat'),'featSel');
 if verbose
     disp('---');
     disp(['Channel space: ' p.chanSpace '-' p.condPair]);
@@ -48,11 +49,11 @@ end
 dP = cell(size(d,2),length(sessList));
 for subjInd = 1:length(d)
     for sessInd = 1:length(sessList)
-        try
+%         try
             dP{subjInd,sessInd} = d{subjInd}.(sessList{sessInd});
-        catch
-            keyboard
-        end
+%         catch
+%             keyboard
+%         end
         d{subjInd}.(sessList{sessInd}) = [];
         dP{subjInd,sessInd}.featSel = featSel{subjInd,sessInd};
     end

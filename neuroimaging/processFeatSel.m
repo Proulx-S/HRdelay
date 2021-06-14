@@ -16,8 +16,8 @@ end
 subjList = p.meta.subjList;
 repoPath = p.paths.repo.in;
     funPath = fullfile(repoPath,'C-derived\DecodingHR\fun');
-        inDir  = ['d_' p.anaID];
-        outDir  = ['d_' p.anaID];
+        inDir  = 'd';
+        outDir  = ['e_' p.anaID];
 %make sure everything is forward slash for mac, linux pc compatibility
 for tmp = {'repoPath' 'funPath' 'inDir' 'outDir'}
     eval([char(tmp) '(strfind(' char(tmp) ',''\''))=''/'';']);
@@ -49,7 +49,7 @@ d = dP; clear dP
 
 %% Retinotopic feature selection
 if p.featSel.fov.doIt && strcmp(p.featSel.fov.threshMethod,'empirical')
-    filePath = fullfile(funPath,outDir,'processFov');
+    filePath = fullfile(funPath,inDir,'processFov');
     load(filePath,'cont','voxProp','pEmpirical','featSel_areaAndFov')
     
     %Pack cont into featSel_areaAndFov and voxProp into d

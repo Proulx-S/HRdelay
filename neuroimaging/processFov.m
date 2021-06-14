@@ -17,8 +17,8 @@ end
 subjList = p.meta.subjList;
 repoPath = p.paths.repo.in;
     funPath = fullfile(repoPath,'C-derived\DecodingHR\fun');
-        inDir  = ['d_' p.anaID];
-        outDir  = ['d_' p.anaID];
+        inDir  = 'd';
+        outDir  = 'd'; if ~exist(fullfile(funPath,outDir,'dir')); mkdir(fullfile(funPath,outDir)); end
 %make sure everything is forward slash for mac, linux pc compatibility
 for tmp = {'repoPath' 'funPath' 'inDir' 'outDir'}
     eval([char(tmp) '(strfind(' char(tmp) ',''\''))=''/'';']);
@@ -59,20 +59,17 @@ if p.featSel.fov.doIt && strcmp(p.featSel.fov.threshMethod,'empirical')
         [featSel_areaAndFov,cont,voxProp,pEmpirical,fAll,f] = empiricalFov(d,p);
         disp(['empiricalFov: saving to ' filePath])
         save(filePath,'featSel_areaAndFov','cont','voxProp','pEmpirical')
-        disp(['empiricalFov: saving to ' fullfile(p.figOption.finalDir,mfilename)])
         for i = 1:length(fAll)
-            tmpName = fullfile(p.figOption.finalDir,[mfilename '_' num2str(i)]);
-            saveas(fAll{i},[tmpName '.fig'])
-            saveas(fAll{i},[tmpName '.jpg'])
+            saveas(fAll{i},[filePath '_' num2str(i) '.fig'])
+            saveas(fAll{i},[filePath '_' num2str(i) '.jpg'])
         end
-        tmpName = fullfile(p.figOption.finalDir,[mfilename '_summary']);
-        saveas(f,[tmpName '.fig'])
-        saveas(f,[tmpName '.jpg'])
+        saveas(f,[filePath '.fig'])
+        saveas(f,[filePath '.jpg'])
         disp('empiricalFov: saved')
         disp('-----------------------')
-    else
-%         openfig(fullfile(p.figOption.finalDir,[mfilename '_summary.fig']));
     end
+    disp(['empiricalFov: copying to ' fullfile(p.figOption.finalDir)])
+    copyfile([filePath '.fig'],fullfile(p.figOption.finalDir))
 end
 
 
