@@ -1,4 +1,4 @@
-function [featSel_areaAndFov,d,p] = empiricalFov(d,p,outPath)
+function [featSel_areaAndFov,d,p,f] = empiricalFov(d,p,outPath)
 filePath = fullfile(outPath,mfilename);
 forceFlag = 1;
 
@@ -12,7 +12,7 @@ p.featSel.fov.empirical.auto(2).smList           = 0.25; % ecc
 p.featSel.fov.empirical.auto(2).mergeRadiusList  = 0.70; % ecc
 p.featSel.fov.empirical.auto(2).marginRadiusList = 0.40; % ecc
 
-if ~exist([filePath '.mat'],'file') || forceFlag
+% if ~exist([filePath '.mat'],'file') || forceFlag
     %% Precompute flattened voxel ecc distribution on fov and delay map
     disp('Flattening ecc dist: computing hemiL')
     voxProp.L = flattenEccDist(d,'L',p,1);
@@ -120,16 +120,16 @@ if ~exist([filePath '.mat'],'file') || forceFlag
                 ax.R.YAxis.Visible = 'off';
             end
         end
-        suptitle(supTitleList{i})
+        sgtitle(supTitleList{i})
     end
     f = fAll{end};
-    save(fullfile(outPath,mfilename),'featSel_areaAndFov','voxProp','cont','fAll','f')
-else
-    load(fullfile(outPath,mfilename),'featSel_areaAndFov','cont','voxProp')
-    if p.figOption.verbose>=1
-        load(fullfile(outPath,mfilename),'f')    
-    end
-end
+%     save(fullfile(outPath,mfilename),'featSel_areaAndFov','voxProp','cont','fAll','f')
+% else
+%     load(fullfile(outPath,mfilename),'featSel_areaAndFov','cont','voxProp')
+%     if p.figOption.verbose>=1
+%         load(fullfile(outPath,mfilename),'f')    
+%     end
+% end
 
 %% Pack cont into featSel_areaAndFov and voxProp into d
 for subjInd = 1:size(d,1)

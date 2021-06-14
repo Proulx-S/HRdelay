@@ -59,35 +59,12 @@ if p.featSel.fov.doIt && strcmp(p.featSel.fov.threshMethod,'empirical')
 %         % loads of time.
 %         [featSel_fov,d,p] = empiricalFov(d,p,fullfile(funPath,outDir2));
 %     else
-        [featSel_fov,d,p] = empiricalFov(d,p,fullfile(funPath,outDir));
+        [featSel_fov,d,p,f] = empiricalFov(d,p,fullfile(funPath,outDir));
         % saves to empiricalFov.mat
 %     end
 end
 
 
-%% Functional feature selection
-featSel = cell(size(d));
-f = cell(size(d));
-disp('Feature Selection: processing')
-for sessInd = 1:size(d,2)
-    for subjInd = 1:size(d,1)
-        p.subjInd = subjInd;
-        p.sessInd = sessInd;
-        disp(['subj' num2str(subjInd) '; sess' num2str(sessInd)])
-        [featSel{subjInd,sessInd}] = getFeatSel(d{subjInd,sessInd},p,featSel_fov{subjInd,sessInd});
-        featSel{subjInd,sessInd}.GLMs.random.sinDesign = d{subjInd,sessInd}.sinDesign;
-        featSel{subjInd,sessInd}.GLMs.random.hrDesign = d{subjInd,sessInd}.hrDesign;
-        featSel{subjInd,sessInd}.GLMs.random.infoDesign = d{subjInd,sessInd}.infoDesign;
-        featSel{subjInd,sessInd}.GLMs.fixed.sinDesign = d{subjInd,sessInd}.featSel.F.act.design.full;
-        
-    end
-end
-% save to featSel.mat
-disp('Feature Selection: saving')
-if ~exist(fullfile(funPath,outDir),'dir')
-    mkdir(fullfile(funPath,outDir))
-end
-fullfilename = fullfile(funPath,outDir,'featSel.mat');
-save(fullfilename,'featSel')
-disp(['Feature Selection: saved to ' fullfilename])
 
+
+disp(['empiricalFov saved to ' fullfile(funPath,outDir,'empiricalFov.mat')])
