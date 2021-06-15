@@ -1,4 +1,4 @@
-function permuteLabels(p)
+function [resPall,resAll] = permuteLabels(p,resAll)
 repoPath = p.paths.repo.in;
         funPath = fullfile(repoPath,'C-derived\DecodingHR\fun');
             inDir  = 'd';
@@ -6,17 +6,26 @@ repoPath = p.paths.repo.in;
 subjList = p.meta.subjList;
 sessList = {'sess1' 'sess2'};
 
-disp('Permuting Labels: Permuting')
+% disp('Permuting Labels: Permuting')
+if ~exist('resAll','var') || isempty(resAll)
+    resAll = cell(length(subjList),1);
+    loadFlag = 1;
+else
+    loadFlag = 0;
+end
+resPall = cell(length(subjList),1);
 for subjInd = 1:length(subjList)
     subj = subjList{subjInd};
     %Load
-    load(fullfile(funPath,inDir,[subj '.mat']),'res')
+    if loadFlag
+        load(fullfile(funPath,inDir,[subj '.mat']),'res')
+        resAll{subjInd} = res;
+    else
+        res = resAll{subjInd};
+    end
+    resP = res;
     for sessInd = 1:length(sessList)
         sess = sessList{sessInd};
-        resP.(sess).sin = res.(sess).sin;
-        resP.(sess).sinBase = res.(sess).sinBase;
-        resP.(sess).hr = res.(sess).hr;
-        resP.(sess).hrBase = res.(sess).hrBase;
         for rep = 1:size(res.(sess).sin,4)
             %Permute
             perm = randperm(3);
@@ -26,7 +35,8 @@ for subjInd = 1:length(subjList)
             resP.(sess).hrBase(:,:,:,rep,:,:) = res.(sess).hrBase(:,:,:,rep,perm,:);
         end
     end
+    resPall{subjInd} = resP;
     %Save
-    save(fullfile(funPath,outDir,[subj '.mat']),'resP','-append')
+%     save(fullfile(funPath,outDir,[subj '.mat']),'resP','-append')
 end
-disp('Permuting Labels: Done')
+% disp('Permuting Labels: Done')

@@ -18,7 +18,7 @@ subjList = p.meta.subjList;
 repoPath = p.paths.repo.in;
     funPath = fullfile(repoPath,'C-derived\DecodingHR\fun');
         inDir  = 'd';
-        outDir  = 'd'; if ~exist(fullfile(funPath,outDir,'dir')); mkdir(fullfile(funPath,outDir)); end
+        outDir  = 'd'; if ~exist(fullfile(funPath,outDir),'dir'); mkdir(fullfile(funPath,outDir)); end
 %make sure everything is forward slash for mac, linux pc compatibility
 for tmp = {'repoPath' 'funPath' 'inDir' 'outDir'}
     eval([char(tmp) '(strfind(' char(tmp) ',''\''))=''/'';']);

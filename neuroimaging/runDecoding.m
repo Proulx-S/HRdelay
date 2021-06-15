@@ -1,4 +1,4 @@
-function [resBS,resBShr,resWS,f] = runDecoding(p,verbose,paths)
+function [resBS,resBShr,resWS,f] = runDecoding(p,verbose,paths,resPall,featSelPall)
 if ~exist('verbose','var')
     verbose = 1;
 end
@@ -9,6 +9,13 @@ end
 if ~isfield(p,'chanSpace') || isempty(p.chanSpace)
     p.chanSpace = 'cart'; % 'cart_HTbSess' 'cartNoAmp_HTbSess' 'cartNoDelay_HTbSess'
     % 'hr' 'hrNoAmp' 'cart' 'cartNoAmp' cartNoAmp_HT 'cartReal', 'cartImag', 'pol', 'polMag' 'polMag_T' or 'polDelay'
+end
+if ~exist('resPall','var') || isempty(resPall)
+    permFlag = 0;
+    resPall = [];
+    featSelPall = [];
+else
+    permFlag = 1;
 end
 f = [];
 % tic
@@ -32,13 +39,25 @@ dAll = cell(size(subjList,1),1);
 for subjInd = 1:length(subjList)
     curFile = fullfile(funPath,inDir,[subjList{subjInd} '.mat']);
     if verbose; disp(['loading: ' curFile]); end
-    load(curFile,'res');
-    dAll{subjInd} = res;
+    if ~permFlag
+        load(curFile,'res');
+    else
+        res = resPall{subjInd}; resPall{subjInd} = {};
+%         load(curFile,'resP');
+%         res = resP; clear resP
+    end
+    dAll{subjInd} = res; clear res
 end
 d = dAll; clear dAll
 sessList = fields(d{1});
 % Load feature slection
-load(fullfile(funPath,inDir2,'featSel.mat'),'featSel');
+if ~permFlag
+    load(fullfile(funPath,inDir2,'featSel.mat'),'featSel');
+else
+    featSel = featSelPall; clear featSelPall
+%     load(fullfile(funPath,inDir2,'featSel.mat'),'featSelP');
+%     featSel = featSelP; clear featSelP
+end
 if verbose
     disp('---');
     disp(['Channel space: ' p.chanSpace '-' p.condPair]);
@@ -49,11 +68,7 @@ end
 dP = cell(size(d,2),length(sessList));
 for subjInd = 1:length(d)
     for sessInd = 1:length(sessList)
-%         try
-            dP{subjInd,sessInd} = d{subjInd}.(sessList{sessInd});
-%         catch
-%             keyboard
-%         end
+        dP{subjInd,sessInd} = d{subjInd}.(sessList{sessInd});
         d{subjInd}.(sessList{sessInd}) = [];
         dP{subjInd,sessInd}.featSel = featSel{subjInd,sessInd};
     end
@@ -125,50 +140,43 @@ if p.svm.doWithin
     nOrig = nan(size(d));
     n = nan(size(d));
     
-    if ~p.perm.doIt
+    if verbose
         disp('Within-session SVM cross-validation')
         disp('with between-session feature selection')
-        for i = 1:numel(d)
-            if verbose
-                disp(['-training and testing sess ' num2str(i) '/' num2str(numel(d))])
-            end
-            [subjInd,sessInd] = ind2sub(size(d),i);
-            switch sessInd
-                case 1
-                    sessIndCross = 2;
-                case 2
-                    sessIndCross = 1;
-                otherwise
-                    error('X')
-            end
-            
-            % get data
-            [X,y,k] = getXYK(d{subjInd,sessInd},p);
-            
-            % cross-session feature selection
-            featSelInd = featSel{subjInd,sessIndCross}.indIn;
-            x = X(:,featSelInd);
-            
-            % k-fold training
-            [svmModelK{i},nrmlzK{i}] = SVMtrain(y,x,p,k);
-            % k-fold testing
-            [yHatK{i},yHatK_tr{i}] = SVMtest(y,x,svmModelK{i},nrmlzK{i},k);
-            yHatK{i} = nanmean(yHatK{i},2);
-            % output
-            Y{i} = y;
-            K{i} = k;
-            nOrig(i) = length(featSelInd);
-            n(i) = nnz(featSelInd);
-        end
-    else
-        for i = 1:numel(d)
-            [subjInd,sessInd] = ind2sub(size(d),i);
-            % get data
-            [~,y,k] = getXYK(d{subjInd,sessInd},p);
-            Y{i} = y;
-            K{i} = k;
-        end
     end
+    for i = 1:numel(d)
+        if verbose
+            disp(['-training and testing sess ' num2str(i) '/' num2str(numel(d))])
+        end
+        [subjInd,sessInd] = ind2sub(size(d),i);
+        switch sessInd
+            case 1
+                sessIndCross = 2;
+            case 2
+                sessIndCross = 1;
+            otherwise
+                error('X')
+        end
+        
+        % get data
+        [X,y,k] = getXYK(d{subjInd,sessInd},p);
+        
+        % cross-session feature selection
+        featSelInd = featSel{subjInd,sessIndCross}.indIn;
+        x = X(:,featSelInd);
+        
+        % k-fold training
+        [svmModelK{i},nrmlzK{i}] = SVMtrain(y,x,p,k);
+        % k-fold testing
+        [yHatK{i},yHatK_tr{i}] = SVMtest(y,x,svmModelK{i},nrmlzK{i},k);
+        yHatK{i} = nanmean(yHatK{i},2);
+        % output
+        Y{i} = y;
+        K{i} = k;
+        nOrig(i) = length(featSelInd);
+        n(i) = nnz(featSelInd);
+    end
+
     
     % line_num=dbstack; % get this line number
     % disp(['line ' num2str(line_num(1).line)]) % displays the line number
@@ -176,8 +184,10 @@ if p.svm.doWithin
 end
 
 %% Within-session SVM training (and feature selection) + Cross-session SVM testing
-disp('Between-session SVM cross-validation')
-disp('with feature selection from the training session')
+if verbose
+    disp('Between-session SVM cross-validation')
+    disp('with feature selection from the training session')
+end
 svmModel = cell(size(d));
 nrmlz = cell(size(d));
 yHat_tr = cell(size(d));
@@ -245,9 +255,9 @@ end
 % disp(['line ' num2str(line_num(1).line)]) % displays the line number
 % toc
 
-if ~p.perm.doIt...
+if ~permFlag...
         && strcmp(p.svm.kernel.type,'lin')...
-        && strcmp(p.svm.complexSpace,'bouboulisDeg1');
+        && strcmp(p.svm.complexSpace,'bouboulisDeg1')
     %% Extract channel HR
     % Testing
     for i = 1:numel(d)
@@ -321,11 +331,7 @@ if ~p.perm.doIt...
         % get channel response
         for tInd = 1:size(x,3)
             % cross-session SVM testing
-            try
             [yHatHr{subjInd,testInd}(:,:,tInd,:),~] = SVMtest(y,x(:,:,tInd),curSvmModel,0,[]);
-            catch
-                keyboard
-            end
         end
         % get non-specific channel response
         curSvmModel.w = abs(curSvmModel.w);
@@ -342,9 +348,11 @@ end
 
 %% Compute performance metrics (SLOW 10sec/16sec)
 % Between-sess
-disp('BS perfMetric: computing')
+if verbose
+    disp('BS perfMetric: computing')
+end
 resBS_sess = repmat(perfMetric,[size(d,1) size(d,2)]);
-if p.perm.doIt
+if permFlag
     for i = 1:size(d,1)
         k = cat(1,K{i,1},K{i,2}+max(K{i,1}));
         y = cat(1,Y{i,:});

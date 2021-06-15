@@ -20,14 +20,8 @@ if p.featSel.respVecSig.doIt || p.featSel.respVecDiff.doIt
     interceptP = nan(size(d.sin,1),length(condIndPairList));
     condStat = nan(size(d.sin,1),length(condIndPairList));
     condP = nan(size(d.sin,1),length(condIndPairList));
-    if p.perm.doIt
-        parfor condIndPairInd = 1:length(condIndPairList)
-            [condStat(:,condIndPairInd),condP(:,condIndPairInd),interceptStat(:,condIndPairInd),interceptP(:,condIndPairInd)] = getDiscrimStats(d,p,condIndPairList{condIndPairInd},statLabel);
-        end
-    else
-        for condIndPairInd = 1:length(condIndPairList)
-            [condStat(:,condIndPairInd),condP(:,condIndPairInd),interceptStat(:,condIndPairInd),interceptP(:,condIndPairInd)] = getDiscrimStats(d,p,condIndPairList{condIndPairInd},statLabel);
-        end
+    for condIndPairInd = 1:length(condIndPairList)
+        [condStat(:,condIndPairInd),condP(:,condIndPairInd),interceptStat(:,condIndPairInd),interceptP(:,condIndPairInd)] = getDiscrimStats(d,p,condIndPairList{condIndPairInd},statLabel);
     end
 end
 

@@ -11,9 +11,10 @@ condPair = 'grat1VSgrat2';
 subjList = p.meta.subjList;
 repoPath = p.paths.repo.in;
         funPath = fullfile(repoPath,'C-derived\DecodingHR\fun');
-            inDir  = ['d_' p.anaID];
+            inDir  = 'd';
+            inDir2  = ['e_' p.anaID];
             inDirX = 'c';
-            outDir  = ['d_' p.anaID];
+            outDir  = ['e_' p.anaID];
 %make sure everything is forward slash for mac, linux pc compatibility
 for tmp = {'repoPath' 'funPath' 'inDir' 'outDir'}
     eval([char(tmp) '(strfind(' char(tmp) ',''\''))=''/'';']);
@@ -21,7 +22,7 @@ end
 clear tmp
 
 %% Load empiricalFOV figure
-openfig(fullfile(p.figOption.finalDir,'processFOV_summary.fig'))
+openfig(fullfile(p.figOption.finalDir,'processFOV.fig'))
 
 %% Load data
 pAll = cell(size(subjList));
@@ -29,7 +30,7 @@ for subjInd = 1:length(subjList)
     tmp = load(fullfile(funPath,inDirX,[subjList{subjInd} '.mat']),'p');
     pAll{subjInd} = tmp.p; clear tmp
 end
-load(fullfile(funPath,inDir,'featSel.mat'));
+load(fullfile(funPath,inDir2,'featSel.mat'));
 
 %% Plot GLM designs
 f = showGLMdesign(featSel{1}.GLMs);

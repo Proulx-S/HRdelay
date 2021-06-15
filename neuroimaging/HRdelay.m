@@ -7,7 +7,7 @@
 clear all
 close all
 
-p.anaID = '2021-06-14_allData';
+p.anaID = '2021-06-15_allData';
 finalSubDir = p.anaID;
 if ~ispc
     p.paths.home = '/Users/sebastienproulx';
@@ -32,7 +32,7 @@ p.termOption.finalDir = fullfile(p.paths.home,p.paths.repo.out,'matlabTermOutput
 
 %% Permutation Test
 p.perm.doIt = 1;
-p.perm.n = 16;
+p.perm.n = 2^11;
 
 %% Open diary
 if ~exist(p.termOption.finalDir,'dir')
@@ -133,34 +133,55 @@ end
 if 1
     processFov(p)
     processFeatSel(p)
-    [resBS,resBShr,resWS,f,info] = runAllDecoding(p,verbose);
+    [resBS,resBShr,resWS,f,info,decodingOut] = runAllDecoding(p);
 end
 if 1
-%     visualizeFeatSel(p)
-%     visualizeOthers(p)
+    visualizeFeatSel(p)
+    visualizeOthers(p)
     plotAllDecoding(p,resBS,info);
     statsAllDecoding(p,resBS,info)
 end
-return
 if p.perm.doIt
-    disp('************************')
-    disp('running permutation test')
-    disp('************************')
+    disp('***************************')
+    disp('Permutation test: computing')
+    disp('***************************')
     for permInd = 1:p.perm.n
-        permuteLabels(p)
-        processFeatSel(p)
-        [resBS,resBShr,resWS,f,info] = runAllDecoding(p,verbose);
+        disp(['Perm ' num2str(permInd) '/' num2str(p.perm.n)])
+        if permInd==1
+            resAll = [];
+            featSel_fov = [];
+        end
+        [resPall,resAll] = permuteLabels(p,resAll);
+        [featSelPall,featSel_fov] = processFeatSel(p,resPall,featSel_fov);
+        [resBSP,resBShrP,resWSP,fP,infoP] = runAllDecoding(p,resPall,featSelPall);
+        if permInd == 1
+            auc = nan([size(resBSP) p.perm.n]);
+        end
+        tmp = reshape([resBSP{:}],size(resBSP));
+        tmp = reshape(permute([tmp.auc],[2 3 1]),[size(tmp) size(tmp(1).auc,1)]);
+        auc(:,:,permInd) = mean(tmp,3); clear tmp
     end
-end
-
-if 0
-    chan = processChanHr(p,resBShr,info);
-    f = plotChanHr(p,chan);
-    statsChanHr(p,chan);
+    disp('**********************')
+    disp('Permutation test: done')
+    disp('**********************')
+    % Save permutations
+    disp('Saving permutations')
+    auc = permute(auc,[3 1 2]);
+    for i = 1:numel(auc(1,:))
+        resBS{i}.subj.aucP = auc(:,i);
+    end
+    save([decodingOut 'P'],'resBS');
+    disp(['Permutations saved to ' decodingOut 'P'])
 end
 if p.termOption.save
     disp(datestr(now))
     diary off
+end
+return
+if 0
+    chan = processChanHr(p,resBShr,info);
+    f = plotChanHr(p,chan);
+    statsChanHr(p,chan);
 end
 return
 if 1
