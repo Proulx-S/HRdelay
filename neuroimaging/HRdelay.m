@@ -1,7 +1,5 @@
 %% To do
-% -Permutation test
 % -Output visualization of all subjects
-% -ROI response analysis
 
 %%
 clear all
@@ -30,9 +28,12 @@ p.termOption.verbose = 1;
 p.termOption.save = 1;
 p.termOption.finalDir = fullfile(p.paths.home,p.paths.repo.out,'matlabTermOutputs',finalSubDir); if ~exist(p.termOption.finalDir,'dir'); mkdir(p.termOption.finalDir); end
 
-%% Permutation Test
+%% Permutation
 p.perm.doIt = 1;
 p.perm.n = 2^13;
+
+%% Bootstrapping
+p.boot.n = 2^13;
 
 %% Open diary
 if ~exist(p.termOption.finalDir,'dir')
@@ -50,10 +51,11 @@ p.paths.repo.in = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
 
 %% Dependencies
 gitDependencyPath = fullfile(p.paths.home,'Documents/GitHub/utilities');
-matDependencyPath = fullfile(p.paths.home,'Dropbox/MATLAB');
 addpath(genpath(fullfile(gitDependencyPath,'circstat-matlab')));
 addpath(genpath(fullfile(gitDependencyPath,'RAMBiNo')));
 addpath(genpath(fullfile(gitDependencyPath,'BrewerMap')));
+matDependencyPath = fullfile(p.paths.home,'OneDrive - McGill University\MATLAB');
+addpath(genpath(fullfile(matDependencyPath,'shadedErrorBar-master')));
 addpath(genpath(fullfile(pwd,'matlabFun')));
 % Matlab toolboxes:
 % -Image Processing
@@ -130,18 +132,18 @@ end
 if 0
     extractResponses(p,figOption,verbose)
 end
-if 1
+if 0
     processFov(p)
     processFeatSel(p)
     [resBS,resBShr,resWS,f,info,decodingOut] = runAllDecoding(p);
 end
 if 1
-    visualizeFeatSel(p)
+%     visualizeFeatSel(p)
     visualizeOthers(p)
     plotAllDecoding(p,resBS,info);
     statsAllDecoding(p,resBS,info)
 end
-if 1
+if 0
     if p.perm.doIt
         disp('***************************')
         disp('Permutation test: computing')

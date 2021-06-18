@@ -2,7 +2,7 @@ function f = plotAllDecoding(p,res,info)
 
 verbose  = 1;
 
-nBoot = 2^13;
+nBoot = p.boot.n;
 metric = 'auc';
 condPairList = info.condPairList;
 respFeatList = info.respFeatList;
