@@ -1,7 +1,21 @@
+%% To do
+% -Permutation test
+% -Output visualization of all subjects
+% -ROI response analysis
+
+%%
 clear all
 close all
 
-finalSubDir = 'boubouDeg1_lin';
+p.anaID = '2021-06-15_allData';
+finalSubDir = p.anaID;
+if ~ispc
+    p.paths.home = '/Users/sebastienproulx';
+else
+    p.paths.home = 'C:\Users\sebas';
+end
+p.paths.repo.out = fullfile('McGill University/Farivar Lab - Dissertations/Sebastien/Manuscripts/aa - in preparation/SP_Neuroimage_HRdelay',p.anaID); if ~exist(p.paths.repo.out,'dir'); mkdir(p.paths.repo.out); end
+
 %% Display parameters
 figOption.save = 1; % save all figures
 figOption.subj = 1; % subjInd-> plots participants subjInd; +inf-> plots all participant (if verbose==0, will only plot subjInd==1 but still produce and save all the other figures)
@@ -10,10 +24,15 @@ p.figOption.sessInd  = 1;
 p.figOption.sliceInd = 7;
 p.figOption.verbose  = 2;
 p.figOption.save  = 0;
-p.figOption.finalDir = fullfile('/Users/sebastienproulx/McGill University/Farivar Lab - Dissertations/Sebastien/Manuscripts/aa - in preparation/SP_Neuroimage_HRdelay/matlabFigOutputs',finalSubDir); if ~exist(p.figOption.finalDir,'dir'); mkdir(p.figOption.finalDir); end
+p.figOption.finalDir = fullfile(p.paths.home,p.paths.repo.out,'matlabFigOutputs',finalSubDir); if ~exist(p.figOption.finalDir,'dir'); mkdir(p.figOption.finalDir); end
+
 p.termOption.verbose = 1;
 p.termOption.save = 1;
-p.termOption.finalDir = fullfile('/Users/sebastienproulx/McGill University/Farivar Lab - Dissertations/Sebastien/Manuscripts/aa - in preparation/SP_Neuroimage_HRdelay/matlabTermOutputs',finalSubDir); if ~exist(p.termOption.finalDir,'dir'); mkdir(p.figOption.finalDir); end
+p.termOption.finalDir = fullfile(p.paths.home,p.paths.repo.out,'matlabTermOutputs',finalSubDir); if ~exist(p.termOption.finalDir,'dir'); mkdir(p.termOption.finalDir); end
+
+%% Permutation Test
+p.perm.doIt = 1;
+p.perm.n = 2^13;
 
 %% Open diary
 if ~exist(p.termOption.finalDir,'dir')
@@ -26,13 +45,22 @@ if p.termOption.verbose && p.termOption.save
     disp(datestr(now))
 end
 
+%% Input Data
+p.paths.repo.in = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
+
 %% Dependencies
-gitDependencyPath = '/Users/sebastienproulx/Documents/GitHub/utilities';
-matDependencyPath = '/Users/sebastienproulx/Dropbox/MATLAB';
+gitDependencyPath = fullfile(p.paths.home,'Documents/GitHub/utilities');
+matDependencyPath = fullfile(p.paths.home,'Dropbox/MATLAB');
 addpath(genpath(fullfile(gitDependencyPath,'circstat-matlab')));
 addpath(genpath(fullfile(gitDependencyPath,'RAMBiNo')));
+addpath(genpath(fullfile(gitDependencyPath,'BrewerMap')));
 addpath(genpath(fullfile(pwd,'matlabFun')));
-% rmpath(genpath(fullfile(matDependencyPath,'HotellingT2')));
+% Matlab toolboxes:
+% -Image Processing
+% -Statistics and Machine Learning
+% -Mapping
+% -Curve Fitting
+% -Bioinformatics
 verbose = 1; % prints more info
 
 %% Meta data
@@ -46,14 +74,14 @@ p.featSel.fov.threshMethod = 'empirical'; % 'empirical' 'ecc'
 p.featSel.fov.areaLabel = 'v1';
 p.featSel.fov.threshVal = [0.75 7]; % threshMethod='ecc'
 p.featSel.fov.percentile = 20; % threshMethod='ecc'
-% Most activated voxels
-p.featSel.act.doIt = 1;
-p.featSel.act.threshMethod = 'fdr'; % '%ile' 'p' 'fdr'
+% Activated voxels (fixed-effect)
+p.featSel.act.doIt = 0;
+p.featSel.act.threshMethod = '%ile'; % '%ile' 'p' 'fdr'
 p.featSel.act.threshVal = 0.05; % threshMethod='p' or 'fdr'
 p.featSel.act.percentile = 20; % threshMethod='%ile'
-% Most significant response vectors
+% Activated voxels (random-effect)
 p.featSel.respVecSig.doIt = 1;
-p.featSel.respVecSig.threshMethod = 'fdr'; % '%ile' 'p' 'fdr'
+p.featSel.respVecSig.threshMethod = 'p'; % '%ile' 'p' 'fdr'
 p.featSel.respVecSig.threshVal = 0.05; % threshMethod='p' or 'fdr'
 p.featSel.respVecSig.percentile = 20; % threshMethod='%ile'
 % Less likely-to-be-vein voxels
@@ -68,7 +96,7 @@ p.featSel.respVecDiff.threshVal = 0.5; % threshMethod='p' or 'fdr'
 p.featSel.respVecDiff.percentile = 20; % threshMethod='%ile'
 % Feature Combination
 p.featSel.global.doIt = 1;
-p.featSel.global.method = 'custom2';
+p.featSel.global.method = 'allData';
 % 'allData'-> featSel uses all three conditions, irrespective of the condition pairs to be decoded
 % 'custom1'-> featSel of active voxels uses all three conditions but featSel of discriminant voxels uses only the conditions to be decoded
 % 'custom2'-> featSel of active and most discriminant voxels uses only the conditions to be decoded
@@ -76,10 +104,12 @@ p.featSel.global.method = 'custom2';
 %% SVM parameters
 p.svm.kernel.type = 'lin';
 p.svm.complexSpace = 'bouboulisDeg1'; % 'bouboulisDeg1' 'bouboulisDeg2'
+p.svm.doWithin = 0;
 
 %% Channel parameters
 p.svm.condPairList = {'grat1VSgrat2' 'grat1VSplaid' 'grat2VSplaid'};
-p.svm.respFeatList = {'cart' 'cartNoDelay' 'cartNoAmp'};
+% p.svm.respFeatList = {'cartNoDelay' 'delay' 'cart'};
+p.svm.respFeatList = {'delay' 'cartNoDelay' 'cart'};
 
 %% Display parameters
 figOption.save = 1; % save all figures
@@ -92,39 +122,84 @@ p.figOption.save  = 2;
 p.termOption.verbose = 1;
 p.termOption.save = 1;
 
-p.perm.doIt = 0;
 if 0
     importData(verbose)
     applyAreaMask(figOption)
     %     processWaveletResponses(figOption,verbose)
 end
 if 0
-    processResponses(p,figOption,verbose)
+    extractResponses(p,figOption,verbose)
 end
-if 0
+if 1
+    processFov(p)
     processFeatSel(p)
+    [resBS,resBShr,resWS,f,info,decodingOut] = runAllDecoding(p);
 end
-if 0
+if 1
     visualizeFeatSel(p)
-end
-if 1
     visualizeOthers(p)
-end
-if 1
-    [resBS,resBShr,resWS,f,info] = runAllDecoding(p,verbose);
     plotAllDecoding(p,resBS,info);
     statsAllDecoding(p,resBS,info)
 end
-if 0
-    chan = processChanHr(p,resBShr,info);
-    f = plotChanHr(p,chan);
-    statsChanHr(p,chan);
+if 1
+    if p.perm.doIt
+        disp('***************************')
+        disp('Permutation test: computing')
+        disp('***************************')
+        for permInd = 1:p.perm.n
+            disp(['Perm ' num2str(permInd) '/' num2str(p.perm.n)])
+            if permInd==1
+                resAll = [];
+                featSel_fov = [];
+            end
+            [resPall,resAll] = permuteLabels(p,resAll);
+            [featSelPall,featSel_fov] = processFeatSel(p,resPall,featSel_fov);
+            [resBSP,resBShrP,resWSP,fP,infoP] = runAllDecoding(p,resPall,featSelPall);
+            if permInd == 1
+                auc = nan([size(resBSP) p.perm.n]);
+            end
+            tmp = reshape([resBSP{:}],size(resBSP));
+            tmp = reshape(permute([tmp.auc],[2 3 1]),[size(tmp) size(tmp(1).auc,1)]);
+            auc(:,:,permInd) = mean(tmp,3); clear tmp
+        end
+        disp('**********************')
+        disp('Permutation test: done')
+        disp('**********************')
+        % Save permutations
+        disp('Saving permutations')
+        auc = permute(auc,[3 1 2]);
+        for i = 1:numel(auc(1,:))
+            resBS{i}.subj.aucP = auc(:,i);
+        end
+        save([decodingOut 'P'],'resBS','info');
+        disp(['Permutations saved to ' decodingOut 'P'])
+    end
+    plotAllDecoding(p,resBS,info);
 end
+
 if p.termOption.save
     disp(datestr(now))
     diary off
 end
 return
+
+
+
+
+
+
+
+if 0
+    chan = processChanHr(p,resBShr,info);
+    f = plotChanHr(p,chan);
+    statsChanHr(p,chan);
+end
+
+
+return
+
+
+
 if 1
     pPerm = p;
     pPerm.perm.doIt = 1;

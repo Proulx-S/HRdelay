@@ -8,16 +8,13 @@ condPair = 'grat1VSgrat2';
 
 
 %% Define paths
-subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'}';
-if ismac
-    repoPath = '/Users/sebastienproulx/OneDrive - McGill University/dataBig';
-else
-    repoPath = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
-end
+subjList = p.meta.subjList;
+repoPath = p.paths.repo.in;
         funPath = fullfile(repoPath,'C-derived\DecodingHR\fun');
             inDir  = 'd';
+            inDir2  = ['e_' p.anaID];
             inDirX = 'c';
-            outDir  = 'd';
+            outDir  = ['e_' p.anaID];
 %make sure everything is forward slash for mac, linux pc compatibility
 for tmp = {'repoPath' 'funPath' 'inDir' 'outDir'}
     eval([char(tmp) '(strfind(' char(tmp) ',''\''))=''/'';']);
@@ -25,8 +22,7 @@ end
 clear tmp
 
 %% Load empiricalFOV figure
-load(fullfile(funPath,'d','empiricalFov'),'f')
-saveas(f,fullfile(funPath,outDir,[mfilename '_empiricalFov.fig']));
+openfig(fullfile(p.figOption.finalDir,'processFOV.fig'))
 
 %% Load data
 pAll = cell(size(subjList));
@@ -34,7 +30,7 @@ for subjInd = 1:length(subjList)
     tmp = load(fullfile(funPath,inDirX,[subjList{subjInd} '.mat']),'p');
     pAll{subjInd} = tmp.p; clear tmp
 end
-load(fullfile(funPath,inDir,'featSel.mat'));
+load(fullfile(funPath,inDir2,'featSel.mat'));
 
 %% Plot GLM designs
 f = showGLMdesign(featSel{1}.GLMs);
@@ -114,10 +110,40 @@ else
         cMap_F = brewermap(256,'reds');
         cMap_vein = brewermap(256,'blues');
     catch
-        error(['Please put this toolbox in Matlab path:' newline 'https://github.com/DrosteEffect/BrewerMap'])
+        error(['Please put this toolbox in .../GitHub/utilities/ (or wherever as long as it ends up in your Matlab path):' newline 'https://github.com/DrosteEffect/BrewerMap'])
     end
     save(filename,'cMap_F','cMap_vein');
 end
+
+% %%
+% condPairInd = 1;
+% % featSel{1}.featSeq.condPairList(condPairInd)
+% indIn1 = all(featSel{1}.featSeq.featIndIn(:,1,condPairInd),2);
+% indIn2 = all(featSel{1}.featSeq.featIndIn(:,2,condPairInd),2);
+% indIn3 = all(featSel{1}.featSeq.featIndIn(:,3,condPairInd),2);
+% 
+% % nnz(indIn1&indIn2)/nnz(indIn1)
+% % nnz(indIn1&indIn3)/nnz(indIn1)
+% % 
+% % 
+% % nnz(indIn1)
+% % nnz(indIn2)/nnz(indIn1)
+% % nnz(indIn3)
+% % nnz(indIn1&indIn2)
+% 
+% 
+% x = featSel{1}.featSeq.featVal(indIn1,2,condPairInd);
+% y = featSel{1}.featSeq.featVal(indIn1,3,condPairInd);
+% 
+% figure('windowstyle','docked')
+% hScat = scatter(x,y);
+% hScat.MarkerEdgeColor = 'none';
+% hScat.MarkerFaceColor = 'k';
+% alpha(hScat,0.1)
+% ax = gca;
+% ax.XAxis.Scale = 'log';
+% ax.YAxis.Scale = 'log';
+
 
 %% Plot Brain
 f{end+1} = figure('WindowStyle','docked','color','w','visible',visibility);

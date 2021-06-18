@@ -14,14 +14,11 @@ f = [];
 % tic
 
 %% Define paths
-subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'};
-if ismac
-    repoPath = '/Users/sebastienproulx/OneDrive - McGill University/dataBig';
-else
-    repoPath = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
-end
-funPath = fullfile(repoPath,'C-derived\DecodingHR\fun');
-inDir  = 'd';
+subjList = p.meta.subjList;
+repoPath = p.paths.repo.in;
+        funPath = fullfile(repoPath,'C-derived\DecodingHR\fun');
+            inDir  = 'd';
+            inDir2  = ['e_' p.anaID];
 %make sure everything is forward slash for mac, linux pc compatibility
 for tmp = {'repoPath' 'funPath' 'inDir'}
     eval([char(tmp) '(strfind(' char(tmp) ',''\''))=''/'';']);
@@ -32,7 +29,7 @@ clear tmp
 
 %% Load data
 dAll = cell(size(subjList,1),1);
-for subjInd = 1:size(subjList,2)
+for subjInd = 1:length(subjList)
     curFile = fullfile(funPath,inDir,[subjList{subjInd} '.mat']);
     if verbose; disp(['loading: ' curFile]); end
     load(curFile,'res');
@@ -41,7 +38,7 @@ end
 d = dAll; clear dAll
 sessList = fields(d{1});
 % Load feature slection
-load(fullfile(funPath,inDir,'featSel.mat'),'featSel');
+load(fullfile(funPath,inDir2,'featSel.mat'),'featSel');
 % if verbose
 %     disp('---');
 %     disp(['Channel space: ' p.chanSpace '-' p.condPair]);
@@ -110,6 +107,16 @@ if p.figOption.verbose==1
 elseif p.figOption.verbose>1
     f = [f plotTrig_featSel(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd}),1];
 end
+
+%% Save
+if verbose
+    curFileName = fullfile(p.figOption.finalDir,'polarRespVec.fig');
+    disp(['Saving fig to ' curFileName])
+end
+saveas(f,curFileName)
+
+
+
 % if p.figOption.verbose>=1 && figOption.save
 %     error('code that')
 %     filename = fullfile(pwd,mfilename);
@@ -131,5 +138,5 @@ end
 % toc
 
 
-f = [f plotNorm(d{subjInd,sessInd},p,featSel{subjInd,sessInd},[],0)];
+% f = [f plotNorm(d{subjInd,sessInd},p,featSel{subjInd,sessInd},[],0)];
 

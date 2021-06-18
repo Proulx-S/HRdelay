@@ -19,7 +19,7 @@ for featInd = 1:length(featSelList)
     tmp = strsplit(featSel.featSeq.featSelList{featInd},': ');
     featSelList(featInd) = tmp(1);
 end
-featInd = ismember(featSelList,'act');
+featInd = ismember(featSelList,'respVecSig');
 
 %% Get data
 [X,y,~] = getXYK(d,p);
@@ -154,7 +154,9 @@ if ~voxFlag
     if ~(xLim(2)>0)
         xLim(2) = +delta;
     end
-    xlim(xLim)
+    if ~all(xLim==[0 0])
+        xlim(xLim)
+    end
     
     yLim = ylim;
     if ~(yLim(1)<0)

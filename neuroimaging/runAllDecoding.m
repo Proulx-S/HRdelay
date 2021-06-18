@@ -1,21 +1,43 @@
-function [resBS,resBShr,resWS,f,info] = runAllDecoding(p,verbose)
-if ~exist('verbose','var')
-    verbose = 1;
-end
+function [resBS,resBShr,resWS,f,info,fullfilenameDecoding] = runAllDecoding(p,resPall,featSelPall)
+% if ~exist('verbose','var')
+%     verbose = 1;
+% end
 if ~isfield(p,'perm')
     p.perm.doIt = 0;
 end
+if ~exist('resPall','var')
+    permFlag = 0;
+    resPall = [];
+else
+    permFlag = 1;
+end
+if ~exist('featSelPall','var')
+    featSelPall = [];
+end
+if permFlag
+    p.figOption.verbose = 0;
+    p.termOption.verbose = 0;
+    verbose = 0;
+else
+    verbose = 1;
+end
+
 
 
 %% Define paths
-subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'};
-if ismac
-    repoPath = '/Users/sebastienproulx/OneDrive - McGill University/dataBig';
-else
-    repoPath = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
-end
-funPath = fullfile(repoPath,'D-tidy\DecodingHR\decodingOutput');
-outDir  = 'a';
+subjList = p.meta.subjList;
+repoPath = p.paths.repo.in;
+    funPath = fullfile(repoPath,'C-derived\DecodingHR\fun');
+        inDir  = ['d'];
+        inDir2  = ['e_' p.anaID];
+        outDir = ['f_' p.anaID];
+paths.subjList = subjList;
+paths.repoPath = repoPath;
+paths.funPath = funPath;
+paths.inDir = inDir;
+paths.inDir2 = inDir2;
+paths.outDir = outDir;
+
 %make sure everything is forward slash for mac, linux pc compatibility
 for tmp = {'repoPath' 'funPath' 'outDir'}
     eval([char(tmp) '(strfind(' char(tmp) ',''\''))=''/'';']);
@@ -49,7 +71,7 @@ for respFeatInd = 1:length(respFeatList)
             p.figOption.verbose = figOption_verbose;
         end
         p.condPair = condPairList{condPairInd};
-        [resBS{condPairInd,respFeatInd},resBShr{condPairInd,respFeatInd},resWS{condPairInd,respFeatInd},f{condPairInd,respFeatInd}] = runDecoding(p,verbose);
+        [resBS{condPairInd,respFeatInd},resBShr{condPairInd,respFeatInd},resWS{condPairInd,respFeatInd},f{condPairInd,respFeatInd}] = runDecoding(p,verbose,paths,resPall,featSelPall);
     end
 end
 p.figOption.verbose = figOption_verbose;
@@ -57,14 +79,14 @@ info.condPairList = condPairList';
 info.respFeatList = respFeatList;
 info.info = 'condPair x respFeat';
 
-if ~p.perm.doIt
+if ~permFlag
     %% Save data
     fullpath = fullfile(funPath,outDir);
     if ~exist(fullpath,'dir'); mkdir(fullpath); end
-    fullfilename = fullfile(fullpath,'decoding');
-    save(fullfilename,'resBS','f','p','info');
+    fullfilenameDecoding = fullfile(fullpath,'decoding');
+    save(fullfilenameDecoding,'resBS','p','info');
     fullfilename = fullfile(fullpath,'channels');
-    save(fullfilename,'resBShr','f','p','info');
+    save(fullfilename,'resBShr','p','info');
     
     %% Save figures
     if p.figOption.verbose

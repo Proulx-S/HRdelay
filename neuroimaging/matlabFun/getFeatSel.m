@@ -8,19 +8,20 @@ allFeatIndIn = cell(0);
 %% Precompute stats on response vector (random effect)
 if p.featSel.respVecSig.doIt || p.featSel.respVecDiff.doIt
     statLabel = 'Hotelling'; % 'Pillai' 'Wilks' 'Hotelling' 'Roy'
-    condIndPairList = [{[1 2 3]} {[1 2]} {[1 3]} {[2 3]}];
+    switch p.featSel.global.method
+        case 'allData'
+            condIndPairList = [{[1 2 3]}];
+        case {'custom1' 'custom2'}
+            condIndPairList = [{[1 2 3]} {[1 2]} {[1 3]} {[2 3]}];
+        otherwise
+            error('X')
+    end
     interceptStat = nan(size(d.sin,1),length(condIndPairList));
     interceptP = nan(size(d.sin,1),length(condIndPairList));
     condStat = nan(size(d.sin,1),length(condIndPairList));
     condP = nan(size(d.sin,1),length(condIndPairList));
-    if p.perm.doIt
-        parfor condIndPairInd = 1:length(condIndPairList)
-            [condStat(:,condIndPairInd),condP(:,condIndPairInd),interceptStat(:,condIndPairInd),interceptP(:,condIndPairInd)] = getDiscrimStats(d,p,condIndPairList{condIndPairInd},statLabel);
-        end
-    else
-        for condIndPairInd = 1:length(condIndPairList)
-            [condStat(:,condIndPairInd),condP(:,condIndPairInd),interceptStat(:,condIndPairInd),interceptP(:,condIndPairInd)] = getDiscrimStats(d,p,condIndPairList{condIndPairInd},statLabel);
-        end
+    for condIndPairInd = 1:length(condIndPairList)
+        [condStat(:,condIndPairInd),condP(:,condIndPairInd),interceptStat(:,condIndPairInd),interceptP(:,condIndPairInd)] = getDiscrimStats(d,p,condIndPairList{condIndPairInd},statLabel);
     end
 end
 
@@ -72,7 +73,6 @@ if p.featSel.act.doIt
                 curIndIn = pVal<=curThresh;
             end
         case '%ile'
-            error('double-check that')
             pVal = featVal.p;
             featVal = featVal.F;
             curThresh = thresh.percentile;
@@ -208,8 +208,12 @@ if p.featSel.respVecDiff.doIt
                 [ind_nSpecFeatSel,ind_nSpecFeatSelCond,ind_specFeatSel,ind_specFeatSelCond] = defineFeatSel(allFeatMethod,condIndPairList,p.featSel.global.method,condIndPairInd);
                 startInd_nSpec = all(catcell(3,allFeatIndIn(ind_nSpecFeatSel)),3);
                 startInd_nSpec = startInd_nSpec(:,ind_nSpecFeatSelCond);
-                startInd_spec = all(catcell(3,allFeatIndIn(ind_specFeatSel)),3);
-                startInd_spec = startInd_spec(:,ind_specFeatSelCond);
+                if ind_specFeatSel
+                    startInd_spec = all(catcell(3,allFeatIndIn(ind_specFeatSel)),3);
+                    startInd_spec = startInd_spec(:,ind_specFeatSelCond);
+                else
+                    startInd_spec = true(size(startInd_nSpec));
+                end
                 startInd = startInd_nSpec & startInd_spec;
                 
                 curIndIn(:,condIndPairInd) = featVal(:,condIndPairInd)>=prctile(featVal(startInd,condIndPairInd),curThresh);
