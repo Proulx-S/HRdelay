@@ -25,7 +25,7 @@ p.figOption.save  = 0;
 p.figOption.finalDir = fullfile(p.paths.home,p.paths.repo.out,'matlabFigOutputs',finalSubDir); if ~exist(p.figOption.finalDir,'dir'); mkdir(p.figOption.finalDir); end
 
 p.termOption.verbose = 1;
-p.termOption.save = 1;
+p.termOption.save = 0;
 p.termOption.finalDir = fullfile(p.paths.home,p.paths.repo.out,'matlabTermOutputs',finalSubDir); if ~exist(p.termOption.finalDir,'dir'); mkdir(p.termOption.finalDir); end
 
 %% Permutation
@@ -137,8 +137,8 @@ if 0
     processFeatSel(p)
     [resBS,resBShr,resWS,f,info,decodingOut] = runAllDecoding(p);
 end
-if 1
-%     visualizeFeatSel(p)
+if 0
+    visualizeFeatSel(p)
     visualizeOthers(p)
     plotAllDecoding(p,resBS,info);
     statsAllDecoding(p,resBS,info)

@@ -146,6 +146,16 @@ rm = fitrm(t,[t.Properties.VariableNames{1} '-' t.Properties.VariableNames{end} 
 tbl = ranova(rm,'WithinModel',withinModel);
 disp(tbl(:,[2 4 5]))
 
+% Sphericity
+tblSphericity = mauchly(rm);
+disp('Mauchly''s spericity:')
+disp(tblSphericity)
+if tblSphericity.pValue<0.05
+    disp('sphericity assumption NOT ok');
+else
+    disp('sphericity assumption ok');
+end
+
 % Post-hoc
 disp(' ')
 disp('post-hoc')
@@ -196,6 +206,16 @@ withinModel = [F1 '*' F2];
 rm = fitrm(t,[t.Properties.VariableNames{1} '-' t.Properties.VariableNames{end} '~1'],'WithinDesign',withinDesign);
 tbl = ranova(rm,'WithinModel',withinModel);
 disp(tbl(:,[2 4 5]))
+
+% Sphericity
+tblSphericity = mauchly(rm);
+disp('Mauchly''s spericity:')
+disp(tblSphericity)
+if tblSphericity.pValue<0.05
+    disp('sphericity assumption NOT ok');
+else
+    disp('sphericity assumption ok');
+end
 
 % Planned comparison
 disp(' ')
