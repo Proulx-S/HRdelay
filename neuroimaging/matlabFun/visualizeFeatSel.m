@@ -202,6 +202,7 @@ for featInd = 1:size(featInfo,2)
         alphaData = ~isnan(im);
         makeOverlay(axBak,axOver,alphaData,cMap,scale,cLim)
         ylabel(yLabel);
+        f{end}.Children(1).Position = f{end}.Children(2).Position;
     end
 end
 
@@ -444,7 +445,7 @@ end
 
 %% Save figures
 if 1
-    filename = fullfile(funPath,outDir,mfilename);
+    filename = fullfile(p.figOption.finalDir,mfilename);
     
     if ~exist(filename,'dir'); mkdir(filename); end
     filename = fullfile(filename,[subjList{subjInd}]);

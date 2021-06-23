@@ -14,14 +14,15 @@ else
 end
 p.paths.repo.out = fullfile('McGill University/Farivar Lab - Dissertations/Sebastien/Manuscripts/aa - in preparation/SP_Neuroimage_HRdelay',p.anaID); if ~exist(p.paths.repo.out,'dir'); mkdir(p.paths.repo.out); end
 
+
 %% Display parameters
 figOption.save = 1; % save all figures
-figOption.subj = 1; % subjInd-> plots participants subjInd; +inf-> plots all participant (if verbose==0, will only plot subjInd==1 but still produce and save all the other figures)
+figOption.subj = 2; % subjInd-> plots participants subjInd; +inf-> plots all participant (if verbose==0, will only plot subjInd==1 but still produce and save all the other figures)
 p.figOption.subjInd  = figOption.subj;
 p.figOption.sessInd  = 1;
 p.figOption.sliceInd = 7;
 p.figOption.verbose  = 2;
-p.figOption.save  = 0;
+p.figOption.save  = 1;
 p.figOption.finalDir = fullfile(p.paths.home,p.paths.repo.out,'matlabFigOutputs',finalSubDir); if ~exist(p.figOption.finalDir,'dir'); mkdir(p.figOption.finalDir); end
 
 p.termOption.verbose = 1;
@@ -113,16 +114,6 @@ p.svm.condPairList = {'grat1VSgrat2' 'grat1VSplaid' 'grat2VSplaid'};
 % p.svm.respFeatList = {'cartNoDelay' 'delay' 'cart'};
 p.svm.respFeatList = {'delay' 'cartNoDelay' 'cart'};
 
-%% Display parameters
-figOption.save = 1; % save all figures
-figOption.subj = 1; % subjInd-> plots participants subjInd; +inf-> plots all participant (if verbose==0, will only plot subjInd==1 but still produce and save all the other figures)
-p.figOption.subjInd  = figOption.subj;
-p.figOption.sessInd  = 1;
-p.figOption.sliceInd = 10;
-p.figOption.verbose  = 2;
-p.figOption.save  = 2;
-p.termOption.verbose = 1;
-p.termOption.save = 1;
 
 if 0
     importData(verbose)
