@@ -1,6 +1,3 @@
-%% To do
-% -Output visualization of all subjects
-
 %%
 clear all
 close all
@@ -131,11 +128,15 @@ end
 if 0
     visualizeFeatSel(p)
     visualizeOthers(p)
+    if ~exist('resBS','var')
+        decodingOut = 'C:\Users\sebas\OneDrive - McGill University\dataBig\C-derived\DecodingHR\fun\f_2021-06-15_allData\decoding';
+        load([decodingOut ''],'resBS','info');
+    end
     plotAllDecoding(p,resBS,info);
     statsAllDecoding(p,resBS,info)
 end
-if 0
-    if p.perm.doIt
+if p.perm.doIt
+    if 0
         disp('***************************')
         disp('Permutation test: computing')
         disp('***************************')
@@ -166,6 +167,33 @@ if 0
         end
         save([decodingOut 'P'],'resBS','info');
         disp(['Permutations saved to ' decodingOut 'P'])
+    else
+        decodingOut = 'C:\Users\sebas\OneDrive - McGill University\dataBig\C-derived\DecodingHR\fun\f_2021-06-15_allData\decoding';
+        load([decodingOut 'P'],'resBS','info');
+        condInd = 1:3;
+        info.condPairList(condInd);
+        respInd = 1:2;
+        info.respFeatList(respInd);
+        
+        tmp = reshape([resBS{:}],size(resBS));
+        tmp = reshape([tmp.subj],size(resBS));
+        auc = permute(reshape([tmp.auc],[length(tmp(1).auc) size(resBS)]),[2 3 1]);
+        aucP = permute(reshape([tmp.aucP],[length(tmp(1).aucP) size(resBS)]),[2 3 1]);
+        
+        auc = mean(auc,1);
+        [H,P,CI,STATS] = ttest(squeeze(auc)',0.5,'tail','right')
+        
+        auc = mean(auc,3);
+        aucP = mean(aucP,1);
+        permP = sum(auc<aucP,3)./size(aucP,3);
+        
+        respInd = 1:3;
+        info.respFeatList(respInd);
+        disp('****Permutation test (all)****')
+        for i = 1:length(respInd)
+            disp(['* ' info.respFeatList{respInd(i)} ': AUC=' num2str(auc(i)) ', p=' num2str(permP(respInd(i)))])
+        end
+        disp('************************')
     end
     plotAllDecoding(p,resBS,info);
 end

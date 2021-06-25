@@ -232,6 +232,15 @@ disp(['wlcxn test: rank=' num2str(wlcxn_R) '    , p=' num2str(wlcxn_P)])
 disp(' ')
 
 
+respFeatInd = [2 3];
+respFeatList(respFeatInd)
+tmp = squeeze(yAll(respFeatInd,:,:))';
+[H,P,CI,STATS] = ttest(tmp(:,1),tmp(:,2));
+
+
+
+
+
 
 
 
