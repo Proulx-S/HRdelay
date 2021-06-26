@@ -118,16 +118,36 @@ elseif p.figOption.verbose>1
     fHr = [fHr plotHr(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},1)];
 end
 
+%% Add-on
+figure(fTrig)
+ax = findobj(fTrig.Children,'type','PolarAxes');
+tmp = ax.Children([4 5]);
+theta = [tmp(1).ThetaData tmp(2).ThetaData];
+rho = [tmp(1).RData tmp(2).RData];
+[u,v] = pol2cart(theta,rho);
+tmp = complex(u,v);
+tmp = mean(tmp);
+hRef(1) = polarplot([0 angle(tmp)],ax.RLim,'k-');
+theta = wrapToPi([-1 1].*pi/2 + angle(tmp));
+rho = [1 1].*ax.RLim(2);
+hRef(2) = polarplot(theta,rho,'k-');
+
+
+
 
 %% Save
 fullfilename = fullfile(p.figOption.finalDir,'polarRespVec');
 curF = fTrig;
+curA = findobj(curF.Children,'type','PolarAxes');
+axColor = curA.Color;
 curF.Color = 'none';
+curA.Color = axColor;
 % set(findobj(curF.Children,'type','Axes'),'color','none')
 curFile = fullfilename;
 curExt = 'svg';
 saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
 curF.Color = 'w';
+curA.Color = axColor;
 curExt = 'fig';
 saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
 curExt = 'jpg';

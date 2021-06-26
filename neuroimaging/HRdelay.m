@@ -1,4 +1,8 @@
 %%
+% To-Dos
+% -Bootstrap fiugure in visualizeOthers.m
+
+%%
 clear all
 close all
 
