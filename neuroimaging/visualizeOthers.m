@@ -140,14 +140,14 @@ fullfilename = fullfile(p.figOption.finalDir,'polarRespVec');
 curF = fTrig;
 curA = findobj(curF.Children,'type','PolarAxes');
 axColor = curA.Color;
-curF.Color = 'none';
-curA.Color = axColor;
+% curF.Color = 'none';
+% curA.Color = axColor;
 % set(findobj(curF.Children,'type','Axes'),'color','none')
 curFile = fullfilename;
 curExt = 'svg';
 saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
-curF.Color = 'w';
-curA.Color = axColor;
+% curF.Color = 'w';
+% curA.Color = axColor;
 curExt = 'fig';
 saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
 curExt = 'jpg';
@@ -155,12 +155,12 @@ saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' cur
 
 fullfilename = fullfile(p.figOption.finalDir,'Hr');
 curF = fHr;
-curF.Color = 'none';
+% curF.Color = 'none';
 % set(findobj(curF.Children,'type','Axes'),'color','none')
 curFile = fullfilename;
 curExt = 'svg';
 saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
-curF.Color = 'w';
+% curF.Color = 'w';
 curExt = 'fig';
 saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
 curExt = 'jpg';
@@ -195,8 +195,8 @@ hPolFov.MarkerEdgeColor = 'k';
 hPolFov.MarkerSize = eps;
 
 hPolAct = polarplot(angle(mean(xAct,1)),abs(mean(xAct,1)),'.'); hold on
-hPolAct.MarkerFaceColor = 'w';
-hPolAct.MarkerEdgeColor = 'w';
+hPolAct.MarkerFaceColor = [1 1 1]-eps;
+hPolAct.MarkerEdgeColor = [1 1 1]-eps;
 % hPolAct.MarkerFaceColor = [1 1 1].*0.5
 % hPolAct.MarkerEdgeColor = [1 1 1].*0.5
 hPolAct.MarkerSize = eps;
@@ -248,7 +248,7 @@ hPol10 = polarplot(theta,rho,'k');
 uistack([hPol1 hPol10],'bottom')
 
 legend([hPolFov hPolAct hPol1vox{:}],{'fov vox' 'selected fov vox' 'grat1' 'grat2' 'plaid'},'box','off')
-f.Color = 'w';
+% f.Color = 'w';
 ax.Box = 'off';
 
 ax.Color = [1 1 1].*0.6;
