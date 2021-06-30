@@ -119,7 +119,32 @@ elseif p.figOption.verbose>1
 end
 
 %% Add-on
-% figure(fTrig)
+figure(fTrig)
+ax = findobj(fTrig.Children,'type','Axes');
+data1 = findobj(ax.Children,'DisplayName','fov vox');
+data2 = findobj(ax.Children,'DisplayName','selected fov vox');
+refAngle = angle(mean(complex([data1.XData data2.XData],[data1.YData data2.YData])));
+[u,v] = pol2cart(refAngle,[0 max(abs(axis))]);
+hRef1 = plot(u,v,'k');
+[u,v] = pol2cart(wrapToPi([refAngle-pi/2 refAngle+pi/2]),[1 1].*max(abs(axis)));
+hRef2 = plot(u,v,'k');
+
+lg = findobj(fTrig.Children,'type','Legend');
+lg.String(end-1:end) = [];
+
+uistack([hRef1 hRef2],'bottom')
+hTmp = [findobj(ax.Children,'DisplayName','','type','Patch'); findobj(ax.Children,'DisplayName','','type','Line')];
+uistack(hTmp,'bottom')
+uistack(findobj(ax.Children,'type','Patch'),'bottom')
+
+
+
+figure(fHr)
+ax = findobj(fHr.Children,'type','Axes');
+hTmp = findobj(ax.Children,'type','Errorbar');
+hTmp.Marker = '^';
+hTmp.MarkerSize = hTmp.MarkerSize/1.5;
+
 % ax = findobj(fTrig.Children,'type','PolarAxes');
 % tmp = ax.Children([4 5]);
 % theta = [tmp(1).ThetaData tmp(2).ThetaData];
@@ -176,7 +201,8 @@ end
 %% Get data
 [X,y,~] = getXYK(d,p);
 
-[u,v] = pol2cart(angle(X),log(abs(X)+1));
+% [u,v] = pol2cart(angle(X),log(abs(X)+1));
+[u,v] = pol2cart(angle(X),abs(X));
 x = complex(u,v);
 
 xFov = x(:,featSel2.indIn & ~featSel1.indIn);
@@ -188,22 +214,21 @@ else
     f = figure('WindowStyle','docked','visible','off');
 end
 
-hPolFov = plot(real(mean(xFov,1)),imag(mean(xFov,1)),'.'); hold on
+[u,v] = pol2cart(angle(mean(xFov,1)),log(abs(mean(xFov,1))+1));
+hPolFov = plot(u,v,'.'); hold on
 % hPolFov = polar(angle(mean(xFov,1)),abs(mean(xFov,1)),'.'); hold on
 % hPolFov = polarplot(angle(mean(xFov,1)),abs(mean(xFov,1)),'.'); hold on
 hPolFov.MarkerFaceColor = 'k';
 hPolFov.MarkerEdgeColor = 'k';
-% hPolFov.MarkerFaceColor = [1 1 1].*0.5;
-% hPolFov.MarkerEdgeColor = [1 1 1].*0.5;
 hPolFov.MarkerSize = eps;
 
-hPolAct = plot(real(mean(xAct,1)),imag(mean(xAct,1)),'.'); hold on
+
+[u,v] = pol2cart(angle(mean(xAct,1)),log(abs(mean(xAct,1))+1));
+hPolAct= plot(u,v,'.'); hold on
 % hPolAct = polar(angle(mean(xAct,1)),abs(mean(xAct,1)),'.'); hold on
 % hPolAct = polarplot(angle(mean(xAct,1)),abs(mean(xAct,1)),'.'); hold on
 hPolAct.MarkerFaceColor = [1 1 1]-eps;
 hPolAct.MarkerEdgeColor = [1 1 1]-eps;
-% hPolAct.MarkerFaceColor = [1 1 1].*0.5
-% hPolAct.MarkerEdgeColor = [1 1 1].*0.5
 hPolAct.MarkerSize = eps;
 
 
@@ -231,7 +256,8 @@ hPol1vox = {};
 for yInd = 1:length(yList)
     tmpX = squeeze(x(yList(yInd)==y,b));
     tmpXmean = mean(tmpX,1);
-    hPol1vox{yInd} = plot(real(tmpXmean),imag(tmpXmean),'.'); hold on
+    [u,v] = pol2cart(angle(tmpXmean),log(abs(tmpXmean)+1));
+    hPol1vox{yInd} = plot(u,v,'.'); hold on
 %     hPol1vox{yInd} = polar(angle(tmpXmean),abs(tmpXmean),'.'); hold on
     %     hPol1vox{yInd} = polarplot(angle(mean(x(yList(yInd)==y,b),1)),abs(mean(x(yList(yInd)==y,b),1)),'.'); hold on
 end
@@ -249,6 +275,8 @@ for yInd = 1:length(yList)
         tmpXboot(bootInd,:) = mean(tmpX(boot,:),1);
     end
     polyCont = credibleInt2D([real(tmpXboot) imag(tmpXboot)],0.05);
+    [theta,rho] = cart2pol(polyCont.Vertices(:,1),polyCont.Vertices(:,2));
+    [polyCont.Vertices(:,1),polyCont.Vertices(:,2)] = pol2cart(theta,log(rho+1));
 %     hPol1vox{yInd} = polar(angle(mean(x(yList(yInd)==y,b),1)),abs(mean(x(yList(yInd)==y,b),1)),'.'); hold on
     hPol2vox{yInd} = plot(polyCont);
     hPol2vox{yInd}.LineStyle = 'none';
@@ -266,15 +294,29 @@ yLim = ylim;
 
 % rhoTickVal = [0:0.1:0.9 1:9 10:10:100]';
 rhoTickVal = [1:9 10]';
+
+[~,rho] = cart2pol(hPolFov.XData,hPolFov.YData);
+ind = rho>log(rhoTickVal(end)+1);
+hPolFov.XData(ind) = []; hPolFov.YData(ind) = [];
+
 theta = repmat(linspace(0,2*pi,100),[length(rhoTickVal) 1]);
 [gu,gv] = pol2cart(theta,log(rhoTickVal+1));
 hGridConc = plot(gu',gv','k');
 
+
 thetaTickVal = 0:1:11;
-rho = repmat([0; rhoTickVal(end)],[1 length(thetaTickVal)]);
+rho = repmat([rhoTickVal(1); rhoTickVal(end)],[1 length(thetaTickVal)]);
 % rho = repmat([0; max(axis)],[1 length(thetaTickVal)]);
 [gu,gv] = pol2cart(thetaTickVal/12*2*pi,log(rho+1));
-hGridRad = plot(gu,gv,'k');
+hGridRad1 = plot(gu,gv,'k');
+
+thetaTickVal = 0:3:9;
+rho = repmat([0; rhoTickVal(1)],[1 length(thetaTickVal)]);
+% rho = repmat([0; max(axis)],[1 length(thetaTickVal)]);
+[gu,gv] = pol2cart(thetaTickVal/12*2*pi,log(rho+1));
+hGridRad2 = plot(gu,gv,'k');
+hGridRad = [hGridRad1; hGridRad2];
+
 
 [gu,gv] = pol2cart(theta(1,:),log(rhoTickVal(end)+1));
 hBck = patch(gu,gv,[1 1 1].*0.6);
@@ -306,6 +348,8 @@ ax.YAxis.Visible = 'off';
 
 ax.Color = 'none';
 f.Color = 'w';
+
+
 
 legend([hPolFov hPolAct hPol1vox],{'fov vox' 'selected fov vox' 'grat1' 'grat2' 'plaid'},'box','off')
 % box off
