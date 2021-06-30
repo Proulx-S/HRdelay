@@ -334,7 +334,7 @@ p.designInfo2 = cellstr(num2str(sort(unique(d.condLabel)),'cond%d'))';
 %% Mixed-effect
 f = fitMixed(d,p);
 
-%% Extrac responses
+%% Extract responses
 hr = cell(size(d.data));
 for runInd = 1:size(f.full.betas,1)
     designInfo = f.full.designInfo{runInd};

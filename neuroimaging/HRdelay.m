@@ -1,8 +1,4 @@
 %%
-% To-Dos
-% -Bootstrap fiugure in visualizeOthers.m
-
-%%
 clear all
 close all
 
@@ -53,6 +49,7 @@ p.paths.repo.in = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
 
 %% Dependencies
 gitDependencyPath = fullfile(p.paths.home,'Documents/GitHub/utilities');
+addpath(genpath(fullfile(gitDependencyPath,'bassFun/matlab')));
 addpath(genpath(fullfile(gitDependencyPath,'circstat-matlab')));
 addpath(genpath(fullfile(gitDependencyPath,'RAMBiNo')));
 addpath(genpath(fullfile(gitDependencyPath,'BrewerMap')));

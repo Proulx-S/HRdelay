@@ -119,18 +119,18 @@ elseif p.figOption.verbose>1
 end
 
 %% Add-on
-figure(fTrig)
-ax = findobj(fTrig.Children,'type','PolarAxes');
-tmp = ax.Children([4 5]);
-theta = [tmp(1).ThetaData tmp(2).ThetaData];
-rho = [tmp(1).RData tmp(2).RData];
-[u,v] = pol2cart(theta,rho);
-tmp = complex(u,v);
-tmp = mean(tmp);
-hRef(1) = polarplot([0 angle(tmp)],ax.RLim,'k-');
-theta = wrapToPi([-1 1].*pi/2 + angle(tmp));
-rho = [1 1].*ax.RLim(2);
-hRef(2) = polarplot(theta,rho,'k-');
+% figure(fTrig)
+% ax = findobj(fTrig.Children,'type','PolarAxes');
+% tmp = ax.Children([4 5]);
+% theta = [tmp(1).ThetaData tmp(2).ThetaData];
+% rho = [tmp(1).RData tmp(2).RData];
+% [u,v] = pol2cart(theta,rho);
+% tmp = complex(u,v);
+% tmp = mean(tmp);
+% hRef(1) = polarplot([0 angle(tmp)],ax.RLim,'k-');
+% theta = wrapToPi([-1 1].*pi/2 + angle(tmp));
+% rho = [1 1].*ax.RLim(2);
+% hRef(2) = polarplot(theta,rho,'k-');
 
 
 
@@ -138,8 +138,8 @@ hRef(2) = polarplot(theta,rho,'k-');
 %% Save
 fullfilename = fullfile(p.figOption.finalDir,'polarRespVec');
 curF = fTrig;
-curA = findobj(curF.Children,'type','PolarAxes');
-axColor = curA.Color;
+% curA = findobj(curF.Children,'type','PolarAxes');
+% axColor = curA.Color;
 % curF.Color = 'none';
 % curA.Color = axColor;
 % set(findobj(curF.Children,'type','Axes'),'color','none')
@@ -168,6 +168,7 @@ saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' cur
 
 
 function f = plotTrig(d,p,featSel1,featSel2,visibilityFlag)
+nBoot = p.boot.n;
 if ~exist('visibilityFlag','var')
     visibilityFlag = 1;
 end
@@ -187,14 +188,18 @@ else
     f = figure('WindowStyle','docked','visible','off');
 end
 
-hPolFov = polarplot(angle(mean(xFov,1)),abs(mean(xFov,1)),'.'); hold on
+hPolFov = plot(real(mean(xFov,1)),imag(mean(xFov,1)),'.'); hold on
+% hPolFov = polar(angle(mean(xFov,1)),abs(mean(xFov,1)),'.'); hold on
+% hPolFov = polarplot(angle(mean(xFov,1)),abs(mean(xFov,1)),'.'); hold on
 hPolFov.MarkerFaceColor = 'k';
 hPolFov.MarkerEdgeColor = 'k';
 % hPolFov.MarkerFaceColor = [1 1 1].*0.5;
 % hPolFov.MarkerEdgeColor = [1 1 1].*0.5;
 hPolFov.MarkerSize = eps;
 
-hPolAct = polarplot(angle(mean(xAct,1)),abs(mean(xAct,1)),'.'); hold on
+hPolAct = plot(real(mean(xAct,1)),imag(mean(xAct,1)),'.'); hold on
+% hPolAct = polar(angle(mean(xAct,1)),abs(mean(xAct,1)),'.'); hold on
+% hPolAct = polarplot(angle(mean(xAct,1)),abs(mean(xAct,1)),'.'); hold on
 hPolAct.MarkerFaceColor = [1 1 1]-eps;
 hPolAct.MarkerEdgeColor = [1 1 1]-eps;
 % hPolAct.MarkerFaceColor = [1 1 1].*0.5
@@ -224,34 +229,115 @@ ax.ColorOrderIndex = 1;
 yList = unique(y);
 hPol1vox = {};
 for yInd = 1:length(yList)
-    hPol1vox{yInd} = polarplot(angle(x(yList(yInd)==y,b)),abs(x(yList(yInd)==y,b)),'.'); hold on
+    tmpX = squeeze(x(yList(yInd)==y,b));
+    tmpXmean = mean(tmpX,1);
+    hPol1vox{yInd} = plot(real(tmpXmean),imag(tmpXmean),'.'); hold on
+%     hPol1vox{yInd} = polar(angle(tmpXmean),abs(tmpXmean),'.'); hold on
+    %     hPol1vox{yInd} = polarplot(angle(mean(x(yList(yInd)==y,b),1)),abs(mean(x(yList(yInd)==y,b),1)),'.'); hold on
+end
+
+hPol2vox = {};    
+for yInd = 1:length(yList)
+    tmpX = squeeze(x(yList(yInd)==y,b));
+    n = size(tmpX,1);
+    tmpXboot = nan(nBoot,size(tmpX,2));
+    for bootInd = 1:nBoot
+        boot = nan(n,1);
+        for i = 1:n
+            boot(i) = randperm(n,1);
+        end
+        tmpXboot(bootInd,:) = mean(tmpX(boot,:),1);
+    end
+    polyCont = credibleInt2D([real(tmpXboot) imag(tmpXboot)],0.05);
+%     hPol1vox{yInd} = polar(angle(mean(x(yList(yInd)==y,b),1)),abs(mean(x(yList(yInd)==y,b),1)),'.'); hold on
+    hPol2vox{yInd} = plot(polyCont);
+    hPol2vox{yInd}.LineStyle = 'none';
+    hPol2vox{yInd}.FaceColor = hPol1vox{yInd}.Color;    
 end
 set([hPol1vox{:}],'MarkerSize',15)
-tickVal = [0:0.1:0.9 1:9 10:10:100];
-ax.RAxis.TickValues = log(tickVal+1);
-
-tickPos = ax.RAxis.TickValues(1:length(ax.RAxis.TickLabels));
-tickVal = round(exp(tickPos)-1,1,'significant');
-
-labelVal = [0 1 10];
-ind = ismember(tickVal,labelVal);
-labelVal = cellstr(num2str(tickVal'))';
-labelVal(~ind) = {''};
-ax.RAxis.TickLabels = labelVal;
 
 
-theta = 0:0.01:2*pi;
-rho = ones(size(theta)).*log(1+1);
-hPol1 = polarplot(theta,rho,'k');
-rho = ones(size(theta)).*log(10+1);
-hPol10 = polarplot(theta,rho,'k');
-uistack([hPol1 hPol10],'bottom')
+ax.PlotBoxAspectRatio = [1 1 1];
+ax.DataAspectRatio = [1 1 1];
 
-legend([hPolFov hPolAct hPol1vox{:}],{'fov vox' 'selected fov vox' 'grat1' 'grat2' 'plaid'},'box','off')
-% f.Color = 'w';
-ax.Box = 'off';
+xLim = xlim;
+yLim = ylim;
 
-ax.Color = [1 1 1].*0.6;
+
+% rhoTickVal = [0:0.1:0.9 1:9 10:10:100]';
+rhoTickVal = [1:9 10]';
+theta = repmat(linspace(0,2*pi,100),[length(rhoTickVal) 1]);
+[gu,gv] = pol2cart(theta,log(rhoTickVal+1));
+hGridConc = plot(gu',gv','k');
+
+thetaTickVal = 0:1:11;
+rho = repmat([0; rhoTickVal(end)],[1 length(thetaTickVal)]);
+% rho = repmat([0; max(axis)],[1 length(thetaTickVal)]);
+[gu,gv] = pol2cart(thetaTickVal/12*2*pi,log(rho+1));
+hGridRad = plot(gu,gv,'k');
+
+[gu,gv] = pol2cart(theta(1,:),log(rhoTickVal(end)+1));
+hBck = patch(gu,gv,[1 1 1].*0.6);
+uistack(hGridRad,'bottom')
+uistack(hGridConc,'bottom')
+uistack(hBck,'bottom')
+uistack(flip([hPol2vox{:}],2),'top')
+uistack([hPol1vox{:}],'top')
+hPol1vox = [hPol1vox{:}];
+for i = 1:length(hPol2vox)
+    hPol1vox(i).Marker = 'o';
+    hPol1vox(i).MarkerFaceColor = hPol2vox{i}.FaceColor;
+    hPol1vox(i).MarkerEdgeColor = 'k';
+    hPol1vox(i).MarkerSize = 5;
+    hPol1vox(i).LineWidth = eps;
+end
+
+set(hGridRad,'LineWidth',eps);
+set(hGridRad,'Color',[1 1 1].*0.5);
+set(hGridConc,'LineWidth',eps);
+set(hGridConc,'Color',[1 1 1].*0.5);
+
+xlim([-1 1].*log(rhoTickVal(end)+1))
+ylim([-1 1].*log(rhoTickVal(end)+1))
+ax.XTick = [];
+ax.YTick = [];
+ax.XAxis.Visible = 'off';
+ax.YAxis.Visible = 'off';
+
+ax.Color = 'none';
+f.Color = 'w';
+
+legend([hPolFov hPolAct hPol1vox],{'fov vox' 'selected fov vox' 'grat1' 'grat2' 'plaid'},'box','off')
+% box off
+% % ylim([-1 1].*max(abs([xLim yLim])))
+% % xlim([-1 1].*max(abs([xLim yLim])))
+% 
+% rhoTickVal = [0:0.1:0.9 1:9 10:10:100];
+% ax
+% ax.RAxis.TickValues = log(rhoTickVal+1);
+% 
+% tickPos = ax.RAxis.TickValues(1:length(ax.RAxis.TickLabels));
+% rhoTickVal = round(exp(tickPos)-1,1,'significant');
+% 
+% labelVal = [0 1 10];
+% ind = ismember(rhoTickVal,labelVal);
+% labelVal = cellstr(num2str(rhoTickVal'))';
+% labelVal(~ind) = {''};
+% ax.RAxis.TickLabels = labelVal;
+% 
+% 
+% theta = 0:0.01:2*pi;
+% rho = ones(size(theta)).*log(1+1);
+% hPol1 = polarplot(theta,rho,'k');
+% rho = ones(size(theta)).*log(10+1);
+% hPol10 = polarplot(theta,rho,'k');
+% uistack([hPol1 hPol10],'bottom')
+% 
+% legend([hPolFov hPolAct hPol1vox{:}],{'fov vox' 'selected fov vox' 'grat1' 'grat2' 'plaid'},'box','off')
+% % f.Color = 'w';
+% ax.Box = 'off';
+% 
+% ax.Color = [1 1 1].*0.6;
 
 
 
@@ -265,6 +351,7 @@ if ~exist('visibilityFlag','var')
 end
 
 %% Get data
+[xSin,~,~] = getXYK(d,p,0);
 [x,y,~] = getXYK(d,p,1);
 x = cat(3,x,x(:,:,1));
 xFov = x(:,featSel2.indIn & ~featSel1.indIn,:);
@@ -296,6 +383,7 @@ ax.Color = [1 1 1].*0.6;
 axis tight
 
 
+%% Choose one voxel
 featSelSteps_labelList = featSel1.featSeq.featSelList;
 for i = 1:length(featSelSteps_labelList)
     tmp = strsplit(featSelSteps_labelList{i},':');
@@ -313,41 +401,77 @@ act = sqrt(sum(featSel1.featSeq.featVal(:,featSelStep_ind,condPair_ind).^2,2));
 
 
 
+%% Plot the one voxel
+tmpX = squeeze(x(:,b,:));
+n = size(tmpX,1);
+tmpXmean = mean(tmpX,1);
+tmpXboot = nan(nBoot,size(tmpX,2));
+for bootInd = 1:nBoot
+    boot = nan(n,1);
+    for i = 1:n
+        boot(i) = randperm(n,1);
+    end
+    tmpXboot(bootInd,:) = mean(tmpX(boot,:),1);
+end
+tmpXer = prctile(tmpXboot,[97.5 2.5],1);
+tmpXer(1,:) = tmpXer(1,:) - tmpXmean;
+tmpXer(2,:) = tmpXmean - tmpXer(2,:);
+hPlot2vox = errorbar(t,tmpXmean,tmpXmean-tmpXer(2,:),tmpXer(1,:)-tmpXmean,'ok');
+hPlot2vox.CapSize = 0;
+hPlot2vox.MarkerEdgeColor = 'k';
+hPlot2vox.MarkerFaceColor = 'w';%hPlot2vox.MarkerEdgeColor;
 
+
+
+%% Plot conditions for the one voxel
 yList = unique(y);
 hPlot1vox = {};
 cList = colororder;
 for yInd = 1:length(yList)
     tmpX = squeeze(x(yList(yInd)==y,b,:));
+    tmpXsin = squeeze(xSin(yList(yInd)==y,b));
+    tmpXsin = real(tmpXsin)*sin(linspace(0,2*pi,13)) ...
+        + imag(tmpXsin)*cos(linspace(0,2*pi,13));
+    
 %     tmpX(tmpX>=0) = log(tmpX(tmpX>=0)+1);
 %     tmpX(tmpX<0) = -log(-tmpX(tmpX<0)+1);
     n = size(tmpX,1);
     tmpXmean = mean(tmpX,1);
+    tmpXsinMean = mean(tmpXsin,1);
     tmpXboot = nan(nBoot,size(tmpX,2));
+    tmpXsinBoot = nan(nBoot,size(tmpXsin,2));
     for bootInd = 1:nBoot
         boot = nan(n,1);
         for i = 1:n
             boot(i) = randperm(n,1);
         end
         tmpXboot(bootInd,:) = mean(tmpX(boot,:),1);
+        tmpXsinBoot(bootInd,:) = mean(tmpXsin(boot,:),1);
     end
     tmpXer = prctile(tmpXboot,[97.5 2.5],1);
     tmpXer(1,:) = tmpXer(1,:) - tmpXmean;
     tmpXer(2,:) = tmpXmean - tmpXer(2,:);
-%     tmpXer = std(tmpX,[],1)*1.96;
-    hPlot1vox{yInd} = shadedErrorBar(t,tmpXmean,tmpXer,'lineprops',{'Color' cList(yInd,:)}); hold on
+    tmpXsinEr = prctile(tmpXsinBoot,[97.5 2.5],1);
+    tmpXsinEr(1,:) = tmpXsinEr(1,:) - tmpXsinMean;
+    tmpXsinEr(2,:) = tmpXsinMean - tmpXsinEr(2,:);
+    hPlot1vox{yInd} = shadedErrorBar(t,tmpXsinMean,tmpXsinEr,'lineprops',{'Color' cList(yInd,:)}); hold on
     delete(hPlot1vox{yInd}.edge)
+%     hPlot2vox{yInd} = plot(t,tmpXmean,'Color',cList(yInd,:)); hold on
 %     hPlot1vox{yInd}
 %     hPlot1vox{yInd} = plot(t,tmpX,'-','Color',cList(yInd,:)); hold on
 end
+hPlot1vox = [hPlot1vox{:}];
+
+
+%% Decortations
 tmpX = mean(xAct,1);
 ylim([-1 1].*max(abs(tmpX(:))))
 % ylim([-1/3 1/3].*max(abs(ylim)))
-hPlot1vox = [hPlot1vox{:}];
 
+% uistack(hPlot1vox,'top')
 legend([hPlotFov(1) hPlotAct(1) [hPlot1vox.mainLine] [hPlot1vox.patch]],{'fov vox' 'selected fov vox' 'grat1' 'grat2' 'plaid' '95' '95' '95'},'box','off','Location','NorthWest')
 % legend([hPlotFov(1) hPlotAct(1) hPlot1vox(1,:)],{'fov vox' 'selected fov vox' 'grat1' 'grat2' 'plaid'},'box','off')
-f.Color = 'w';
+% f.Color = 'w';
 ax = gca;
 ax.Box = 'off';
 
