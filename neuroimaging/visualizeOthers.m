@@ -143,7 +143,8 @@ figure(fHr)
 ax = findobj(fHr.Children,'type','Axes');
 hTmp = findobj(ax.Children,'type','Errorbar');
 hTmp.Marker = '^';
-hTmp.MarkerSize = hTmp.MarkerSize/1.5;
+% hTmp.MarkerSize = hTmp.MarkerSize*1.5;
+hTmp.MarkerFaceColor = [1 1 1].*0.6;
 
 % ax = findobj(fTrig.Children,'type','PolarAxes');
 % tmp = ax.Children([4 5]);

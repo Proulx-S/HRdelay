@@ -45,51 +45,51 @@ allFeatIndIn(end+1) = {uniformizeOutputs(curIndIn,condIndPairList)};
 
 
 
-%% Activated voxels (fixed-effect sinusoidal fit of BOLD timeseries)
-% !!!Warning!!! Contrary to what defineFeatSel.m may suggest, activated
-% voxels (model explaining the BOLD timeseries) are not detected using only
-% the to-be-decoded conditions. It always uses all conditions. The reason
-% is that I did not go back to to have processResponses.m <- runGLMs.m
-% output stats from fits using only the corresponding conditions. Lazy
-% programming, but likely no impact at all.
-if p.featSel.act.doIt
-    curInfo1 = {'act'};
-    
-    featVal = d.featSel.F.act;
-    thresh = p.featSel.(char(curInfo1));
-    curInfo2 = {thresh.threshMethod};
-    startInd = indFovIn;
-    switch thresh.threshMethod
-        case {'p' 'fdr'}
-            pVal = featVal.p;
-            featVal = featVal.F;
-            curThresh = thresh.threshVal;
-            curInfo2 = {[curInfo2{1} '<' num2str(curThresh)]};
-            if strcmp(thresh.threshMethod,'fdr')
-                fdr = nan(size(pVal));
-                fdr(startInd) = mafdr(pVal(startInd),'BHFDR',true);
-                curIndIn = fdr<=curThresh;
-            else
-                curIndIn = pVal<=curThresh;
-            end
-        case '%ile'
-            pVal = featVal.p;
-            featVal = featVal.F;
-            curThresh = thresh.percentile;
-            curInfo2 = {[curInfo2{1} '>' num2str(curThresh)]};
-            
-            curIndIn = featVal>=prctile(featVal(startInd),curThresh);
-        otherwise
-            error('X')
-    end
-    curIndIn = repmat(curIndIn,[1 length(condIndPairList)]);
-
-    allFeatVal(end+1) = {uniformizeOutputs(featVal,condIndPairList)};
-    allFeatP(end+1) = {uniformizeOutputs(pVal,condIndPairList)};
-    allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
-    allFeatIndStart(end+1) = {uniformizeOutputs(startInd,condIndPairList)};
-    allFeatIndIn(end+1) = {uniformizeOutputs(curIndIn,condIndPairList)};
-end
+% %% Activated voxels (fixed-effect sinusoidal fit of BOLD timeseries)
+% % !!!Warning!!! Contrary to what defineFeatSel.m may suggest, activated
+% % voxels (model explaining the BOLD timeseries) are not detected using only
+% % the to-be-decoded conditions. It always uses all conditions. The reason
+% % is that I did not go back to to have processResponses.m <- runGLMs.m
+% % output stats from fits using only the corresponding conditions. Lazy
+% % programming, but likely no impact at all.
+% if p.featSel.act.doIt
+%     curInfo1 = {'act'};
+%     
+%     featVal = d.featSel.F.act;
+%     thresh = p.featSel.(char(curInfo1));
+%     curInfo2 = {thresh.threshMethod};
+%     startInd = indFovIn;
+%     switch thresh.threshMethod
+%         case {'p' 'fdr'}
+%             pVal = featVal.p;
+%             featVal = featVal.F;
+%             curThresh = thresh.threshVal;
+%             curInfo2 = {[curInfo2{1} '<' num2str(curThresh)]};
+%             if strcmp(thresh.threshMethod,'fdr')
+%                 fdr = nan(size(pVal));
+%                 fdr(startInd) = mafdr(pVal(startInd),'BHFDR',true);
+%                 curIndIn = fdr<=curThresh;
+%             else
+%                 curIndIn = pVal<=curThresh;
+%             end
+%         case '%ile'
+%             pVal = featVal.p;
+%             featVal = featVal.F;
+%             curThresh = thresh.percentile;
+%             curInfo2 = {[curInfo2{1} '>' num2str(curThresh)]};
+%             
+%             curIndIn = featVal>=prctile(featVal(startInd),curThresh);
+%         otherwise
+%             error('X')
+%     end
+%     curIndIn = repmat(curIndIn,[1 length(condIndPairList)]);
+% 
+%     allFeatVal(end+1) = {uniformizeOutputs(featVal,condIndPairList)};
+%     allFeatP(end+1) = {uniformizeOutputs(pVal,condIndPairList)};
+%     allFeatMethod(end+1) = {strjoin([curInfo1 curInfo2],': ')};
+%     allFeatIndStart(end+1) = {uniformizeOutputs(startInd,condIndPairList)};
+%     allFeatIndIn(end+1) = {uniformizeOutputs(curIndIn,condIndPairList)};
+% end
 
 
 %% Most significant response vectors
@@ -118,6 +118,25 @@ if p.featSel.respVecSig.doIt
             else
                 curIndIn = pVal<=curThresh;
             end
+%             circVar = circ_var(angle(d.sin(:,:)),[],[],2);
+%             for vox = 1:size(d.sin,1)
+%                 circK(vox) = circ_kappa(angle(d.sin(vox,:)));
+%             end
+% %             [a,b] = max(1/circK')
+% %             circK(b) = [];
+% %             circVar(b) = [];
+%             scatter(circVar,log(circK)')
+%             [~,b] = sort(circVar,'descend');
+%             i = round(length(b)/2):length(b);
+%             theta = wrapToPi(angle(d.sin(b(i),:))-angle(mean(d.sin(b(i),:),2)));
+%             polarhistogram(theta)
+%             ax = gca
+%             ax.RLim(2) = 100;
+%             
+%             ax = gca;
+%             ax.YAxis.Scale = 'log'
+%             
+%             angle(d.sin(:,:))
         case '%ile'
             error('double-check that')
             pVal;

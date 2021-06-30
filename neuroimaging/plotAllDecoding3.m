@@ -1,6 +1,46 @@
-function f = plotAllDecoding(p,res,info)
-p.figOption.save = 0;
-verbose  = 0;
+function f = plotAllDecoding3(p,res,info)
+f1 = plotAllDecoding2(p,res,info);
+f2 = plotAllDecoding(p,res,info);
+
+delta = 3;
+ax1 = findobj(f1.Children,'Type','Axes');
+ax2 = findobj(f2.Children,'Type','Axes');
+
+hBar1 = copyobj(findobj(ax1.Children,'Type','Bar'),ax2);
+hBar1.XData = hBar1.XData - delta;
+
+hBar1 = copyobj(findobj(ax1.Children,'Type','ErrorBar'),ax2);
+hBar1.XData = hBar1.XData - delta;
+
+
+figure(f2)
+
+
+f = figure('windowstyle','docked');
+copyobj(findobj(f2.Children,'Type','Axes'),f)
+
+
+
+t = tiledlayout(1,3);
+% t = tiledlayout(1,3,'TileIndexing','columnmajor');
+nexttile(1)
+nexttile(2,[1 2])
+
+
+
+nexttile(2,[2 1])
+
+
+nexttile(1,[1 1])
+nexttile(2,1)
+
+
+
+
+
+
+
+verbose  = 1;
 
 nBoot = p.boot.n;
 metric = 'auc';
@@ -22,11 +62,11 @@ yInfo = 'respFeat x condPair x subj';
 % y = y([2 3 1],:,:);
 % respFeatList = respFeatList([2 3 1]);
 
-y2 = cat(2,y(:,1,:),mean(y(:,2:3,:),2));
+y2 = mean(y,2);
 % y = cat(1,y(1,:,:),mean(y(2:3,:,:),1));
 condPairList2 = condPairList;
-condPairList2{2} = 'gratVSplaid';
-condPairList2(3) = [];
+% condPairList2{2} = 'gratVSplaid';
+% condPairList2(3) = [];
 
 yAv = mean(y2,3);
 [yBoot_90CI,~] = bootThat(y2,nBoot);
@@ -36,9 +76,9 @@ yErHigh = yBoot_90CI(:,:,2)-yAv;
 
 f = figure('WindowStyle','docked');
 hBar = bar(yAv); hold on
-for i = 1:length(condPairList2)
+for i = 1%:length(condPairList2)
 % for i = 1:length(respFeatList)
-    x = hBar(i).XEndPoints;
+    x = hBar.XEndPoints;
     hErBar = errorbar(x,yAv(:,i),yErLow(:,i),yErHigh(:,i));
     hErBar.LineStyle = 'none';
     hErBar.Color = 'k';
@@ -57,8 +97,8 @@ if isfield(res{1}.subj,'aucP')
     tmp = reshape([tmp.subj],size(tmp));
     tmp = reshape(permute([tmp.aucP],[2 3 1]),[size(tmp) size(tmp(1).aucP,1)]);
     aucP = permute(tmp,[3 1 2]);
-    aucP = cat(2,aucP(:,1,:),mean(aucP(:,[2 3],:),2));
-    info.condPairList = cat(1,condPairList2(1),{'gratVSplaid'});
+    aucP = mean(aucP,2);
+    info.condPairList = {'all'};
     
     fTmp = figure('windowstyle','docked','visible',verbose);
     binWidth = 5;
@@ -94,69 +134,63 @@ if isfield(res{1}.subj,'aucP')
     
     
     figure(f)
+    BarWidth = 0.5;
+    scaleDown = -0.025;
+    set(hBar,'BarWidth',BarWidth)
     hBarP = cell(length(info.condPairList),length(info.respFeatList));
-    for condPairInd = 1:length(info.condPairList)
-        switch condPairInd
-            case 1
-                scaleDown = -0.025;
-            case 2
-                scaleDown = 0.025;
-            otherwise
-                error('X')
-        end
-        for respFeatInd = 1:length(info.respFeatList)
-            barGroupCent = hBar(condPairInd).XData(respFeatInd);
-            barCent = hBar(condPairInd).XEndPoints(respFeatInd);
-            delta = (barGroupCent-barCent)*hBar(condPairInd).BarWidth;
-            base = barCent - delta;
-            width = mode(diff(binEdges{condPairInd,respFeatInd}(2:end)));
-            %         n = base + binN{condPairInd,respFeatInd}*scaleDown;
-            n = binN{condPairInd,respFeatInd}*scaleDown;
-            cent = binEdges{condPairInd,respFeatInd}(2:end)-width/2;
-            hBarP{condPairInd,respFeatInd} = barh(cent,n,'hist');
-            %         ,'BaseValue',base
-            hBarP{condPairInd,respFeatInd}.EdgeColor = 'none';
-            hBarP{condPairInd,respFeatInd}.FaceColor = hBar(condPairInd).FaceColor;
-            hBarP{condPairInd,respFeatInd}.Vertices(:,1) = hBarP{condPairInd,respFeatInd}.Vertices(:,1) + base;
-            uistack(hBarP{condPairInd,respFeatInd},'bottom')
-        end
+    for respFeatInd = 1:length(info.respFeatList)
+        barCent = hBar.XData(respFeatInd);
+        base = barCent - hBar.BarWidth/2;
+        width = mode(diff(binEdges{respFeatInd}(2:end)));
+        n = binN{respFeatInd}*scaleDown;
+        cent = binEdges{respFeatInd}(2:end)-width/2;
+        hBarP{respFeatInd} = barh(cent,n,'hist');
+        hBarP{respFeatInd}.EdgeColor = 'none';
+        hBarP{respFeatInd}.FaceColor = hBar.FaceColor;
+        hBarP{respFeatInd}.Vertices(:,1) = hBarP{respFeatInd}.Vertices(:,1) + base;
+        uistack(hBarP{respFeatInd},'bottom')
     end
+    
+    
+    
     axLim = axis;
     hTex1 = text(axLim(1),axLim(4),[num2str(size(res{1}.subj.aucP,1)) ' permutations/bootstraps'],'VerticalAlignment','top');
     hTex2 = text(axLim(2),axLim(4),['n=' num2str(length(res{1}.subj.subjList))],'VerticalAlignment','top','horizontalAlignment','right');
 end
 
 
-x = nan(size(y));
-for respFeatInd = 1:length(respFeatList)
-    respFeatList{respFeatInd}
-    for condInd = 1:length(condPairList)
-        condPairList{condInd}
-        switch condInd
-            case 1
-                barInd = 1;
-                offset = 0;
-            case 2
-                barInd = 2;
-                offset = -abs(delta)/2;
-            case 3
-                barInd = 2;
-                offset = abs(delta)/2;
-            otherwise
-                error('X')
-        end
-        x(respFeatInd,condInd,:) = hBar(barInd).XEndPoints(respFeatInd) + offset;
-    end
-end
-xTmp = permute(x,[3 1 2]);
-yTmp = permute(y,[3 1 2]);
+% x = nan(size(y));
+% for respFeatInd = 1:length(respFeatList)
+%     respFeatList{respFeatInd}
+%     for condInd = 1:length(condPairList)
+%         condPairList{condInd}
+%         switch condInd
+%             case 1
+%                 barInd = 1;
+%                 offset = 0;
+%             case 2
+%                 barInd = 2;
+%                 offset = -abs(delta)/2;
+%             case 3
+%                 barInd = 2;
+%                 offset = abs(delta)/2;
+%             otherwise
+%                 error('X')
+%         end
+%         x(respFeatInd,condInd,:) = hBar(barInd).XEndPoints(respFeatInd) + offset;
+%     end
+% end
+xTmp = 1:3;%permute(x,[3 1 2]);
+yTmp = permute(mean(y,2),[3 1 2]);
 Mrkr = 'osd^v><ph';
 for subjInd = 1:size(y,3)
-    hScat(subjInd) = scatter(xTmp(subjInd,:),yTmp(subjInd,:),Mrkr(subjInd));
+    hScat(subjInd) = scatter(xTmp,yTmp(subjInd,:),Mrkr(subjInd));
 end
 % alpha(hScat,0.3)
-set(hScat,'MarkerEdgeColor',[1 1 1].*0.7)
-
+set(hScat,'MarkerEdgeColor',[1 1 1].*0.4)
+set(hBar,'FaceColor',[1 1 1].*0.6)
+set(hBar,'EdgeColor','k')
+set([hBarP{:}],'FaceColor',hBar.FaceColor)
 
 ax = f.Children;
 % ax.XTickLabel = condPairList;
@@ -164,11 +198,12 @@ ax.XTickLabel = respFeatList;
 hP = plot(xlim,[0.5 0.5],'k');
 uistack(hP,'bottom')
 % legend(hBar,respFeatList)
-legend(hBar,condPairList2,'Box','off')
+% legend(hBar,condPairList2,'Box','off')
+
 
 %% Save
 if p.figOption.save
-    fullfilename = fullfile(p.figOption.finalDir,'decodingSummary');
+    fullfilename = fullfile(p.figOption.finalDir,'decodingSummary2');
     curF = f;
     curF.Color = 'none';
     set(findobj(curF.Children,'type','Axes'),'color','none')
@@ -186,7 +221,7 @@ function [yBoot_90CI,yBoot_95CI] = bootThat(y,nBoot)
 nSubj = size(y,3);
 sz = size(y);
 y = permute(y,[length(sz) 1:(length(sz)-1)]);
-sz = size(y);
+sz = sz([length(sz) 1:(length(sz)-1)]);
 sz(1) = nBoot;
 yBoot = nan(sz);
 for bootInd = 1:nBoot
@@ -197,9 +232,8 @@ for bootInd = 1:nBoot
     yBoot(bootInd,:) = mean(y(i,:),1);
 end
 
-sz = size(yBoot);
 yBoot = permute(yBoot,[2:length(sz) 1]);
-sz = size(yBoot);
+sz = sz([2:length(sz) 1]);
 yBoot_90CI = prctile(yBoot,[5 95],length(sz));
 yBoot_95CI = prctile(yBoot,[2.5 97.5],length(sz));
 

@@ -133,6 +133,7 @@ if 0
         decodingOut = 'C:\Users\sebas\OneDrive - McGill University\dataBig\C-derived\DecodingHR\fun\f_2021-06-15_allData\decoding';
         load([decodingOut ''],'resBS','info');
     end
+    plotAllDecoding2(p,resBS,info);
     plotAllDecoding(p,resBS,info);
     statsAllDecoding(p,resBS,info)
 end
@@ -196,7 +197,9 @@ if p.perm.doIt
         end
         disp('************************')
     end
-    plotAllDecoding(p,resBS,info);
+    plotAllDecoding3(p,resBS,info);
+    f1 = plotAllDecoding2(p,resBS,info);
+    f2 = plotAllDecoding(p,resBS,info);
 end
 
 if p.termOption.save
