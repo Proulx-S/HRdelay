@@ -2,208 +2,132 @@ function f = plotAllDecoding3(p,res,info)
 f1 = plotAllDecoding2(p,res,info);
 f2 = plotAllDecoding(p,res,info);
 
-delta = 3;
+delta = 2;
 ax1 = findobj(f1.Children,'Type','Axes');
 ax2 = findobj(f2.Children,'Type','Axes');
 
-hBar1 = copyobj(findobj(ax1.Children,'Type','Bar'),ax2);
-hBar1.XData = hBar1.XData - delta;
+hBar1 = findobj(ax1.Children,'Type','Bar');
+hBar2 = findobj(ax2.Children,'Type','Bar');
 
-hBar1 = copyobj(findobj(ax1.Children,'Type','ErrorBar'),ax2);
-hBar1.XData = hBar1.XData - delta;
 
+figure(f1)
+h = hBar1(1);
+D_x = mode(diff(h.XData));
+wTx = D_x;
+b_w = h.BarWidth;
+bg_w = b_w;
+b_x = b_w*wTx;
+bg_x = bg_w*wTx;
+
+wTx_1 = wTx;
+D_x1 = D_x;
+b_x1 = b_x;
+bg_x1 = bg_x;
+
+
+h = hBar2(1);
+D_x = mode(diff(h.XData));
+wTx = D_x/3.5;
+b_w = h.BarWidth;
+bg_w = b_w*2+(1-b_w);
+b_x = b_w*wTx;
+bg_x = bg_w*wTx;
+
+wTx_2 = wTx;
+D_x2 = D_x;
+b_x2 = b_x;
+bg_x2 = bg_x;
+
+
+% figure(f1)
+D1 = D_x1;
+b1 = b_x1;
+bg1 = bg_x1;
+d1 = D1-bg1;
+% figure(f2)
+D2 = D_x2;
+b2 = b_x2;
+bg2 = bg_x2;
+d2 = D2-bg2;
+
+%D1=d2+b2
+scale_1 = (d2+b2)/D1;
+wTx_1 = wTx_1*scale_1;
+d1 = d1*scale_1;
+%b1=bg2
+b1_w = b2/wTx_1;
 
 figure(f2)
+hTmp = copyobj(findobj(ax1.Children,'Type','Bar'),ax2);
+hTmp.XData = hTmp.XData*scale_1 - delta;
+hTmp.BarWidth = b1_w;
+hBar1 = hTmp;
+hBar2 = findobj(ax2.Children,'Type','Bar');
 
+hTmp = copyobj(findobj(ax1.Children,'Type','ErrorBar'),ax2);
+hTmp.XData = (hTmp.XData*scale_1 - delta);
+hEr1 = hTmp;
+hEr2 = findobj(ax2.Children,'Type','ErrorBar');
 
-f = figure('windowstyle','docked');
-copyobj(findobj(f2.Children,'Type','Axes'),f)
-
-
-
-t = tiledlayout(1,3);
-% t = tiledlayout(1,3,'TileIndexing','columnmajor');
-nexttile(1)
-nexttile(2,[1 2])
-
-
-
-nexttile(2,[2 1])
-
-
-nexttile(1,[1 1])
-nexttile(2,1)
-
-
-
-
-
-
-
-verbose  = 1;
-
-nBoot = p.boot.n;
-metric = 'auc';
-condPairList = info.condPairList;
-respFeatList = info.respFeatList;
-n = size(res{1,1}.subj.(metric),1);
-y = nan(length(condPairList),length(respFeatList),n);
-for respFeatInd = 1:length(respFeatList)
-    for condPairInd = 1:length(condPairList)
-        y(condPairInd,respFeatInd,:) = res{condPairInd,respFeatInd}.subj.(metric);
-    end
+hTmp = copyobj(findobj(ax1.Children,'Type','Patch'),ax2);
+for i = 1:length(hTmp)
+    hTmp(i).Vertices(:,1) = hTmp(i).Vertices(:,1)*scale_1 - delta + (b1-b2)/4;
 end
+hPatch1 = hTmp;
+hPatch2 = findobj(ax2.Children,'Type','Patch');
 
-% yInfo = 'condPair x respFeat x subj';
-y = permute(y,[2 1 3]);
-condPairList = condPairList';
-respFeatList = respFeatList';
-yInfo = 'respFeat x condPair x subj';
-% y = y([2 3 1],:,:);
-% respFeatList = respFeatList([2 3 1]);
-
-y2 = mean(y,2);
-% y = cat(1,y(1,:,:),mean(y(2:3,:,:),1));
-condPairList2 = condPairList;
-% condPairList2{2} = 'gratVSplaid';
-% condPairList2(3) = [];
-
-yAv = mean(y2,3);
-[yBoot_90CI,~] = bootThat(y2,nBoot);
-yErLow = yAv-yBoot_90CI(:,:,1);
-yErHigh = yBoot_90CI(:,:,2)-yAv;
-% yEr = std(y,[],3);
-
-f = figure('WindowStyle','docked');
-hBar = bar(yAv); hold on
-for i = 1%:length(condPairList2)
-% for i = 1:length(respFeatList)
-    x = hBar.XEndPoints;
-    hErBar = errorbar(x,yAv(:,i),yErLow(:,i),yErHigh(:,i));
-    hErBar.LineStyle = 'none';
-    hErBar.Color = 'k';
-    hErBar.CapSize = 0;
+hTmp = copyobj(findobj(ax1.Children,'Type','Scatter'),ax2);
+for i = 1:length(hTmp)
+    hTmp(i).XData = hTmp(i).XData*scale_1 - delta;
 end
-ylim([0 1]);
-ax = gca;
+hScat1 = hTmp;
+hScat2 = findobj(ax2.Children,'Type','Scatter');
 
 
 
-
-
-
-if isfield(res{1}.subj,'aucP')
-    tmp = reshape([res{:}],size(res));
-    tmp = reshape([tmp.subj],size(tmp));
-    tmp = reshape(permute([tmp.aucP],[2 3 1]),[size(tmp) size(tmp(1).aucP,1)]);
-    aucP = permute(tmp,[3 1 2]);
-    aucP = mean(aucP,2);
-    info.condPairList = {'all'};
-    
-    fTmp = figure('windowstyle','docked','visible',verbose);
-    binWidth = 5;
-    t = tiledlayout(3,1,'TileIndexing','columnmajor');
-    binN = cell(size(aucP,[2 3]));
-    binEdges = cell(size(aucP,[2 3]));
-    for respFeatInd = 1:size(aucP,3)
-        axTmp(respFeatInd) = nexttile;
-        for condPairInd = 1:size(aucP,2)
-            hHist(condPairInd) = histogram(aucP(:,condPairInd,respFeatInd),linspace(prctile(aucP(:,condPairInd,respFeatInd),5),prctile(aucP(:,condPairInd,respFeatInd),95),100/binWidth-2*5/binWidth),'Normalization','pdf'); hold on
-            [binN{condPairInd,respFeatInd},binEdges{condPairInd,respFeatInd}] = histcounts(aucP(:,condPairInd,respFeatInd),linspace(prctile(aucP(:,condPairInd,respFeatInd),5),prctile(aucP(:,condPairInd,respFeatInd),95),100/binWidth-2*5/binWidth),'Normalization','pdf');
-            hHist(condPairInd).EdgeColor = 'none';
-        end
-        xlim([0 1])
-        grid on
-        hLeg(respFeatInd) = legend(info.condPairList);
-        title(respFeatList{respFeatInd})
-    end
-    linkaxes(axTmp,'x');
-    xticklabels(axTmp(1:2),{})
-    xlabel(t,'auc')
-    title(t,'Permutation Test')
-    t.TileSpacing = 'compact';
-    set(hLeg(2:3),'Visible','off')
-    hLeg(1).Box = 'off';
-    hLeg(1).Location = 'northwest';
-    hLeg(1).Position(1) = axTmp(1).Position(1);
-    hLeg(1).Position(3) = 0.2;
-    % sum(hHist(1).Values).*hHist(1).BinWidth
-    
-    
-    
-    
-    
-    figure(f)
-    BarWidth = 0.5;
-    scaleDown = -0.025;
-    set(hBar,'BarWidth',BarWidth)
-    hBarP = cell(length(info.condPairList),length(info.respFeatList));
-    for respFeatInd = 1:length(info.respFeatList)
-        barCent = hBar.XData(respFeatInd);
-        base = barCent - hBar.BarWidth/2;
-        width = mode(diff(binEdges{respFeatInd}(2:end)));
-        n = binN{respFeatInd}*scaleDown;
-        cent = binEdges{respFeatInd}(2:end)-width/2;
-        hBarP{respFeatInd} = barh(cent,n,'hist');
-        hBarP{respFeatInd}.EdgeColor = 'none';
-        hBarP{respFeatInd}.FaceColor = hBar.FaceColor;
-        hBarP{respFeatInd}.Vertices(:,1) = hBarP{respFeatInd}.Vertices(:,1) + base;
-        uistack(hBarP{respFeatInd},'bottom')
-    end
-    
-    
-    
-    axLim = axis;
-    hTex1 = text(axLim(1),axLim(4),[num2str(size(res{1}.subj.aucP,1)) ' permutations/bootstraps'],'VerticalAlignment','top');
-    hTex2 = text(axLim(2),axLim(4),['n=' num2str(length(res{1}.subj.subjList))],'VerticalAlignment','top','horizontalAlignment','right');
+fac = 0.5;
+D1 = mode(diff(hBar1.XData));
+% hBar1.XData
+delta = (2:-1:0)*(d1*fac/D1);
+% fac2 = d1*fac/D1;
+hBar1.XData = hBar1.XData + delta;
+fac2 = D1/mode(diff(hBar1.XData));
+hBar1.BarWidth = hBar1.BarWidth*fac2;
+hEr1.XData = hEr1.XData + delta;
+for i = 1:length(hScat1)
+    hScat1(i).XData = hScat1(i).XData + delta;
 end
-
-
-% x = nan(size(y));
-% for respFeatInd = 1:length(respFeatList)
-%     respFeatList{respFeatInd}
-%     for condInd = 1:length(condPairList)
-%         condPairList{condInd}
-%         switch condInd
-%             case 1
-%                 barInd = 1;
-%                 offset = 0;
-%             case 2
-%                 barInd = 2;
-%                 offset = -abs(delta)/2;
-%             case 3
-%                 barInd = 2;
-%                 offset = abs(delta)/2;
-%             otherwise
-%                 error('X')
-%         end
-%         x(respFeatInd,condInd,:) = hBar(barInd).XEndPoints(respFeatInd) + offset;
-%     end
-% end
-xTmp = 1:3;%permute(x,[3 1 2]);
-yTmp = permute(mean(y,2),[3 1 2]);
-Mrkr = 'osd^v><ph';
-for subjInd = 1:size(y,3)
-    hScat(subjInd) = scatter(xTmp,yTmp(subjInd,:),Mrkr(subjInd));
+for i = 1:length(hPatch1)
+    hPatch1(i).Vertices(:,1) = hPatch1(i).Vertices(:,1) + delta(i);
 end
-% alpha(hScat,0.3)
-set(hScat,'MarkerEdgeColor',[1 1 1].*0.4)
-set(hBar,'FaceColor',[1 1 1].*0.6)
-set(hBar,'EdgeColor','k')
-set([hBarP{:}],'FaceColor',hBar.FaceColor)
+uistack(hPatch1,'bottom')
+% set(hPatch1,'FaceColor','r')
 
-ax = f.Children;
-% ax.XTickLabel = condPairList;
-ax.XTickLabel = respFeatList;
-hP = plot(xlim,[0.5 0.5],'k');
-uistack(hP,'bottom')
-% legend(hBar,respFeatList)
-% legend(hBar,condPairList2,'Box','off')
+
+delete(f1)
+f = f2; clear f2
+ax = findobj(f.Children,'Type','Axes');
+hLine = findobj(ax.Children,'Type','Line');
+hLine.XData = xlim;
+uistack(hLine,'bottom');
+
+hScat = findobj(ax.Children,'Type','Scatter');
+set(hScat,'MarkerEdgeColor',[1 1 1].*0.7);
+tmp = get(hScat,'SizeData');
+set(hScat,'SizeData',mode([tmp{:}])/2);
+
+delete(findobj(f.Children,'Type','Legend'));
+delete(findobj(f.Children,'Type','Text'));
+ax.Box = 'off';
+ax.Color = 'none';
+f.Color = 'w';
+
+
 
 
 %% Save
 if p.figOption.save
-    fullfilename = fullfile(p.figOption.finalDir,'decodingSummary2');
+    fullfilename = fullfile(p.figOption.finalDir,'decodingSummary3');
     curF = f;
     curF.Color = 'none';
     set(findobj(curF.Children,'type','Axes'),'color','none')
