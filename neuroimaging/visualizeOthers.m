@@ -18,6 +18,7 @@ repoPath = p.paths.repo.in;
         funPath = fullfile(repoPath,'C-derived\DecodingHR\fun');
             inDir  = 'd';
             inDir2  = ['e_' p.anaID];
+            inDir3  = 'c';
 %make sure everything is forward slash for mac, linux pc compatibility
 for tmp = {'repoPath' 'funPath' 'inDir'}
     eval([char(tmp) '(strfind(' char(tmp) ',''\''))=''/'';']);
@@ -38,11 +39,7 @@ d = dAll; clear dAll
 sessList = fields(d{1});
 % Load feature slection
 load(fullfile(funPath,inDir2,'featSel.mat'),'featSel');
-% if verbose
-%     disp('---');
-%     disp(['Channel space: ' p.chanSpace '-' p.condPair]);
-%     disp(['Complex space: ' p.complexSpace]);
-% end
+
 
 %% Reorganize
 dP = cell(size(d,2),length(sessList));
@@ -103,20 +100,48 @@ featSel_act = featSel;
 subjInd = p.figOption.subjInd;
 sessInd = p.figOption.sessInd;
 %% Trigonometric (polar) representation
-fTrig = [];
+% fTrig = [];
 if p.figOption.verbose==1
-    fTrig = [fTrig plotTrig(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},0)];
+    [fTrig,voxIndTrig] = plotTrig(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},0);
+%     [fTrig] = [fTrig plotTrig(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},0)];
 elseif p.figOption.verbose>1
-    fTrig = [fTrig plotTrig(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},1)];
+    [fTrig,voxIndTrig] = plotTrig(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},1);
+%     [fTrig] = [fTrig plotTrig(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},1)];
 end
 
 %% Temporal represeantation
 fHr = [];
 if p.figOption.verbose==1
-    fHr = [fHr plotHr(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},0)];
+    [fHr,voxIndHr] = plotHr(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},0);
+%     fHr = [fHr plotHr(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},0)];
 elseif p.figOption.verbose>1
-    fHr = [fHr plotHr(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},1)];
+    [fHr,voxIndHr] = plotHr(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},1);
+%     fHr = [fHr plotHr(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},1)];
 end
+
+%% Time series
+curFile = fullfile(funPath,inDir3,[subjList{p.figOption.subjInd} '.mat']);
+fun = load(curFile);
+fun = fun.d.fun(p.figOption.sessInd);
+runTs = squeeze(cat(5,fun.data{:}));
+% runTs = squeeze(mean(runTs(voxIndHr,:,:),1));
+runTs = squeeze(mean(runTs(:,:,:),1));
+runTs_av = mean(runTs,2)';
+runTs_er = bootci(p.boot.n,{@(x)mean(x),runTs'},'Type','percentile');
+runTs_er = [runTs_er(2,:) - runTs_av
+runTs_av - runTs_er(1,:)];
+
+fTs = figure('windowstyle','docked');
+t = 0:119;
+hErr = shadedErrorBar(t,runTs_av,runTs_er);
+delete(hErr.edge);
+ax = gca;
+ax.PlotBoxAspectRatio = [120 13 1];
+ax.Box = 'off'; ax.Color = 'none';
+ax.XTick = 0:12:120;
+ax.XGrid = 'on';
+ax.XTickLabelRotation = 0;
+
 
 %% Add-on
 figure(fTrig)
@@ -172,6 +197,8 @@ curF = fTrig;
 curFile = fullfilename;
 curExt = 'svg';
 saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
+curExt = 'eps';
+exportgraphics(curF,[curFile '.' curExt],'ContentType','vector'); if p.figOption.verbose; disp([curFile '.' curExt]); end
 % curF.Color = 'w';
 % curA.Color = axColor;
 curExt = 'fig';
@@ -186,14 +213,30 @@ curF = fHr;
 curFile = fullfilename;
 curExt = 'svg';
 saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
+curExt = 'eps';
+exportgraphics(curF,[curFile '.' curExt],'ContentType','vector'); if p.figOption.verbose; disp([curFile '.' curExt]); end
 % curF.Color = 'w';
 curExt = 'fig';
 saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
 curExt = 'jpg';
 saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
 
+fullfilename = fullfile(p.figOption.finalDir,'Ts');
+curF = fTs;
+% curF.Color = 'none';
+% set(findobj(curF.Children,'type','Axes'),'color','none')
+curFile = fullfilename;
+curExt = 'svg';
+saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
+curExt = 'eps';
+exportgraphics(curF,[curFile '.' curExt],'ContentType','vector'); if p.figOption.verbose; disp([curFile '.' curExt]); end
+% curF.Color = 'w';
+curExt = 'fig';
+saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
+curExt = 'jpg';
+saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
 
-function f = plotTrig(d,p,featSel1,featSel2,visibilityFlag)
+function [f,voxInd] = plotTrig(d,p,featSel1,featSel2,visibilityFlag)
 nBoot = p.boot.n;
 if ~exist('visibilityFlag','var')
     visibilityFlag = 1;
@@ -247,6 +290,8 @@ end
 
 act = sqrt(sum(featSel1.featSeq.featVal(:,featSelStep_ind,condPair_ind).^2,2));
 [~,b] = min(abs(prctile(act(featSel1.indIn),80)-act));
+voxInd = false(size(act));
+voxInd(b) = true;
 
 
 ax = gca;
@@ -353,43 +398,12 @@ f.Color = 'w';
 
 
 legend([hPolFov hPolAct hPol1vox],{'fov vox' 'selected fov vox' 'grat1' 'grat2' 'plaid'},'box','off')
-% box off
-% % ylim([-1 1].*max(abs([xLim yLim])))
-% % xlim([-1 1].*max(abs([xLim yLim])))
-% 
-% rhoTickVal = [0:0.1:0.9 1:9 10:10:100];
-% ax
-% ax.RAxis.TickValues = log(rhoTickVal+1);
-% 
-% tickPos = ax.RAxis.TickValues(1:length(ax.RAxis.TickLabels));
-% rhoTickVal = round(exp(tickPos)-1,1,'significant');
-% 
-% labelVal = [0 1 10];
-% ind = ismember(rhoTickVal,labelVal);
-% labelVal = cellstr(num2str(rhoTickVal'))';
-% labelVal(~ind) = {''};
-% ax.RAxis.TickLabels = labelVal;
-% 
-% 
-% theta = 0:0.01:2*pi;
-% rho = ones(size(theta)).*log(1+1);
-% hPol1 = polarplot(theta,rho,'k');
-% rho = ones(size(theta)).*log(10+1);
-% hPol10 = polarplot(theta,rho,'k');
-% uistack([hPol1 hPol10],'bottom')
-% 
-% legend([hPolFov hPolAct hPol1vox{:}],{'fov vox' 'selected fov vox' 'grat1' 'grat2' 'plaid'},'box','off')
-% % f.Color = 'w';
-% ax.Box = 'off';
-% 
-% ax.Color = [1 1 1].*0.6;
 
 
 
 
 
-
-function f = plotHr(d,p,featSel1,featSel2,visibilityFlag)
+function [f,voxInd] = plotHr(d,p,featSel1,featSel2,visibilityFlag)
 nBoot = p.boot.n;
 if ~exist('visibilityFlag','var')
     visibilityFlag = 1;
@@ -443,7 +457,8 @@ end
 
 act = sqrt(sum(featSel1.featSeq.featVal(:,featSelStep_ind,condPair_ind).^2,2));
 [~,b] = min(abs(prctile(act(featSel1.indIn),80)-act));
-
+voxInd = false(size(act));
+voxInd(b) = true;
 
 
 %% Plot the one voxel
@@ -508,7 +523,7 @@ end
 hPlot1vox = [hPlot1vox{:}];
 
 
-%% Decortations
+%% Decorations
 tmpX = mean(xAct,1);
 ylim([-1 1].*max(abs(tmpX(:))))
 % ylim([-1/3 1/3].*max(abs(ylim)))
