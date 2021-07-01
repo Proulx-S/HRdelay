@@ -198,8 +198,6 @@ if p.perm.doIt
         disp('************************')
     end
     plotAllDecoding3(p,resBS,info);
-    f1 = plotAllDecoding2(p,resBS,info);
-    f2 = plotAllDecoding(p,resBS,info);
 end
 
 if p.termOption.save
