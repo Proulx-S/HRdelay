@@ -132,6 +132,8 @@ if p.figOption.save
     curF.Color = 'none';
     set(findobj(curF.Children,'type','Axes'),'color','none')
     curFile = fullfilename;
+    curExt = 'eps';
+    exportgraphics(curF,[curFile '.' curExt],'ContentType','vector'); if p.figOption.verbose; disp([curFile '.' curExt]); end
     curExt = 'svg';
     saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
     curF.Color = 'w';
