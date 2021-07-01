@@ -124,8 +124,9 @@ curFile = fullfile(funPath,inDir3,[subjList{p.figOption.subjInd} '.mat']);
 fun = load(curFile);
 fun = fun.d.fun(p.figOption.sessInd);
 runTs = squeeze(cat(5,fun.data{:}));
+runLabel = fun.condLabel;
 % runTs = squeeze(mean(runTs(voxIndHr,:,:),1));
-runTs = squeeze(mean(runTs(:,:,:),1));
+runTs = squeeze(mean(runTs(:,:,runLabel==1),1));
 runTs_av = mean(runTs,2)';
 runTs_er = bootci(p.boot.n,{@(x)mean(x),runTs'},'Type','percentile');
 runTs_er = [runTs_er(2,:) - runTs_av
