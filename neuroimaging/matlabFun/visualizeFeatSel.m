@@ -206,6 +206,118 @@ for featInd = 1:size(featInfo,2)
     end
 end
 
+
+%% Plot extra maps
+whos inDir*
+
+brain
+nnz(roi)
+tmp.d.fun(p.figOption.sessInd).data
+
+
+
+
+mapInfo = {'none' 'amp' 'vein'};
+for mapInd = 1:length(mapInfo)
+    thresh = 125;
+    figure('WindowStyle','docked')
+    tiledlayout(2,1,'TileIndexing','columnmajor')
+    nexttile
+    brainY = squeeze(mean(brain,1));
+    xLim = [1 length(brainY)];
+    x = xLim(1):xLim(2);
+    yLim = ylim;
+    y = yLim(1):yLim(2);
+    plot(x,brainY); hold on
+    xlim(xLim)
+    tmpIm = nan(diff(xLim)+1,diff(yLim)+1);
+    hIm = imagesc(x,y,tmpIm);
+    uistack(hIm)
+    plot(xlim,[1 1].*thresh,'k')
+    nexttile
+    brainX = squeeze(mean(brain,2));
+    plot(brainX); hold on
+    plot(xlim,[1 1].*thresh,'k')
+    
+    roipoly
+    
+    brainY>thresh
+    brainY<thresh
+    
+    for sliceInd = 2:size(brain,3)-1
+        f{end+1} = figure('WindowStyle','docked','color','w','visible',visibility);
+        brainSlice = brain(:,:,slice);
+        mean(brainSlice,1)
+        
+        brain
+        axBak = plotIm(axes,brain(:,:,slice));
+        switch mapInfo{mapInd}
+            case 'none'
+                continue
+            case 'amp'
+                tmp = load(fullfile(funPath,inDir,[subjList{p.figOption.subjInd} '.mat']));
+                vec = tmp.res.(['sess' num2str(p.figOption.sessInd)]).sin;
+                vec = mean(vec(:,:,:,:,p.figOption.condInd),4);
+                im = nan(size(roi));
+                im(roi) = abs(vec);
+                im = im(:,:,slice);
+                
+                im = log(im);
+                
+                cLim = [min(im(:)) max(im(:))];
+                %             cLim(1) = cLim(1) + diff(cLim)*0.2;
+                if cLim(2)<log(10)
+                    cLim(2) = log(10);
+                end
+                
+                cMap = cMap_F;
+                
+                yLabel = {'Response Amplitude' '(%BOLD)'};
+            case 'vein'
+                im = featSelVal(:,:,slice,mapInd);
+                
+                im = log(im);
+                
+                cLim = [min(im(:)) max(im(:))];
+                %             cLim(1) = cLim(1) + diff(cLim)*0.2;
+                %             if cLim(2)<log(10)
+                %                 cLim(2) = log(10);
+                %             end
+                
+                cMap = cMap_vein;
+                
+                yLabel = {'Vein score' '(BOLD var / BOLD mean)'};
+            case 'act'
+                yLabel = {'Activation' 'Level (F value)'};
+                cMap = cMap_F;
+                scale = 'log';
+            case 'respVecSig'
+                yLabel = {'Response Vector Strength' '(Hotelling''s U)'};
+                cMap = cMap_F;
+                scale = 'log';
+            case {'respVecDist' 'lateVein'}
+                continue
+            case 'respVecDiff'
+                yLabel = {'Response Vector Stimulus Preference' '(Hotelling''s U)'};
+                cMap = cMap_F;
+                scale = 'log';
+            case 'retinoFov'
+                yLabel = {'Activation vs Deactivation' '(absolute delay from roi delay)'};
+                cMap = flipud(redblue(256));
+                scale = 'lin';
+                im = im./pi*6;
+            otherwise
+                error('X')
+        end
+        axOver = plotIm(axes,im,cLim);
+        alphaData = ~isnan(im);
+        makeOverlay(axBak,axOver,alphaData,cMap,scale,cLim)
+        ylabel(yLabel);
+        f{end}.Children(1).Position = f{end}.Children(2).Position;
+    end
+end
+
+
 if 1
     %% Plot thresholded maps
     for featInd = 1:size(featInfo,2)
