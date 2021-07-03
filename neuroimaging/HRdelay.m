@@ -56,6 +56,7 @@ addpath(genpath(fullfile(gitDependencyPath,'RAMBiNo')));
 addpath(genpath(fullfile(gitDependencyPath,'BrewerMap')));
 matDependencyPath = fullfile(p.paths.home,'OneDrive - McGill University\MATLAB');
 addpath(genpath(fullfile(matDependencyPath,'shadedErrorBar-master')));
+addpath(genpath(fullfile(matDependencyPath,'InterX')))
 addpath(genpath(fullfile(pwd,'matlabFun')));
 % Matlab toolboxes:
 % -Image Processing
