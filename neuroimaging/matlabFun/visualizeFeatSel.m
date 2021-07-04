@@ -30,9 +30,11 @@ tmp = cell(size(ax));
 for i = 1:length(ax)
     tmp(i) = ax(i).Title.String(1);
 end
-fFOV = figure('WindowStyle','docked');
-ax = copyobj(ax(ismember(tmp,['subj' num2str(p.figOption.subjInd) '; sess' num2str(p.figOption.sessInd)])),fFOV);
+fFOV2 = figure('WindowStyle','docked');
+ax = copyobj(ax(ismember(tmp,['subj' num2str(p.figOption.subjInd) '; sess' num2str(p.figOption.sessInd)])),fFOV2);
 drawnow
+close(fFOV)
+fFOV = fFOV2; clear fFOV2
 fFOV.Units = 'inches';
 set(ax,'Units','centimeter')
 drawnow
@@ -45,6 +47,74 @@ ax(1).YAxis.Visible = 'on';
 ax(2).YAxis.Visible = 'on';
 ax(2).YAxisLocation = 'right';
 
+fData = load([p.featSel.fov.resFile,'.mat']);
+
+
+eccTransL = fData.voxProp{p.figOption.subjInd,p.figOption.sessInd}.L.eccTrans;
+eccL = fData.voxProp{p.figOption.subjInd,p.figOption.sessInd}.L.ecc;
+eccTransR = fData.voxProp{p.figOption.subjInd,p.figOption.sessInd}.R.eccTrans;
+eccR = fData.voxProp{p.figOption.subjInd,p.figOption.sessInd}.R.ecc;
+Lmax = max(fData.voxProp{p.figOption.subjInd,p.figOption.sessInd}.L.ecc);
+Rmax = max(fData.voxProp{p.figOption.subjInd,p.figOption.sessInd}.R.ecc);
+
+tickLabel = 0:0.2:Lmax;
+tickLabel2 = 0:1:Lmax;
+ax(2).YTick = eccTransL.toFlat{3}(tickLabel)';
+ax(2).YTickLabel = cellstr(num2str(tickLabel'));
+ax(2).YTickLabel(~ismembertol(tickLabel,tickLabel2)) = {''};
+ax(2).YTickLabel(ismembertol(tickLabel,tickLabel2)) = cellstr(num2str(tickLabel2'));
+ax(2).TickDir = 'out';
+
+tickLabel = 0:0.2:Rmax;
+tickLabel2 = 0:1:Rmax;
+ax(1).YTick = flip(-eccTransR.toFlat{3}(tickLabel)',2);
+ax(1).YTickLabel = flip(cellstr(num2str(tickLabel')),1);
+ax(1).YTickLabel(flip(~ismembertol(tickLabel,tickLabel2),2)) = {''};
+ax(1).YTickLabel(flip(ismembertol(tickLabel,tickLabel2),2)) = flip(cellstr(num2str(tickLabel2')),1);
+ax(1).TickDir = 'out';
+
+ax(1).XAxis.Visible = 'off';
+ax(2).XAxis.Visible = 'off';
+
+tmp2 = load(fullfile(funPath,inDir,[p.meta.subjList{p.figOption.subjInd} '.mat']));
+res = tmp2.res; clear tmp2
+d = res.(['sess' num2str(p.figOption.sessInd)]);
+
+[eccLbefore,eccRbefore,densityLbefore,densityRbefore] = compareEcc(d);
+[eccLafter,eccRafter,densityLafter,densityRafter] = compareEcc(d,eccTransL,eccTransR);
+
+fDensity = figure('WindowStyle','docked');
+tiledlayout(1,2,'TileIndexing','columnmajor')
+nexttile
+
+indLbefore = ~isnan(densityLbefore);
+densityLbefore(indLbefore) = densityLbefore(indLbefore).*mode(diff(eccLbefore(indLbefore)));
+indLafter = ~isnan(densityLafter);
+densityLafter(indLafter) = densityLafter(indLafter).*mode(diff(eccLafter(indLafter)));
+
+indRbefore = ~isnan(densityRbefore);
+densityRbefore(indRbefore) = densityRbefore(indRbefore).*mode(diff(eccRbefore(indRbefore)));
+indRafter = ~isnan(densityRafter);
+densityRafter(indRafter) = densityRafter(indRafter).*mode(diff(eccRafter(indRafter)));
+
+
+hAreaLbefore = area(-eccLbefore,densityLbefore./nansum(densityLbefore)); hold on
+hAreaLafter = area(-eccLafter,densityLafter./nansum(densityLafter));
+axL = gca;
+axL.XTick = -flip(p.featSel.fov.threshVal);
+axL.YAxis.Visible = 'off';
+nexttile
+hAreaRbefore = area(eccRbefore,densityRbefore./nansum(densityRbefore)); hold on
+hAreaRafter = area(eccRafter,densityRafter./nansum(densityRafter));
+axR = gca;
+axR.XTick = p.featSel.fov.threshVal;
+axR.YAxis.Visible = 'off';
+
+hAreaLbefore.FaceAlpha = 0.5;
+hAreaLafter.FaceAlpha = 0.5;
+
+hAreaRbefore.FaceAlpha = 0.5;
+hAreaRafter.FaceAlpha = 0.5;
 
 %% Load data
 pAll = cell(size(subjList));
@@ -648,6 +718,8 @@ if 0
 end
 
 %% Save figures
+f{end+1} = fFOV;
+f{end+1} = fDensity;
 if 1
     filename = fullfile(p.figOption.finalDir,mfilename);
     
@@ -660,6 +732,8 @@ if 1
         curFile = [filename '_' num2str(i)];
         curExt = 'svg';
         saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
+        curExt = 'eps';
+        exportgraphics(curF,[curFile '.' curExt],'ContentType','vector')
         curF.Color = 'w';
         curExt = 'fig';
         saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end

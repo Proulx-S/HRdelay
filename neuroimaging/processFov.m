@@ -1,4 +1,4 @@
-function processFov(p)
+function filePath = processFov(p)
 
 if ~isfield(p,'figOption') || isempty(p.figOption)
     p.figOption.verbose = 1;

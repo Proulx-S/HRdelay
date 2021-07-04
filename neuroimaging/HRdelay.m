@@ -123,8 +123,8 @@ end
 if 0
     extractResponses(p,figOption,verbose)
 end
+p.featSel.fov.resFile = processFov(p);
 if 0
-    processFov(p)
     processFeatSel(p)
     [resBS,resBShr,resWS,f,info,decodingOut] = runAllDecoding(p);
 end
