@@ -24,7 +24,27 @@ end
 clear tmp
 
 %% Load empiricalFOV figure
-openfig(fullfile(p.figOption.finalDir,'processFOV.fig'))
+fFOV = openfig(fullfile(p.figOption.finalDir,'processFOV.fig'));
+ax = findobj(fFOV.Children,'Type','axes');
+tmp = cell(size(ax));
+for i = 1:length(ax)
+    tmp(i) = ax(i).Title.String(1);
+end
+fFOV = figure('WindowStyle','docked');
+ax = copyobj(ax(ismember(tmp,['subj' num2str(p.figOption.subjInd) '; sess' num2str(p.figOption.sessInd)])),fFOV);
+drawnow
+fFOV.Units = 'inches';
+set(ax,'Units','centimeter')
+drawnow
+ax(1).Position = [7    1.6845   10.1600   11.6152];
+ax(2).Position = [0    1.6845   10.1600   11.6152];
+
+delete(ax(1).Title)
+delete(ax(2).Title)
+ax(1).YAxis.Visible = 'on';
+ax(2).YAxis.Visible = 'on';
+ax(2).YAxisLocation = 'right';
+
 
 %% Load data
 pAll = cell(size(subjList));

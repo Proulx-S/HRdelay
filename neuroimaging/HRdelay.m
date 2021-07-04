@@ -185,7 +185,7 @@ if p.perm.doIt
         aucP = permute(reshape([tmp.aucP],[length(tmp(1).aucP) size(resBS)]),[2 3 1]);
         
         auc = mean(auc,1);
-        [H,P,CI,STATS] = ttest(squeeze(auc)',0.5,'tail','right')
+        [H,P,CI,STATS] = ttest(squeeze(auc)',0.5,'tail','right');
         
         auc = mean(auc,3);
         aucP = mean(aucP,1);
