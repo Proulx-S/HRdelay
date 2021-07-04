@@ -1,4 +1,4 @@
-function makeOverlay(axBak,ax,alphaData,cMap,cBar,cLim)
+function YTicks = makeOverlay(axBak,ax,alphaData,cMap,cBar,cLim)
 
 linkaxes([axBak ax]);
 linkprop([axBak ax],'position');
@@ -56,6 +56,7 @@ if exist('cBar','var') && ~isempty(cBar)
             
             tmp = ax.YTickLabel;
             tmp(~ismember(YTicks,YTickLabel)) = {''};
+            tmp([1 end]) = cellstr(num2str(str2num(char(ax.YTickLabel([1 end]))),'%0.1f'));
             ax.YTickLabel = tmp;
 %             ax.YTickLabel(1) = {num2str(YTicks(1))};
 %             ax.YTickLabel(end) = {num2str(YTicks(end))};
@@ -97,3 +98,4 @@ imMin = ax.CLim(1);
 imMax = ax.CLim(2);
 YTicks = sort(unique(YTicks));
 YTicks = YTicks(YTicks>exp(imMin) & YTicks<exp(imMax));
+YTicks = [exp(imMin) YTicks exp(imMax)];
