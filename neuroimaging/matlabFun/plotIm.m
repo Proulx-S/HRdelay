@@ -13,7 +13,7 @@ hIm = imagesc(im,cLim);
 hIm.YData = fliplr(hIm.YData);
 hIm.AlphaData = alphaData;
 ax.YDir = 'normal';
-ax.PlotBoxAspectRatio = [1+cbWidth 1 1];
+ax.PlotBoxAspectRatio = [1+cbWidth size(im,1)/size(im,2) 1];
 xticks([]); yticks([]);
 colormap(ax,'gray');
 ax.Color = 'none';

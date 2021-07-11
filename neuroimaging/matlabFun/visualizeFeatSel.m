@@ -47,8 +47,11 @@ ax(1).YAxis.Visible = 'on';
 ax(2).YAxis.Visible = 'on';
 ax(2).YAxisLocation = 'right';
 
-fData = load([p.featSel.fov.resFile,'.mat']);
+% hScat = findobj(ax(1).Children,'Type','Scatter');
+% hScat.MarkerEdgeColor
+% hScat.MarkerFaceAlpha
 
+fData = load([p.featSel.fov.resFile,'.mat']);
 
 eccTransL = fData.voxProp{p.figOption.subjInd,p.figOption.sessInd}.L.eccTrans;
 eccL = fData.voxProp{p.figOption.subjInd,p.figOption.sessInd}.L.ecc;
@@ -75,6 +78,8 @@ ax(1).TickDir = 'out';
 
 ax(1).XAxis.Visible = 'off';
 ax(2).XAxis.Visible = 'off';
+
+
 
 tmp2 = load(fullfile(funPath,inDir,[p.meta.subjList{p.figOption.subjInd} '.mat']));
 res = tmp2.res; clear tmp2
@@ -314,7 +319,9 @@ end
 save(fullfile(pwd,[mfilename '_crop']),'lim')
 
 mapInfo = {'none' 'amp' 'vein'};
-fExtra = cell(11,1);    
+fExtra = cell(11,1);
+indXall = cell(1,size(brain,3));
+indYall = cell(1,size(brain,3));
 for mapInd = 1:length(mapInfo)    
     for sliceInd = 2:size(brain,3)-1
         if mapInd==1
@@ -328,9 +335,9 @@ for mapInd = 1:length(mapInfo)
         brainSlice(all(brainCrop(:,:,sliceInd)==max(brainCrop(:,:,sliceInd)),2),:) = [];
         brainSlice(:,all(brainCrop(:,:,sliceInd)==max(brainCrop(:,:,sliceInd)),1)) = [];
         
-        axBak = plotIm(curTile,brainSlice);
         switch mapInfo{mapInd}
             case 'none'
+                axBak = plotIm(curTile,brainSlice);
                 continue
             case 'amp'
                 tmp = load(fullfile(funPath,inDir,[subjList{p.figOption.subjInd} '.mat']));
@@ -370,9 +377,29 @@ for mapInd = 1:length(mapInfo)
             otherwise
                 error('X')
         end
+        
+        %crop some more
+        indX = true(1,size(im,2));
+        indY = true(size(im,1),1);
+        if p.figOption.subjInd==2 && sliceInd==11
+            tmp = find(any(~isnan(im),1),2,'last');
+            indX(find(any(~isnan(im),1),1):tmp(1)) = false;
+            tmp = find(any(~isnan(im),2),2);
+            indY(tmp(2):find(any(~isnan(im),2),1,'last')) = false;
+        else
+            indX(find(any(~isnan(im),1),1):find(any(~isnan(im),1),1,'last')) = false;
+            indY(find(any(~isnan(im),2),1):find(any(~isnan(im),2),1,'last')) = false;
+        end
+        brainSlice(indY,:) = [];
+        brainSlice(:,indX) = [];
+        im(indY,:) = [];
+        im(:,indX) = [];
+        indYall{sliceInd} = indY;
+        indXall{sliceInd} = indX;
+        
+        axBak = plotIm(curTile,brainSlice);
         axOver = plotIm(axes,im,cLim);
         alphaData = ~isnan(im);
-        
         YTicks = makeOverlay(tExtra{sliceInd}.Children(1),axOver,alphaData,cMap,scale,cLim);
         switch mapInfo{mapInd}
             case {'none' 'amp'}
@@ -389,6 +416,23 @@ for sliceInd = 2:size(brain,3)-1
     for mapInd = 2:length(mapInfo)
         fExtra{sliceInd}.Children(length(mapInfo)-mapInd+1).Position = fExtra{sliceInd}.Children(end).Children(length(mapInfo)-mapInd+1).Position;
     end
+    fExtra{sliceInd}.Children(3).Children(3).Children
+    tExtra{sliceInd}.Children(3).Visible = 'off';
+    fExtra{sliceInd}.Children(3).Visible = 'on';
+    
+    axes(fExtra{sliceInd}.Children(3).Children(3))
+    hold on
+    x1 = find(~indXall{sliceInd},1)+0.5;
+    x2 = find(~indXall{sliceInd},1,'last')+1.5;
+    y1 = find(flip(~indYall{sliceInd}),1)-0.5;
+    y2 = find(flip(~indYall{sliceInd}),1,'last')+0.5;
+    
+    plot([1 1].*x1,[y1 y2],'w')
+    plot([1 1].*x2,[y1 y2],'w')
+    
+    plot([x1 x2],[1 1].*y1,'w')
+    plot([x1 x2],[1 1].*y2,'w')
+    
     f{end+1} = fExtra{sliceInd};
 end
 
@@ -667,11 +711,7 @@ if 0
             ax.Box = 'off';
             
             if ~strcmp(thresh.threshMethod,'empirical')
-                try
-                    featVals = featVal(:,featInd);
-                catch
-                    keyboard
-                end
+                featVals = featVal(:,featInd);
                 qtiles = featQtile(:,featInd);
                 ps = featP(:,featInd);
                 fdrs = nan(size(ps));
@@ -727,14 +767,14 @@ if 1
     filename = fullfile(filename,[subjList{subjInd}]);
     for i = 1:length(f)
         curF = f{i};
-        curF.Color = 'none';
-        set(findobj(curF.Children,'type','Axes'),'color','none')
+%         curF.Color = 'none';
+%         set(findobj(curF.Children,'type','Axes'),'color','none')
         curFile = [filename '_' num2str(i)];
         curExt = 'svg';
         saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
         curExt = 'eps';
         exportgraphics(curF,[curFile '.' curExt],'ContentType','vector')
-        curF.Color = 'w';
+%         curF.Color = 'w';
         curExt = 'fig';
         saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
         curExt = 'jpg';
