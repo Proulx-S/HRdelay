@@ -102,12 +102,30 @@ sessInd = p.figOption.sessInd;
 %% Trigonometric (polar) representation
 % fTrig = [];
 if p.figOption.verbose==1
-    [fTrig,voxIndTrig] = plotTrig(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},0);
+    [fTrig,voxIndTrig,indFovNotAct,indFovAct] = plotTrig(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},0);
 %     [fTrig] = [fTrig plotTrig(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},0)];
 elseif p.figOption.verbose>1
-    [fTrig,voxIndTrig] = plotTrig(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},1);
+    [fTrig,voxIndTrig,indFovNotAct,indFovAct] = plotTrig(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},1);
 %     [fTrig] = [fTrig plotTrig(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},1)];
 end
+
+% tmp = d{subjInd,sessInd}.sin(voxIndTrig,:);
+% angle(mean(tmp(:)))/pi*6
+% 
+% featSel_fov{subjInd,sessInd}.indIn
+% featSel_act{subjInd,sessInd}.indIn
+% 
+% tmp = d{subjInd,sessInd}.sin(featSel_fov{subjInd,sessInd}.indIn,:);
+% angle(mean(tmp(:)))/pi*6
+% tmp = d{subjInd,sessInd}.sin(featSel_act{subjInd,sessInd}.indIn,:);
+% angle(mean(tmp(:)))/pi*6
+% tmp = d{subjInd,sessInd}.sin(featSel_act{subjInd,sessInd}.indIn & featSel_fov{subjInd,sessInd}.indIn,:);
+% angle(mean(tmp(:)))/pi*6
+% 
+% 
+% xFov = x(:,featSel2.indIn & ~featSel1.indIn);
+% xAct = x(:,featSel1.indIn);
+
 
 %% Temporal represeantation
 fHr = [];
@@ -126,7 +144,7 @@ fun = fun.d.fun(p.figOption.sessInd);
 runTs = squeeze(cat(5,fun.data{:}));
 runLabel = fun.condLabel;
 % runTs = squeeze(mean(runTs(voxIndHr,:,:),1));
-runTs = squeeze(mean(runTs(:,:,runLabel==1),1));
+runTs = squeeze(mean(runTs(:,:,runLabel==3),1));
 runTs_av = mean(runTs,2)';
 runTs_er = bootci(p.boot.n,{@(x)mean(x),runTs'},'Type','percentile');
 runTs_er = [runTs_er(2,:) - runTs_av
@@ -147,13 +165,42 @@ ax.XTickLabelRotation = 0;
 %% Add-on
 figure(fTrig)
 ax = findobj(fTrig.Children,'type','Axes');
-data1 = findobj(ax.Children,'DisplayName','fov vox');
-data2 = findobj(ax.Children,'DisplayName','selected fov vox');
-refAngle = angle(mean(complex([data1.XData data2.XData],[data1.YData data2.YData])));
+
+%info
+delay = nan(size(d));
+for i = 1:numel(d)
+    delay(i) = angle(mean(d{i}.sin(:)));
+end
+refAngle = delay(p.figOption.subjInd,p.figOption.sessInd);
+disp(['ex subj delay=' num2str(-refAngle/pi*6) 's'])
+disp(['mean delay=' num2str(-mean(delay(:))/pi*6) 's'])
+disp(['mmin delay=' num2str(-min(delay(:))/pi*6) 's'])
+disp(['max delay=' num2str(-max(delay(:))/pi*6) 's'])
 [u,v] = pol2cart(refAngle,[0 max(abs(axis))]);
 hRef1 = plot(u,v,'k');
 [u,v] = pol2cart(wrapToPi([refAngle-pi/2 refAngle+pi/2]),[1 1].*max(abs(axis)));
 hRef2 = plot(u,v,'k');
+
+negRatio = nan(size(delay));
+for i = 1:numel(d)
+    negRatio(i) = nnz( ...
+    ( wrapToPi(delay(i)+pi/2) < angle(d{i}.sin(:)) ) & ...
+    ( angle(d{i}.sin(:)) < wrapToPi(delay(i)-pi/2) ) ...
+    ) ./ numel(d{i}.sin);
+end
+disp(['ex subj negBOLD%=' num2str(negRatio(subjInd,sessInd).*100) '%'])
+disp(['mean delay=' num2str(mean(negRatio(:)).*100) '%'])
+disp(['mmin delay=' num2str(min(negRatio(:)).*100) '%'])
+disp(['max delay=' num2str(max(negRatio(:)).*100) '%'])
+
+
+
+% refAngle/pi*6
+% indFovNotAct
+% indFovAct
+% plotTrig
+% tmp = d{subjInd,sessInd}.sin(indFovNotAct | indFovAct,:);
+% angle(mean(tmp(:)))/pi*6
 
 lg = findobj(fTrig.Children,'type','Legend');
 lg.String(end-1:end) = [];
@@ -237,7 +284,7 @@ saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' cur
 curExt = 'jpg';
 saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
 
-function [f,voxInd] = plotTrig(d,p,featSel1,featSel2,visibilityFlag)
+function [f,voxInd,indFovNotAct,indFovAct] = plotTrig(d,p,featSel1,featSel2,visibilityFlag)
 nBoot = p.boot.n;
 if ~exist('visibilityFlag','var')
     visibilityFlag = 1;
@@ -250,8 +297,11 @@ end
 [u,v] = pol2cart(angle(X),abs(X));
 x = complex(u,v);
 
-xFov = x(:,featSel2.indIn & ~featSel1.indIn);
-xAct = x(:,featSel1.indIn);
+indFovNotAct = featSel2.indIn & ~featSel1.indIn;
+indFovAct = featSel1.indIn;
+xFovNotAct = x(:,indFovNotAct);
+xFovAct = x(:,indFovAct);
+
 
 if visibilityFlag
     f = figure('WindowStyle','docked','visible','on');
@@ -259,7 +309,7 @@ else
     f = figure('WindowStyle','docked','visible','off');
 end
 
-[u,v] = pol2cart(angle(mean(xFov,1)),log(abs(mean(xFov,1))+1));
+[u,v] = pol2cart(angle(mean(xFovNotAct,1)),log(abs(mean(xFovNotAct,1))+1));
 hPolFov = plot(u,v,'.'); hold on
 % hPolFov = polar(angle(mean(xFov,1)),abs(mean(xFov,1)),'.'); hold on
 % hPolFov = polarplot(angle(mean(xFov,1)),abs(mean(xFov,1)),'.'); hold on
@@ -268,7 +318,7 @@ hPolFov.MarkerEdgeColor = 'k';
 hPolFov.MarkerSize = eps;
 
 
-[u,v] = pol2cart(angle(mean(xAct,1)),log(abs(mean(xAct,1))+1));
+[u,v] = pol2cart(angle(mean(xFovAct,1)),log(abs(mean(xFovAct,1))+1));
 hPolAct= plot(u,v,'.'); hold on
 % hPolAct = polar(angle(mean(xAct,1)),abs(mean(xAct,1)),'.'); hold on
 % hPolAct = polarplot(angle(mean(xAct,1)),abs(mean(xAct,1)),'.'); hold on

@@ -118,6 +118,43 @@ disp('---')
 disp(' ')
 
 
+% % (3) Addition of delay
+% ind = ismember(respFeatList,{'cartNoDelay' 'cart'});
+% 
+% tmp = ttest_P(ind,:);
+% tmp(:) = mafdr(tmp(:),'BHFDR','true');
+% ttest_FDR1(ind,:) = tmp;
+% tmp = wlcxn_P(ind,:);
+% tmp(:) = mafdr(tmp(:),'BHFDR','true');
+% wlcxn_FDR1(ind,:) = tmp;
+% 
+% tmp = ttestAll_P(ind,:);
+% tmp(:) = mafdr(tmp(:),'BHFDR','true');
+% ttestAll_FDR1(ind,:) = tmp;
+% tmp = wlcxnAll_P(ind,:);
+% tmp(:) = mafdr(tmp(:),'BHFDR','true');
+% wlcxnAll_FDR1(ind,:) = tmp;
+% 
+% disp('---Addition of delay')
+% for levelInd = 1:length(respFeatList)
+%     if ind(levelInd)
+%         disp(['respFeat[' respFeatList{levelInd} '], condPair[all]'])
+%         disp(['t test    : T   =' num2str(ttestAll_T(levelInd,1)) ', one-sided p(fdr)=' num2str(ttestAll_P(levelInd,1)) '(' num2str(ttestAll_FDR1(levelInd,1)) ')'])
+%         disp(['wlcxn test: rank=' num2str(wlcxnAll_R(levelInd,1)) '    , one-sided p(fdr)=' num2str(wlcxnAll_P(levelInd,1)) '(' num2str(wlcxnAll_FDR1(levelInd,1)) ')'])
+%         disp(' ')
+%         for condPairInd = 1:length(condPairList)
+%             disp(['respFeat[' respFeatList{levelInd} '], condPair[' condPairList{condPairInd} ']'])
+%             disp(['t test    : T   =' num2str(ttest_T(levelInd,condPairInd)) ', one-sided p(fdr)=' num2str(ttest_P(levelInd,condPairInd)) '(' num2str(ttest_FDR1(levelInd,condPairInd)) ')'])
+%             disp(['wlcxn test: rank=' num2str(wlcxn_R(levelInd,condPairInd)) '    , one-sided p(fdr)=' num2str(wlcxn_P(levelInd,condPairInd)) '(' num2str(wlcxn_FDR1(levelInd,condPairInd)) ')'])
+%             disp(' ')
+%         end
+%     end
+% end
+% disp('---')
+% disp(' ')
+
+
+
 %%%%%%%%%
 %% Anovas
 % set intercept to chance
@@ -232,10 +269,14 @@ disp(['wlcxn test: rank=' num2str(wlcxn_R) '    , p=' num2str(wlcxn_P)])
 disp(' ')
 
 
+
+
+disp('All conditions; amp-only vs cart')
 respFeatInd = [2 3];
 respFeatList(respFeatInd)
 tmp = squeeze(yAll(respFeatInd,:,:))';
-[H,P,CI,STATS] = ttest(tmp(:,1),tmp(:,2));
+[H,P,CI,STATS] = ttest(tmp(:,1),tmp(:,2),'tail','left');
+['t=' num2str(STATS.tstat) ', one-sided p=' num2str(P)];
 
 
 

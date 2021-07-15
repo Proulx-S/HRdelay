@@ -79,8 +79,14 @@ ax(1).TickDir = 'out';
 ax(1).XAxis.Visible = 'off';
 ax(2).XAxis.Visible = 'off';
 
+% Colorbar
+hCb = colorbar;
+hCb.Ticks = linspace(0,6,7)/6.*pi;
+hCb.TickLabels = cellstr(num2str(linspace(0,6,7)'));
+hCb.TickDirection = 'out';
 
 
+% Voxel density
 tmp2 = load(fullfile(funPath,inDir,[p.meta.subjList{p.figOption.subjInd} '.mat']));
 res = tmp2.res; clear tmp2
 d = res.(['sess' num2str(p.figOption.sessInd)]);
@@ -121,6 +127,7 @@ hAreaLafter.FaceAlpha = 0.5;
 hAreaRbefore.FaceAlpha = 0.5;
 hAreaRafter.FaceAlpha = 0.5;
 
+
 %% Load data
 pAll = cell(size(subjList));
 for subjInd = 1:length(subjList)
@@ -137,6 +144,10 @@ f{2}.Children.DataAspectRatio = [2 10 1];
 f{1}.Children.Units = 'centimeter';
 f{2}.Children.Units = 'centimeter';
 f{1}.Children.Position(4) = f{2}.Children.Position(4);
+
+
+% angle(mean(res.(['sess' num2str(p.figOption.sessInd)]).sin(:)))/pi*6
+% angle(mean(d.sin(:)))/pi*6
 
 %% Initialize subj, sess and masks
 subjInd = p.figOption.subjInd;
@@ -378,18 +389,32 @@ for mapInd = 1:length(mapInfo)
                 error('X')
         end
         
-        %crop some more
-        indX = true(1,size(im,2));
-        indY = true(size(im,1),1);
-        if p.figOption.subjInd==2 && sliceInd==11
-            tmp = find(any(~isnan(im),1),2,'last');
-            indX(find(any(~isnan(im),1),1):tmp(1)) = false;
-            tmp = find(any(~isnan(im),2),2);
-            indY(tmp(2):find(any(~isnan(im),2),1,'last')) = false;
-        else
-            indX(find(any(~isnan(im),1),1):find(any(~isnan(im),1),1,'last')) = false;
-            indY(find(any(~isnan(im),2),1):find(any(~isnan(im),2),1,'last')) = false;
-        end
+        %Crop out areas that are not in the contiguous ROI
+        in = any(~isnan(im),1);
+        ind = true(size(in));
+        zpos = find(~[0 in 0]);
+        [~, grpidx] = max(diff(zpos));
+        ind(zpos(grpidx):zpos(grpidx+1)-2) = false;
+        indX = ind;
+        
+        in = any(~isnan(im),2)';
+        ind = true(size(in));
+        zpos = find(~[0 in 0]);
+        [~, grpidx] = max(diff(zpos));
+        ind(zpos(grpidx):zpos(grpidx+1)-2) = false;
+        indY = ind';
+        
+%         indX = true(1,size(im,2));
+%         indY = true(size(im,1),1);
+%         if p.figOption.subjInd==2 && sliceInd==11
+%             tmp = find(any(~isnan(im),1),2,'last');
+%             indX(find(any(~isnan(im),1),1):tmp(1)) = false;
+%             tmp = find(any(~isnan(im),2),2);
+%             indY(tmp(2):find(any(~isnan(im),2),1,'last')) = false;
+%         else
+%             indX(find(any(~isnan(im),1),1):find(any(~isnan(im),1),1,'last')) = false;
+%             indY(find(any(~isnan(im),2),1):find(any(~isnan(im),2),1,'last')) = false;
+%         end
         brainSlice(indY,:) = [];
         brainSlice(:,indX) = [];
         im(indY,:) = [];
