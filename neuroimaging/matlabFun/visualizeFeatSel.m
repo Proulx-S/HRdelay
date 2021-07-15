@@ -253,6 +253,20 @@ end
 % ax.YAxis.Scale = 'log';
 
 
+%% Feature selection summary
+nVox = nan([5 size(featSel)]);
+for i = 1:numel(nVox(1,:))
+    nVox(1,i) = size(featSel{i}.featSeq.featIndIn,1);
+    nVox(2,i) = nnz(featSel{i}.featSeq.featIndIn(:,1));
+    nVox(3,i) = nnz(all(featSel{i}.featSeq.featIndIn(:,1:2),2));
+    nVox(4,i) = nnz(all(featSel{i}.featSeq.featIndIn(:,1:3),2));
+    nVox(5,i) = nnz(all(featSel{i}.featSeq.featIndIn(:,1:4),2));
+end
+disp(nVox(:,subjInd,sessInd))
+nVox = mean(nVox,3)';
+disp(nVox)
+
+
 %% Plot Brain
 f{end+1} = figure('WindowStyle','docked','color','w','visible',visibility);
 axBak = plotIm(axes,brain(:,:,slice));
