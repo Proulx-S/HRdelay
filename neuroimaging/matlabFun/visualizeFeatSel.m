@@ -23,61 +23,6 @@ for tmp = {'repoPath' 'funPath' 'inDir' 'outDir'}
 end
 clear tmp
 
-%% Load empiricalFOV figure: for single-subject figure
-fFOVall = openfig(fullfile(p.figOption.finalDir,'processFOV.fig'));
-fData = load([p.featSel.fov.resFile,'.mat']);
-
-ax = findobj(fFOVall.Children,'Type','axes');
-ax = flip(flip(flip(reshape(ax,[2 2 length(ax)/4]),1),2),3);
-hemiLabel = {'L' 'R'};
-for subjInd = 1:size(ax,3)
-    for sessInd = 1:size(ax,2)
-        for hemiInd = 1:size(ax,1)
-            ax(hemiInd,sessInd,subjInd).Title.String = [];
-
-            eccTrans = fData.voxProp{subjInd,sessInd}.(hemiLabel{hemiInd}).eccTrans;
-            ecc = fData.voxProp{subjInd,sessInd}.(hemiLabel{hemiInd}).ecc;
-            eccMax = max(ecc);            
-            tickLabel = 0:0.2:eccMax;
-            tickLabel2 = 0:1:eccMax;
-            switch hemiLabel{hemiInd}
-                case 'L'
-                    ax(hemiInd,sessInd,subjInd).XTick = -flip(eccTrans.toFlat{3}(tickLabel)');
-                    tickLabel = -flip(tickLabel);
-                    tickLabel2 = -flip(tickLabel2);
-                case 'R'
-                    ax(hemiInd,sessInd,subjInd).XTick = eccTrans.toFlat{3}(tickLabel)';
-                otherwise
-                    error('X')
-            end
-            ax(hemiInd,sessInd,subjInd).XTickLabel = cellstr(num2str(tickLabel'));
-            ax(hemiInd,sessInd,subjInd).XTickLabel(~ismembertol(tickLabel,tickLabel2)) = {''};
-            ax(hemiInd,sessInd,subjInd).XTickLabel(ismembertol(tickLabel,tickLabel2)) = cellstr(num2str(tickLabel2'));
-%             ax(hemiInd,sessInd,subjInd).TickDir = 'out';
-            switch sessInd
-                case 1
-                    ax(hemiInd,sessInd,subjInd).XTickLabel = [];
-                case 2
-                otherwise
-                    error('X')
-            end
-            
-            hScat = findobj(ax(hemiInd,sessInd,subjInd).Children,'Type','Scatter');
-            hScat.MarkerEdgeColor = 'none';
-        end
-    end
-end
-
-fFOVall1 = figure('WindowStyle','docked');
-ax1 = copyobj(ax(:,:,1:3),fFOVall1);
-fFOVall2 = figure('WindowStyle','docked');
-ax2 = copyobj(ax(:,:,4:6),fFOVall2);
-
-ax1
-
-
-
-
 
 %% Load empiricalFOV figure: for single-subject figure
 [fFOV,fDensity] = replotOneFOV(p,funPath,inDir,p.figOption.subjInd,p.figOption.sessInd);
@@ -96,6 +41,10 @@ for subjInd = 1:6
             ax(hemiInd).YTickLabel(cellfun('isempty',ax(hemiInd).YTickLabel)) = [];
             ax(hemiInd).YTickLabel = [];
             ax(hemiInd).Box = 'off';
+            hLine = findobj(ax(hemiInd).Children,'Type','Line');
+            set(hLine,'LineWidth',1.5)
+            hPoly = findobj(ax(hemiInd).Children,'Type','Polygon');
+            set(hPoly,'LineWidth',1.5)
         end
         fFOVall.Color = 'w';
         
