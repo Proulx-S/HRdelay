@@ -68,111 +68,45 @@ for subjInd = 1:size(ax,3)
     end
 end
 
+fFOVall1 = figure('WindowStyle','docked');
+ax1 = copyobj(ax(:,:,1:3),fFOVall1);
+fFOVall2 = figure('WindowStyle','docked');
+ax2 = copyobj(ax(:,:,4:6),fFOVall2);
+
+ax1
+
+
+
 
 
 %% Load empiricalFOV figure: for single-subject figure
-fFOV = openfig(fullfile(p.figOption.finalDir,'processFOV.fig'));
-ax = findobj(fFOV.Children,'Type','axes');
-tmp = cell(size(ax));
-for i = 1:length(ax)
-    tmp(i) = ax(i).Title.String(1);
+[fFOV,fDensity] = replotOneFOV(p,funPath,inDir,p.figOption.subjInd,p.figOption.sessInd);
+
+%% Load empiricalFOV figure: for single-subject figure
+subjList = p.meta.subjList;
+sessList = {'sess1' 'sess2'};
+for subjInd = 1:6
+    for sessInd = 1:2
+        [fFOVall,~] = replotOneFOV(p,funPath,inDir,subjInd,sessInd);
+        delete(findobj(fFOVall.Children,'Type','ColorBar'));
+        drawnow
+        ax = findobj(fFOVall.Children,'Type','Axes');
+        for hemiInd = 1:2
+            ax(hemiInd).YTick(cellfun('isempty',ax(hemiInd).YTickLabel)) = [];
+            ax(hemiInd).YTickLabel(cellfun('isempty',ax(hemiInd).YTickLabel)) = [];
+            ax(hemiInd).YTickLabel = [];
+            ax(hemiInd).Box = 'off';
+        end
+        fFOVall.Color = 'w';
+        
+        filename = fullfile(p.figOption.finalDir,mfilename);
+        filename = fullfile(filename,'FOVs');
+        if ~exist(filename,'dir'); mkdir(filename); end
+        filename = fullfile(filename,[subjList{subjInd} '_' sessList{sessInd}]);
+        
+        print(fFOVall,[filename '.png'],'-dpng','-r600')
+    end
 end
-fFOV2 = figure('WindowStyle','docked');
-ax = copyobj(ax(ismember(tmp,['subj' num2str(p.figOption.subjInd) '; sess' num2str(p.figOption.sessInd)])),fFOV2);
-drawnow
-close(fFOV)
-fFOV = fFOV2; clear fFOV2
-fFOV.Units = 'inches';
-set(ax,'Units','centimeter')
-drawnow
-ax(1).Position = [7    1.6845   10.1600   11.6152];
-ax(2).Position = [0    1.6845   10.1600   11.6152];
-
-delete(ax(1).Title)
-delete(ax(2).Title)
-ax(1).YAxis.Visible = 'on';
-ax(2).YAxis.Visible = 'on';
-ax(2).YAxisLocation = 'right';
-
-% hScat = findobj(ax(1).Children,'Type','Scatter');
-% hScat.MarkerEdgeColor
-% hScat.MarkerFaceAlpha
-
-fData = load([p.featSel.fov.resFile,'.mat']);
-
-eccTrans = fData.voxProp{p.figOption.subjInd,p.figOption.sessInd}.L.eccTrans;
-ecc = fData.voxProp{p.figOption.subjInd,p.figOption.sessInd}.L.ecc;
-eccTransR = fData.voxProp{p.figOption.subjInd,p.figOption.sessInd}.R.eccTrans;
-eccR = fData.voxProp{p.figOption.subjInd,p.figOption.sessInd}.R.ecc;
-eccMax = max(fData.voxProp{p.figOption.subjInd,p.figOption.sessInd}.L.ecc);
-Rmax = max(fData.voxProp{p.figOption.subjInd,p.figOption.sessInd}.R.ecc);
-
-tickLabel = 0:0.2:eccMax;
-tickLabel2 = 0:1:eccMax;
-ax(2).YTick = eccTrans.toFlat{3}(tickLabel)';
-ax(2).YTickLabel = cellstr(num2str(tickLabel'));
-ax(2).YTickLabel(~ismembertol(tickLabel,tickLabel2)) = {''};
-ax(2).YTickLabel(ismembertol(tickLabel,tickLabel2)) = cellstr(num2str(tickLabel2'));
-ax(2).TickDir = 'out';
-
-tickLabel = 0:0.2:Rmax;
-tickLabel2 = 0:1:Rmax;
-ax(1).YTick = flip(-eccTransR.toFlat{3}(tickLabel)',2);
-ax(1).YTickLabel = flip(cellstr(num2str(tickLabel')),1);
-ax(1).YTickLabel(flip(~ismembertol(tickLabel,tickLabel2),2)) = {''};
-ax(1).YTickLabel(flip(ismembertol(tickLabel,tickLabel2),2)) = flip(cellstr(num2str(tickLabel2')),1);
-ax(1).TickDir = 'out';
-
-ax(1).XAxis.Visible = 'off';
-ax(2).XAxis.Visible = 'off';
-
-% Colorbar
-hCb = colorbar;
-hCb.Ticks = linspace(0,6,7)/6.*pi;
-hCb.TickLabels = cellstr(num2str(linspace(0,6,7)'));
-hCb.TickDirection = 'out';
-
-
-% Voxel density
-tmp2 = load(fullfile(funPath,inDir,[p.meta.subjList{p.figOption.subjInd} '.mat']));
-res = tmp2.res; clear tmp2
-d = res.(['sess' num2str(p.figOption.sessInd)]);
-
-[eccLbefore,eccRbefore,densityLbefore,densityRbefore] = compareEcc(d);
-[eccLafter,eccRafter,densityLafter,densityRafter] = compareEcc(d,eccTrans,eccTransR);
-
-fDensity = figure('WindowStyle','docked');
-tiledlayout(1,2,'TileIndexing','columnmajor')
-nexttile
-
-indLbefore = ~isnan(densityLbefore);
-densityLbefore(indLbefore) = densityLbefore(indLbefore).*mode(diff(eccLbefore(indLbefore)));
-indLafter = ~isnan(densityLafter);
-densityLafter(indLafter) = densityLafter(indLafter).*mode(diff(eccLafter(indLafter)));
-
-indRbefore = ~isnan(densityRbefore);
-densityRbefore(indRbefore) = densityRbefore(indRbefore).*mode(diff(eccRbefore(indRbefore)));
-indRafter = ~isnan(densityRafter);
-densityRafter(indRafter) = densityRafter(indRafter).*mode(diff(eccRafter(indRafter)));
-
-
-hAreaLbefore = area(-eccLbefore,densityLbefore./nansum(densityLbefore)); hold on
-hAreaLafter = area(-eccLafter,densityLafter./nansum(densityLafter));
-axL = gca;
-axL.XTick = -flip(p.featSel.fov.threshVal);
-axL.YAxis.Visible = 'off';
-nexttile
-hAreaRbefore = area(eccRbefore,densityRbefore./nansum(densityRbefore)); hold on
-hAreaRafter = area(eccRafter,densityRafter./nansum(densityRafter));
-axR = gca;
-axR.XTick = p.featSel.fov.threshVal;
-axR.YAxis.Visible = 'off';
-
-hAreaLbefore.FaceAlpha = 0.5;
-hAreaLafter.FaceAlpha = 0.5;
-
-hAreaRbefore.FaceAlpha = 0.5;
-hAreaRafter.FaceAlpha = 0.5;
 
 
 %% Load data
