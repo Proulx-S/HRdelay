@@ -128,10 +128,10 @@ if 0
     processFeatSel(p)
     [resBS,resBShr,resWS,f,info,decodingOut] = runAllDecoding(p);
 end
+visualizeFeatSel(p)
 if 0
-    visualizeFeatSel(p)
+    visualizeOthers(p)
 end
-visualizeOthers(p)
 if 0
     if ~exist('resBS','var')
         decodingOut = 'C:\Users\sebas\OneDrive - McGill University\dataBig\C-derived\DecodingHR\fun\f_2021-06-15_allData\decoding';

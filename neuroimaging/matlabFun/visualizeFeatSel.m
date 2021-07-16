@@ -23,7 +23,54 @@ for tmp = {'repoPath' 'funPath' 'inDir' 'outDir'}
 end
 clear tmp
 
-%% Load empiricalFOV figure
+%% Load empiricalFOV figure: for single-subject figure
+fFOVall = openfig(fullfile(p.figOption.finalDir,'processFOV.fig'));
+fData = load([p.featSel.fov.resFile,'.mat']);
+
+ax = findobj(fFOVall.Children,'Type','axes');
+ax = flip(flip(flip(reshape(ax,[2 2 length(ax)/4]),1),2),3);
+hemiLabel = {'L' 'R'};
+for subjInd = 1:size(ax,3)
+    for sessInd = 1:size(ax,2)
+        for hemiInd = 1:size(ax,1)
+            ax(hemiInd,sessInd,subjInd).Title.String = [];
+
+            eccTrans = fData.voxProp{subjInd,sessInd}.(hemiLabel{hemiInd}).eccTrans;
+            ecc = fData.voxProp{subjInd,sessInd}.(hemiLabel{hemiInd}).ecc;
+            eccMax = max(ecc);            
+            tickLabel = 0:0.2:eccMax;
+            tickLabel2 = 0:1:eccMax;
+            switch hemiLabel{hemiInd}
+                case 'L'
+                    ax(hemiInd,sessInd,subjInd).XTick = -flip(eccTrans.toFlat{3}(tickLabel)');
+                    tickLabel = -flip(tickLabel);
+                    tickLabel2 = -flip(tickLabel2);
+                case 'R'
+                    ax(hemiInd,sessInd,subjInd).XTick = eccTrans.toFlat{3}(tickLabel)';
+                otherwise
+                    error('X')
+            end
+            ax(hemiInd,sessInd,subjInd).XTickLabel = cellstr(num2str(tickLabel'));
+            ax(hemiInd,sessInd,subjInd).XTickLabel(~ismembertol(tickLabel,tickLabel2)) = {''};
+            ax(hemiInd,sessInd,subjInd).XTickLabel(ismembertol(tickLabel,tickLabel2)) = cellstr(num2str(tickLabel2'));
+%             ax(hemiInd,sessInd,subjInd).TickDir = 'out';
+            switch sessInd
+                case 1
+                    ax(hemiInd,sessInd,subjInd).XTickLabel = [];
+                case 2
+                otherwise
+                    error('X')
+            end
+            
+            hScat = findobj(ax(hemiInd,sessInd,subjInd).Children,'Type','Scatter');
+            hScat.MarkerEdgeColor = 'none';
+        end
+    end
+end
+
+
+
+%% Load empiricalFOV figure: for single-subject figure
 fFOV = openfig(fullfile(p.figOption.finalDir,'processFOV.fig'));
 ax = findobj(fFOV.Children,'Type','axes');
 tmp = cell(size(ax));
@@ -53,16 +100,16 @@ ax(2).YAxisLocation = 'right';
 
 fData = load([p.featSel.fov.resFile,'.mat']);
 
-eccTransL = fData.voxProp{p.figOption.subjInd,p.figOption.sessInd}.L.eccTrans;
-eccL = fData.voxProp{p.figOption.subjInd,p.figOption.sessInd}.L.ecc;
+eccTrans = fData.voxProp{p.figOption.subjInd,p.figOption.sessInd}.L.eccTrans;
+ecc = fData.voxProp{p.figOption.subjInd,p.figOption.sessInd}.L.ecc;
 eccTransR = fData.voxProp{p.figOption.subjInd,p.figOption.sessInd}.R.eccTrans;
 eccR = fData.voxProp{p.figOption.subjInd,p.figOption.sessInd}.R.ecc;
-Lmax = max(fData.voxProp{p.figOption.subjInd,p.figOption.sessInd}.L.ecc);
+eccMax = max(fData.voxProp{p.figOption.subjInd,p.figOption.sessInd}.L.ecc);
 Rmax = max(fData.voxProp{p.figOption.subjInd,p.figOption.sessInd}.R.ecc);
 
-tickLabel = 0:0.2:Lmax;
-tickLabel2 = 0:1:Lmax;
-ax(2).YTick = eccTransL.toFlat{3}(tickLabel)';
+tickLabel = 0:0.2:eccMax;
+tickLabel2 = 0:1:eccMax;
+ax(2).YTick = eccTrans.toFlat{3}(tickLabel)';
 ax(2).YTickLabel = cellstr(num2str(tickLabel'));
 ax(2).YTickLabel(~ismembertol(tickLabel,tickLabel2)) = {''};
 ax(2).YTickLabel(ismembertol(tickLabel,tickLabel2)) = cellstr(num2str(tickLabel2'));
@@ -92,7 +139,7 @@ res = tmp2.res; clear tmp2
 d = res.(['sess' num2str(p.figOption.sessInd)]);
 
 [eccLbefore,eccRbefore,densityLbefore,densityRbefore] = compareEcc(d);
-[eccLafter,eccRafter,densityLafter,densityRafter] = compareEcc(d,eccTransL,eccTransR);
+[eccLafter,eccRafter,densityLafter,densityRafter] = compareEcc(d,eccTrans,eccTransR);
 
 fDensity = figure('WindowStyle','docked');
 tiledlayout(1,2,'TileIndexing','columnmajor')
@@ -799,12 +846,16 @@ end
 %% Save figures
 f{end+1} = fFOV;
 f{end+1} = fDensity;
+f{end+1} = fFOVall;
 if 1
     filename = fullfile(p.figOption.finalDir,mfilename);
     
     if ~exist(filename,'dir'); mkdir(filename); end
     filename = fullfile(filename,[subjList{subjInd}]);
     for i = 1:length(f)
+        if i == length(f)
+            keyboard
+        end
         curF = f{i};
 %         curF.Color = 'none';
 %         set(findobj(curF.Children,'type','Axes'),'color','none')
