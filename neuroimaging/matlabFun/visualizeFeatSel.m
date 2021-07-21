@@ -192,9 +192,12 @@ for i = 1:numel(nVox(1,:))
     nVox(4,i) = nnz(all(featSel{i}.featSeq.featIndIn(:,1:3),2));
     nVox(5,i) = nnz(all(featSel{i}.featSeq.featIndIn(:,1:4),2));
 end
-disp(nVox(:,subjInd,sessInd))
+[min(nVox(1,:)) max(nVox(1,:))];
+[min(nVox(end,:)) max(nVox(end,:))];
+disp(nVox(:,subjInd,sessInd));
+squeeze(nVox(:,subjInd,:));
 nVox = mean(nVox,3)';
-disp(nVox)
+disp(nVox);
 
 
 %% Plot Brain

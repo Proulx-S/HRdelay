@@ -128,8 +128,8 @@ if 0
     processFeatSel(p)
     [resBS,resBShr,resWS,f,info,decodingOut] = runAllDecoding(p);
 end
-visualizeFeatSel(p)
 if 0
+    visualizeFeatSel(p)
     visualizeOthers(p)
 end
 if 0

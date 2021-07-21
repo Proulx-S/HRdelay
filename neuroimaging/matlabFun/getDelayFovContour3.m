@@ -37,7 +37,7 @@ kernel = fspecial('gauss',2*ceil(2*sigma.*[1 1])+1,sigma);
 vecXY = nanconv(vecXY,kernel,'nanout');
 
 %% Get contours
-vecXY(outXY|outUV) = level-pi*0.01;
+vecXY(outXY|outUV) = level-pi*0.01; %just to out-of-FOV regions behave
 
 M = contourc(X(1,:),Y(:,1),vecXY,ones(2,1).*level);
 if isempty(M)
