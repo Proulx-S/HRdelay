@@ -288,8 +288,6 @@ for i = 1:numel(d)
     end
 end
 
-[featVal,pVal,featVal2,pVal2] = getDiscrimStats(mean(X,3),p)
-
 % [x,~] = polarSpaceNormalization(x,'cart');
 
 
