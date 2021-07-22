@@ -91,10 +91,13 @@ for subjInd = 1:size(d,1)
 end
 featSel_act = featSel;
 
-% line_num=dbstack; % get this line number
-% disp(['line ' num2str(line_num(1).line)]) % displays the line number
-% toc
 
+%% Group effect
+if p.figOption.verbose==1
+    plotTrigGroup(d,p,featSel,0);
+elseif p.figOption.verbose>1
+    plotTrigGroup(d,p,featSel,1);
+end
 
 
 subjInd = p.figOption.subjInd;
@@ -108,23 +111,6 @@ elseif p.figOption.verbose>1
     [fTrig,voxIndTrig,indFovNotAct,indFovAct] = plotTrig(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},1);
 %     [fTrig] = [fTrig plotTrig(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},1)];
 end
-
-% tmp = d{subjInd,sessInd}.sin(voxIndTrig,:);
-% angle(mean(tmp(:)))/pi*6
-% 
-% featSel_fov{subjInd,sessInd}.indIn
-% featSel_act{subjInd,sessInd}.indIn
-% 
-% tmp = d{subjInd,sessInd}.sin(featSel_fov{subjInd,sessInd}.indIn,:);
-% angle(mean(tmp(:)))/pi*6
-% tmp = d{subjInd,sessInd}.sin(featSel_act{subjInd,sessInd}.indIn,:);
-% angle(mean(tmp(:)))/pi*6
-% tmp = d{subjInd,sessInd}.sin(featSel_act{subjInd,sessInd}.indIn & featSel_fov{subjInd,sessInd}.indIn,:);
-% angle(mean(tmp(:)))/pi*6
-% 
-% 
-% xFov = x(:,featSel2.indIn & ~featSel1.indIn);
-% xAct = x(:,featSel1.indIn);
 
 
 %% Temporal represeantation
@@ -283,6 +269,164 @@ curExt = 'fig';
 saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
 curExt = 'jpg';
 saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
+
+
+function [f,voxInd,indFovNotAct,indFovAct] = plotTrigGroup(d,p,featSel,visibilityFlag)
+nBoot = p.boot.n;
+if ~exist('visibilityFlag','var')
+    visibilityFlag = 1;
+end
+
+%% Get data
+X = nan([3 size(d)]);
+for i = 1:numel(d)
+    [x,y,~] = getXYK(d{i},p);
+    x = x(:,featSel{i}.indIn);
+    for yInd = 1:3
+        tmpX = x(y==yInd,:);
+        X(yInd,i) = mean(tmpX(:));
+    end
+end
+
+[featVal,pVal,featVal2,pVal2] = getDiscrimStats(mean(X,3),p)
+
+% [x,~] = polarSpaceNormalization(x,'cart');
+
+
+%% Stats
+tmpX = cat(1,mean(X(1:2,:,:),1),X(3,:,:));
+tmpX = mean(tmpX,3);
+[H,P,CI,STATS] = ttest(angle(tmpX(1,:)),angle(tmpX(2,:)));
+[H,P,CI,STATS] = ttest(abs(tmpX(1,:)),abs(tmpX(2,:)));
+
+%% Remove random-effect of subject
+rho = abs(X) ./ abs(mean(X,1)) .* abs(mean(X(:)));
+theta = wrapToPi(angle(X) - angle(mean(X,1)) + angle(mean(X(:))));
+[u,v] = pol2cart(theta,rho);
+Xnorm = complex(u,v);
+
+%% Average sessions
+Xnorm = mean(Xnorm,3);
+XnormAv = mean(Xnorm,2);
+
+
+if visibilityFlag
+    f = figure('WindowStyle','docked','visible','on');
+else
+    f = figure('WindowStyle','docked','visible','off');
+end
+
+hPol = {};
+hPolAv = {};
+for yInd = 1:3
+    [u,v] = pol2cart(angle(Xnorm(yInd,:)),log(abs(Xnorm(yInd,:))+1));
+    hPol{yInd} = plot(u,v,'.'); hold on
+end
+for yInd = 1:3
+    [u,v] = pol2cart(angle(XnormAv(yInd,:)),log(abs(XnormAv(yInd,:))+1));
+    hPolAv{yInd} = plot(u,v,'o'); hold on
+    
+    hPolAv{yInd}.Color = hPol{yInd}.Color;
+    hPolAv{yInd}.MarkerFaceColor = hPolAv{yInd}.Color;
+    hPolAv{yInd}.MarkerEdgeColor = 'k';
+end
+
+
+
+hPolEr = {};    
+for yInd = 1:3
+    tmpX = permute(Xnorm(yInd,:),[2 1]);
+    n = size(tmpX,1);
+    tmpXboot = nan(nBoot,size(tmpX,2));
+    for bootInd = 1:nBoot
+        boot = nan(n,1);
+        for i = 1:n
+            boot(i) = randperm(n,1);
+        end
+        tmpXboot(bootInd,:) = mean(tmpX(boot,:),1);
+    end
+    polyCont = credibleInt2D([real(tmpXboot) imag(tmpXboot)],0.05);
+    [theta,rho] = cart2pol(polyCont.Vertices(:,1),polyCont.Vertices(:,2));
+    [polyCont.Vertices(:,1),polyCont.Vertices(:,2)] = pol2cart(theta,log(rho+1));
+%     hPol1vox{yInd} = polar(angle(mean(x(yList(yInd)==y,b),1)),abs(mean(x(yList(yInd)==y,b),1)),'.'); hold on
+    hPolEr{yInd} = plot(polyCont);
+    hPolEr{yInd}.LineStyle = 'none';
+    hPolEr{yInd}.FaceColor = hPolAv{yInd}.Color;
+end
+
+
+set([hPolAv{:}],'MarkerSize',8)
+
+ax = gca;
+ax.PlotBoxAspectRatio = [1 1 1];
+ax.DataAspectRatio = [1 1 1];
+
+xLim = xlim;
+yLim = ylim;
+
+
+% rhoTickVal = [0:0.1:0.9 1:9 10:10:100]';
+rhoTickVal = [1:9 10]';
+
+[~,rho] = cart2pol(hPolFov.XData,hPolFov.YData);
+ind = rho>log(rhoTickVal(end)+1);
+hPolFov.XData(ind) = []; hPolFov.YData(ind) = [];
+
+theta = repmat(linspace(0,2*pi,100),[length(rhoTickVal) 1]);
+[gu,gv] = pol2cart(theta,log(rhoTickVal+1));
+hGridConc = plot(gu',gv','k');
+
+
+thetaTickVal = 0:1:11;
+rho = repmat([rhoTickVal(1); rhoTickVal(end)],[1 length(thetaTickVal)]);
+% rho = repmat([0; max(axis)],[1 length(thetaTickVal)]);
+[gu,gv] = pol2cart(thetaTickVal/12*2*pi,log(rho+1));
+hGridRad1 = plot(gu,gv,'k');
+
+thetaTickVal = 0:3:9;
+rho = repmat([0; rhoTickVal(1)],[1 length(thetaTickVal)]);
+% rho = repmat([0; max(axis)],[1 length(thetaTickVal)]);
+[gu,gv] = pol2cart(thetaTickVal/12*2*pi,log(rho+1));
+hGridRad2 = plot(gu,gv,'k');
+hGridRad = [hGridRad1; hGridRad2];
+
+
+[gu,gv] = pol2cart(theta(1,:),log(rhoTickVal(end)+1));
+hBck = patch(gu,gv,[1 1 1].*0.6);
+uistack(hGridRad,'bottom')
+uistack(hGridConc,'bottom')
+uistack(hBck,'bottom')
+uistack(flip([hPol2vox{:}],2),'top')
+uistack([hPol1vox{:}],'top')
+hPol1vox = [hPol1vox{:}];
+for i = 1:length(hPol2vox)
+    hPol1vox(i).Marker = 'o';
+    hPol1vox(i).MarkerFaceColor = hPol2vox{i}.FaceColor;
+    hPol1vox(i).MarkerEdgeColor = 'k';
+    hPol1vox(i).MarkerSize = 5;
+    hPol1vox(i).LineWidth = eps;
+end
+
+set(hGridRad,'LineWidth',eps);
+set(hGridRad,'Color',[1 1 1].*0.5);
+set(hGridConc,'LineWidth',eps);
+set(hGridConc,'Color',[1 1 1].*0.5);
+
+xlim([-1 1].*log(rhoTickVal(end)+1))
+ylim([-1 1].*log(rhoTickVal(end)+1))
+ax.XTick = [];
+ax.YTick = [];
+ax.XAxis.Visible = 'off';
+ax.YAxis.Visible = 'off';
+
+ax.Color = 'none';
+f.Color = 'w';
+
+
+
+legend([hPolFov hPolAct hPol1vox],{'fov vox' 'selected fov vox' 'grat1' 'grat2' 'plaid'},'box','off')
+
+
 
 function [f,voxInd,indFovNotAct,indFovAct] = plotTrig(d,p,featSel1,featSel2,visibilityFlag)
 nBoot = p.boot.n;
