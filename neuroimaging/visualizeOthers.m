@@ -292,10 +292,38 @@ end
 
 
 %% Stats
-tmpX = cat(1,mean(X(1:2,:,:),1),X(3,:,:));
-tmpX = mean(tmpX,3);
-[H,P,CI,STATS] = ttest(angle(tmpX(1,:)),angle(tmpX(2,:)));
-[H,P,CI,STATS] = ttest(abs(tmpX(1,:)),abs(tmpX(2,:)));
+% tmpX = cat(1,mean(X(1:2,:,:),1),X(3,:,:));
+tmpX = angle(X);
+tmpX = permute(mean(tmpX,3),[2 1]);
+t = table(tmpX(:,1),tmpX(:,2),tmpX(:,3),...
+'VariableNames',{'cond1','cond2','cond3'});
+Meas = table([1 2 3]','VariableNames',{'cond'});
+rm = fitrm(t,'cond1-cond3~1','WithinDesign',Meas);
+ranovatbl = ranova(rm);
+disp(' ')
+disp('-------')
+disp('One-way ANOVA on delay')
+disp(ranovatbl)
+disp('-------')
+disp(' ')
+
+tmpX = abs(X);
+tmpX = permute(mean(tmpX,3),[2 1]);
+t = table(tmpX(:,1),tmpX(:,2),tmpX(:,3),...
+'VariableNames',{'cond1','cond2','cond3'});
+Meas = table([1 2 3]','VariableNames',{'cond'});
+rm = fitrm(t,'cond1-cond3~1','WithinDesign',Meas);
+ranovatbl = ranova(rm);
+disp(' ')
+disp('-------')
+disp('One-way ANOVA on amplitude')
+disp(ranovatbl)
+disp('-------')
+disp(' ')
+
+% [H,P,CI,STATS] = ttest(angle(tmpX(1,:)),angle(tmpX(2,:)));
+% [H,P,CI,STATS] = ttest(abs(tmpX(1,:)),abs(tmpX(2,:)));
+
 
 %% Remove random-effect of subject
 rho = abs(X) ./ abs(mean(X,1)) .* abs(mean(X(:)));
@@ -329,8 +357,6 @@ for yInd = 1:3
     hPolAv{yInd}.MarkerEdgeColor = 'k';
 end
 
-
-
 hPolEr = {};    
 for yInd = 1:3
     tmpX = permute(Xnorm(yInd,:),[2 1]);
@@ -359,66 +385,153 @@ ax = gca;
 ax.PlotBoxAspectRatio = [1 1 1];
 ax.DataAspectRatio = [1 1 1];
 
-xLim = xlim;
-yLim = ylim;
+
+% hPol
+% 
+% xLim = xlim;
+% yLim = ylim;
+% 
+% 
+% % rhoTickVal = [0:0.1:0.9 1:9 10:10:100]';
+
+allPoly = findall(ax.Children,'Type','Polygon');
+thetaPoly = nan([length(allPoly) 2]);
+rhoPoly = nan([length(allPoly) 2]);
+xxPoly = nan([length(allPoly) 2]);
+yyPoly = nan([length(allPoly) 2]);
+for i = 1:length(allPoly)
+    xx = allPoly(i).Shape.Vertices(:,1);
+    yy = allPoly(i).Shape.Vertices(:,1);
+    [theta,rho] = cart2pol(xx,yy);
+    rhoPoly(i,:) = [min(rho) max(rho)];
+    thetaPoly(i,:) = [min(theta) max(theta)];
+    xxPoly(i,:) = [min(xx) max(xx)];
+    yyPoly(i,:) = [min(yy) max(yy)];
+end
+allLine = findall(ax.Children,'Type','Line');
+thetaLine = nan([length(allLine) 2]);
+rhoLine = nan([length(allLine) 2]);
+xxLine = nan([length(allLine) 2]);
+yyLine = nan([length(allLine) 2]);
+for i = 1:length(allLine)
+    xx = allLine(i).XData;
+    yy = allLine(i).YData;
+    [theta,rho] = cart2pol(xx,yy);
+    rhoLine(i,:) = [min(rho) max(rho)];
+    thetaLine(i,:) = [min(theta) max(theta)];
+    xxLine(i,:) = [min(xx) max(xx)];
+    yyLine(i,:) = [min(yy) max(yy)];
+end
+rhoLim = [min([rhoPoly(:); rhoLine(:)]) max([rhoPoly(:); rhoLine(:)])];
+thetaLim = [min([thetaPoly(:); thetaLine(:)]) max([thetaPoly(:); thetaLine(:)])];
+xxLim = [min([xxLine(:); xxLine(:)]) max([xxPoly(:); xxLine(:)])];
+yyLim = [min([yyLine(:); yyLine(:)]) max([yyPoly(:); yyLine(:)])];
 
 
-% rhoTickVal = [0:0.1:0.9 1:9 10:10:100]';
-rhoTickVal = [1:9 10]';
 
-[~,rho] = cart2pol(hPolFov.XData,hPolFov.YData);
-ind = rho>log(rhoTickVal(end)+1);
-hPolFov.XData(ind) = []; hPolFov.YData(ind) = [];
+rhoTickMinorVal = [0:0.01:2]';
+theta = repmat(linspace(0,2*pi,1000),[length(rhoTickMinorVal) 1]);
+[gu,gv] = pol2cart(theta,log(rhoTickMinorVal+1));
+hGridRhoMinor = plot(gu',gv','Color',[1 1 1].*0.5);
+uistack(hGridRhoMinor,'bottom')
+set(hGridRhoMinor,'Color',[1 1 1].*0.8)
 
-theta = repmat(linspace(0,2*pi,100),[length(rhoTickVal) 1]);
-[gu,gv] = pol2cart(theta,log(rhoTickVal+1));
-hGridConc = plot(gu',gv','k');
+rhoTickMajorVal = [0:0.1:2]';
+theta = repmat(linspace(0,2*pi,1000),[length(rhoTickMajorVal) 1]);
+[gu,gv] = pol2cart(theta,log(rhoTickMajorVal+1));
+hGridRhoMajor = plot(gu',gv','k');
+uistack(hGridRhoMajor,'bottom')
+uistack(hGridRhoMinor,'bottom')
+set(hGridRhoMajor,'Color',[1 1 1].*0.5)
 
 
-thetaTickVal = 0:1:11;
-rho = repmat([rhoTickVal(1); rhoTickVal(end)],[1 length(thetaTickVal)]);
+thetaTickMinorVal = 0:0.01:12;
+rho = repmat([rhoTickMinorVal(1); rhoTickMinorVal(end)],[1 length(thetaTickMinorVal)]);
 % rho = repmat([0; max(axis)],[1 length(thetaTickVal)]);
-[gu,gv] = pol2cart(thetaTickVal/12*2*pi,log(rho+1));
-hGridRad1 = plot(gu,gv,'k');
+[gu,gv] = pol2cart(thetaTickMinorVal/12*2*pi,log(rho+1));
+hGridThetaMinor = plot(gu,gv,'k');
+uistack(hGridThetaMinor,'bottom')
+set(hGridThetaMinor,'Color',[1 1 1].*0.8)
 
-thetaTickVal = 0:3:9;
-rho = repmat([0; rhoTickVal(1)],[1 length(thetaTickVal)]);
+thetaTickMajorVal = 0:0.1:12;
+rho = repmat([rhoTickMinorVal(1); rhoTickMinorVal(end)],[1 length(thetaTickMajorVal)]);
 % rho = repmat([0; max(axis)],[1 length(thetaTickVal)]);
-[gu,gv] = pol2cart(thetaTickVal/12*2*pi,log(rho+1));
-hGridRad2 = plot(gu,gv,'k');
-hGridRad = [hGridRad1; hGridRad2];
+[gu,gv] = pol2cart(thetaTickMajorVal/12*2*pi,log(rho+1));
+hGridThetaMajor = plot(gu,gv,'k');
+uistack(hGridThetaMajor,'bottom')
+uistack(hGridThetaMinor,'bottom')
+set(hGridThetaMajor,'Color',[1 1 1].*0.5)
 
 
-[gu,gv] = pol2cart(theta(1,:),log(rhoTickVal(end)+1));
-hBck = patch(gu,gv,[1 1 1].*0.6);
-uistack(hGridRad,'bottom')
-uistack(hGridConc,'bottom')
-uistack(hBck,'bottom')
-uistack(flip([hPol2vox{:}],2),'top')
-uistack([hPol1vox{:}],'top')
-hPol1vox = [hPol1vox{:}];
-for i = 1:length(hPol2vox)
-    hPol1vox(i).Marker = 'o';
-    hPol1vox(i).MarkerFaceColor = hPol2vox{i}.FaceColor;
-    hPol1vox(i).MarkerEdgeColor = 'k';
-    hPol1vox(i).MarkerSize = 5;
-    hPol1vox(i).LineWidth = eps;
+uistack(allLine,'top')
+uistack(allPoly,'top')
+
+xlim(xxLim + [-1 1].*range(xxLim)*0.05)
+ylim(yyLim + [-1 1].*range(yyLim)*0.05)
+
+refPts = complex(mean(xxLim),mean(yyLim));
+[theta,rho] = meshgrid(thetaTickMajorVal,rhoTickMajorVal);
+[xx,yy] = pol2cart(theta/12*2*pi,log(rho+1));
+TickMinorVal = complex(xx(:),yy(:));
+[a,b] = sort(abs(TickMinorVal - refPts),'ascend');
+for i = 1:4
+    plot(TickMinorVal(b(i)),'or');
+    tmpText = [num2str(abs(angle(TickMinorVal(b(i)))/pi*6)) 'sec, ' num2str(exp(abs(TickMinorVal(b(i))))-1) '%BOLD'];
+    text(real(TickMinorVal(b(i))),imag(TickMinorVal(b(i))),tmpText)
 end
 
-set(hGridRad,'LineWidth',eps);
-set(hGridRad,'Color',[1 1 1].*0.5);
-set(hGridConc,'LineWidth',eps);
-set(hGridConc,'Color',[1 1 1].*0.5);
-
-xlim([-1 1].*log(rhoTickVal(end)+1))
-ylim([-1 1].*log(rhoTickVal(end)+1))
-ax.XTick = [];
-ax.YTick = [];
 ax.XAxis.Visible = 'off';
 ax.YAxis.Visible = 'off';
 
-ax.Color = 'none';
-f.Color = 'w';
+
+
+
+
+
+
+% 
+% 
+% thetaTickMinorVal
+% rhoTickMinorVal
+% 
+% thetaTickVal = 0:3:9;
+% rho = repmat([0; rhoTickMinorVal(1)],[1 length(thetaTickVal)]);
+% % rho = repmat([0; max(axis)],[1 length(thetaTickVal)]);
+% [gu,gv] = pol2cart(thetaTickVal/12*2*pi,log(rho+1));
+% hGridRad2 = plot(gu,gv,'k');
+% hGridRad = [hGridRad1; hGridRad2];
+% 
+% 
+% [gu,gv] = pol2cart(theta(1,:),log(rhoTickMinorVal(end)+1));
+% hBck = patch(gu,gv,[1 1 1].*0.6);
+% uistack(hGridRad,'bottom')
+% uistack(hGridConc,'bottom')
+% uistack(hBck,'bottom')
+% uistack(flip([hPol2vox{:}],2),'top')
+% uistack([hPol1vox{:}],'top')
+% hPol1vox = [hPol1vox{:}];
+% for i = 1:length(hPol2vox)
+%     hPol1vox(i).Marker = 'o';
+%     hPol1vox(i).MarkerFaceColor = hPol2vox{i}.FaceColor;
+%     hPol1vox(i).MarkerEdgeColor = 'k';
+%     hPol1vox(i).MarkerSize = 5;
+%     hPol1vox(i).LineWidth = eps;
+% end
+% 
+% set(hGridRad,'LineWidth',eps);
+% set(hGridRad,'Color',[1 1 1].*0.5);
+% set(hGridConc,'LineWidth',eps);
+% set(hGridConc,'Color',[1 1 1].*0.5);
+% 
+% xlim([-1 1].*log(rhoTickMinorVal(end)+1))
+% ylim([-1 1].*log(rhoTickMinorVal(end)+1))
+% ax.XTick = [];
+% ax.YTick = [];
+% ax.XAxis.Visible = 'off';
+% ax.YAxis.Visible = 'off';
+% 
+% ax.Color = 'none';
+% f.Color = 'w';
 
 
 
