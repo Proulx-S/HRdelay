@@ -322,14 +322,16 @@ t = table(tmpX(:,1),tmpX(:,2),tmpX(:,3),...
 Meas = table([1 2 3]','VariableNames',{'cond'});
 rm = fitrm(t,'cond1-cond3~1','WithinDesign',Meas);
 ranovatbl = ranova(rm);
+[H,P,CI,STATS] = ttest(mean(table2array(t(:,1:2)),2),table2array(t(:,3)));
 disp(' ')
 disp('-------')
 disp('Delay')
+disp('One-way (3-level) ANOVA')
+disp(ranovatbl)
 tmp = mean(X(:,:),2);
 tmp = (angle(mean(tmp(1:2,:),1)) - angle(tmp(3,:)))/pi*6;
 disp(['plaid-grat=' num2str(tmp) 'sec'])
-disp('One-way ANOVA')
-disp(ranovatbl)
+disp(['t=' num2str(STATS.tstat) ', p=' num2str(P)])
 disp('-------')
 disp(' ')
 
@@ -340,14 +342,16 @@ t = table(tmpX(:,1),tmpX(:,2),tmpX(:,3),...
 Meas = table([1 2 3]','VariableNames',{'cond'});
 rm = fitrm(t,'cond1-cond3~1','WithinDesign',Meas);
 ranovatbl = ranova(rm);
+[H,P,CI,STATS] = ttest(mean(table2array(t(:,1:2)),2),table2array(t(:,3)));
 disp(' ')
 disp('-------')
 disp('Amplitude')
+disp('One-way (3-level) ANOVA on amplitude')
+disp(ranovatbl)
 tmp = mean(X(:,:),2);
 tmp = abs(tmp(3,:)) - abs(mean(tmp(1:2,:),1));
 disp(['plaid-grat=' num2str(tmp) '%BOLD'])
-disp('One-way ANOVA on amplitude')
-disp(ranovatbl)
+disp(['t=' num2str(STATS.tstat) ', p=' num2str(P)])
 disp('-------')
 disp(' ')
 
