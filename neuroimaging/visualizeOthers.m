@@ -2,15 +2,10 @@ function visualizeOthers(p,verbose)
 if ~exist('verbose','var')
     verbose = 1;
 end
-% if ~exist('figOption','var') || isempty(figOption)
-%     figOption.save = 0;
-%     figOption.subj = 1; % 'all' or subjInd
-% end
 if ~isfield(p,'chanSpace') || isempty(p.chanSpace)
     p.chanSpace = 'cart'; % 'cart_HTbSess' 'cartNoAmp_HTbSess' 'cartNoDelay_HTbSess'
     % 'hr' 'hrNoAmp' 'cart' 'cartNoAmp' cartNoAmp_HT 'cartReal', 'cartImag', 'pol', 'polMag' 'polMag_T' or 'polDelay'
 end
-% tic
 
 %% Define paths
 subjList = p.meta.subjList;
@@ -52,9 +47,6 @@ for subjInd = 1:length(d)
 end
 d = dP; clear dP
 
-% line_num=dbstack; % get this line number
-% disp(['line ' num2str(line_num(1).line)]) % displays the line number
-% toc
 
 %% Define feature selection
 if ~strcmp(featSel{1,1}.featSeq.info2,p.featSel.global.method)
@@ -67,7 +59,6 @@ featSelConds_labelList = featSel{1,1}.featSeq.condPairList;
 method = 'onlyRetinoFov'; % 'onlyRetinoFov' 'upToActivation'
 condPair = 'all';
 [ind_nSpecFeatSel,ind_nSpecFeatSelCond,ind_specFeatSel,ind_specFeatSelCond] = defineFeatSel(featSelSteps_labelList,featSelConds_labelList,method,condPair);
-% [ind_nSpecFeatSel,ind_nSpecFeatSelCond,ind_specFeatSel,ind_specFeatSelCond] = defineFeatSel(featSelSteps_labelList,featSelConds_labelList,p.featSel.global.method,p.condPair);
 for subjInd = 1:size(d,1)
     for sessInd = 1:size(d,2)
         featSel{subjInd,sessInd}.indIn = ...
@@ -81,7 +72,6 @@ featSel_fov = featSel;
 method = 'upToActivation'; % 'onlyRetinoFov' 'upToActivation'
 condPair = 'all';
 [ind_nSpecFeatSel,ind_nSpecFeatSelCond,ind_specFeatSel,ind_specFeatSelCond] = defineFeatSel(featSelSteps_labelList,featSelConds_labelList,method,condPair);
-% [ind_nSpecFeatSel,ind_nSpecFeatSelCond,ind_specFeatSel,ind_specFeatSelCond] = defineFeatSel(featSelSteps_labelList,featSelConds_labelList,p.featSel.global.method,p.condPair);
 for subjInd = 1:size(d,1)
     for sessInd = 1:size(d,2)
         featSel{subjInd,sessInd}.indIn = ...
@@ -100,13 +90,10 @@ fHrGroup = plotHrGroup(d,p,featSel,p.figOption.verbose>1);
 subjInd = p.figOption.subjInd;
 sessInd = p.figOption.sessInd;
 %% Trigonometric (polar) representation
-% fTrig = [];
 if p.figOption.verbose==1
     [fTrig,voxIndTrig,indFovNotAct,indFovAct] = plotTrig(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},0);
-%     [fTrig] = [fTrig plotTrig(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},0)];
 elseif p.figOption.verbose>1
     [fTrig,voxIndTrig,indFovNotAct,indFovAct] = plotTrig(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},1);
-%     [fTrig] = [fTrig plotTrig(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},1)];
 end
 
 
@@ -114,10 +101,8 @@ end
 fHr = [];
 if p.figOption.verbose==1
     [fHr,voxIndHr] = plotHr(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},0);
-%     fHr = [fHr plotHr(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},0)];
 elseif p.figOption.verbose>1
     [fHr,voxIndHr] = plotHr(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},1);
-%     fHr = [fHr plotHr(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},1)];
 end
 
 %% Time series
@@ -126,7 +111,6 @@ fun = load(curFile);
 fun = fun.d.fun(p.figOption.sessInd);
 runTs = squeeze(cat(5,fun.data{:}));
 runLabel = fun.condLabel;
-% runTs = squeeze(mean(runTs(voxIndHr,:,:),1));
 runTs = squeeze(mean(runTs(:,:,runLabel==3),1));
 runTs_av = mean(runTs,2)';
 runTs_er = bootci(p.boot.n,{@(x)mean(x),runTs'},'Type','percentile');
@@ -176,15 +160,6 @@ disp(['mean delay=' num2str(mean(negRatio(:)).*100) '%'])
 disp(['mmin delay=' num2str(min(negRatio(:)).*100) '%'])
 disp(['max delay=' num2str(max(negRatio(:)).*100) '%'])
 
-
-
-% refAngle/pi*6
-% indFovNotAct
-% indFovAct
-% plotTrig
-% tmp = d{subjInd,sessInd}.sin(indFovNotAct | indFovAct,:);
-% angle(mean(tmp(:)))/pi*6
-
 lg = findobj(fTrig.Children,'type','Legend');
 lg.String(end-1:end) = [];
 
@@ -199,21 +174,7 @@ figure(fHr)
 ax = findobj(fHr.Children,'type','Axes');
 hTmp = findobj(ax.Children,'type','Errorbar');
 hTmp.Marker = '^';
-% hTmp.MarkerSize = hTmp.MarkerSize*1.5;
 hTmp.MarkerFaceColor = [1 1 1].*0.6;
-
-% ax = findobj(fTrig.Children,'type','PolarAxes');
-% tmp = ax.Children([4 5]);
-% theta = [tmp(1).ThetaData tmp(2).ThetaData];
-% rho = [tmp(1).RData tmp(2).RData];
-% [u,v] = pol2cart(theta,rho);
-% tmp = complex(u,v);
-% tmp = mean(tmp);
-% hRef(1) = polarplot([0 angle(tmp)],ax.RLim,'k-');
-% theta = wrapToPi([-1 1].*pi/2 + angle(tmp));
-% rho = [1 1].*ax.RLim(2);
-% hRef(2) = polarplot(theta,rho,'k-');
-
 
 
 
@@ -245,18 +206,11 @@ saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' cur
 
 fullfilename = fullfile(p.figOption.finalDir,'polarRespVec');
 curF = fTrig;
-% curA = findobj(curF.Children,'type','PolarAxes');
-% axColor = curA.Color;
-% curF.Color = 'none';
-% curA.Color = axColor;
-% set(findobj(curF.Children,'type','Axes'),'color','none')
 curFile = fullfilename;
 curExt = 'svg';
 saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
 curExt = 'eps';
 exportgraphics(curF,[curFile '.' curExt],'ContentType','vector'); if p.figOption.verbose; disp([curFile '.' curExt]); end
-% curF.Color = 'w';
-% curA.Color = axColor;
 curExt = 'fig';
 saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
 curExt = 'jpg';
@@ -264,14 +218,11 @@ saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' cur
 
 fullfilename = fullfile(p.figOption.finalDir,'Hr');
 curF = fHr;
-% curF.Color = 'none';
-% set(findobj(curF.Children,'type','Axes'),'color','none')
 curFile = fullfilename;
 curExt = 'svg';
 saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
 curExt = 'eps';
 exportgraphics(curF,[curFile '.' curExt],'ContentType','vector'); if p.figOption.verbose; disp([curFile '.' curExt]); end
-% curF.Color = 'w';
 curExt = 'fig';
 saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
 curExt = 'jpg';
@@ -279,8 +230,6 @@ saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' cur
 
 fullfilename = fullfile(p.figOption.finalDir,'Ts');
 curF = fTs;
-% curF.Color = 'none';
-% set(findobj(curF.Children,'type','Axes'),'color','none')
 curFile = fullfilename;
 curExt = 'svg';
 saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
@@ -309,9 +258,6 @@ for i = 1:numel(d)
         X(yInd,i) = mean(tmpX(:));
     end
 end
-
-% [x,~] = polarSpaceNormalization(x,'cart');
-
 
 %% Stats
 % tmpX = cat(1,mean(X(1:2,:,:),1),X(3,:,:));
@@ -355,10 +301,6 @@ disp(['t=' num2str(STATS.tstat) ', p=' num2str(P)])
 disp('-------')
 disp(' ')
 
-% [H,P,CI,STATS] = ttest(angle(tmpX(1,:)),angle(tmpX(2,:)));
-% [H,P,CI,STATS] = ttest(abs(tmpX(1,:)),abs(tmpX(2,:)));
-
-
 %% Remove random-effect of subject
 rho = abs(X) ./ abs(mean(X,1)) .* abs(mean(X(:)));
 theta = wrapToPi(angle(X) - angle(mean(X,1)) + angle(mean(X(:))));
@@ -383,15 +325,6 @@ for subjInd = 1:6
     hPol{yInd,subjInd} = plot(u,v,Mrkr(subjInd),'Color',[1 1 1].*0.5); hold on
     hPol{yInd,subjInd}.MarkerFaceColor = hPol{yInd,subjInd}.Color;
     hPol{yInd,subjInd}.MarkerEdgeColor = 'none';
-%     for yInd = 1:3
-%         [u,v] = pol2cart(angle(X(yInd,subjInd)),log(abs(X(yInd,subjInd))+1));
-%         hPol{yInd,subjInd} = plot(u,v,Mrkr(subjInd)); hold on
-%         if subjInd>1
-%             hPol{yInd,subjInd}.Color = hPol{yInd,1}.Color;
-%         end
-%         hPol{yInd,subjInd}.MarkerEdgeColor = hPol{yInd,subjInd}.Color;
-%         hPol{yInd,subjInd}.MarkerFaceColor = hPol{yInd,subjInd}.Color;
-%     end
 end
 
 set(gca,'ColorOrderIndex',1)
@@ -399,8 +332,6 @@ hPolAv = {};
 for yInd = 1:3
     [u,v] = pol2cart(angle(mean(Xnorm(yInd,:),2)),log(abs(mean(Xnorm(yInd,:),2))+1));
     hPolAv{yInd} = plot(u,v,'o'); hold on
-    
-%     hPolAv{yInd}.Color = hPol{yInd}.Color;
     hPolAv{yInd}.MarkerFaceColor = hPolAv{yInd}.Color;
     hPolAv{yInd}.MarkerEdgeColor = 'k';
 end
@@ -420,34 +351,10 @@ for yInd = 1:3
     polyCont = credibleInt2D([real(tmpXboot) imag(tmpXboot)],0.05);
     [theta,rho] = cart2pol(polyCont.Vertices(:,1),polyCont.Vertices(:,2));
     [polyCont.Vertices(:,1),polyCont.Vertices(:,2)] = pol2cart(theta,log(rho+1));
-%     hPol1vox{yInd} = polar(angle(mean(x(yList(yInd)==y,b),1)),abs(mean(x(yList(yInd)==y,b),1)),'.'); hold on
     hPolEr{yInd} = plot(polyCont);
     hPolEr{yInd}.LineStyle = 'none';
     hPolEr{yInd}.FaceColor = hPolAv{yInd}.Color;
 end
-% %gratings together
-% tmpX = permute(mean(Xnorm(1:2,:),1),[2 1]);
-% n = size(tmpX,1);
-% tmpXboot = nan(nBoot,size(tmpX,2));
-% for bootInd = 1:nBoot
-%     boot = nan(n,1);
-%     for i = 1:n
-%         boot(i) = randperm(n,1);
-%     end
-%     tmpXboot(bootInd,:) = mean(tmpX(boot,:),1);
-% end
-% polyCont = credibleInt2D([real(tmpXboot) imag(tmpXboot)],0.05);
-% [theta,rho] = cart2pol(polyCont.Vertices(:,1),polyCont.Vertices(:,2));
-% [polyCont.Vertices(:,1),polyCont.Vertices(:,2)] = pol2cart(theta,log(rho+1));
-% %     hPol1vox{yInd} = polar(angle(mean(x(yList(yInd)==y,b),1)),abs(mean(x(yList(yInd)==y,b),1)),'.'); hold on
-% hPolEr{end+1} = plot(polyCont);
-% hPolEr{end+1}.FaceColor = 'none';
-% hPolEr{end+1}.EdgeColor = 'k';
-
-
-ax = gca;
-ax.PlotBoxAspectRatio = [1 1 1];
-ax.DataAspectRatio = [1 1 1];
 
 allPoly = findall(ax.Children,'Type','Polygon');
 thetaPoly = nan([length(allPoly) 2]);
