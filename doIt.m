@@ -1,73 +1,15 @@
-%%
+%% Info
+% This script reproduces all figures from S. Proulx et al., Neuroimage, in
+% preperation.
 clear all
 close all
 
-p.anaID = '2021-06-15_allData';
-finalSubDir = p.anaID;
-if ~ispc
-    p.paths.home = '/Users/sebastienproulx';
-else
-    p.paths.home = 'C:\Users\sebas';
-end
-p.paths.repo.out = fullfile('McGill University/Farivar Lab - Dissertations/Sebastien/Manuscripts/aa - in preparation/SP_Neuroimage_HRdelay',p.anaID); if ~exist(p.paths.repo.out,'dir'); mkdir(p.paths.repo.out); end
+%% Initiation
+anaInit; % where to define paths and some general configurations
 
+%% Get data (preprocessed BOLD volumes, only V1 ROI voxels, in .mat)
+getData;
 
-%% Display parameters
-figOption.save = 1; % save all figures
-figOption.subj = 2; % subjInd-> plots participants subjInd; +inf-> plots all participant (if verbose==0, will only plot subjInd==1 but still produce and save all the other figures)
-p.figOption.subjInd  = figOption.subj;
-p.figOption.sessInd  = 1;
-p.figOption.condInd = 1;
-p.figOption.sliceInd = 7;
-p.figOption.verbose  = 2;
-p.figOption.save  = 1;
-p.figOption.finalDir = fullfile(p.paths.home,p.paths.repo.out,'matlabFigOutputs',finalSubDir); if ~exist(p.figOption.finalDir,'dir'); mkdir(p.figOption.finalDir); end
-
-p.termOption.verbose = 1;
-p.termOption.save = 0;
-p.termOption.finalDir = fullfile(p.paths.home,p.paths.repo.out,'matlabTermOutputs',finalSubDir); if ~exist(p.termOption.finalDir,'dir'); mkdir(p.termOption.finalDir); end
-
-%% Permutation
-p.perm.doIt = 1;
-p.perm.n = 2^13;
-
-%% Bootstrapping
-p.boot.n = 2^13;
-
-%% Open diary
-if ~exist(p.termOption.finalDir,'dir')
-    mkdir(p.termOption.finalDir)
-end
-if p.termOption.verbose && p.termOption.save
-    cmd = ['diary ''' fullfile(p.termOption.finalDir,[mfilename '-' datestr(now,'YYYYmmDD-hh_MM_ss') '.log'''])];
-    eval(cmd)
-    disp(fullfile(p.termOption.finalDir,[mfilename '.mat']))
-    disp(datestr(now))
-end
-
-%% Input Data
-p.paths.repo.in = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
-
-%% Dependencies
-gitDependencyPath = fullfile(p.paths.home,'Documents/GitHub/utilities');
-addpath(genpath(fullfile(gitDependencyPath,'bassFun/matlab')));
-addpath(genpath(fullfile(gitDependencyPath,'circstat-matlab')));
-addpath(genpath(fullfile(gitDependencyPath,'RAMBiNo')));
-addpath(genpath(fullfile(gitDependencyPath,'BrewerMap')));
-matDependencyPath = fullfile(p.paths.home,'OneDrive - McGill University\MATLAB');
-addpath(genpath(fullfile(matDependencyPath,'shadedErrorBar-master')));
-addpath(genpath(fullfile(matDependencyPath,'InterX')))
-addpath(genpath(fullfile(pwd,'matlabFun')));
-% Matlab toolboxes:
-% -Image Processing
-% -Statistics and Machine Learning
-% -Mapping
-% -Curve Fitting
-% -Bioinformatics
-verbose = 1; % prints more info
-
-%% Meta data
-p.meta.subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'}';
 
 
 %% Feature selection parameters

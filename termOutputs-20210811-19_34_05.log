@@ -1,0 +1,108 @@
+11-Aug-2021 19:34:05
+getData;
+{Error using <a href="matlab:matlab.internal.language.introspective.errorDocCallback('horzcat')" style="font-weight:bold">horzcat</a>
+Dimensions of arrays being concatenated are not consistent.
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('getData', 'C:\Users\el_ba\Documents\GitHub\HRdelay\getData.m', 8)" style="font-weight:bold">getData</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\getData.m',8,0)">line 8</a>)
+    curLink = ['https://zenodo.org/record/5183028/files/' char(subjId) '.mat?download=1'];
+} 
+opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\getData.m',8,0)
+getData;
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\getData.m',8,1)">8   </a>    curLink = ['https://zenodo.org/record/5183028/files/' char(subjId) '.mat?download=1'];
+curLink = ['https://zenodo.org/record/5183028/files/' char(subjId) '.mat?download=1'];
+{Error using <a href="matlab:matlab.internal.language.introspective.errorDocCallback('horzcat')" style="font-weight:bold">horzcat</a>
+Dimensions of arrays being concatenated are not consistent.
+} 
+subjId
+
+subjId =
+
+  6×1 <a href="matlab:helpPopup cell" style="font-weight:bold">cell</a> array
+
+    {'02jp'}
+    {'03sk'}
+    {'04sp'}
+    {'05bm'}
+    {'06sb'}
+    {'07bj'}
+
+p.meta.subjList
+
+ans =
+
+  6×1 <a href="matlab:helpPopup cell" style="font-weight:bold">cell</a> array
+
+    {'02jp'}
+    {'03sk'}
+    {'04sp'}
+    {'05bm'}
+    {'06sb'}
+    {'07bj'}
+
+p.meta.subjList
+
+ans =
+
+  6×1 <a href="matlab:helpPopup cell" style="font-weight:bold">cell</a> array
+
+    {'02jp'}
+    {'03sk'}
+    {'04sp'}
+    {'05bm'}
+    {'06sb'}
+    {'07bj'}
+
+dbquit
+getData;
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\getData.m',9,1)">9   </a>    curLink = ['https://zenodo.org/record/5183028/files/' p.meta.subjList{subjInd} '.mat?download=1'];
+if system_dependent('IsDebugMode')==1, dbstep out; end
+
+ans =
+
+    'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\02jp.mat'
+
+
+ans =
+
+    'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\03sk.mat'
+
+
+ans =
+
+    'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\04sp.mat'
+
+
+ans =
+
+    'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\05bm.mat'
+
+
+ans =
+
+    'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\06sb.mat'
+
+
+ans =
+
+    'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\07bj.mat'
+
+getData;
+02jp already downloaded from https://doi.org/10.5281/zenodo.5183028
+03sk already downloaded from https://doi.org/10.5281/zenodo.5183028
+04sp already downloaded from https://doi.org/10.5281/zenodo.5183028
+05bm already downloaded from https://doi.org/10.5281/zenodo.5183028
+06sb already downloaded from https://doi.org/10.5281/zenodo.5183028
+07bj already downloaded from https://doi.org/10.5281/zenodo.5183028
+getData;
+Downloading 02jp from https://doi.org/10.5281/zenodo.5183028
+done
+Downloading 03sk from https://doi.org/10.5281/zenodo.5183028
+done
+Downloading 04sp from https://doi.org/10.5281/zenodo.5183028
+done
+Downloading 05bm from https://doi.org/10.5281/zenodo.5183028
+done
+Downloading 06sb from https://doi.org/10.5281/zenodo.5183028
+done
+Downloading 07bj from https://doi.org/10.5281/zenodo.5183028
+done

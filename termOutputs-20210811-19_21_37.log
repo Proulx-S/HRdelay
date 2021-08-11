@@ -1,0 +1,112 @@
+11-Aug-2021 19:21:37
+if system_dependent('IsDebugMode')==1, dbstep in; end
+p
+
+p = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+            wd: 'C:\Users\el_ba\Documents\GitHub\HRdelay'
+         anaID: '2021-08-11'
+     figOption: [1×1 struct]
+    termOption: [1×1 struct]
+          perm: [1×1 struct]
+          boot: [1×1 struct]
+          meta: [1×1 struct]
+
+p.meta
+
+ans = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+    subjList: {6×1 cell}
+
+p.meta.subjList
+
+ans =
+
+  6×1 <a href="matlab:helpPopup cell" style="font-weight:bold">cell</a> array
+
+    {'02jp'}
+    {'03sk'}
+    {'04sp'}
+    {'05bm'}
+    {'06sb'}
+    {'07bj'}
+
+for subjId = p.meta.subjList
+    subjId
+end
+
+subjId =
+
+  6×1 <a href="matlab:helpPopup cell" style="font-weight:bold">cell</a> array
+
+    {'02jp'}
+    {'03sk'}
+    {'04sp'}
+    {'05bm'}
+    {'06sb'}
+    {'07bj'}
+
+for subjId = p.meta.subjList
+    char(subjId)
+end
+
+ans =
+
+  6×4 <a href="matlab:helpPopup char" style="font-weight:bold">char</a> array
+
+    '02jp'
+    '03sk'
+    '04sp'
+    '05bm'
+    '06sb'
+    '07bj'
+
+p.dataPath.V1 = fullfile(p.wd,'data','V1');
+p.dataPath.V1
+
+ans =
+
+    'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1'
+
+fullfile(p.dataPath.V1,[char(subjId) '.mat'])
+{Error using <a href="matlab:matlab.internal.language.introspective.errorDocCallback('horzcat')" style="font-weight:bold">horzcat</a>
+Dimensions of arrays being concatenated are not consistent.
+} 
+subjId = p.meta.subjList(1)
+
+subjId =
+
+  1×1 <a href="matlab:helpPopup cell" style="font-weight:bold">cell</a> array
+
+    {'02jp'}
+
+fullfile(p.dataPath.V1,[char(subjId) '.mat'])
+
+ans =
+
+    'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\02jp.mat'
+
+exist(p.dataPath.V1,'dir')
+
+ans =
+
+     0
+
+~exist(p.dataPath.V1,'dir')
+
+ans =
+
+  <a href="matlab:helpPopup logical" style="font-weight:bold">logical</a>
+
+   1
+
+mkdir(p.dataPath.V1)
+if ~exist(p.dataPath.V1,'dir')
+    mkdir(p.dataPath.V1)
+end
+dbquit
+doIt
