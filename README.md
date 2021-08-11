@@ -1,4 +1,4 @@
-# Is Measuring the Hemodynamic Response Delay Relevant for the Study of Neural Functions
+# Is Measuring the Hemodynamic Response Delay Relevant for the Study of Neural Functions?
 CC-BY_4.0
 
 __A WORK IN PROGRESS__
