@@ -114,3 +114,3897 @@ extractResponses(p)
 07bj: saved to C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\resp\07bj.mat
 07bj: saving detrended timeseries
 07bj: saved to 'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\07bj_dDtrd.mat'
+p.featSel.fov.resFile = processFov(p);
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',3,1)">3   </a>if ~isfield(p,'figOption') || isempty(p.figOption)
+p.wd
+
+ans =
+
+    'C:\Users\el_ba\Documents\GitHub\HRdelay'
+
+p
+
+p = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+            wd: 'C:\Users\el_ba\Documents\GitHub\HRdelay'
+         anaID: '2021-08-11'
+      dataPath: [1×1 struct]
+     figOption: [1×1 struct]
+    termOption: [1×1 struct]
+          perm: [1×1 struct]
+          boot: [1×1 struct]
+          meta: [1×1 struct]
+
+= p.dataPath
+ = p.dataPath
+ ↑
+{Incorrect use of '=' operator. Assign a value to a variable using '='
+and compare values for equality using '=='.
+} 
+p.dataPath
+
+ans = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+    V1: 'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1'
+
+p.dataPath.V1
+
+ans =
+
+    'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1'
+
+dataIn = [p.dataPath.V1 'resp']
+
+dataIn =
+
+    'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1resp'
+
+dataIn = fullfile(p.dataPath.V1,'resp');
+subjList = p.meta.subjList;
+dAll = cell(length(p.meta.subjList),1);
+dAll = cell(length(p.meta.subjList),1);
+subjInd = 1
+
+subjInd =
+
+     1
+
+curFile = fullfile(funPath,inDir,[p.meta.subjList{subjInd} '.mat']);
+{Unrecognized function or variable 'funPath'.
+} 
+dataIn
+
+dataIn =
+
+    'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\resp'
+
+[p.meta.subjList{subjInd} '.mat']
+
+ans =
+
+    '02jp.mat'
+
+curFile = fullfile(dataIn,[p.meta.subjList{subjInd} '.mat']);
+curFile
+
+curFile =
+
+    'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\resp\02jp.mat'
+
+disp([p.meta.subjList{subjInd} ': loading responses']);
+02jp: loading responses
+load(curFile,'resp');
+dAll{subjInd} = resp;
+dAll
+
+dAll =
+
+  6×1 <a href="matlab:helpPopup cell" style="font-weight:bold">cell</a> array
+
+    {1×1 struct}
+    {0×0 double}
+    {0×0 double}
+    {0×0 double}
+    {0×0 double}
+    {0×0 double}
+
+dAll = cell(length(p.meta.subjList),1);
+for subjInd = 1:length(p.meta.subjList)
+    curFile = fullfile(dataIn,[p.meta.subjList{subjInd} '.mat']);
+    disp([p.meta.subjList{subjInd} ': loading responses']);
+    load(curFile,'resp');
+    dAll{subjInd} = resp;
+end
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+d = dAll; clear dAll
+disp('responses loaded')
+responses loaded
+d
+
+d =
+
+  6×1 <a href="matlab:helpPopup cell" style="font-weight:bold">cell</a> array
+
+    {1×1 struct}
+    {1×1 struct}
+    {1×1 struct}
+    {1×1 struct}
+    {1×1 struct}
+    {1×1 struct}
+
+fields(d{1})
+
+ans =
+
+  2×1 <a href="matlab:helpPopup cell" style="font-weight:bold">cell</a> array
+
+    {'sess1'}
+    {'sess2'}
+
+sessList = fields(d{1});
+dbquit
+p.featSel.fov.resFile = processFov(p);
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',16,1)">16  </a>[d,sessList] = loadData(p);
+[d,sessList] = loadData(p);
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+d
+
+d =
+
+  6×2 <a href="matlab:helpPopup cell" style="font-weight:bold">cell</a> array
+
+    {1×1 struct}    {1×1 struct}
+    {1×1 struct}    {1×1 struct}
+    {1×1 struct}    {1×1 struct}
+    {1×1 struct}    {1×1 struct}
+    {1×1 struct}    {1×1 struct}
+    {1×1 struct}    {1×1 struct}
+
+sessList
+
+sessList =
+
+  2×1 <a href="matlab:helpPopup cell" style="font-weight:bold">cell</a> array
+
+    {'sess1'}
+    {'sess2'}
+
+d
+
+d =
+
+  6×2 <a href="matlab:helpPopup cell" style="font-weight:bold">cell</a> array
+
+    {1×1 struct}    {1×1 struct}
+    {1×1 struct}    {1×1 struct}
+    {1×1 struct}    {1×1 struct}
+    {1×1 struct}    {1×1 struct}
+    {1×1 struct}    {1×1 struct}
+    {1×1 struct}    {1×1 struct}
+
+p.meta.subjList
+
+ans =
+
+  6×1 <a href="matlab:helpPopup cell" style="font-weight:bold">cell</a> array
+
+    {'02jp'}
+    {'03sk'}
+    {'04sp'}
+    {'05bm'}
+    {'06sb'}
+    {'07bj'}
+
+dbquit
+p.featSel.fov.resFile = processFov(p);
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',16,1)">16  </a>[d,info] = loadData(p);
+[d,info] = loadData(p);
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+info
+
+info = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+        info: 'subj x sess'
+    sessList: {'sess1'  'sess2'}
+    subjList: {6×1 cell}
+
+d
+
+d =
+
+  6×2 <a href="matlab:helpPopup cell" style="font-weight:bold">cell</a> array
+
+    {1×1 struct}    {1×1 struct}
+    {1×1 struct}    {1×1 struct}
+    {1×1 struct}    {1×1 struct}
+    {1×1 struct}    {1×1 struct}
+    {1×1 struct}    {1×1 struct}
+    {1×1 struct}    {1×1 struct}
+
+[featSel_areaAndFov,cont,voxProp,pEmpirical,fAll,f] = empiricalFov(d,p);
+{Unrecognized function or variable 'empiricalFov'.
+} 
+dbquit
+p.featSel.fov.resFile = processFov(p);
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',19,1)">19  </a>disp('-----------------------')
+[featSel_areaAndFov,cont,voxProp,pEmpirical,fAll,f] = empiricalFov(d,p);
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',113,1)">113 </a>pEmpirical.padFac             = 1.2;
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+Flattening ecc dist: computing hemiL
+dbquit
+dbquit
+p.featSel.fov.resFile = processFov(p);
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',19,1)">19  </a>disp('-----------------------')
+[featSel_areaAndFov,cont,voxProp,pEmpirical,fAll,f] = empiricalFov(d,p);
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',113,1)">113 </a>pEmpirical.padFac             = 1.2;
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+Flattening ecc dist: computing hemiL
+if system_dependent('IsDebugMode')==1, dbstep; end
+{Unrecognized field name "threshVal".
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>flattenEccDist', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 232)" style="font-weight:bold">processFov>flattenEccDist</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',232,0)">line 232</a>)
+eccRef = p.featSel.fov.threshVal';
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>empiricalFov', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 125)" style="font-weight:bold">processFov>empiricalFov</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',125,0)">line 125</a>)
+voxProp.L = flattenEccDist(d,'L',p,1);
+} 
+if system_dependent('IsDebugMode')==1, dbstep; end
+-----------------------
+if system_dependent('IsDebugMode')==1, dbstep; end
+empiricalFov: Computing
+opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',232,0)
+opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',232,0)
+p.featSel.fov.resFile = processFov(p);
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',19,1)">19  </a>disp('-----------------------')
+dbquit
+p.featSel.fov.resFile = processFov(p);
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',19,1)">19  </a>disp('-----------------------')
+dbquit
+p.featSel.fov.resFile = processFov(p);
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',19,1)">19  </a>disp('-----------------------')
+dbquit
+dbquit
+p.featSel.fov.resFile = processFov(p);
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',19,1)">19  </a>disp('-----------------------')
+[featSel_areaAndFov,cont,voxProp,pEmpirical,fAll,f] = empiricalFov(d,p);
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',113,1)">113 </a>pEmpirical.padFac             = 1.2;
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+Flattening ecc dist: computing hemiL
+if system_dependent('IsDebugMode')==1, dbstep; end
+{Unrecognized function or variable 'getOneHemi'.
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>flattenEccDist', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 235)" style="font-weight:bold">processFov>flattenEccDist</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',235,0)">line 235</a>)
+    d{sessInd} = getOneHemi(d{sessInd},hemi);
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>empiricalFov', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 125)" style="font-weight:bold">processFov>empiricalFov</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',125,0)">line 125</a>)
+voxProp.L = flattenEccDist(d,'L',p,1);
+} 
+dbquit
+p.featSel.fov.resFile = processFov(p);
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',19,1)">19  </a>disp('-----------------------')
+[featSel_areaAndFov,cont,voxProp,pEmpirical,fAll,f] = empiricalFov(d,p);
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',113,1)">113 </a>pEmpirical.padFac             = 1.2;
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+Flattening ecc dist: computing hemiL
+voxProp.L = flattenEccDist(d,'L',p,1);
+{Unrecognized function or variable 'plotVoxOnFoV'.
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>flattenEccDist', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 245)" style="font-weight:bold">processFov>flattenEccDist</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',245,0)">line 245</a>)
+    plotVoxOnFoV(d{p.figOption.subjInd,p.figOption.sessInd},[],eccRef)
+} 
+dbquit
+dbquit
+p.featSel.fov.resFile = processFov(p);
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',19,1)">19  </a>disp('-----------------------')
+if system_dependent('IsDebugMode')==1, dbcont; end
+-----------------------
+empiricalFov: Computing
+[featSel_areaAndFov,cont,voxProp,pEmpirical,fAll,f] = empiricalFov(d,p);
+Flattening ecc dist: computing hemiL
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',125,1)">125 </a>voxProp.L = flattenEccDist(d,'L',p,1);
+voxProp.L = flattenEccDist(d,'L',p,1);
+{Unrecognized function or variable 'polarSpaceNormalization'.
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>plotVoxOnFoV', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 574)" style="font-weight:bold">processFov>plotVoxOnFoV</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',574,0)">line 574</a>)
+[vec,~] = polarSpaceNormalization(vec,'cartRoi');
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>flattenEccDist', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 245)" style="font-weight:bold">processFov>flattenEccDist</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',245,0)">line 245</a>)
+    plotVoxOnFoV(d{p.figOption.subjInd,p.figOption.sessInd},[],eccRef)
+} 
+voxProp.L = flattenEccDist(d,'L',p,1);
+{Unrecognized function or variable 'reDim1'.
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('polarSpaceNormalization', 'C:\Users\el_ba\Documents\GitHub\HRdelay\polarSpaceNormalization.m', 2)" style="font-weight:bold">polarSpaceNormalization</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\polarSpaceNormalization.m',2,0)">line 2</a>)
+[x,sz] = reDim1(x);
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>plotVoxOnFoV', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 574)" style="font-weight:bold">processFov>plotVoxOnFoV</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',574,0)">line 574</a>)
+[vec,~] = polarSpaceNormalization(vec,'cartRoi');
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>flattenEccDist', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 245)" style="font-weight:bold">processFov>flattenEccDist</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',245,0)">line 245</a>)
+    plotVoxOnFoV(d{p.figOption.subjInd,p.figOption.sessInd},[],eccRef)
+} 
+opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\polarSpaceNormalization.m',2,0)
+voxProp.L = flattenEccDist(d,'L',p,1);
+{Unrecognized function or variable 'redblue'.
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>plotVoxOnFoV', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 578)" style="font-weight:bold">processFov>plotVoxOnFoV</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',578,0)">line 578</a>)
+cMap = redblue(256);
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>flattenEccDist', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 245)" style="font-weight:bold">processFov>flattenEccDist</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',245,0)">line 245</a>)
+    plotVoxOnFoV(d{p.figOption.subjInd,p.figOption.sessInd},[],eccRef)
+} 
+matDependencyPath = fullfile(p.wd,'MatFileEx');
+matDependencyPath = fullfile(p.wd,'MatFileEx');
+mkdir(matDependencyPath)
+mkdir(matDependencyPath)
+[Warning: Directory already exists.] 
+[> In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>empiricalFov', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 125)" style="font-weight:bold">processFov>empiricalFov</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',125,0)">line 125</a>)
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 21)" style="font-weight:bold">processFov</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',21,0)">line 21</a>)] 
+help mkdir
+ <strong>mkdir</strong> Make new directory.
+    [SUCCESS,MESSAGE,MESSAGEID] = <strong>mkdir</strong>(PARENTDIR,NEWDIR) makes a new
+    directory, NEWDIR, under the parent, PARENTDIR. While PARENTDIR may be
+    an absolute path, NEWDIR must be a relative path. When NEWDIR exists,
+    <strong>mkdir</strong> returns SUCCESS = 1.  If the number of output arguments is 1 or
+    less, it also issues a warning that the directory already exists.
+ 
+    [SUCCESS,MESSAGE,MESSAGEID] = <strong>mkdir</strong>(NEWDIR) creates the directory
+    NEWDIR in the current directory, if NEWDIR represents a relative path.
+    Otherwise, NEWDIR represents an absolute path and <strong>mkdir</strong> attempts to
+    create the absolute directory NEWDIR in the root of the current volume.
+    An absolute path starts in any one of a Windows drive letter, a UNC
+    path '\\' or a UNIX '/' character. 
+ 
+    INPUT PARAMETERS:
+        PARENTDIR: Character vector or string scalar 
+                   specifying the parent directory. See NOTE 1.
+        NEWDIR:    Character vector or string scalar specifying the new 
+                   directory. 
+ 
+    RETURN PARAMETERS:
+        SUCCESS:   Logical scalar, defining the outcome of <strong>mkdir</strong>. 
+                   1 : <strong>mkdir</strong> executed successfully. 0 : an error occurred.
+        MESSAGE:   Character vector, defining the error or warning message. 
+                   empty character array : <strong>mkdir</strong> executed successfully. message :
+                   an error or warning message, as applicable.
+        MESSAGEID: Character vector, defining the error or warning identifier.
+                   empty character array: <strong>mkdir</strong> executed successfully. message id:
+                   the MATLAB error or warning message identifier (see
+                   ERROR, MException, WARNING, LASTWARN).
+ 
+    NOTE 1: UNC paths are supported. 
+ 
+    See also <a href="matlab:help cd -displayBanner">cd</a>, <a href="matlab:help copyfile -displayBanner">copyfile</a>, <a href="matlab:help delete -displayBanner">delete</a>, <a href="matlab:help dir -displayBanner">dir</a>, <a href="matlab:help fileattrib -displayBanner">fileattrib</a>, <a href="matlab:help movefile -displayBanner">movefile</a>, <a href="matlab:help rmdir -displayBanner">rmdir</a>.
+
+    <a href="matlab:doc mkdir">Documentation for mkdir</a>
+
+doc mkdir
+if ~exist(matDependencyPath,'var')
+    mkdir(matDependencyPath)
+end
+[Warning: Directory already exists.] 
+[> In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>empiricalFov', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 125)" style="font-weight:bold">processFov>empiricalFov</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',125,0)">line 125</a>)
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 21)" style="font-weight:bold">processFov</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',21,0)">line 21</a>)] 
+if ~exist(matDependencyPath,'dir')
+    mkdir(matDependencyPath)
+end
+matDependencyPath = fullfile(p.wd,'MatFileEx'); if ~exist(matDependencyPath,'dir'); mkdir(matDependencyPath); end;
+matDependencyPath = fullfile(p.wd,'matlabFileEx'); if ~exist(matDependencyPath,'dir'); mkdir(matDependencyPath); end;
+addpath(genpath(fullfile(matDependencyPath)));
+addpath(genpath(fullfile(matDependencyPath)));
+voxProp.L = flattenEccDist(d,'L',p,1);
+{Unrecognized field name "threshVal".
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>defineTrans', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 465)" style="font-weight:bold">processFov>defineTrans</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',465,0)">line 465</a>)
+    [~,b] = min(abs(x-p.featSel.fov.threshVal(2)));
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>getFlatTrans', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 443)" style="font-weight:bold">processFov>getFlatTrans</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',443,0)">line 443</a>)
+[ecc2eccFlat,eccFlat2ecc] =
+defineTrans(p,ecc,eccFlat,transFlag,plotFlag);
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>flattenEccDist', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 249)" style="font-weight:bold">processFov>flattenEccDist</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',249,0)">line 249</a>)
+[ecc2eccFlat_1,eccFlat2ecc_1,~,~,~,~] =
+getFlatTrans(d,p,'circ',[],plotFlag);
+} 
+opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',465,0)
+opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',465,0)
+opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',465,0)
+p
+
+p = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+            wd: 'C:\Users\el_ba\Documents\GitHub\HRdelay'
+         anaID: '2021-08-11'
+      dataPath: [1×1 struct]
+     figOption: [1×1 struct]
+    termOption: [1×1 struct]
+          perm: [1×1 struct]
+          boot: [1×1 struct]
+          meta: [1×1 struct]
+       featSel: [1×1 struct]
+
+dbquit
+p.fov.eccLim = [0.75 7]; % threshMethod='ecc'
+[featSel_areaAndFov,cont,voxProp,pEmpirical,fAll,f] = empiricalFov(d,p);
+Flattening ecc dist: computing hemiL
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',125,1)">125 </a>voxProp.L = flattenEccDist(d,'L',p,1);
+dbquit
+dbquit
+p.fov.eccLim = [0.75 7]; % threshMethod='ecc'
+p.featSel.fov.resFile = processFov(p);
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+-----------------------
+empiricalFov: Computing
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',21,1)">21  </a>[featSel_areaAndFov,cont,voxProp,pEmpirical,fAll,f] = empiricalFov(d,p);
+[featSel_areaAndFov,cont,voxProp,pEmpirical,fAll,f] = empiricalFov(d,p);
+Flattening ecc dist: computing hemiL
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',125,1)">125 </a>voxProp.L = flattenEccDist(d,'L',p,1);
+voxProp.L = flattenEccDist(d,'L',p,1);
+{Unrecognized function or variable 'getEccPd'.
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>getFlatTrans', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 320)" style="font-weight:bold">processFov>getFlatTrans</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',320,0)">line 320</a>)
+            [eccXY{subjInd},densityXY{subjInd},X{subjInd},Y{subjInd},okInd{subjInd},U{subjInd},V{subjInd},eccXYspline{subjInd},densityXYspline{subjInd},eccXYbin{subjInd},densityXYmed{subjInd}]
+            =
+            getEccPd(d{subjInd,sessInd},ecc{subjInd,sessInd},sm,plotFlag);
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>flattenEccDist', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 260)" style="font-weight:bold">processFov>flattenEccDist</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',260,0)">line 260</a>)
+[ecc2eccFlat_2,eccFlat2ecc_2,~,ecc2eccFlat_1_2,eccFlat2ecc_1_2,~] =
+getFlatTrans(d,p,'empirical',ecc2eccFlat_1,plotFlag);
+} 
+dbquit
+dbquit
+p.fov.eccLim = [0.75 7]; % threshMethod='ecc'
+p.featSel.fov.resFile = processFov(p);
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+-----------------------
+empiricalFov: Computing
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',21,1)">21  </a>[featSel_areaAndFov,cont,voxProp,pEmpirical,fAll,f] = empiricalFov(d,p);
+[featSel_areaAndFov,cont,voxProp,pEmpirical,fAll,f] = empiricalFov(d,p);
+Flattening ecc dist: computing hemiL
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',125,1)">125 </a>voxProp.L = flattenEccDist(d,'L',p,1);
+voxProp.L = flattenEccDist(d,'L',p,1);
+{Unrecognized function or variable 'pol2surf'.
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>getEccPd', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 627)" style="font-weight:bold">processFov>getEccPd</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',627,0)">line 627</a>)
+[densityUV,U,V,densityXY,X,Y] = pol2surf(d.voxProp);
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>getFlatTrans', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 320)" style="font-weight:bold">processFov>getFlatTrans</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',320,0)">line 320</a>)
+            [eccXY{subjInd},densityXY{subjInd},X{subjInd},Y{subjInd},okInd{subjInd},U{subjInd},V{subjInd},eccXYspline{subjInd},densityXYspline{subjInd},eccXYbin{subjInd},densityXYmed{subjInd}]
+            =
+            getEccPd(d{subjInd,sessInd},ecc{subjInd,sessInd},sm,plotFlag);
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>flattenEccDist', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 260)" style="font-weight:bold">processFov>flattenEccDist</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',260,0)">line 260</a>)
+[ecc2eccFlat_2,eccFlat2ecc_2,~,ecc2eccFlat_1_2,eccFlat2ecc_1_2,~] =
+getFlatTrans(d,p,'empirical',ecc2eccFlat_1,plotFlag);
+} 
+dbquit
+dbquit
+p.fov.eccLim = [0.75 7]; % threshMethod='ecc'
+p.featSel.fov.resFile = processFov(p);
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+-----------------------
+empiricalFov: Computing
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',21,1)">21  </a>[featSel_areaAndFov,cont,voxProp,pEmpirical,fAll,f] = empiricalFov(d,p);
+[featSel_areaAndFov,cont,voxProp,pEmpirical,fAll,f] = empiricalFov(d,p);
+Flattening ecc dist: computing hemiL
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',125,1)">125 </a>voxProp.L = flattenEccDist(d,'L',p,1);
+voxProp.L = flattenEccDist(d,'L',p,1);
+{Unrecognized function or variable 'medianFilter'.
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>getEccPd', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 650)" style="font-weight:bold">processFov>getEccPd</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',650,0)">line 650</a>)
+[eccXYbin,densityXYmed] =
+medianFilter(eccXY(okInd),densityXY(okInd),n);
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>getFlatTrans', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 320)" style="font-weight:bold">processFov>getFlatTrans</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',320,0)">line 320</a>)
+            [eccXY{subjInd},densityXY{subjInd},X{subjInd},Y{subjInd},okInd{subjInd},U{subjInd},V{subjInd},eccXYspline{subjInd},densityXYspline{subjInd},eccXYbin{subjInd},densityXYmed{subjInd}]
+            =
+            getEccPd(d{subjInd,sessInd},ecc{subjInd,sessInd},sm,plotFlag);
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>flattenEccDist', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 260)" style="font-weight:bold">processFov>flattenEccDist</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',260,0)">line 260</a>)
+[ecc2eccFlat_2,eccFlat2ecc_2,~,ecc2eccFlat_1_2,eccFlat2ecc_1_2,~] =
+getFlatTrans(d,p,'empirical',ecc2eccFlat_1,plotFlag);
+} 
+dbquit
+dbquit
+p.fov.eccLim = [0.75 7]; % threshMethod='ecc'
+p.featSel.fov.resFile = processFov(p);
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+-----------------------
+empiricalFov: Computing
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',21,1)">21  </a>[featSel_areaAndFov,cont,voxProp,pEmpirical,fAll,f] = empiricalFov(d,p);
+[featSel_areaAndFov,cont,voxProp,pEmpirical,fAll,f] = empiricalFov(d,p);
+Flattening ecc dist: computing hemiL
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',125,1)">125 </a>voxProp.L = flattenEccDist(d,'L',p,1);
+voxProp.L = flattenEccDist(d,'L',p,1);
+disp('Flattening ecc dist: computing hemiR')
+Flattening ecc dist: computing hemiR
+voxProp.R = flattenEccDist(d,'R',p,1);
+disp('Flattening ecc dist: done')
+Flattening ecc dist: done
+disp('Delay map for contour: computing hemiL')
+Delay map for contour: computing hemiL
+cont.L = prepareDelayFovContour(d,voxProp.L,p);
+{Unrecognized function or variable 'prepareDelayFovContour'.
+} 
+dbquit
+dbquit
+p.fov.eccLim = [0.75 7]; % threshMethod='ecc'
+p.featSel.fov.resFile = processFov(p);
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+-----------------------
+empiricalFov: Computing
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',21,1)">21  </a>[featSel_areaAndFov,cont,voxProp,pEmpirical,fAll,f] = empiricalFov(d,p);
+[featSel_areaAndFov,cont,voxProp,pEmpirical,fAll,f] = empiricalFov(d,p);
+Flattening ecc dist: computing hemiL
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',125,1)">125 </a>voxProp.L = flattenEccDist(d,'L',p,1);
+if system_dependent('IsDebugMode')==1, dbcont; end
+Flattening ecc dist: computing hemiR
+Flattening ecc dist: done
+Delay map for contour: computing hemiL
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+Delay map for contour: computing hemiR
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',135,1)">135 </a>disp('Delay map for contour: done')
+if system_dependent('IsDebugMode')==1, dbstep; end
+Delay map for contour: done
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbcont; end
+if system_dependent('IsDebugMode')==1, dbcont; end
+subj:1/6
+[featValLR.(hemi),featMethodLR.(hemi),featIndInLR.(hemi),featInfoLR.(hemi),f.(hemi){subjInd,sessInd}] = getFeatSel_areaAndFov(cont.(hemi){subjInd,sessInd},voxProp{subjInd,sessInd}.(hemi),p);
+{Unrecognized function or variable 'getFeatSel_areaAndFov'.
+} 
+dbquit
+dbquit
+p.fov.eccLim = [0.75 7]; % threshMethod='ecc'
+p.featSel.fov.resFile = processFov(p);
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+-----------------------
+empiricalFov: Computing
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',21,1)">21  </a>[featSel_areaAndFov,cont,voxProp,pEmpirical,fAll,f] = empiricalFov(d,p);
+[featSel_areaAndFov,cont,voxProp,pEmpirical,fAll,f] = empiricalFov(d,p);
+Flattening ecc dist: computing hemiL
+Flattening ecc dist: computing hemiR
+Flattening ecc dist: done
+Delay map for contour: computing hemiL
+Delay map for contour: computing hemiR
+Delay map for contour: done
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',151,1)">151 </a>featSel_areaAndFov = cell(size(d));
+if system_dependent('IsDebugMode')==1, dbstep; end
+areaAndFov = cell(size(d));
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+subj:1/6
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+{Unrecognized field name "doIt".
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>getAreaAndFov', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 769)" style="font-weight:bold">processFov>getAreaAndFov</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',769,0)">line 769</a>)
+if p.featSel.fov.doIt
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>empiricalFov', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 160)" style="font-weight:bold">processFov>empiricalFov</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',160,0)">line 160</a>)
+        [featValLR.(hemi),featMethodLR.(hemi),featIndInLR.(hemi),featInfoLR.(hemi),f.(hemi){subjInd,sessInd}]
+        =
+        getAreaAndFov(cont.(hemi){subjInd,sessInd},voxProp{subjInd,sessInd}.(hemi),p);} 
+opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',769,0)
+dbquit
+p.fov.eccLim = [0.75 7]; % threshMethod='ecc'
+p.featSel.fov.resFile = processFov(p);
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+-----------------------
+empiricalFov: Computing
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',21,1)">21  </a>[featSel_areaAndFov,cont,voxProp,pEmpirical,fAll,f] = empiricalFov(d,p);
+if system_dependent('IsDebugMode')==1, dbcont; end
+Flattening ecc dist: computing hemiL
+Flattening ecc dist: computing hemiR
+Flattening ecc dist: done
+Delay map for contour: computing hemiL
+Delay map for contour: computing hemiR
+Delay map for contour: done
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+subj:1/6
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+[featValLR.(hemi),featMethodLR.(hemi),featIndInLR.(hemi),featInfoLR.(hemi),f.(hemi){subjInd,sessInd}] = getAreaAndFov(cont.(hemi){subjInd,sessInd},voxProp{subjInd,sessInd}.(hemi),p);
+{Unrecognized field name "threshMethod".
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>getAreaAndFov', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 772)" style="font-weight:bold">processFov>getAreaAndFov</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',772,0)">line 772</a>)
+curInfo2 = {thresh.threshMethod};
+} 
+opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',772,0)
+[featValLR.(hemi),featMethodLR.(hemi),featIndInLR.(hemi),featInfoLR.(hemi),f.(hemi){subjInd,sessInd}] = getAreaAndFov(cont.(hemi){subjInd,sessInd},voxProp{subjInd,sessInd}.(hemi),p);
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',769,1)">769 </a>curInfo1 = {'fov'};
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',770,1)">770 </a>minContPercentArea = p.featSel.fov.empirical.minContPercentArea;
+p.featSel
+
+ans = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+    fov: [1×1 struct]
+
+p.featSel.fov
+
+ans = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+    empirical: [1×1 struct]
+
+p.featSel.fov.empirical
+
+ans = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+                padFac: 1.2000
+    minContPercentArea: 0.0500
+                  auto: [1×2 struct]
+
+p.featSel.fov.empirical.minContPercentArea
+
+ans =
+
+    0.0500
+
+p.featSel
+
+ans = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+    fov: [1×1 struct]
+
+p.featSel.(char(curInfo1))
+
+ans = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+    empirical: [1×1 struct]
+
+thresh = p.featSel.(char(curInfo1));
+thresh
+
+thresh = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+    empirical: [1×1 struct]
+
+thresh
+
+thresh = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+    empirical: [1×1 struct]
+
+curInfo1
+
+curInfo1 =
+
+  1×1 <a href="matlab:helpPopup cell" style="font-weight:bold">cell</a> array
+
+    {'fov'}
+
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+thresh
+
+thresh = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+    empirical: [1×1 struct]
+
+thresh.empirical
+
+ans = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+                padFac: 1.2000
+    minContPercentArea: 0.0500
+                  auto: [1×2 struct]
+
+thresh
+
+thresh = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+    empirical: [1×1 struct]
+
+threshMethod
+{Unrecognized function or variable 'threshMethod'.
+} 
+p.featSel.fov.empirical
+
+ans = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+                padFac: 1.2000
+    minContPercentArea: 0.0500
+                  auto: [1×2 struct]
+
+thresh
+
+thresh = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+    empirical: [1×1 struct]
+
+dbquit
+dbquit
+p.fov.eccLim = [0.75 7]; % threshMethod='ecc'
+p.featSel.fov.resFile = processFov(p);
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+-----------------------
+empiricalFov: Computing
+Flattening ecc dist: computing hemiL
+Flattening ecc dist: computing hemiR
+Flattening ecc dist: done
+Delay map for contour: computing hemiL
+Delay map for contour: computing hemiR
+Delay map for contour: done
+subj:1/6
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',160,1)">160 </a>        [featValLR.(hemi),featMethodLR.(hemi),featIndInLR.(hemi),featInfoLR.(hemi),f.(hemi){subjInd,sessInd}] = getAreaAndFov(cont.(hemi){subjInd,sessInd},voxProp{subjInd,sessInd}.(hemi),p);
+[featValLR.(hemi),featMethodLR.(hemi),featIndInLR.(hemi),featInfoLR.(hemi),f.(hemi){subjInd,sessInd}] = getAreaAndFov(cont.(hemi){subjInd,sessInd},voxProp{subjInd,sessInd}.(hemi),p);
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',769,1)">769 </a>curInfo1 = {'fov'};
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep out; end
+{Unrecognized function or variable 'getDelayFovContour3'.
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>getAreaAndFov', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 813)" style="font-weight:bold">processFov>getAreaAndFov</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',813,0)">line 813</a>)
+cont = getDelayFovContour3(cont,sm,prevInd);
+} 
+dbquit
+p.fov.eccLim = [0.75 7]; % threshMethod='ecc'
+p.featSel.fov.resFile = processFov(p);
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+-----------------------
+empiricalFov: Computing
+Flattening ecc dist: computing hemiL
+Flattening ecc dist: computing hemiR
+Flattening ecc dist: done
+Delay map for contour: computing hemiL
+Delay map for contour: computing hemiR
+Delay map for contour: done
+subj:1/6
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',160,1)">160 </a>        [featValLR.(hemi),featMethodLR.(hemi),featIndInLR.(hemi),featInfoLR.(hemi),f.(hemi){subjInd,sessInd}] = getAreaAndFov(cont.(hemi){subjInd,sessInd},voxProp{subjInd,sessInd}.(hemi),p);
+[featValLR.(hemi),featMethodLR.(hemi),featIndInLR.(hemi),featInfoLR.(hemi),f.(hemi){subjInd,sessInd}] = getAreaAndFov(cont.(hemi){subjInd,sessInd},voxProp{subjInd,sessInd}.(hemi),p);
+{Unrecognized function or variable 'nanconv'.
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>getDelayFovContour3', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 870)" style="font-weight:bold">processFov>getDelayFovContour3</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',870,0)">line 870</a>)
+vecXY = nanconv(vecXY,kernel,'nanout');
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>getAreaAndFov', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 813)" style="font-weight:bold">processFov>getAreaAndFov</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',813,0)">line 813</a>)
+cont = getDelayFovContour3(cont,sm,prevInd);
+} 
+addpath(genpath(fullfile(matDependencyPath)));
+{Unrecognized function or variable 'matDependencyPath'.
+} 
+matDependencyPath = fullfile(p.wd,'matlabFileEx'); if ~exist(matDependencyPath,'dir'); mkdir(matDependencyPath); end
+addpath(genpath(fullfile(matDependencyPath)));
+[featValLR.(hemi),featMethodLR.(hemi),featIndInLR.(hemi),featInfoLR.(hemi),f.(hemi){subjInd,sessInd}] = getAreaAndFov(cont.(hemi){subjInd,sessInd},voxProp{subjInd,sessInd}.(hemi),p);
+{Unrecognized function or variable 'processDelayFovContour3'.
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>getAreaAndFov', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 815)" style="font-weight:bold">processFov>getAreaAndFov</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',815,0)">line 815</a>)
+[~,f1,pgon] =
+processDelayFovContour3(cont,voxProp,p,prevInd,sm,mergeRadius,marginRadius,[],'do
+not add pgonRef',visibleFlag2);
+} 
+dbquit
+p.fov.eccLim = [0.75 7]; % threshMethod='ecc'
+p.featSel.fov.resFile = processFov(p);
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+-----------------------
+empiricalFov: Computing
+Flattening ecc dist: computing hemiL
+Flattening ecc dist: computing hemiR
+Flattening ecc dist: done
+Delay map for contour: computing hemiL
+Delay map for contour: computing hemiR
+Delay map for contour: done
+subj:1/6
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',160,1)">160 </a>        [featValLR.(hemi),featMethodLR.(hemi),featIndInLR.(hemi),featInfoLR.(hemi),f.(hemi){subjInd,sessInd}] = getAreaAndFov(cont.(hemi){subjInd,sessInd},voxProp{subjInd,sessInd}.(hemi),p);
+[featValLR.(hemi),featMethodLR.(hemi),featIndInLR.(hemi),featInfoLR.(hemi),f.(hemi){subjInd,sessInd}] = getAreaAndFov(cont.(hemi){subjInd,sessInd},voxProp{subjInd,sessInd}.(hemi),p);
+{Unrecognized function or variable 'showDelayFovContour'.
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>processDelayFovContour3', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 936)" style="font-weight:bold">processFov>processDelayFovContour3</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',936,0)">line 936</a>)
+        f = showDelayFovContour(X,Y,vecXY,cMap,U,V,[],[],'off');
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>getAreaAndFov', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 815)" style="font-weight:bold">processFov>getAreaAndFov</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',815,0)">line 815</a>)
+[~,f1,pgon] =
+processDelayFovContour3(cont,voxProp,p,prevInd,sm,mergeRadius,marginRadius,[],'do
+not add pgonRef',visibleFlag2);
+} 
+[featValLR.(hemi),featMethodLR.(hemi),featIndInLR.(hemi),featInfoLR.(hemi),f.(hemi){subjInd,sessInd}] = getAreaAndFov(cont.(hemi){subjInd,sessInd},voxProp{subjInd,sessInd}.(hemi),p);
+{Unrecognized function or variable 'addEccRef'.
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>processDelayFovContour3', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 952)" style="font-weight:bold">processFov>processDelayFovContour3</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',952,0)">line 952</a>)
+    [x,y] = addEccRef(voxProp,p);
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>getAreaAndFov', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 815)" style="font-weight:bold">processFov>getAreaAndFov</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',815,0)">line 815</a>)
+[~,f1,pgon] =
+processDelayFovContour3(cont,voxProp,p,prevInd,sm,mergeRadius,marginRadius,[],'do
+not add pgonRef',visibleFlag2);
+} 
+[featValLR.(hemi),featMethodLR.(hemi),featIndInLR.(hemi),featInfoLR.(hemi),f.(hemi){subjInd,sessInd}] = getAreaAndFov(cont.(hemi){subjInd,sessInd},voxProp{subjInd,sessInd}.(hemi),p);
+{Unrecognized function or variable 'addEccRef'.
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>processDelayFovContour3', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 952)" style="font-weight:bold">processFov>processDelayFovContour3</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',952,0)">line 952</a>)
+    [x,y] = addEccRef(voxProp,p);
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>getAreaAndFov', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 815)" style="font-weight:bold">processFov>getAreaAndFov</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',815,0)">line 815</a>)
+[~,f1,pgon] =
+processDelayFovContour3(cont,voxProp,p,prevInd,sm,mergeRadius,marginRadius,[],'do
+not add pgonRef',visibleFlag2);
+} 
+if system_dependent('IsDebugMode')==1, dbcont; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbcont; end
+if system_dependent('IsDebugMode')==1, dbcont; end
+[~,f1,pgon] = processDelayFovContour3(cont,voxProp,p,prevInd,sm,mergeRadius,marginRadius,[],'do not add pgonRef',visibleFlag2);
+{Unrecognized function or variable 'addEccRef'.
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>processDelayFovContour3', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 952)" style="font-weight:bold">processFov>processDelayFovContour3</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',952,0)">line 952</a>)
+    [x,y] = addEccRef(voxProp,p);
+} 
+if system_dependent('IsDebugMode')==1, dbcont; end
+if system_dependent('IsDebugMode')==1, dbcont; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+dbquit
+p.featSel.fov.resFile = processFov(p);
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+-----------------------
+empiricalFov: Computing
+Flattening ecc dist: computing hemiL
+Flattening ecc dist: computing hemiR
+Flattening ecc dist: done
+Delay map for contour: computing hemiL
+Delay map for contour: computing hemiR
+Delay map for contour: done
+subj:1/6
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',160,1)">160 </a>        [featValLR.(hemi),featMethodLR.(hemi),featIndInLR.(hemi),featInfoLR.(hemi),f.(hemi){subjInd,sessInd}] = getAreaAndFov(cont.(hemi){subjInd,sessInd},voxProp{subjInd,sessInd}.(hemi),p);
+[featValLR.(hemi),featMethodLR.(hemi),featIndInLR.(hemi),featInfoLR.(hemi),f.(hemi){subjInd,sessInd}] = getAreaAndFov(cont.(hemi){subjInd,sessInd},voxProp{subjInd,sessInd}.(hemi),p);
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',815,1)">815 </a>[~,f1,pgon] = processDelayFovContour3(cont,voxProp,p,prevInd,sm,mergeRadius,marginRadius,[],'do not add pgonRef',visibleFlag2);
+[~,f1,pgon] = processDelayFovContour3(cont,voxProp,p,prevInd,sm,mergeRadius,marginRadius,[],'do not add pgonRef',visibleFlag2);
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',952,1)">952 </a>    [x,y] = addEccRef(voxProp,p);
+[x,y] = addEccRef(voxProp,p);
+{Unrecognized field name "threshVal".
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>addEccRef', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 1117)" style="font-weight:bold">processFov>addEccRef</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',1117,0)">line 1117</a>)
+eccRef = voxProp.eccTrans.toFlat{end}(p.featSel.fov.threshVal);
+} 
+opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',1117,0)
+p
+
+p = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+            wd: 'C:\Users\el_ba\Documents\GitHub\HRdelay'
+         anaID: '2021-08-11'
+      dataPath: [1×1 struct]
+     figOption: [1×1 struct]
+    termOption: [1×1 struct]
+          perm: [1×1 struct]
+          boot: [1×1 struct]
+          meta: [1×1 struct]
+           fov: [1×1 struct]
+       featSel: [1×1 struct]
+       subjInd: 1
+       sessInd: 1
+
+p.fov
+
+ans = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+    eccLim: [0.7500 7]
+
+p.fov.eccLim
+
+ans =
+
+    0.7500    7.0000
+
+dbquit
+dbquit
+dbquit
+p.featSel.fov.resFile = processFov(p);
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+-----------------------
+empiricalFov: Computing
+Flattening ecc dist: computing hemiL
+Flattening ecc dist: computing hemiR
+Flattening ecc dist: done
+Delay map for contour: computing hemiL
+Delay map for contour: computing hemiR
+Delay map for contour: done
+subj:1/6
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',815,1)">815 </a>[~,f1,pgon] = processDelayFovContour3(cont,voxProp,p,prevInd,sm,mergeRadius,marginRadius,[],'do not add pgonRef',visibleFlag2);
+[~,f1,pgon] = processDelayFovContour3(cont,voxProp,p,prevInd,sm,mergeRadius,marginRadius,[],'do not add pgonRef',visibleFlag2);
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',952,1)">952 </a>    [x,y] = addEccRef(voxProp,p);
+[x,y] = addEccRef(voxProp,p);
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep out; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',817,1)">817 </a>if p.featSel.fov.empirical.auto(2).smList~=sm
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',828,1)">828 </a>end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+{Unrecognized function or variable 'curInfo2'.
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>getAreaAndFov', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 831)" style="font-weight:bold">processFov>getAreaAndFov</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',831,0)">line 831</a>)
+featMethod = strjoin([curInfo1 curInfo2],': ');
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov>empiricalFov', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 160)" style="font-weight:bold">processFov>empiricalFov</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',160,0)">line 160</a>)
+        [featValLR.(hemi),featMethodLR.(hemi),featIndInLR.(hemi),featInfoLR.(hemi),f.(hemi){subjInd,sessInd}]
+        =
+        getAreaAndFov(cont.(hemi){subjInd,sessInd},voxProp{subjInd,sessInd}.(hemi),p);
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFov', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m', 21)" style="font-weight:bold">processFov</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',21,0)">line 21</a>)
+[featSel_areaAndFov,cont,voxProp,pEmpirical,fAll,f] =
+empiricalFov(d,p);
+} 
+curInfo1
+{Unrecognized function or variable 'curInfo1'.
+} 
+curInfo2
+{Unrecognized function or variable 'curInfo2'.
+} 
+featMethod = strjoin([{'qqq'} {'www'}],': ');
+featMethod
+
+featMethod =
+
+    'qqq: www'
+
+featMethod = strjoin([{'fov'} {'empirical'}],': ');
+featIndIn = curIndIn;
+{Unrecognized function or variable 'curIndIn'.
+} 
+curIndIn
+{Unrecognized function or variable 'curIndIn'.
+} 
+opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',831,0)
+p.featSel.fov.resFile = processFov(p);
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+-----------------------
+empiricalFov: Computing
+Flattening ecc dist: computing hemiL
+Flattening ecc dist: computing hemiR
+Flattening ecc dist: done
+Delay map for contour: computing hemiL
+Delay map for contour: computing hemiR
+Delay map for contour: done
+subj:1/6
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',815,1)">815 </a>[~,f1,pgon] = processDelayFovContour3(cont,voxProp,p,prevInd,sm,mergeRadius,marginRadius,[],'do not add pgonRef',visibleFlag2);
+[~,f1,pgon] = processDelayFovContour3(cont,voxProp,p,prevInd,sm,mergeRadius,marginRadius,[],'do not add pgonRef',visibleFlag2);
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',817,1)">817 </a>if p.featSel.fov.empirical.auto(2).smList~=sm
+if system_dependent('IsDebugMode')==1, dbcont; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',832,1)">832 </a>featIndIn = curIndIn;
+curIndIn
+
+curIndIn =
+
+  1820×1 <a href="matlab:helpPopup logical" style="font-weight:bold">logical</a> array
+
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   1
+   1
+   1
+   1
+   0
+   0
+   1
+   1
+   1
+   0
+   0
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   1
+   1
+   1
+   0
+   0
+   0
+   1
+   1
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   0
+   0
+   1
+   1
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   1
+   0
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   1
+   1
+   0
+   1
+   0
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   0
+   0
+   1
+   1
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   1
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   0
+   1
+   1
+   1
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   1
+   1
+   0
+   0
+   0
+   0
+   1
+   0
+   0
+   0
+   1
+   1
+   1
+   0
+   0
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   1
+   1
+   1
+   0
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   1
+   1
+   1
+   0
+   0
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   1
+   1
+   1
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   1
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   1
+   1
+   0
+   1
+   1
+   0
+   0
+   0
+   0
+   1
+   1
+   0
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   0
+   0
+   1
+   0
+   0
+   1
+   1
+   1
+   0
+   0
+   0
+   1
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   1
+   1
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   1
+   0
+   1
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   1
+   0
+   1
+   0
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   1
+   0
+   0
+   0
+   1
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   1
+   0
+   0
+   0
+   1
+   1
+   1
+   0
+   0
+   0
+   0
+   0
+   1
+   1
+   0
+   0
+   0
+   1
+   1
+   1
+   0
+   0
+   0
+   0
+   1
+   0
+   1
+   1
+   0
+   1
+   0
+   0
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   0
+   1
+   1
+   1
+   0
+   1
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   1
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   1
+   1
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   1
+   0
+   1
+   1
+   1
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   0
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   0
+   1
+   0
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   1
+   0
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   0
+   0
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+   1
+
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',165,1)">165 </a>        featVal = nan(size(voxProp{subjInd,sessInd}.(hemi).hemifield));
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+close all
+dbquit
+p.featSel.fov.resFile = processFov(p);
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+-----------------------
+empiricalFov: Computing
+Flattening ecc dist: computing hemiL
+Flattening ecc dist: computing hemiR
+Flattening ecc dist: done
+Delay map for contour: computing hemiL
+Delay map for contour: computing hemiR
+Delay map for contour: done
+subj:1/6
+subj:2/6
+subj:3/6
+subj:4/6
+subj:5/6
+subj:6/6
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',183,1)">183 </a>fIndList = [1 2 4 7 9 10];
+p.meta
+
+ans = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+    subjList: {6×1 cell}
+
+p.meta.subjList
+
+ans =
+
+  6×1 <a href="matlab:helpPopup cell" style="font-weight:bold">cell</a> array
+
+    {'02jp'}
+    {'03sk'}
+    {'04sp'}
+    {'05bm'}
+    {'06sb'}
+    {'07bj'}
+
+p.meta.subjList{subjInd}
+
+ans =
+
+    '07bj'
+
+disp([p.meta.subjList{subjInd} ', sess' num2str(sessInd) ': refining fov contour'])
+07bj, sess2: refining fov contour
+disp([p.meta.subjList{subjInd} ',sess' num2str(sessInd) ': refining fov contour'])
+07bj,sess2: refining fov contour
+dbquit
+p.featSel.fov.resFile = processFov(p);
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+-----------------------
+empiricalFov: Computing
+flattening ecc distributions
+preparing delay maps
+02jp,sess1: refining fov contour
+02jp,sess2: refining fov contour
+03sk,sess1: refining fov contour
+03sk,sess2: refining fov contour
+04sp,sess1: refining fov contour
+04sp,sess2: refining fov contour
+05bm,sess1: refining fov contour
+05bm,sess2: refining fov contour
+06sb,sess1: refining fov contour
+06sb,sess2: refining fov contour
+07bj,sess1: refining fov contour
+07bj,sess2: refining fov contour
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',179,1)">179 </a>fIndList = [1 2 4 7 9 10];
+close all
+dbquit
+p.featSel.fov.resFile = processFov(p);
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+-----------------------
+empiricalFov: Computing
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',21,1)">21  </a>[featSel_areaAndFov,cont,voxProp,pEmpirical,fAll,f] = empiricalFov(d,p);
+if system_dependent('IsDebugMode')==1, dbstep in; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+flattening ecc distributions
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',126,1)">126 </a>voxProp.R = flattenEccDist(d,'R',p,1);
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',129,1)">129 </a>disp('preparing delay maps')
+preparing delay maps
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',130,1)">130 </a>cont.L = prepareDelayFovContour(d,voxProp.L,p);
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',131,1)">131 </a>cont.R = prepareDelayFovContour(d,voxProp.R,p);
+dbquit
+p.featSel.fov.resFile = processFov(p);
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+-----------------------
+empiricalFov: Computing
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',21,1)">21  </a>[featSel_areaAndFov,cont,voxProp,pEmpirical,fAll,f] = empiricalFov(d,p);
+if system_dependent('IsDebugMode')==1, dbcont; end
+flattening ecc distributions
+if system_dependent('IsDebugMode')==1, dbcont; end
+dbquit
+p.featSel.fov.resFile = processFov(p);
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+-----------------------
+empiricalFov: Computing
+flattening ecc distributions
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',230,1)">230 </a>for sessInd = 1:numel(d)
+close all
+dbquit
+p.featSel.fov.resFile = processFov(p);
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+-----------------------
+empiricalFov: Computing
+flattening ecc distributions
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',578,1)">578 </a>figure('WindowStyle','docked');
+dbquit
+p.featSel.fov.resFile = processFov(p);
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+-----------------------
+empiricalFov: Computing
+flattening ecc distributions
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',578,1)">578 </a>figure('WindowStyle','docked');
+dbquit
+p.featSel.fov.resFile = processFov(p);
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+-----------------------
+empiricalFov: Computing
+flattening ecc distributions
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',125,1)">125 </a>voxProp.L = flattenEccDist(d,'L',p,1);
+voxProp.L = flattenEccDist(d,'L',p,0);
+p
+
+p = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+            wd: 'C:\Users\el_ba\Documents\GitHub\HRdelay'
+         anaID: '2021-08-11'
+      dataPath: [1×1 struct]
+     figOption: [1×1 struct]
+    termOption: [1×1 struct]
+          perm: [1×1 struct]
+          boot: [1×1 struct]
+          meta: [1×1 struct]
+           fov: [1×1 struct]
+       featSel: [1×1 struct]
+
+p.figOption
+
+ans = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+      outDir: 'C:\Users\el_ba\Documents\GitHub\HRdelay\figures\2021-08-11'
+     verbose: 0
+        save: 1
+     subjInd: 2
+     sessInd: 1
+     condInd: 1
+    sliceInd: 7
+
+p.figOption
+
+ans = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+      outDir: 'C:\Users\el_ba\Documents\GitHub\HRdelay\figures\2021-08-11'
+     verbose: 0
+        save: 1
+     subjInd: 2
+     sessInd: 1
+     condInd: 1
+    sliceInd: 7
+
+p.figOption.verbose
+
+ans =
+
+     0
+
+voxProp.L = flattenEccDist(d,'L',p,p.figOption.verbose);
+voxProp.L = flattenEccDist(d,'L',p,1)
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',578,1)">578 </a>figure('WindowStyle','docked');
+dbquit
+dbquit
+p.featSel.fov.resFile = processFov(p);
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+-----------------------
+empiricalFov: Computing
+flattening ecc distributions
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',125,1)">125 </a>voxProp.L = flattenEccDist(d,'L',p,p.figOption.verbose);
+p.figOption
+
+ans = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+      outDir: 'C:\Users\el_ba\Documents\GitHub\HRdelay\figures\2021-08-11'
+     verbose: 0
+        save: 1
+     subjInd: 2
+     sessInd: 1
+     condInd: 1
+    sliceInd: 7
+
+dbquit
+p.featSel.fov.resFile = processFov(p);
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+-----------------------
+empiricalFov: Computing
+flattening ecc distributions
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',125,1)">125 </a>voxProp.L = flattenEccDist(d,'L',p,p.figOption.verbose);
+dbquit
+p.featSel.fov.resFile = processFov(p);
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+-----------------------
+empiricalFov: Computing
+flattening ecc distributions
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',125,1)">125 </a>voxProp.L = flattenEccDist(d,'L',p);
+voxProp.L = flattenEccDist(d,'L',p);
+voxProp.L = flattenEccDist(d,'L',p,1);
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',580,1)">580 </a>figure('WindowStyle','docked');
+dbquit
+dbquit
+p.featSel.fov.resFile = processFov(p);
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+-----------------------
+empiricalFov: Computing
+flattening ecc distributions
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',125,1)">125 </a>voxProp.L = flattenEccDist(d,'L',p,1);
+voxProp.L = flattenEccDist(d,'L',p,1);
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',237,1)">237 </a>if plotFlag>=2
+if system_dependent('IsDebugMode')==1, dbstep; end
+p.figOption
+
+ans = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+      outDir: 'C:\Users\el_ba\Documents\GitHub\HRdelay\figures\2021-08-11'
+     verbose: 0
+        save: 1
+     subjInd: 2
+     sessInd: 1
+     condInd: 1
+    sliceInd: 7
+
+p.figOption.subjInd
+
+ans =
+
+     2
+
+if system_dependent('IsDebugMode')==1, dbstep; end
+dbquit
+dbquit
+p.featSel.fov.resFile = processFov(p);
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+-----------------------
+empiricalFov: Computing
+flattening ecc distributions
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',125,1)">125 </a>voxProp.L = flattenEccDist(d,'L',p,1);
+voxProp.L = flattenEccDist(d,'L',p,1);
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',580,1)">580 </a>figure('WindowStyle','docked');
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep out; end
+if system_dependent('IsDebugMode')==1, dbstep out; end
+dbquit
+p.featSel.fov.resFile = processFov(p);
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+-----------------------
+empiricalFov: Computing
+flattening ecc distributions
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',131,1)">131 </a>disp('preparing delay maps')
+dbquit
+close all
+p.featSel.fov.resFile = processFov(p);
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+-----------------------
+empiricalFov: Computing
+flattening ecc distributions
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',131,1)">131 </a>disp('preparing delay maps')
+if system_dependent('IsDebugMode')==1, dbstep; end
+preparing delay maps
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',132,1)">132 </a>cont.L = prepareDelayFovContour(d,voxProp.L,p);
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',133,1)">133 </a>cont.R = prepareDelayFovContour(d,voxProp.R,p);
+p.figOption
+
+ans = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+      outDir: 'C:\Users\el_ba\Documents\GitHub\HRdelay\figures\2021-08-11'
+     verbose: 0
+        save: 1
+     subjInd: 2
+     sessInd: 1
+     condInd: 1
+    sliceInd: 7
+
+p.figOption.verbose
+
+ans =
+
+     0
+
+p.figOption.verbose = 1
+
+p = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+            wd: 'C:\Users\el_ba\Documents\GitHub\HRdelay'
+         anaID: '2021-08-11'
+      dataPath: [1×1 struct]
+     figOption: [1×1 struct]
+    termOption: [1×1 struct]
+          perm: [1×1 struct]
+          boot: [1×1 struct]
+          meta: [1×1 struct]
+           fov: [1×1 struct]
+       featSel: [1×1 struct]
+
+cont.R = prepareDelayFovContour(d,voxProp.R,p);
+p.figOption.verbose = 0
+
+p = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+            wd: 'C:\Users\el_ba\Documents\GitHub\HRdelay'
+         anaID: '2021-08-11'
+      dataPath: [1×1 struct]
+     figOption: [1×1 struct]
+    termOption: [1×1 struct]
+          perm: [1×1 struct]
+          boot: [1×1 struct]
+          meta: [1×1 struct]
+           fov: [1×1 struct]
+       featSel: [1×1 struct]
+
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',136,1)">136 </a>voxProp2 = cell(size(d));
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbcont; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+02jp,sess1: refining fov contour
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+[featValLR.(hemi),featMethodLR.(hemi),featIndInLR.(hemi),featInfoLR.(hemi),f.(hemi){subjInd,sessInd}] = getAreaAndFov(cont.(hemi){subjInd,sessInd},voxProp{subjInd,sessInd}.(hemi),p);
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',798,1)">798 </a>    f0 = figure('WindowStyle','docked','visible','off');
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',813,1)">813 </a>[~,f1,pgon] = processDelayFovContour3(cont,voxProp,p,prevInd,sm,mergeRadius,marginRadius,[],'do not add pgonRef',visibleFlag2);
+if system_dependent('IsDebugMode')==1, dbcont; end
+f.(hemi){subjInd,sessInd}
+
+ans = 
+
+  1×11 <a href="matlab:helpPopup matlab.ui.Figure" style="font-weight:bold">Figure</a> array:
+
+  Columns 1 through 7
+
+    Figure    Figure    Figure    Figure    Figure    Figure    Figure
+
+  Columns 8 through 11
+
+    Figure    Figure    Figure    Figure
+
+p
+
+p = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+            wd: 'C:\Users\el_ba\Documents\GitHub\HRdelay'
+         anaID: '2021-08-11'
+      dataPath: [1×1 struct]
+     figOption: [1×1 struct]
+    termOption: [1×1 struct]
+          perm: [1×1 struct]
+          boot: [1×1 struct]
+          meta: [1×1 struct]
+           fov: [1×1 struct]
+       featSel: [1×1 struct]
+       subjInd: 1
+       sessInd: 1
+
+p.figOption
+
+ans = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+      outDir: 'C:\Users\el_ba\Documents\GitHub\HRdelay\figures\2021-08-11'
+     verbose: 0
+        save: 1
+     subjInd: 2
+     sessInd: 1
+     condInd: 1
+    sliceInd: 7
+
+p.figOption.verbose
+
+ans =
+
+     0
+
+p.figOption.verbose=1
+
+p = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+            wd: 'C:\Users\el_ba\Documents\GitHub\HRdelay'
+         anaID: '2021-08-11'
+      dataPath: [1×1 struct]
+     figOption: [1×1 struct]
+    termOption: [1×1 struct]
+          perm: [1×1 struct]
+          boot: [1×1 struct]
+          meta: [1×1 struct]
+           fov: [1×1 struct]
+       featSel: [1×1 struct]
+       subjInd: 1
+       sessInd: 1
+
+[featValLR.(hemi),featMethodLR.(hemi),featIndInLR.(hemi),featInfoLR.(hemi),f.(hemi){subjInd,sessInd}] = getAreaAndFov(cont.(hemi){subjInd,sessInd},voxProp{subjInd,sessInd}.(hemi),p);
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',798,1)">798 </a>    f0 = figure('WindowStyle','docked','visible','off');
+visibleFlag
+
+visibleFlag =
+
+     0
+
+p.figOption
+
+ans = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+      outDir: 'C:\Users\el_ba\Documents\GitHub\HRdelay\figures\2021-08-11'
+     verbose: 1
+        save: 1
+     subjInd: 2
+     sessInd: 1
+     condInd: 1
+    sliceInd: 7
+
+p.figOption.verbose
+
+ans =
+
+     1
+
+visibleFlag = 1;
+if system_dependent('IsDebugMode')==1, dbstep; end
+dbquit
+dbquit
+p.featSel.fov.resFile = processFov(p);
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+-----------------------
+empiricalFov: Computing
+flattening ecc distributions
+preparing delay maps
+02jp,sess1: refining fov contour
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',158,1)">158 </a>        [featValLR.(hemi),featMethodLR.(hemi),featIndInLR.(hemi),featInfoLR.(hemi),f.(hemi){subjInd,sessInd}] = getAreaAndFov(cont.(hemi){subjInd,sessInd},voxProp{subjInd,sessInd}.(hemi),p);
+[featValLR.(hemi),featMethodLR.(hemi),featIndInLR.(hemi),featInfoLR.(hemi),f.(hemi){subjInd,sessInd}] = getAreaAndFov(cont.(hemi){subjInd,sessInd},voxProp{subjInd,sessInd}.(hemi),p);
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',802,1)">802 </a>    f0 = figure('WindowStyle','docked','visible','off');
+p.figOption.verbose
+
+ans =
+
+     0
+
+visibleFlag = 1;
+if system_dependent('IsDebugMode')==1, dbstep; end
+f0 = figure('WindowStyle','docked','visible','on');
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',817,1)">817 </a>[~,f1,pgon] = processDelayFovContour3(cont,voxProp,p,prevInd,sm,mergeRadius,marginRadius,[],'do not add pgonRef',visibleFlag2);
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',819,1)">819 </a>if p.featSel.fov.empirical.auto(2).smList~=sm
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',820,1)">820 </a>    sm = p.featSel.fov.empirical.auto(2).smList;
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',823,1)">823 </a>mergeRadius  = p.featSel.fov.empirical.auto(2).mergeRadiusList;
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',830,1)">830 </a>end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',831,1)">831 </a>f = [f0 f1 f2];
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',817,1)">817 </a>[~,f1,pgon] = processDelayFovContour3(cont,voxProp,p,prevInd,sm,mergeRadius,marginRadius,[],'do not add pgonRef',visibleFlag2);
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',819,1)">819 </a>if p.featSel.fov.empirical.auto(2).smList~=sm
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',158,1)">158 </a>        [featValLR.(hemi),featMethodLR.(hemi),featIndInLR.(hemi),featInfoLR.(hemi),f.(hemi){subjInd,sessInd}] = getAreaAndFov(cont.(hemi){subjInd,sessInd},voxProp{subjInd,sessInd}.(hemi),p);
+if system_dependent('IsDebugMode')==1, dbstep in; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+p
+
+p = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+            wd: 'C:\Users\el_ba\Documents\GitHub\HRdelay'
+         anaID: '2021-08-11'
+      dataPath: [1×1 struct]
+     figOption: [1×1 struct]
+    termOption: [1×1 struct]
+          perm: [1×1 struct]
+          boot: [1×1 struct]
+          meta: [1×1 struct]
+           fov: [1×1 struct]
+       featSel: [1×1 struct]
+       subjInd: 1
+       sessInd: 1
+
+p.figOption
+
+ans = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+      outDir: 'C:\Users\el_ba\Documents\GitHub\HRdelay\figures\2021-08-11'
+     verbose: 0
+        save: 1
+     subjInd: 2
+     sessInd: 1
+     condInd: 1
+    sliceInd: 7
+
+p.figOption.verbose
+
+ans =
+
+     0
+
+p.figOption.verbose = 1
+
+p = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+            wd: 'C:\Users\el_ba\Documents\GitHub\HRdelay'
+         anaID: '2021-08-11'
+      dataPath: [1×1 struct]
+     figOption: [1×1 struct]
+    termOption: [1×1 struct]
+          perm: [1×1 struct]
+          boot: [1×1 struct]
+          meta: [1×1 struct]
+           fov: [1×1 struct]
+       featSel: [1×1 struct]
+       subjInd: 1
+       sessInd: 1
+
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',800,1)">800 </a>    f0 = figure('WindowStyle','docked','visible','on');
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',803,1)">803 </a>end
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',804,1)">804 </a>imagesc(cont.X(1,:),cont.Y(:,1),~tmpInd); hold on
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',805,1)">805 </a>set(gca,'YDir','normal'); colormap autumn
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',806,1)">806 </a>plot(pgonOrig,'FaceColor','none')
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',807,1)">807 </a>set(gca,'PlotBoxAspectRatio',[1 1 1],'DataAspectRatio',[1 1 1]);
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',809,1)">809 </a>cont.outXY = ~tmpInd;
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',810,1)">810 </a>prevInd = ind&tmpInd2;
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',812,1)">812 </a>sm           = p.featSel.fov.empirical.auto(1).smList;
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',813,1)">813 </a>mergeRadius  = p.featSel.fov.empirical.auto(1).mergeRadiusList;
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',814,1)">814 </a>marginRadius = p.featSel.fov.empirical.auto(1).marginRadiusList;
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',815,1)">815 </a>cont = getDelayFovContour3(cont,sm,prevInd);
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',816,1)">816 </a>featVal = cont.vecUV;
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',817,1)">817 </a>[~,f1,pgon] = processDelayFovContour3(cont,voxProp,p,prevInd,sm,mergeRadius,marginRadius,[],'do not add pgonRef',visibleFlag2);
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',819,1)">819 </a>if p.featSel.fov.empirical.auto(2).smList~=sm
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',820,1)">820 </a>    sm = p.featSel.fov.empirical.auto(2).smList;
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',821,1)">821 </a>    cont = getDelayFovContour3(cont,sm,prevInd);
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',822,1)">822 </a>end
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',823,1)">823 </a>mergeRadius  = p.featSel.fov.empirical.auto(2).mergeRadiusList;
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',824,1)">824 </a>marginRadius = p.featSel.fov.empirical.auto(2).marginRadiusList;
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',825,1)">825 </a>if ~isempty(pgon)
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',826,1)">826 </a>    [curIndIn,f2,~] = processDelayFovContour3(cont,voxProp,p,prevInd,sm,mergeRadius,marginRadius,pgon,'add pgonRef',visibleFlag2);
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',830,1)">830 </a>end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',831,1)">831 </a>f = [f0 f1 f2];
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',832,1)">832 </a>featVal;
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',833,1)">833 </a>featMethod = strjoin([{'fov'} {'empirical'}],': ');
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',834,1)">834 </a>featIndIn = curIndIn;
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',835,1)">835 </a>featInfo = 'vox X featSel X condPair';
+if system_dependent('IsDebugMode')==1, dbstep; end
+End of function processFov>getAreaAndFov.
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',160,1)">160 </a>        [featValLR.(hemi),featMethodLR.(hemi),featIndInLR.(hemi),featInfoLR.(hemi),f.(hemi){subjInd,sessInd}] = getAreaAndFov(cont.(hemi){subjInd,sessInd},voxProp{subjInd,sessInd}.(hemi),p);
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',163,1)">163 </a>        featVal = nan(size(voxProp{subjInd,sessInd}.(hemi).hemifield));
+close all
+[featValLR.(hemi),featMethodLR.(hemi),featIndInLR.(hemi),featInfoLR.(hemi),f.(hemi){subjInd,sessInd}] = getAreaAndFov(cont.(hemi){subjInd,sessInd},voxProp{subjInd,sessInd}.(hemi),p);
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',800,1)">800 </a>    f0 = figure('WindowStyle','docked','visible','on');
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',806,1)">806 </a>plot(pgonOrig,'FaceColor','none')
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',807,1)">807 </a>set(gca,'PlotBoxAspectRatio',[1 1 1],'DataAspectRatio',[1 1 1]);
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',809,1)">809 </a>cont.outXY = ~tmpInd;
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',810,1)">810 </a>prevInd = ind&tmpInd2;
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',812,1)">812 </a>sm           = p.featSel.fov.empirical.auto(1).smList;
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',813,1)">813 </a>mergeRadius  = p.featSel.fov.empirical.auto(1).mergeRadiusList;
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',814,1)">814 </a>marginRadius = p.featSel.fov.empirical.auto(1).marginRadiusList;
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',815,1)">815 </a>cont = getDelayFovContour3(cont,sm,prevInd);
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',816,1)">816 </a>featVal = cont.vecUV;
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',817,1)">817 </a>[~,f1,pgon] = processDelayFovContour3(cont,voxProp,p,prevInd,sm,mergeRadius,marginRadius,[],'do not add pgonRef',visibleFlag2);
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',819,1)">819 </a>if p.featSel.fov.empirical.auto(2).smList~=sm
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',820,1)">820 </a>    sm = p.featSel.fov.empirical.auto(2).smList;
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',821,1)">821 </a>    cont = getDelayFovContour3(cont,sm,prevInd);
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',822,1)">822 </a>end
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',823,1)">823 </a>mergeRadius  = p.featSel.fov.empirical.auto(2).mergeRadiusList;
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',824,1)">824 </a>marginRadius = p.featSel.fov.empirical.auto(2).marginRadiusList;
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',825,1)">825 </a>if ~isempty(pgon)
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',826,1)">826 </a>    [curIndIn,f2,~] = processDelayFovContour3(cont,voxProp,p,prevInd,sm,mergeRadius,marginRadius,pgon,'add pgonRef',visibleFlag2);
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',830,1)">830 </a>end
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',831,1)">831 </a>f = [f0 f1 f2];
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',832,1)">832 </a>featVal;
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',833,1)">833 </a>featMethod = strjoin([{'fov'} {'empirical'}],': ');
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',834,1)">834 </a>featIndIn = curIndIn;
+if system_dependent('IsDebugMode')==1, dbstep; end
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',835,1)">835 </a>featInfo = 'vox X featSel X condPair';
+if system_dependent('IsDebugMode')==1, dbstep; end
+End of function processFov>getAreaAndFov.

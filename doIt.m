@@ -14,6 +14,7 @@ downloadData;
 extractResponses(p);
 
 %% Define the retinotopic representation of the stimulus field of view (data-driven with priors from a probabilistic retinotopic atlas)
+p.fov.eccLim = [0.75 7]; % threshMethod='ecc'
 p.featSel.fov.resFile = processFov(p);
 
 

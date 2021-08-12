@@ -5,12 +5,19 @@ p.anaID = '2021-08-11'; %an ID for your output folder. Potentially useful if you
 addpath(genpath(fullfile(p.wd,'utilities')));
 addpath(genpath(fullfile(p.wd,'matlabFun')));
 
-% Matlab toolboxes:
+% Matlab proprietary toolboxes:
 % -Image Processing
 % -Statistics and Machine Learning
 % -Mapping
 % -Curve Fitting
 % -Bioinformatics
+
+% Matlab contributed toolboxes
+matDependencyPath = fullfile(p.wd,'matlabFileEx'); if ~exist(matDependencyPath,'dir'); mkdir(matDependencyPath); end
+%https://www.mathworks.com/matlabcentral/fileexchange/25536-red-blue-colormap
+%https://www.mathworks.com/matlabcentral/fileexchange/41961-nanconv
+addpath(genpath(fullfile(matDependencyPath)));
+
 
 % gitDependencyPath = fullfile(p.paths.home,'Documents/GitHub/utilities');
 %addpath(genpath(fullfile(gitDependencyPath,'bassFun/matlab')));

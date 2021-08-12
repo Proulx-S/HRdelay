@@ -17,7 +17,7 @@ for subjInd = 1:length(p.meta.subjList)
     data = load(fullfile(dataIn,[subj '.mat']),'d','p');
     % Run GLMs
     for sessInd = 1:size(data.d.fun,2)
-        disp([subj ': extracting responses (sess' num2str(sessInd) '/' num2str(size(data.d.fun,2)) ')'])
+        disp([subj ': extracting responses from timeseries (sess' num2str(sessInd) '/' num2str(size(data.d.fun,2)) ')'])
         sess = ['sess' num2str(sessInd)];
         resp.(sess) = runGLMs(data.d.fun(1,sessInd),data.p,0);
         dDtrd.(sess) = rmfield(data.d.fun(sessInd),{'data' 'design' 'extraRegr'});
