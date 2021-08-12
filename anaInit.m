@@ -3,6 +3,7 @@ p.anaID = '2021-08-11'; %an ID for your output folder. Potentially useful if you
 
 %% Dependencies
 addpath(genpath(fullfile(p.wd,'utilities')));
+addpath(genpath(fullfile(p.wd,'matlabFun')));
 
 % Matlab toolboxes:
 % -Image Processing

@@ -1,0 +1,116 @@
+11-Aug-2021 21:47:36
+Downloading 02jp from https://doi.org/10.5281/zenodo.5183028
+Downloaded to C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\02jp.mat
+Downloading 03sk from https://doi.org/10.5281/zenodo.5183028
+Downloaded to C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\03sk.mat
+Downloading 04sp from https://doi.org/10.5281/zenodo.5183028
+Downloaded to C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\04sp.mat
+Downloading 05bm from https://doi.org/10.5281/zenodo.5183028
+Downloaded to C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\05bm.mat
+Downloading 06sb from https://doi.org/10.5281/zenodo.5183028
+Downloaded to C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\06sb.mat
+Downloading 07bj from https://doi.org/10.5281/zenodo.5183028
+Downloaded to C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\07bj.mat
+02jp: loading
+02jp: extracting responses (sess1/2)
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\extractResponses.m',16,1)">16  </a>        res.(sess) = runGLMs(data.d.fun(1,sessInd),data.p,0);
+res.(sess) = runGLMs(data.d.fun(1,sessInd),data.p,0);
+dDtrd.(sess) = rmfield(data.d.fun(sessInd),{'data' 'design' 'extraRegr'});
+dDtrd.(sess).data = res.(sess).dataDtrd;
+res.(sess) = rmfield(res.(sess),'dataDtrd');
+disp([subj ': saving responses'])
+02jp: saving responses
+dataOut = fullfile(p.dataPath.V1,'resp');
+dataOut = fullfile(p.dataPath.V1,'resp');
+if ~exist(dataOut,'dir')
+    mkdir(dataOut)
+end
+outDir
+{Unrecognized function or variable 'outDir'.
+} 
+dataOut
+
+dataOut =
+
+    'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\resp'
+
+fullfile(dataOut,[subj '.mat'])
+
+ans =
+
+    'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\resp\02jp.mat'
+
+dbquit
+extractResponses(p)
+02jp: loading time-series
+02jp: extracting responses (sess1/2)
+02jp: extracting responses (sess2/2)
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\extractResponses.m',29,1)">29  </a>    disp([subj ': saving responses'])
+if system_dependent('IsDebugMode')==1, dbstep; end
+02jp: saving responses
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+02jp: saved to C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\resp\02jp.mat
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+02jp: saving detrended data
+inDir
+{Unrecognized function or variable 'inDir'.
+} 
+dataIn
+
+dataIn =
+
+    'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1'
+
+disp([subj ': saving detrended timeseries'])
+02jp: saving detrended timeseries
+save(fullfile(dataIn,[subj '_dDtrd.mat']),'dDtrd')
+save(fullfile(dataIn,[subj '_dDtrd.mat']),'dDtrd')
+disp([subj ': saved to ''' fullfile(dataIn,[subj '_dDtrd.mat']) ''''])
+02jp: saved to 'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\02jp_dDtrd.mat'
+clear dDtrd
+dbquit
+extractResponses(p)
+02jp: loading time-series
+02jp: extracting responses (sess1/2)
+02jp: extracting responses (sess2/2)
+02jp: saving responses
+02jp: saved to C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\resp\02jp.mat
+02jp: saving detrended timeseries
+02jp: saved to 'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\02jp_dDtrd.mat'
+03sk: loading time-series
+03sk: extracting responses (sess1/2)
+03sk: extracting responses (sess2/2)
+03sk: saving responses
+03sk: saved to C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\resp\03sk.mat
+03sk: saving detrended timeseries
+03sk: saved to 'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\03sk_dDtrd.mat'
+04sp: loading time-series
+04sp: extracting responses (sess1/2)
+04sp: extracting responses (sess2/2)
+04sp: saving responses
+04sp: saved to C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\resp\04sp.mat
+04sp: saving detrended timeseries
+04sp: saved to 'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\04sp_dDtrd.mat'
+05bm: loading time-series
+05bm: extracting responses (sess1/2)
+05bm: extracting responses (sess2/2)
+05bm: saving responses
+05bm: saved to C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\resp\05bm.mat
+05bm: saving detrended timeseries
+05bm: saved to 'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\05bm_dDtrd.mat'
+06sb: loading time-series
+06sb: extracting responses (sess1/2)
+06sb: extracting responses (sess2/2)
+06sb: saving responses
+06sb: saved to C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\resp\06sb.mat
+06sb: saving detrended timeseries
+06sb: saved to 'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\06sb_dDtrd.mat'
+07bj: loading time-series
+07bj: extracting responses (sess1/2)
+07bj: extracting responses (sess2/2)
+07bj: saving responses
+07bj: saved to C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\resp\07bj.mat
+07bj: saving detrended timeseries
+07bj: saved to 'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\07bj_dDtrd.mat'

@@ -7,8 +7,21 @@ close all
 %% Initiation
 anaInit; % where to define paths and some general configurations
 
-%% Get data (preprocessed BOLD volumes, only V1 ROI voxels, in .mat)
-getData;
+%% Get data (preprocessed BOLD volumes, only V1 ROI voxels, one .mat file per subject)
+downloadData;
+
+%% Extract responses from timeseries
+extractResponses(p);
+
+%% Define the retinotopic representation of the stimulus field of view (data-driven with priors from a probabilistic retinotopic atlas)
+p.featSel.fov.resFile = processFov(p);
+
+
+
+
+
+
+
 
 
 
