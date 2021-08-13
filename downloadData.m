@@ -1,3 +1,5 @@
+disp('--------------')
+disp('downloadData.m')
 %% Download intermediary data from Zenodo repository DOI:10.5281/zenodo.5183028 (https://doi.org/10.5281/zenodo.5183028)
 forceDownload = 0;
 if ~exist(p.dataPath.V1,'dir')

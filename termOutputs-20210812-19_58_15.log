@@ -1,0 +1,507 @@
+12-Aug-2021 19:58:15
+02jp already downloaded from https://doi.org/10.5281/zenodo.5183028
+03sk already downloaded from https://doi.org/10.5281/zenodo.5183028
+04sp already downloaded from https://doi.org/10.5281/zenodo.5183028
+05bm already downloaded from https://doi.org/10.5281/zenodo.5183028
+06sb already downloaded from https://doi.org/10.5281/zenodo.5183028
+07bj already downloaded from https://doi.org/10.5281/zenodo.5183028
+02jp: loading time-series
+02jp: extracting responses from timeseries (sess1/2)
+02jp: extracting responses from timeseries (sess2/2)
+02jp: saving responses
+02jp: saved to C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\resp\02jp.mat
+02jp: saving detrended timeseries
+02jp: saved to 'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\02jp_dDtrd.mat'
+03sk: loading time-series
+03sk: extracting responses from timeseries (sess1/2)
+03sk: extracting responses from timeseries (sess2/2)
+03sk: saving responses
+03sk: saved to C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\resp\03sk.mat
+03sk: saving detrended timeseries
+03sk: saved to 'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\03sk_dDtrd.mat'
+04sp: loading time-series
+04sp: extracting responses from timeseries (sess1/2)
+04sp: extracting responses from timeseries (sess2/2)
+04sp: saving responses
+04sp: saved to C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\resp\04sp.mat
+04sp: saving detrended timeseries
+04sp: saved to 'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\04sp_dDtrd.mat'
+05bm: loading time-series
+05bm: extracting responses from timeseries (sess1/2)
+05bm: extracting responses from timeseries (sess2/2)
+05bm: saving responses
+05bm: saved to C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\resp\05bm.mat
+05bm: saving detrended timeseries
+05bm: saved to 'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\05bm_dDtrd.mat'
+06sb: loading time-series
+06sb: extracting responses from timeseries (sess1/2)
+06sb: extracting responses from timeseries (sess2/2)
+06sb: saving responses
+06sb: saved to C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\resp\06sb.mat
+06sb: saving detrended timeseries
+06sb: saved to 'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\06sb_dDtrd.mat'
+07bj: loading time-series
+07bj: extracting responses from timeseries (sess1/2)
+07bj: extracting responses from timeseries (sess2/2)
+07bj: saving responses
+07bj: saved to C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\resp\07bj.mat
+07bj: saving detrended timeseries
+07bj: saved to 'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\07bj_dDtrd.mat'
+-----------------------
+empiricalFov: Loading data previously saved locally
+empiricalFov: Loaded
+empiricalFov: Saving figures
+empiricalFov: Saved to C:\Users\el_ba\Documents\GitHub\HRdelay\figures\2021-08-11\FigA
+empiricalFov: Saving figures
+empiricalFov: Saved to C:\Users\el_ba\Documents\GitHub\HRdelay\figures\2021-08-11\FigSuppl
+empiricalFov: Cleaning up
+empiricalFov: Done
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\doIt.m',27,1)">27  </a>processFeatSel(p)
+processFeatSel(p)
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m',3,1)">3   </a>loadData(p)
+loadData(p)
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m',88,1)">88  </a>subjList = p.meta.subjList;
+dbquit
+dbquit
+processFeatSel(p)
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m',3,1)">3   </a>loadData(p)
+loadData(p)
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m',86,1)">86  </a>dataIn = fullfile(p.dataPath.V1,'resp');
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+02jp: loading responses
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+03sk: loading responses
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep out; end
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+
+ans =
+
+  6×2 <a href="matlab:helpPopup cell" style="font-weight:bold">cell</a> array
+
+    {1×1 struct}    {1×1 struct}
+    {1×1 struct}    {1×1 struct}
+    {1×1 struct}    {1×1 struct}
+    {1×1 struct}    {1×1 struct}
+    {1×1 struct}    {1×1 struct}
+    {1×1 struct}    {1×1 struct}
+
+[d,info] = loadData(p)
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m',86,1)">86  </a>dataIn = fullfile(p.dataPath.V1,'resp');
+if system_dependent('IsDebugMode')==1, dbstep out; end
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+
+d =
+
+  6×2 <a href="matlab:helpPopup cell" style="font-weight:bold">cell</a> array
+
+    {1×1 struct}    {1×1 struct}
+    {1×1 struct}    {1×1 struct}
+    {1×1 struct}    {1×1 struct}
+    {1×1 struct}    {1×1 struct}
+    {1×1 struct}    {1×1 struct}
+    {1×1 struct}    {1×1 struct}
+
+
+info = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+        info: 'subj x sess'
+    sessList: {'sess1'  'sess2'}
+    subjList: {6×1 cell}
+
+d
+
+d =
+
+  6×2 <a href="matlab:helpPopup cell" style="font-weight:bold">cell</a> array
+
+    {1×1 struct}    {1×1 struct}
+    {1×1 struct}    {1×1 struct}
+    {1×1 struct}    {1×1 struct}
+    {1×1 struct}    {1×1 struct}
+    {1×1 struct}    {1×1 struct}
+    {1×1 struct}    {1×1 struct}
+
+p
+
+p = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+            wd: 'C:\Users\el_ba\Documents\GitHub\HRdelay'
+       figPath: 'C:\Users\el_ba\Documents\GitHub\HRdelay\figures'
+         anaID: '2021-08-11'
+      dataPath: [1×1 struct]
+     figOption: [1×1 struct]
+    termOption: [1×1 struct]
+          perm: [1×1 struct]
+          boot: [1×1 struct]
+          meta: [1×1 struct]
+
+p.dataPath
+
+ans = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+    V1: 'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1'
+
+p.dataPath
+
+ans = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+    V1: 'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1'
+
+ls(p.dataPath)
+{Error using <a href="matlab:matlab.internal.language.introspective.errorDocCallback('ls', 'C:\Program Files\MATLAB\R2021a\toolbox\matlab\general\ls.m', 24)" style="font-weight:bold">ls</a> (<a href="matlab: opentoline('C:\Program Files\MATLAB\R2021a\toolbox\matlab\general\ls.m',24,0)">line 24</a>)
+Inputs must be character vectors or string scalars.
+} 
+p.dataPath
+
+ans = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+    V1: 'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1'
+
+ls(p.dataPath.V1)
+
+.               04sp.mat        07bj.mat        
+..              04sp_dDtrd.mat  07bj_dDtrd.mat  
+02jp.mat        05bm.mat        fov.mat         
+02jp_dDtrd.mat  05bm_dDtrd.mat  resp            
+03sk.mat        06sb.mat        
+03sk_dDtrd.mat  06sb_dDtrd.mat  
+
+fullfile(p.dataPath.V1,'fov.mat')
+
+ans =
+
+    'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\fov.mat'
+
+load(fullfile(p.dataPath.V1,'fov.mat'),'cont','voxProp','pEmpirical','areaAndFov')
+fov = load(fullfile(p.dataPath.V1,'fov.mat'),'cont','voxProp','pEmpirical','areaAndFov');
+size(d,1)
+
+ans =
+
+     6
+
+for subjInd = 1:size(d,1)
+    for sessInd = 1:size(d,2)
+        areaAndFov{subjInd,sessInd}.cont.L = cont.L{subjInd,sessInd};
+        areaAndFov{subjInd,sessInd}.cont.R = cont.R{subjInd,sessInd};
+        d{subjInd,sessInd}.voxProp.L = voxProp{subjInd,sessInd}.L;
+        d{subjInd,sessInd}.voxProp.R = voxProp{subjInd,sessInd}.R;
+    end
+end
+%Pack cont into featSel_areaAndFov and voxProp into d
+for subjInd = 1:size(d,1)
+    for sessInd = 1:size(d,2)
+        fov.areaAndFov{subjInd,sessInd}.cont.L = fov.cont.L{subjInd,sessInd};
+        fov.areaAndFov{subjInd,sessInd}.cont.R = fov.cont.R{subjInd,sessInd};
+        d{subjInd,sessInd}.voxProp.L = fov.voxProp{subjInd,sessInd}.L;
+        d{subjInd,sessInd}.voxProp.R = fov.voxProp{subjInd,sessInd}.R;
+    end
+end
+p
+
+p = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+            wd: 'C:\Users\el_ba\Documents\GitHub\HRdelay'
+       figPath: 'C:\Users\el_ba\Documents\GitHub\HRdelay\figures'
+         anaID: '2021-08-11'
+      dataPath: [1×1 struct]
+     figOption: [1×1 struct]
+    termOption: [1×1 struct]
+          perm: [1×1 struct]
+          boot: [1×1 struct]
+          meta: [1×1 struct]
+
+pEmpirical
+
+pEmpirical = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+                padFac: 1.2000
+    minContPercentArea: 0.0500
+                  auto: [1×2 struct]
+
+fov
+
+fov = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+          cont: [1×1 struct]
+       voxProp: {6×2 cell}
+    pEmpirical: [1×1 struct]
+    areaAndFov: {6×2 cell}
+
+fov.pEmpirical
+
+ans = 
+
+  <a href="matlab:helpPopup struct" style="font-weight:bold">struct</a> with fields:
+
+                padFac: 1.2000
+    minContPercentArea: 0.0500
+                  auto: [1×2 struct]
+
+p.featSel.fov.empricalFov = fov.pEmpirical;
+dbquit
+processFeatSel(p)
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m',4,1)">4   </a>[d,info] = loadData(p);
+if system_dependent('IsDebugMode')==1, dbstep; end
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+if system_dependent('IsDebugMode')==1, dbstep; end
+{Unrecognized function or variable 'loadFov'.
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFeatSel', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m', 7)" style="font-weight:bold">processFeatSel</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m',7,0)">line 7</a>)
+[p,d,featSel_fov] = loadFov(p,d);
+} 
+opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m',7,0)
+opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m',7,0)
+processFeatSel(p)
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m',4,1)">4   </a>[d,info] = loadData(p);
+if system_dependent('IsDebugMode')==1, dbstep; end
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+if system_dependent('IsDebugMode')==1, dbstep; end
+dbquit
+processFeatSel(p)
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+Loading FOV
+Loaded FOV
+{Unrecognized function or variable 'verbose'.
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFeatSel', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m', 34)" style="font-weight:bold">processFeatSel</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m',34,0)">line 34</a>)
+if verbose
+} 
+opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m',34,0)
+processFeatSel(p)
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+Loading FOV
+Loaded FOV
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m',10,1)">10  </a>featSel = cell(size(d));
+featSel = cell(size(d));
+f = cell(size(d));
+edit
+featSel = cell(size(d));
+f = cell(size(d));
+sessInd = 1
+
+sessInd =
+
+     1
+
+subjInd = 1
+
+subjInd =
+
+     1
+
+disp(['subj' num2str(subjInd) '; sess' num2str(sessInd)])
+subj1; sess1
+disp(['processFeatSel: subj' num2str(subjInd) '; sess' num2str(sessInd)])
+processFeatSel: subj1; sess1
+disp(['processFeatSel: subj' num2str(subjInd) ',sess' num2str(sessInd)])
+processFeatSel: subj1,sess1
+[featSel{subjInd,sessInd}] = getFeatSel(d{subjInd,sessInd},p,featSel_fov{subjInd,sessInd});
+{Unrecognized function or variable 'getFeatSel'.
+} 
+dbquit
+processFeatSel(p)
+----------------
+processFeatSel.m
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+Loading FOV
+Loaded FOV
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m',12,1)">12  </a>featSel = cell(size(d));
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+processFeatSel: subj1,sess1
+if system_dependent('IsDebugMode')==1, dbstep; end
+{Unrecognized field name "respVecSig".
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFeatSel>getFeatSel', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m', 97)" style="font-weight:bold">processFeatSel>getFeatSel</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m',97,0)">line 97</a>)
+if p.featSel.respVecSig.doIt || p.featSel.respVecDiff.doIt
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFeatSel', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m', 17)" style="font-weight:bold">processFeatSel</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m',17,0)">line 17</a>)
+        [featSel{subjInd,sessInd}] =
+        getFeatSel(d{subjInd,sessInd},p,featSel_fov{subjInd,sessInd});
+} 
+opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m',97,0)
+processFeatSel(p)
+----------------
+processFeatSel.m
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+Loading FOV
+Loaded FOV
+processFeatSel: subj1,sess1
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m',17,1)">17  </a>        [featSel{subjInd,sessInd}] = getFeatSel(d{subjInd,sessInd},p,featSel_fov{subjInd,sessInd});
+[featSel{subjInd,sessInd}] = getFeatSel(d{subjInd,sessInd},p,featSel_fov{subjInd,sessInd});
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m',97,1)">97  </a>if p.featSel.respVecSig.doIt || p.featSel.respVecDiff.doIt
+if system_dependent('IsDebugMode')==1, dbstep; end
+{Unrecognized field name "respVecSig".
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFeatSel>getFeatSel', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m', 97)" style="font-weight:bold">processFeatSel>getFeatSel</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m',97,0)">line 97</a>)
+if p.featSel.respVecSig.doIt || p.featSel.respVecDiff.doIt
+} 
+opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m',97,0)
+opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m',97,0)
+opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m',97,0)
+processFeatSel(p)
+----------------
+processFeatSel.m
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+{Operation terminated by user during <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFeatSel>loadData', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m', 49)" style="font-weight:bold">processFeatSel>loadData</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m',49,0)">line 49</a>)
+
+
+In <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFeatSel', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m', 6)" style="font-weight:bold">processFeatSel</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m',6,0)">line 6</a>)
+[d,info] = loadData(p);
+} 
+dbquit
+processFeatSel(p)
+----------------
+processFeatSel.m
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+Loading FOV
+Loaded FOV
+processFeatSel: subj1,sess1
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m',17,1)">17  </a>        [featSel{subjInd,sessInd}] = getFeatSel(d{subjInd,sessInd},p,featSel_fov{subjInd,sessInd});
+[featSel{subjInd,sessInd}] = getFeatSel(d{subjInd,sessInd},p,featSel_fov{subjInd,sessInd});
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m',97,1)">97  </a>if p.featSel.respVecSig.doIt || p.featSel.respVecDiff.doIt
+p.featSel.global.method
+{Unrecognized field name "global".
+} 
+statLabel = 'Hotelling'; % 'Pillai' 'Wilks' 'Hotelling' 'Roy'
+    condIndPairList = [{[1 2 3]}];
+interceptStat = nan(size(d.sin,1),length(condIndPairList));
+    interceptP = nan(size(d.sin,1),length(condIndPairList));
+    condStat = nan(size(d.sin,1),length(condIndPairList));
+    condP = nan(size(d.sin,1),length(condIndPairList));
+statLabel = 'Hotelling'; % 'Pillai' 'Wilks' 'Hotelling' 'Roy'
+condIndPairList = [{[1 2 3]}];
+interceptStat = nan(size(d.sin,1),length(condIndPairList));
+interceptP = nan(size(d.sin,1),length(condIndPairList));
+interceptP = nan(size(d.sin,1),length(condIndPairList));
+condStat = nan(size(d.sin,1),length(condIndPairList));
+condP = nan(size(d.sin,1),length(condIndPairList));
+condIndPairInd = 1
+
+condIndPairInd =
+
+     1
+
+[condStat(:,condIndPairInd),condP(:,condIndPairInd),interceptStat(:,condIndPairInd),interceptP(:,condIndPairInd)] = getDiscrimStats(d,p,condIndPairList{condIndPairInd},statLabel);
+{Unrecognized function or variable 'getXYK'.
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFeatSel>getDiscrimStats', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m', 394)" style="font-weight:bold">processFeatSel>getDiscrimStats</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m',394,0)">line 394</a>)
+[x,y,~] = getXYK(d,p);
+} 
+[condStat(:,condIndPairInd),condP(:,condIndPairInd),interceptStat(:,condIndPairInd),interceptP(:,condIndPairInd)] = getDiscrimStats(d,p,condIndPairList{condIndPairInd},statLabel);
+{Unrecognized function or variable 'manova2'.
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFeatSel>getDiscrimStats', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m', 406)" style="font-weight:bold">processFeatSel>getDiscrimStats</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m',406,0)">line 406</a>)
+[TBL,A,C_MV,D,withinNames,betweenNames] =
+manova2(rm,withinModel,[],statLabel);
+} 
+[condStat(:,condIndPairInd),condP(:,condIndPairInd),interceptStat(:,condIndPairInd),interceptP(:,condIndPairInd)] = getDiscrimStats(d,p,condIndPairList{condIndPairInd},statLabel);
+{Error using <a href="matlab:matlab.internal.language.introspective.errorDocCallback('manova2')" style="font-weight:bold">manova2</a>
+Too many input arguments.
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFeatSel>getDiscrimStats', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m', 406)" style="font-weight:bold">processFeatSel>getDiscrimStats</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m',406,0)">line 406</a>)
+[TBL,A,C_MV,D,withinNames,betweenNames] =
+manova2(rm,withinModel,[],statLabel);
+} 
+[condStat(:,condIndPairInd),condP(:,condIndPairInd),interceptStat(:,condIndPairInd),interceptP(:,condIndPairInd)] = getDiscrimStats(d,p,condIndPairList{condIndPairInd},statLabel);
+{Error using <a href="matlab:matlab.internal.language.introspective.errorDocCallback('manova2')" style="font-weight:bold">manova2</a>
+Too many input arguments.
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFeatSel>getDiscrimStats', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m', 406)" style="font-weight:bold">processFeatSel>getDiscrimStats</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m',406,0)">line 406</a>)
+[TBL,A,C_MV,D,withinNames,betweenNames] =
+manova2(rm,withinModel,[],statLabel);
+} 
+[condStat(:,condIndPairInd),condP(:,condIndPairInd),interceptStat(:,condIndPairInd),interceptP(:,condIndPairInd)] = getDiscrimStats(d,p,condIndPairList{condIndPairInd},statLabel);
+{Error using <a href="matlab:matlab.internal.language.introspective.errorDocCallback('manova2')" style="font-weight:bold">manova2</a>
+Too many input arguments.
+
+Error in <a href="matlab:matlab.internal.language.introspective.errorDocCallback('processFeatSel>getDiscrimStats', 'C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m', 406)" style="font-weight:bold">processFeatSel>getDiscrimStats</a> (<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFeatSel.m',406,0)">line 406</a>)
+[TBL,A,C_MV,D,withinNames,betweenNames] =
+manova2(rm,withinModel,[],statLabel);
+} 

@@ -1,4 +1,6 @@
 function extractResponses(p)
+disp('------------------')
+disp('extractResponses.m')
 % For each session of each subject, extract BOLD response to the stimulus
 % cycle by fitting a sinusoidal response model and a deconvolution model.
 

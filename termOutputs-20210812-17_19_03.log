@@ -1,0 +1,224 @@
+12-Aug-2021 17:19:03
+02jp already downloaded from https://doi.org/10.5281/zenodo.5183028
+03sk already downloaded from https://doi.org/10.5281/zenodo.5183028
+04sp already downloaded from https://doi.org/10.5281/zenodo.5183028
+05bm already downloaded from https://doi.org/10.5281/zenodo.5183028
+06sb already downloaded from https://doi.org/10.5281/zenodo.5183028
+07bj already downloaded from https://doi.org/10.5281/zenodo.5183028
+02jp: loading time-series
+02jp: extracting responses from timeseries (sess1/2)
+02jp: extracting responses from timeseries (sess2/2)
+02jp: saving responses
+02jp: saved to C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\resp\02jp.mat
+02jp: saving detrended timeseries
+02jp: saved to 'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\02jp_dDtrd.mat'
+03sk: loading time-series
+03sk: extracting responses from timeseries (sess1/2)
+03sk: extracting responses from timeseries (sess2/2)
+03sk: saving responses
+03sk: saved to C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\resp\03sk.mat
+03sk: saving detrended timeseries
+03sk: saved to 'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\03sk_dDtrd.mat'
+04sp: loading time-series
+04sp: extracting responses from timeseries (sess1/2)
+04sp: extracting responses from timeseries (sess2/2)
+04sp: saving responses
+04sp: saved to C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\resp\04sp.mat
+04sp: saving detrended timeseries
+04sp: saved to 'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\04sp_dDtrd.mat'
+05bm: loading time-series
+05bm: extracting responses from timeseries (sess1/2)
+05bm: extracting responses from timeseries (sess2/2)
+05bm: saving responses
+05bm: saved to C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\resp\05bm.mat
+05bm: saving detrended timeseries
+05bm: saved to 'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\05bm_dDtrd.mat'
+06sb: loading time-series
+06sb: extracting responses from timeseries (sess1/2)
+06sb: extracting responses from timeseries (sess2/2)
+06sb: saving responses
+06sb: saved to C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\resp\06sb.mat
+06sb: saving detrended timeseries
+06sb: saved to 'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\06sb_dDtrd.mat'
+07bj: loading time-series
+07bj: extracting responses from timeseries (sess1/2)
+07bj: extracting responses from timeseries (sess2/2)
+07bj: saving responses
+07bj: saved to C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\resp\07bj.mat
+07bj: saving detrended timeseries
+07bj: saved to 'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\07bj_dDtrd.mat'
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\doIt.m',18,1)">18  </a>doWhat = 'run';
+doWhat = 'run_forced';
+p.featSel.fov.resFile = processFov(p,doWhat);
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+-----------------------
+empiricalFov: Computing
+flattening ecc distributions
+preparing delay maps
+02jp,sess1: refining fov contour
+02jp,sess2: refining fov contour
+03sk,sess1: refining fov contour
+03sk,sess2: refining fov contour
+04sp,sess1: refining fov contour
+04sp,sess2: refining fov contour
+05bm,sess1: refining fov contour
+05bm,sess2: refining fov contour
+06sb,sess1: refining fov contour
+06sb,sess2: refining fov contour
+07bj,sess1: refining fov contour
+07bj,sess2: refining fov contour
+empiricalFov: Saving
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',15,1)">15  </a>            save(outFile,'areaAndFov','cont','voxProp','pEmpirical')
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+empiricalFov: Saved to: C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\fov.mat
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+doWhat = 'download_forced';
+dbquit
+doWhat = 'download_forced';
+p.featSel.fov.resFile = processFov(p,doWhat);
+-----------------------
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',22,1)">22  </a>        if ~exist(outFile,'file') || strcmp(doWhat,'download_forced')
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+empiricalFov: Downloading
+p.dataPath.V1
+
+ans =
+
+    'C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1'
+
+dbquit
+doWhat = 'download_forced';
+% 'run' -> run it yourself (several minutes)
+% 'download' -> download precomputed data from repository
+% 'run_forced' -> same as above, but forces to rerun instead of loading
+% locally saved data
+% 'download_forced' -> same as above, but forces to redownload instead of loading
+% locally saved data
+p.featSel.fov.resFile = processFov(p,doWhat);
+-----------------------
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',22,1)">22  </a>        if ~exist(outFile,'file') || strcmp(doWhat,'download_forced')
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+empiricalFov: Downloading
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+empiricalFov: Downloaded to C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\fov.mat
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+dbquit
+doWhat = 'download_forced';
+p.featSel.fov.resFile = processFov(p,doWhat);
+-----------------------
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',20,1)">20  </a>        if ~exist(outFile,'file') || strcmp(doWhat,'download_forced')
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+empiricalFov: Downloading
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+empiricalFov: Downloaded to C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\fov.mat
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',27,1)">27  </a>        end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+dbquit
+doWhat = 'download';
+p.featSel.fov.resFile = processFov(p,doWhat);
+-----------------------
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',6,1)">6   </a>switch doWhat
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+empiricalFov: using data previously saved locally
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+dbquit
+doWhat = 'run_forced';
+%
+p.featSel.fov.resFile = processFov(p,doWhat);
+-----------------------
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',6,1)">6   </a>switch doWhat
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+02jp: loading responses
+03sk: loading responses
+04sp: loading responses
+05bm: loading responses
+06sb: loading responses
+07bj: loading responses
+responses loaded
+if system_dependent('IsDebugMode')==1, dbstep; end
+empiricalFov: Computing
+if system_dependent('IsDebugMode')==1, dbstep; end
+flattening ecc distributions
+preparing delay maps
+02jp,sess1: refining fov contour
+02jp,sess2: refining fov contour
+03sk,sess1: refining fov contour
+03sk,sess2: refining fov contour
+04sp,sess1: refining fov contour
+04sp,sess2: refining fov contour
+05bm,sess1: refining fov contour
+05bm,sess2: refining fov contour
+06sb,sess1: refining fov contour
+06sb,sess2: refining fov contour
+07bj,sess1: refining fov contour
+07bj,sess2: refining fov contour
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',12,1)">12  </a>            disp('empiricalFov: Saving')
+if system_dependent('IsDebugMode')==1, dbstep; end
+empiricalFov: Saving
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+empiricalFov: Saved to: C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\fov.mat
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+dbquit
+doWhat = 'download_forced';
+p.featSel.fov.resFile = processFov(p,doWhat);
+-----------------------
+<a href="matlab: opentoline('C:\Users\el_ba\Documents\GitHub\HRdelay\processFov.m',6,1)">6   </a>switch doWhat
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+empiricalFov: Downloading
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+empiricalFov: Downloaded to C:\Users\el_ba\Documents\GitHub\HRdelay\data\V1\fov.mat
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+if system_dependent('IsDebugMode')==1, dbstep; end
+dbquit
+if system_dependent('IsDebugMode')==1, dbquit all; end
+doIt

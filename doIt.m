@@ -14,9 +14,17 @@ downloadData;
 extractResponses(p);
 
 %% Define the retinotopic representation of the stimulus field of view (data-driven with priors from a probabilistic retinotopic atlas)
-p.fov.eccLim = [0.75 7]; % threshMethod='ecc'
-p.featSel.fov.resFile = processFov(p);
+doWhat = 'download';
+% 'run' -> run it yourself (several minutes)
+% 'download' -> download precomputed data from repository
+% 'run_forced' -> same as above, but forces to rerun instead of loading
+% locally saved data
+% 'download_forced' -> same as above, but forces to redownload instead of loading
+% locally saved data
+processFov(p,doWhat);
 
+%% Feature selection
+processFeatSel(p)
 
 
 
