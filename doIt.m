@@ -5,7 +5,7 @@ clear all
 close all
 
 %% Initiation
-anaInit; % where to define paths and some general configurations
+initAnalysis; % where to define paths and some general configurations
 
 %% Get data (preprocessed BOLD volumes, only V1 ROI voxels, one .mat file per subject)
 downloadData;
