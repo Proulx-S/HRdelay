@@ -7,9 +7,10 @@ finalSubDir = p.anaID;
 if ~ispc
     p.paths.home = '/Users/sebastienproulx';
 else
-    p.paths.home = 'C:\Users\sebas';
+    p.paths.home = 'C:\Users\el_ba';
 end
-p.paths.repo.out = fullfile('McGill University/Farivar Lab - Dissertations/Sebastien/Manuscripts/aa - in preparation/SP_Neuroimage_HRdelay',p.anaID); if ~exist(p.paths.repo.out,'dir'); mkdir(p.paths.repo.out); end
+p.paths.repo.out = fullfile('McGill University/Farivar Lab - Sebastien/Manuscripts/aa - in preparation/SP_Neuroimage_HRdelay',p.anaID); if ~exist(p.paths.repo.out,'dir'); mkdir(p.paths.repo.out); end
+p.paths.repo.in = fullfile(p.paths.home,'\OneDrive - McGill University\dataBig');
 
 
 %% Display parameters
@@ -44,9 +45,6 @@ if p.termOption.verbose && p.termOption.save
     disp(fullfile(p.termOption.finalDir,[mfilename '.mat']))
     disp(datestr(now))
 end
-
-%% Input Data
-p.paths.repo.in = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
 
 %% Dependencies
 gitDependencyPath = fullfile(p.paths.home,'Documents/GitHub/utilities');

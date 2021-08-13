@@ -276,7 +276,10 @@ disp('One-way (3-level) ANOVA')
 disp(ranovatbl)
 tmp = mean(X(:,:),2);
 tmp = (angle(mean(tmp(1:2,:),1)) - angle(tmp(3,:)))/pi*6;
-disp(['plaid-grat=' num2str(tmp) 'sec'])
+tmp2 = mean(X,3);
+tmp2 = (angle(mean(tmp2(1:2,:),1)) - angle(tmp2(3,:)))/pi*6;
+disp(['plaid-grat=' num2str(tmp) 'sec (range: ' num2str(min(tmp2),'%0.3f') '-' num2str(max(tmp2),'%0.3f') ')'])
+
 disp(['t=' num2str(STATS.tstat) ', p=' num2str(P)])
 disp('-------')
 disp(' ')
