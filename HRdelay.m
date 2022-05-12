@@ -2,30 +2,60 @@
 clear all
 close all
 
-p.anaID = '2021-06-15_allData';
-finalSubDir = p.anaID;
-if ~ispc
-    p.paths.home = '/Users/sebastienproulx';
-else
-    p.paths.home = 'C:\Users\sebas';
-end
-p.paths.repo.out = fullfile('McGill University/Farivar Lab - Dissertations/Sebastien/Manuscripts/aa - in preparation/SP_Neuroimage_HRdelay',p.anaID); if ~exist(p.paths.repo.out,'dir'); mkdir(p.paths.repo.out); end
+p.paths.pwd = pwd;
+p.paths.data = ''; % when empty, data folder defaults to pwd/../HRdelay (to keep data and code separate)
+p.info.dataURL = 'https://zenodo.org/record/5192849';
+p.info.subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'}';
+addpath(genpath(fullfile(p.paths.pwd,'fun')))
+% Get data from data repository
+getRepoData(p)
+
+return
+
+%%
+p.info.anaId = 'myAna';
+
+
+
+
+
+return
+
+% data() = load(fullfile(p.paths.data,'03sk.mat'))
+
+
+urlwrite('https://zenodo.org/record/5192849/files/02jp.mat?download=1',fullfile(p.paths.data,'test.mat'))
+urlwrite('https://zenodo.org/record/5192849/files/03sk.mat?download=1',fullfile(p.paths.data,'03sk.mat'))
+% data() = load(fullfile(p.paths.data,'03sk.mat'))
+data = webread('https://zenodo.org/record/5192849/files/02jp.mat?download=1');
+
+p.paths.data = fullfile('McGill University/Farivar Lab - Dissertations/Sebastien/Manuscripts/aa - in preparation/SP_Neuroimage_HRdelay',p.anaID); if ~exist(p.paths.repo.out,'dir'); mkdir(p.paths.repo.out); end
+
+
+% p.anaID = '2021-06-15_allData';
+% finalSubDir = p.anaID;
+% if ~ispc
+%     p.paths.home = '/Users/sebastienproulx';
+% else
+%     p.paths.home = 'C:\Users\sebas';
+% end
+% p.paths.repo.out = fullfile('McGill University/Farivar Lab - Dissertations/Sebastien/Manuscripts/aa - in preparation/SP_Neuroimage_HRdelay',p.anaID); if ~exist(p.paths.repo.out,'dir'); mkdir(p.paths.repo.out); end
 
 
 %% Display parameters
-figOption.save = 1; % save all figures
-figOption.subj = 2; % subjInd-> plots participants subjInd; +inf-> plots all participant (if verbose==0, will only plot subjInd==1 but still produce and save all the other figures)
-p.figOption.subjInd  = figOption.subj;
+% figOption.save = 1; % save all figures
+% figOption.subj = 2; % subjInd-> plots participants subjInd; +inf-> plots all participant (if verbose==0, will only plot subjInd==1 but still produce and save all the other figures)
+p.figOption.verbose  = 2;
+p.figOption.save  = 1; % save all figures
+p.figOption.subjInd  = 2; % subjInd-> plots participants subjInd; +inf-> plots all participant (if verbose==0, will only plot subjInd==1 but still produce and save all the other figures)
 p.figOption.sessInd  = 1;
 p.figOption.condInd = 1;
 p.figOption.sliceInd = 7;
-p.figOption.verbose  = 2;
-p.figOption.save  = 1;
-p.figOption.finalDir = fullfile(p.paths.home,p.paths.repo.out,'matlabFigOutputs',finalSubDir); if ~exist(p.figOption.finalDir,'dir'); mkdir(p.figOption.finalDir); end
+p.figOption.finalDir = fullfile(p.paths.pwd,p.info.anaId,'matlabFigOutputs'); if ~exist(p.figOption.finalDir,'dir'); mkdir(p.figOption.finalDir); end
 
 p.termOption.verbose = 1;
 p.termOption.save = 0;
-p.termOption.finalDir = fullfile(p.paths.home,p.paths.repo.out,'matlabTermOutputs',finalSubDir); if ~exist(p.termOption.finalDir,'dir'); mkdir(p.termOption.finalDir); end
+p.termOption.finalDir = fullfile(p.paths.pwd,p.info.anaId,'matlabTermOutputs'); if ~exist(p.figOption.finalDir,'dir'); mkdir(p.figOption.finalDir); end
 
 %% Permutation
 p.perm.doIt = 1;
