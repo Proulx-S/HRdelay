@@ -2,7 +2,8 @@
 clear all
 close all
 
-p.anaID = '2021-06-15_allData';
+% p.anaID = '2021-06-15_allData';
+p.anaID = 'grrr';
 finalSubDir = p.anaID;
 if ~ispc
     p.paths.home = '/Users/sebastienproulx';
@@ -14,14 +15,14 @@ p.paths.repo.in = fullfile(p.paths.home,'\OneDrive - McGill University\dataBig')
 
 
 %% Display parameters
-figOption.save = 1; % save all figures
+figOption.save = 0; % save all figures
 figOption.subj = 2; % subjInd-> plots participants subjInd; +inf-> plots all participant (if verbose==0, will only plot subjInd==1 but still produce and save all the other figures)
 p.figOption.subjInd  = figOption.subj;
 p.figOption.sessInd  = 1;
 p.figOption.condInd = 1;
 p.figOption.sliceInd = 7;
 p.figOption.verbose  = 2;
-p.figOption.save  = 1;
+p.figOption.save  = 0;
 p.figOption.finalDir = fullfile(p.paths.home,p.paths.repo.out,'matlabFigOutputs',finalSubDir); if ~exist(p.figOption.finalDir,'dir'); mkdir(p.figOption.finalDir); end
 
 p.termOption.verbose = 1;
@@ -113,8 +114,8 @@ p.svm.condPairList = {'grat1VSgrat2' 'grat1VSplaid' 'grat2VSplaid'};
 p.svm.respFeatList = {'delay' 'cartNoDelay' 'cart'};
 
 
-if 0
-    importData(verbose)
+if 1
+    importData(p,verbose)
     applyAreaMask(figOption)
     %     processWaveletResponses(figOption,verbose)
 end
