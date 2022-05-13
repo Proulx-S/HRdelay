@@ -23,7 +23,7 @@ subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'};
 if ismac
     repoPath = '/Users/sebastienproulx/OneDrive - McGill University/dataBig';
 else
-    repoPath = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
+    repoPath = 'C:\Users\el_ba\OneDrive - McGill University\dataBig';
 end
         funPath = fullfile(repoPath,'C-derived\DecodingHR\fun');
             inDir  = 'b';

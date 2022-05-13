@@ -119,6 +119,11 @@ if 1
     applyAreaMask(figOption)
     %     processWaveletResponses(figOption,verbose)
 end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% The output of the above constitute the intermdiary dataset begins here  %
+% uploaded to https://zenodo.org/record/5192849.                          %
+% ...\dataBig\C-derived\DecodingHR\fun\c\????.mat                         %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if 0
     extractResponses(p,figOption,verbose)
 end
