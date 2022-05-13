@@ -42,13 +42,13 @@ p.dataPath.V1 = fullfile(p.wd,'data','V1');
 
 %% Output paths
 p.figOption.outDir = fullfile(p.wd,'figures',p.anaID); if ~exist(p.figOption.outDir,'dir'); mkdir(p.figOption.outDir); end
-p.termOption.outDir = fullfile(p.wd,'termOutputs',p.anaID); if ~exist(p.termOption.outDir,'dir'); mkdir(p.termOption.outDir); end
+p.termOption.outDir = fullfile(p.wd,'terminalOutputs',p.anaID); if ~exist(p.termOption.outDir,'dir'); mkdir(p.termOption.outDir); end
 
 
 %% Logging
 p.figOption.verbose  = 0;
 p.termOption.verbose = 0;
-p.termOption.save = 1; % save command window outputs to text file
+p.termOption.save = 0; % save command window outputs to text file
 if p.termOption.save
     diaryON(p)
 end
@@ -61,7 +61,6 @@ end
 
 
 
-
 %% Parameters for single-subject example
 p.figOption.save     = 1; % save figures
 p.figOption.subjInd  = 2;
@@ -70,14 +69,12 @@ p.figOption.condInd  = 1;
 p.figOption.sliceInd = 7;
 
 
-
 %% Permutation
 p.perm.doIt = 1;
 p.perm.n = 2^13;
 
 %% Bootstrapping
 p.boot.n = 2^13;
-
 
 
 %% Meta data
