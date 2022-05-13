@@ -7,10 +7,11 @@ p.paths.pwd = pwd;
 p.paths.data = ''; % when empty, data folder defaults to pwd/../HRdelay (to keep data and code separate)
 p.info.dataURL = 'https://zenodo.org/record/5192849';
 p.info.subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'}';
+% Dependencies
 addpath(genpath(fullfile(p.paths.pwd,'fun')))
-% Get data from data repository
+% Get intermediary data from data repository (see "main" branch for matlab preprocessing of intermediary data)
 p = getRepoData(p);
-return
+
 % p.anaID = '2021-06-15_allData';
 % finalSubDir = p.anaID;
 % if ~ispc
@@ -125,26 +126,20 @@ p.svm.condPairList = {'grat1VSgrat2' 'grat1VSplaid' 'grat2VSplaid'};
 p.svm.respFeatList = {'delay' 'cartNoDelay' 'cart'};
 
 
-for subjInd = 1:length(p.info.subjList)
-    data = load(fullfile(p.paths.data,[p.info.subjList{subjInd} '.mat']))
-%     fun = mean(data.d.fun(1).data{1},4);
-    fun = zeros(size(data.d.anat.brain,1:3));
-    fun(data.d.anat.roiMask) = mean(data.d.fun(1).data{1},4);
-    imagesc(fun(:,:,10))
+%% Extract response amplitude and delay from polar fit (also output detrended data)
+if 0
+    extractResponses(p)
 end
 
-dir(p.paths.data)
+%% Refined stimulus FOV according to positive and negative BOLD response regions
+% Use version downloaded from repository
+p.featSel.fov.resFile = fullfile(p.paths.data,'fov.mat');
+% To recompute it, you'll have to dig through the "main" branch of the
+% github repo ( p.featSel.fov.resFile = processFov(p); ), or wait until I
+% clean and release that algorithm.
 
-return
-if 0
-    importData(p)
-    applyAreaMask(figOption)
-    %     processWaveletResponses(figOption,verbose)
-end
-if 0
-    extractResponses(p,figOption,verbose)
-end
-p.featSel.fov.resFile = processFov(p);
+
+
 if 0
     processFeatSel(p)
     [resBS,resBShr,resWS,f,info,decodingOut] = runAllDecoding(p);

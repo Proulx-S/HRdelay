@@ -1,5 +1,6 @@
 function f = olsmatrix(X,mode)
 
+
 % function f = olsmatrix(X,mode)
 %
 % <X> is samples x parameters
