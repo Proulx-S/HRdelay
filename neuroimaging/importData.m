@@ -1,4 +1,4 @@
-function importData(verbose)
+function importData(p,verbose)
 actuallyRun = 1;
 if ~actuallyRun
     disp(['skipping ' mfilename])
@@ -11,11 +11,13 @@ end
 %% Define paths
 subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'};
 subjStimList = {'jp' 'sk' 'sp' 'bm' 'sb' 'bj'};
-if ismac
-    repoPath = '/Users/sebastienproulx/OneDrive - McGill University/dataBig';
-else
-    repoPath = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
-end
+
+repoPath = p.paths.repo.in;
+% if ismac
+%     repoPath = '/Users/sebastienproulx/OneDrive - McGill University/dataBig';
+% else
+%     repoPath = 'C:\Users\sebas\OneDrive - McGill University\dataBig';
+% end
     funPath = fullfile(repoPath,'C-derived\DecodingHR\fun');
         inDir  = 'a';
         outDir = 'b';
