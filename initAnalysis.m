@@ -4,7 +4,7 @@ disp('initAnalysis.m')
 
 p.wd = pwd;
 p.figPath = fullfile(p.wd,'figures'); if ~exist(p.figPath,'dir'); mkdir(p.figPath); end
-p.anaID = '2021-08-11'; %an ID for your output folder. Potentially useful if you make tweaks
+p.anaID = 'anaTmp'; %an ID for your output folder. Potentially useful if you make tweaks
 
 %% Dependencies
 
@@ -20,7 +20,7 @@ addpath(genpath(fullfile(p.wd,'matlabFun')));
 % -Bioinformatics
 
 % Matlab contributed toolboxes
-matDependencyPath = fullfile(p.wd,'matlabFileEx'); if ~exist(matDependencyPath,'dir'); mkdir(matDependencyPath); end
+matDependencyPath = fullfile(p.wd,'matlabFileExchange'); if ~exist(matDependencyPath,'dir'); mkdir(matDependencyPath); end
 %https://www.mathworks.com/matlabcentral/fileexchange/25536-red-blue-colormap
 %https://www.mathworks.com/matlabcentral/fileexchange/41961-nanconv
 %https://www.mathworks.com/matlabcentral/fileexchange/27991-tight_subplot-nh-nw-gap-marg_h-marg_w
