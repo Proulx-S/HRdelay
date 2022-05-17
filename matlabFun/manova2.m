@@ -1,15 +1,31 @@
-function [anovatbl_MV,A,C_MV,D] = manova2(rm_WM,withinModel,By)
+function [anovatbl_MV,A,C_MV,D,withinNames,betweenNames] = manova2(rm_WM,withinModel,By,statLabel)
+if ~exist('statLabel','var') || isempty(statLabel)
+    statLabel = 'Hotelling';
+end
 
 %% Run standard matlab manova
-if exist('By','var') && ~isempty(By)
-    ByFlag = 1;
-    [anovatbl,A,C,D] = manova(rm_WM,'WithinModel',withinModel,'By',By);
+if exist('withinModel','var')
+    if exist('By','var') && ~isempty(By)
+        ByFlag = 1;
+        [anovatbl,A,C,D] = manova(rm_WM,'WithinModel',withinModel,'By',By);
+    else
+        ByFlag = 0;
+        [anovatbl,A,C,D] = manova(rm_WM,'WithinModel',withinModel);
+    end
 else
-    ByFlag = 0;
-    [anovatbl,A,C,D] = manova(rm_WM,'WithinModel',withinModel);
+    if exist('By','var') && ~isempty(By)
+        ByFlag = 1;
+        [anovatbl,A,C,D] = manova(rm_WM,'By',By);
+    else
+        ByFlag = 0;
+        [anovatbl,A,C,D] = manova(rm_WM);
+    end
 end
-% Keep only Hotelling
-anovatbl = anovatbl(3:4:end,:);
+% [anovatbl,A,C,D] = manova(rm_WM);
+% % Keep only Hotelling
+% anovatbl = anovatbl(ismember(anovatbl.Statistic,'Hotelling'),:);
+% Keep only Wilks
+anovatbl = anovatbl(ismember(anovatbl.Statistic,statLabel),:);
 %% Redefine contrasts with the dependent variable factor (the first in withinModel_MV)
 [C_MV,C_MV_names] = redefineC(rm_WM,anovatbl,C);
 
@@ -23,7 +39,7 @@ anovatbl_MV = [];
 for withinTestInd = 1:length(C_MV)
     for betweenTestInd = 1:length(A)
         tmp = coeftest(rm_WM,A{betweenTestInd},C_MV{withinTestInd},D);
-        anovatbl_MV = cat(1,anovatbl_MV,tmp(3,:));
+        anovatbl_MV = cat(1,anovatbl_MV,tmp(ismember(tmp.Statistic,statLabel),:));
 %         withinNames = cat(1,withinNames,repmat(C_MV_names(withinTestInd),[4 1]));
         withinNames = cat(1,withinNames,C_MV_names(withinTestInd));
         betweenNames = cat(1,betweenNames,A_names(betweenTestInd));
