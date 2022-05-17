@@ -48,6 +48,7 @@ p.termOption.outDir = fullfile(p.wd,'terminalOutputs',p.anaID); if ~exist(p.term
 %% Logging
 p.figOption.verbose  = 0;
 p.termOption.verbose = 0;
+
 p.termOption.save = 0; % save command window outputs to text file
 if p.termOption.save
     diaryON(p)
@@ -62,7 +63,7 @@ end
 
 
 %% Parameters for single-subject example
-p.figOption.save     = 1; % save figures
+p.figOption.save     = 0; % save figures
 p.figOption.subjInd  = 2;
 p.figOption.sessInd  = 1;
 p.figOption.condInd  = 1;
