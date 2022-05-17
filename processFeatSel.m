@@ -1,6 +1,9 @@
-function [featSelP,featSel_fov] = processFeatSel(p,resPall,featSel_fov)
+function [featSelP,featSel_fov] = processFeatSel(p,permFlag,resPall,featSel_fov)
 disp('----------------')
 disp('processFeatSel.m')
+if ~exist('permFlag','var')
+    permFlag = 0;
+end
 
 %% Load response data
 [d,info] = loadData(p);
@@ -22,21 +25,10 @@ for sessInd = 1:size(d,2)
     end
 end
 % save to featSel.mat
-if verbose
-    disp('Feature Selection: saving')
-end
-if ~exist(fullfile(funPath,outDir),'dir')
-    mkdir(fullfile(funPath,outDir))
-end
-fullfilename = fullfile(funPath,outDir,'featSel.mat');
+fullfilename = fullfile(p.dataPath.V1,'featSel.mat');
 if ~permFlag
+    disp('Feature Selection: saving')
     save(fullfilename,'featSel')
-    featSelP = [];
-else
-    featSelP = featSel; % clear featSel;
-%     save(fullfilename,'featSelP','-append')
-end
-if verbose
     disp(['Feature Selection: saved to ' fullfilename])
 end
 
@@ -171,7 +163,6 @@ allFeatIndIn(end+1) = {uniformizeOutputs(curIndIn,condIndPairList)};
 
 
 %% Most significant response vectors
-keyboard
 if p.featSel.respVecSig.doIt
     curInfo1 = {'respVecSig'};
     featVal = interceptStat; clear interceptStat
@@ -380,6 +371,7 @@ for voxInd = voxIndList
     pVal2(voxInd) = PVAL(ismember(betweenNames,'(Intercept)'));
 end
 
+
 function [Value,pValue,ds] = getStats(X,A,B,C,D,SSE,statLabel,withinNames,betweenNames)
 % Adapted from RepeatedMeasuresModel.m
 
@@ -477,6 +469,7 @@ else
     ds = [];
 end
 
+
 function [H,q] = makeH(A,B,C,D,X) % Make hypothesis matrix H
 % H = (A*Beta*C - D)'*inv(A*inv(X'*X)*A')*(A*Beta*C - D);
 d = A*B*C - D;
@@ -514,6 +507,7 @@ else
     end
 end
 
+
 function [stat,PVAL] = manova3(Xmat,Ymat,C,A,D,statLabel)
 [Beta,DFE,Cov] = fitrm2(Xmat,Ymat);
 SSE = DFE * Cov;
@@ -528,10 +522,135 @@ for withinTestInd = 1:length(C)
     end
 end
 
+
 function featVec = uniformizeOutputs(featVec,condIndPairList)
 if size(featVec,2)==1
     featVec = repmat(featVec,[1 length(condIndPairList) 1]);
 elseif size(featVec,2)~=length(condIndPairList)
     error('X')
 end
+
+
+function [ind_nSpecFeatSel,ind_nSpecFeatSelCond,ind_specFeatSel,ind_specFeatSelCond] = defineFeatSel(featSelSteps_labelList,featSelConds_labelList,method,condPair)
+
+for i = 1:length(featSelSteps_labelList)
+    tmp = strsplit(featSelSteps_labelList{i},':');
+    featSelSteps_labelList(i) = tmp(1);
+end
+switch method
+    case 'allData'
+        % Non-condition-specific featSel steps
+        ind_nSpecFeatSel = ismember(featSelSteps_labelList,{'retinoFov' 'act' 'respVecSig' 'vein' 'respVecDiff'});
+        % which condition set
+        ind_nSpecFeatSelCond = [1 2 3];
+        % Condition-specific fetSel steps
+        ind_specFeatSel = ismember(featSelSteps_labelList,{''});
+        % which condition set
+        ind_specFeatSelCond = [1 2 3];
+    case 'custom1'
+        % Non-condition-specific featSel steps
+        ind_nSpecFeatSel = ismember(featSelSteps_labelList,{'retinoFov' 'act' 'respVecSig' 'vein'});
+        % which condition set
+        ind_nSpecFeatSelCond = [1 2 3];
+        % Condition-specific fetSel steps
+        ind_specFeatSel = ismember(featSelSteps_labelList,{'respVecDiff'});
+        % which condition set
+        if ischar(condPair)
+            switch condPair
+                case 'grat1VSgrat2'
+                    ind_specFeatSelCond = [1 2];
+                case 'grat1VSplaid'
+                    ind_specFeatSelCond = [1 3];
+                case 'grat2VSplaid'
+                    ind_specFeatSelCond = [2 3];
+                case 'all'
+                    ind_specFeatSelCond = [1 2 3];
+                otherwise
+                    error('X')
+            end
+        else
+            ind_specFeatSelCond = featSelConds_labelList{condPair};
+        end
+    case 'custom2'
+        % Non-condition-specific featSel steps
+        ind_nSpecFeatSel = ismember(featSelSteps_labelList,{'retinoFov' 'vein'});
+        % which condition set
+        ind_nSpecFeatSelCond = [1 2 3];
+        % Condition-specific fetSel steps
+        ind_specFeatSel = ismember(featSelSteps_labelList,{'act' 'respVecSig' 'respVecDiff'});
+        % which condition set
+        if ischar(condPair)
+            switch condPair
+                case 'grat1VSgrat2'
+                    ind_specFeatSelCond = [1 2];
+                case 'grat1VSplaid'
+                    ind_specFeatSelCond = [1 3];
+                case 'grat2VSplaid'
+                    ind_specFeatSelCond = [2 3];
+                case 'all'
+                    ind_specFeatSelCond = [1 2 3];
+                otherwise
+                    error('X')
+            end
+        else
+            ind_specFeatSelCond = featSelConds_labelList{condPair};
+        end
+    case 'onlyRetinoFov'
+        % Non-condition-specific featSel steps
+        ind_nSpecFeatSel = ismember(featSelSteps_labelList,{'retinoFov'});
+        % which condition set
+        ind_nSpecFeatSelCond = [1 2 3];
+        % Condition-specific fetSel steps
+        ind_specFeatSel = ismember(featSelSteps_labelList,{''});
+        % which condition set
+        if ischar(condPair)
+            switch condPair
+                case 'grat1VSgrat2'
+                    ind_specFeatSelCond = [1 2];
+                case 'grat1VSplaid'
+                    ind_specFeatSelCond = [1 3];
+                case 'grat2VSplaid'
+                    ind_specFeatSelCond = [2 3];
+                case 'all'
+                    ind_specFeatSelCond = [1 2 3];
+                otherwise
+                    error('X')
+            end
+        else
+            ind_specFeatSelCond = featSelConds_labelList{condPair};
+        end
+    case 'upToActivation'
+        % Non-condition-specific featSel steps
+        ind_nSpecFeatSel = ismember(featSelSteps_labelList,{'retinoFov' 'act' 'respVecSig' 'vein'});
+        % which condition set
+        ind_nSpecFeatSelCond = [1 2 3];
+        % Condition-specific fetSel steps
+        ind_specFeatSel = ismember(featSelSteps_labelList,{''});
+        % which condition set
+        if ischar(condPair)
+            switch condPair
+                case 'grat1VSgrat2'
+                    ind_specFeatSelCond = [1 2];
+                case 'grat1VSplaid'
+                    ind_specFeatSelCond = [1 3];
+                case 'grat2VSplaid'
+                    ind_specFeatSelCond = [2 3];
+                case 'all'
+                    ind_specFeatSelCond = [1 2 3];
+                otherwise
+                    error('X')
+            end
+        else
+            ind_specFeatSelCond = featSelConds_labelList{condPair};
+        end
+    otherwise
+        error('X')
+end
+
+for i = 1:length(featSelConds_labelList)
+    featSelConds_labelList{i} = num2str(featSelConds_labelList{i});
+end
+ind_nSpecFeatSelCond = squeeze(ismember(featSelConds_labelList,num2str(ind_nSpecFeatSelCond)));
+ind_specFeatSelCond = squeeze(ismember(featSelConds_labelList,num2str(ind_specFeatSelCond)));
+
 

@@ -11,7 +11,7 @@ for subjInd = 1:length(p.meta.subjList)
     curFile = fullfile(p.dataPath.V1,[p.meta.subjList{subjInd} '.mat']);
     if ~exist(curFile,'file') || forceDownload
         disp(['Downloading ' p.meta.subjList{subjInd} ' from https://doi.org/10.5281/zenodo.5183028'])
-        websave(curFile,curLink);
+        websave(curFile,curLink,weboptions('timeout',15));
         disp(['Downloaded to ' curFile])
     else
         disp([p.meta.subjList{subjInd} ' already downloaded from https://doi.org/10.5281/zenodo.5183028'])
