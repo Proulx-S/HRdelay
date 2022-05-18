@@ -5,7 +5,7 @@ clear all
 close all
 
 %% Initiation
-initAnalysis; % where to define paths and some general configurations
+initAnalysis; % where to define paths, analysis parameters and some other general configurations
 
 %% Get data (preprocessed BOLD volumes, only V1 ROI voxels, one .mat file per subject)
 downloadData;
@@ -28,10 +28,15 @@ processFeatSel(p)
 
 %% Decoding
 [resBS,resBShr,resWS,f,info,decodingOut] = runAllDecoding(p);
+
+%% Visualize and do stats on BOLD responses
 visualizeOthers(p)
 
+%% Visualize and do stats on decoding
+plotAllDecoding(p);
 
 
+statsAllDecoding(p,resBS,info)
 
 
 

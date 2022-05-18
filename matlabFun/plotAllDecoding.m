@@ -1,6 +1,9 @@
-function f = plotAllDecoding3(p,res,info)
-f1 = plotAllDecoding2(p,res,info);
-f2 = plotAllDecoding(p,res,info);
+function f = plotAllDecoding(p)
+load(fullfile(p.wd,'results',p.anaID,'decoding.mat'),'resBS','info');
+res = resBS; clear resBS
+
+f1 = plotAllDecodingAv(p,res,info);
+f2 = plotAllDecodingOriVsPlaid(p,res,info);
 
 delta = 2;
 ax1 = findobj(f1.Children,'Type','Axes');
@@ -127,7 +130,7 @@ f.Color = 'w';
 
 %% Save
 if p.figOption.save
-    fullfilename = fullfile(p.figOption.finalDir,'decodingSummary3');
+    fullfilename = fullfile(p.figOption.outDir,'Fig4');
     curF = f;
     curF.Color = 'none';
     set(findobj(curF.Children,'type','Axes'),'color','none')

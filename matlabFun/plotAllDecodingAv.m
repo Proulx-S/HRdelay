@@ -150,7 +150,9 @@ end
 set(hScat,'MarkerEdgeColor',[1 1 1].*0.4)
 set(hBar,'FaceColor',[1 1 1].*0.6)
 set(hBar,'EdgeColor','k')
-set([hBarP{:}],'FaceColor',hBar.FaceColor)
+if isfield(res{1}.subj,'aucP')
+    set([hBarP{:}],'FaceColor',hBar.FaceColor)
+end
 
 ax = f.Children;
 % ax.XTickLabel = condPairList;
@@ -163,7 +165,7 @@ uistack(hP,'bottom')
 
 %% Save
 if p.figOption.save
-    fullfilename = fullfile(p.figOption.finalDir,'decodingSummary2');
+    fullfilename = fullfile(p.figOption.outDir,'Fig4left');
     curF = f;
     curF.Color = 'none';
     set(findobj(curF.Children,'type','Axes'),'color','none')

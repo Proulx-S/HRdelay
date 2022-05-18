@@ -88,23 +88,23 @@ if ~permFlag
     fullfilename = fullfile(fullpath,'channels');
     save(fullfilename,'resBShr','p','info');
     
-    %% Save figures
-    if p.figOption.verbose
-        f = mat2cell([f{:}],1,ones(1,numel([f{:}])));
-        fullfilename = fullfile(p.figOption.outDir,'decodingFig');
-        for i = 1:numel(f)
-            curF = f{i};
-            curF.Color = 'none';
-            set(findobj(curF.Children,'type','Axes'),'color','none')
-            curFile = [fullfilename '_' num2str(i)];
-            curExt = 'svg';
-            saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
-            curF.Color = 'w';
-            curExt = 'fig';
-            saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
-            curExt = 'jpg';
-            saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
-        end
-    end
+%     %% Save figures
+%     if p.figOption.verbose
+%         f = mat2cell([f{:}],1,ones(1,numel([f{:}])));
+%         fullfilename = fullfile(p.figOption.outDir,'decodingFig');
+%         for i = 1:numel(f)
+%             curF = f{i};
+%             curF.Color = 'none';
+%             set(findobj(curF.Children,'type','Axes'),'color','none')
+%             curFile = [fullfilename '_' num2str(i)];
+%             curExt = 'svg';
+%             saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
+%             curF.Color = 'w';
+%             curExt = 'fig';
+%             saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
+%             curExt = 'jpg';
+%             saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
+%         end
+%     end
 end
 

@@ -8,13 +8,6 @@ p.anaID = 'anaTmp'; %an ID for your output folder. Potentially useful if you mak
 addpath(genpath(fullfile(p.wd,'utilities')));
 addpath(genpath(fullfile(p.wd,'matlabFun')));
 
-% % Matlab proprietary toolboxes:
-% % -Image Processing
-% % -Statistics and Machine Learning
-% % -Mapping
-% % -Curve Fitting
-% % -Bioinformatics
-
 % Matlab community toolboxes
 matDependencyPath = fullfile(p.wd,'matlabFileExchange'); if ~exist(matDependencyPath,'dir'); mkdir(matDependencyPath); end
 %https://www.mathworks.com/matlabcentral/fileexchange/25536-red-blue-colormap
@@ -22,14 +15,43 @@ matDependencyPath = fullfile(p.wd,'matlabFileExchange'); if ~exist(matDependency
 %https://www.mathworks.com/matlabcentral/fileexchange/27991-tight_subplot-nh-nw-gap-marg_h-marg_w
 addpath(genpath(fullfile(matDependencyPath)));
 
-% Github dependencies
+% Github dependencies (make sure git is installed and available in your system path: https://git-scm.com/downloads)
 gitDependencyPath = fullfile(p.wd,'..');
-% clone https://github.com/cjlin1/libsvm
-if ispc
-    addpath(genpath(fullfile(gitDependencyPath,'libsvm','windows')));
+% libsvm
+curRepo = 'libsvm';
+curRepoURL = 'https://github.com/cjlin1/libsvm.git';
+curRepoPath = fullfile(gitDependencyPath,curRepo);
+disp(curRepoURL)
+if exist(fullfile(curRepoPath,'.git'),'dir')
+    disp(['already in ' curRepoPath])
 else
-    error('you need to fix paths to libsvm githu repo for non-windows machines')
+    eval(['!git clone ' curRepoURL ' ' curRepoPath])
+    if ispc
+        addpath(genpath(fullfile(curRepoPath,'windows')));
+    else
+        error('you need to fix paths to libsvm githu repo for non-windows machines')
+    end
 end
+% shadedErrorBar
+curRepo = 'shadedErrorBar';
+curRepoURL = 'https://github.com/raacampbell/shadedErrorBar.git';
+curRepoPath = fullfile(gitDependencyPath,curRepo);
+disp(curRepoURL)
+if exist(fullfile(curRepoPath,'.git'),'dir')
+    disp(['already in ' curRepoPath])
+else
+    eval(['!git clone ' curRepoURL ' ' curRepoPath])
+    addpath(genpath(curRepoPath));
+end
+
+
+
+% % Matlab proprietary toolboxes:
+% % -Image Processing
+% % -Statistics and Machine Learning
+% % -Mapping
+% % -Curve Fitting
+% % -Bioinformatics
 
 
 % gitDependencyPath = fullfile(p.paths.home,'Documents/GitHub/utilities');

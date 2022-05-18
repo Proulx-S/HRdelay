@@ -106,7 +106,8 @@ elseif p.figOption.verbose>1
 end
 
 %% Time series
-curFile = fullfile(funPath,inDir3,[subjList{p.figOption.subjInd} '.mat']);
+p.dataPath.V1
+curFile = fullfile(p.dataPath.V1,[subjList{p.figOption.subjInd} '.mat']);
 fun = load(curFile);
 fun = fun.d.fun(p.figOption.sessInd);
 runTs = squeeze(cat(5,fun.data{:}));
@@ -140,9 +141,9 @@ for i = 1:numel(d)
 end
 refAngle = delay(p.figOption.subjInd,p.figOption.sessInd);
 disp(['ex subj delay=' num2str(-refAngle/pi*6) 's'])
-disp(['mean delay=' num2str(-mean(delay(:))/pi*6) 's'])
-disp(['mmin delay=' num2str(-min(delay(:))/pi*6) 's'])
-disp(['max delay=' num2str(-max(delay(:))/pi*6) 's'])
+disp(['group mean delay=' num2str(-mean(delay(:))/pi*6) 's'])
+disp(['group min delay=' num2str(-min(delay(:))/pi*6) 's'])
+disp(['group max delay=' num2str(-max(delay(:))/pi*6) 's'])
 [u,v] = pol2cart(refAngle,[0 max(abs(axis))]);
 hRef1 = plot(u,v,'k');
 [u,v] = pol2cart(wrapToPi([refAngle-pi/2 refAngle+pi/2]),[1 1].*max(abs(axis)));
@@ -156,9 +157,9 @@ for i = 1:numel(d)
     ) ./ numel(d{i}.sin);
 end
 disp(['ex subj negBOLD%=' num2str(negRatio(subjInd,sessInd).*100) '%'])
-disp(['mean delay=' num2str(mean(negRatio(:)).*100) '%'])
-disp(['mmin delay=' num2str(min(negRatio(:)).*100) '%'])
-disp(['max delay=' num2str(max(negRatio(:)).*100) '%'])
+disp(['group mean negBOLD%=' num2str(mean(negRatio(:)).*100) '%'])
+disp(['group min negBOLD%=' num2str(min(negRatio(:)).*100) '%'])
+disp(['group max negBOLD%=' num2str(max(negRatio(:)).*100) '%'])
 
 lg = findobj(fTrig.Children,'type','Legend');
 lg.String(end-1:end) = [];
@@ -179,7 +180,7 @@ hTmp.MarkerFaceColor = [1 1 1].*0.6;
 
 
 %% Save
-fullfilename = fullfile(p.figOption.finalDir,'polarRespVecGroup');
+fullfilename = fullfile(p.figOption.outDir,'Fig5A');
 curF = fTrigGroup;
 curFile = fullfilename;
 curExt = 'svg';
@@ -191,7 +192,7 @@ saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' cur
 curExt = 'jpg';
 saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
 
-fullfilename = fullfile(p.figOption.finalDir,'HrGroup');
+fullfilename = fullfile(p.figOption.outDir,'Fig5B');
 curF = fHrGroup;
 curFile = fullfilename;
 curExt = 'svg';
@@ -204,7 +205,7 @@ curExt = 'jpg';
 saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
 
 
-fullfilename = fullfile(p.figOption.finalDir,'polarRespVec');
+fullfilename = fullfile(p.figOption.outDir,'Fig2A');
 curF = fTrig;
 curFile = fullfilename;
 curExt = 'svg';
@@ -216,7 +217,7 @@ saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' cur
 curExt = 'jpg';
 saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
 
-fullfilename = fullfile(p.figOption.finalDir,'Hr');
+fullfilename = fullfile(p.figOption.outDir,'Fig2B');
 curF = fHr;
 curFile = fullfilename;
 curExt = 'svg';
@@ -228,7 +229,7 @@ saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' cur
 curExt = 'jpg';
 saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
 
-fullfilename = fullfile(p.figOption.finalDir,'Ts');
+fullfilename = fullfile(p.figOption.outDir,'Fig1C');
 curF = fTs;
 curFile = fullfilename;
 curExt = 'svg';

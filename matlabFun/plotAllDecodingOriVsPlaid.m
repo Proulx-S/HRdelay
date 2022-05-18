@@ -127,11 +127,16 @@ if isfield(res{1}.subj,'aucP')
 end
 
 
+barGroupCent = hBar(1).XData(1);
+barCent = hBar(1).XEndPoints(1);
+delta = (barGroupCent-barCent)*hBar(1).BarWidth;
+base = barCent - delta;
+
 x = nan(size(y));
 for respFeatInd = 1:length(respFeatList)
-    respFeatList{respFeatInd}
+    respFeatList{respFeatInd};
     for condInd = 1:length(condPairList)
-        condPairList{condInd}
+        condPairList{condInd};
         switch condInd
             case 1
                 barInd = 1;
@@ -168,7 +173,7 @@ legend(hBar,condPairList2,'Box','off')
 
 %% Save
 if p.figOption.save
-    fullfilename = fullfile(p.figOption.finalDir,'decodingSummary');
+    fullfilename = fullfile(p.figOption.outDir,'Fig4right');
     curF = f;
     curF.Color = 'none';
     set(findobj(curF.Children,'type','Axes'),'color','none')
