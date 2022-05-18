@@ -37,7 +37,7 @@ Thumbs.db
 
 # External dependencies
 ######################
-/matlabFileExchange
-/matlabFileExchange/**
-/matlabFileExchange/**/**
-/matlabFileExchange/**/**/**
+#/matlabFileExchange
+#/matlabFileExchange/**
+#/matlabFileExchange/**/**
+#/matlabFileExchange/**/**/**
