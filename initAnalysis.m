@@ -8,31 +8,36 @@ p.anaID = 'anaTmp'; %an ID for your output folder. Potentially useful if you mak
 addpath(genpath(fullfile(p.wd,'utilities')));
 addpath(genpath(fullfile(p.wd,'matlabFun')));
 
+% Matlab proprietary toolboxes (may not all be needed):
+% -Image Processing
+% -Statistics and Machine Learning
+% -Mapping
+% -Curve Fitting
+% -Bioinformatics
+
 % Matlab community toolboxes
 matDependencyPath = fullfile(p.wd,'matlabFileExchange'); if ~exist(matDependencyPath,'dir'); mkdir(matDependencyPath); end
+matDependencyNameList = {...
+    'https://www.mathworks.com/matlabcentral/fileexchange/25536-red-blue-colormap'...
+    };
 %https://www.mathworks.com/matlabcentral/fileexchange/25536-red-blue-colormap
 %https://www.mathworks.com/matlabcentral/fileexchange/41961-nanconv
 %https://www.mathworks.com/matlabcentral/fileexchange/27991-tight_subplot-nh-nw-gap-marg_h-marg_w
-addpath(genpath(fullfile(matDependencyPath)));
+matDependencyUrlList = {...
+    'https://www.mathworks.com/matlabcentral/mlc-downloads/downloads/submissions/25536/versions/1/download/zip'...
+    };
+for i = 1:length(matDependencyNameList)
+    curLink = matDependencyUrlList{i};
+    curZip = fullfile(matDependencyPath,'x.zip');
+    websave(curZip,curLink,weboptions('timeout',15));
+    [~,b,~] = fileparts(matDependencyNameList{i});
+    curFolder = fullfile(matDependencyPath,b);
+    unzip(curZip,curFolder)
+    delete(curZip)
+    addpath(genpath(curFolder))
+end
 
-% 
-% 
-% for subjInd = 1:length(p.meta.subjList)
-%     curLink = ['https://zenodo.org/record/5183028/files/' p.meta.subjList{subjInd} '.mat?download=1'];
-%     curFile = fullfile(p.dataPath.V1,[p.meta.subjList{subjInd} '.mat']);
-%     if ~exist(curFile,'file') || forceDownload
-%         disp(['Downloading ' p.meta.subjList{subjInd} ' from https://doi.org/10.5281/zenodo.5183028'])
-%         websave(curFile,curLink,weboptions('timeout',15));
-%         disp(['Downloaded to ' curFile])
-%     else
-%         disp([p.meta.subjList{subjInd} ' already downloaded from https://doi.org/10.5281/zenodo.5183028'])
-%     end
-% end
-
-
-
-
-% Github dependencies (make sure git is installed and available in your system path: https://git-scm.com/downloads)
+% Github repository (make sure git is installed and available in your system path: https://git-scm.com/downloads)
 gitDependencyPath = fullfile(p.wd,'..');
 % libsvm
 curRepo = 'libsvm';
@@ -60,27 +65,6 @@ else
     eval(['!git clone ' curRepoURL ' ' curRepoPath])
     addpath(genpath(curRepoPath));
 end
-
-
-
-% % Matlab proprietary toolboxes:
-% % -Image Processing
-% % -Statistics and Machine Learning
-% % -Mapping
-% % -Curve Fitting
-% % -Bioinformatics
-
-
-% gitDependencyPath = fullfile(p.paths.home,'Documents/GitHub/utilities');
-%addpath(genpath(fullfile(gitDependencyPath,'bassFun/matlab')));
-%addpath(genpath(fullfile(gitDependencyPath,'circstat-matlab')));
-%addpath(genpath(fullfile(gitDependencyPath,'RAMBiNo')));
-%addpath(genpath(fullfile(gitDependencyPath,'BrewerMap')));
-% matDependencyPath = fullfile(p.paths.home,'OneDrive - McGill University\MATLAB');
-% addpath(genpath(fullfile(matDependencyPath,'shadedErrorBar-master')));
-%addpath(genpath(fullfile(matDependencyPath,'InterX')))
-%addpath(genpath(fullfile(pwd,'matlabFun')));
-
 
 %% Parameters for feature selection
 % Within visual field region of the stimulus
