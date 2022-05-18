@@ -1,4 +1,4 @@
-function visualizeOthers(p,verbose)
+function visualizeResponses(p,verbose)
 if ~exist('verbose','var')
     verbose = 1;
 end

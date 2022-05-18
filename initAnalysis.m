@@ -15,6 +15,23 @@ matDependencyPath = fullfile(p.wd,'matlabFileExchange'); if ~exist(matDependency
 %https://www.mathworks.com/matlabcentral/fileexchange/27991-tight_subplot-nh-nw-gap-marg_h-marg_w
 addpath(genpath(fullfile(matDependencyPath)));
 
+% 
+% 
+% for subjInd = 1:length(p.meta.subjList)
+%     curLink = ['https://zenodo.org/record/5183028/files/' p.meta.subjList{subjInd} '.mat?download=1'];
+%     curFile = fullfile(p.dataPath.V1,[p.meta.subjList{subjInd} '.mat']);
+%     if ~exist(curFile,'file') || forceDownload
+%         disp(['Downloading ' p.meta.subjList{subjInd} ' from https://doi.org/10.5281/zenodo.5183028'])
+%         websave(curFile,curLink,weboptions('timeout',15));
+%         disp(['Downloaded to ' curFile])
+%     else
+%         disp([p.meta.subjList{subjInd} ' already downloaded from https://doi.org/10.5281/zenodo.5183028'])
+%     end
+% end
+
+
+
+
 % Github dependencies (make sure git is installed and available in your system path: https://git-scm.com/downloads)
 gitDependencyPath = fullfile(p.wd,'..');
 % libsvm

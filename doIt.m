@@ -29,10 +29,10 @@ processFeatSel(p)
 %% Decoding
 [resBS,resBShr,resWS,f,info,decodingOut] = runAllDecoding(p);
 
-%% Visualize and do stats on BOLD responses
-visualizeOthers(p)
+%% Visualize and print stats on BOLD responses
+visualizeResponses(p)
 
-%% Visualize and do stats on decoding
+%% Visualize and print stats on decoding
 plotAllDecoding(p);
 statsAllDecoding(p);
 
