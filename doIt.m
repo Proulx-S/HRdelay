@@ -14,7 +14,7 @@ downloadData;
 extractResponses(p);
 
 %% Define the retinotopic representation of the stimulus field of view (data-driven with priors from a probabilistic retinotopic atlas)
-doWhat = 'run_forced';
+doWhat = 'download';
 % 'run' -> run it yourself (several minutes)
 % 'download' -> download precomputed data from repository
 % 'run_forced' -> same as above, but forces to rerun instead of loading
