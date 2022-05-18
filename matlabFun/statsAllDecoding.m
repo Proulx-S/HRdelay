@@ -1,5 +1,6 @@
-function statsAllDecoding(p,res,info)
-
+function statsAllDecoding(p)
+load(fullfile(p.wd,'results',p.anaID,'decoding.mat'),'resBS','info');
+res = resBS; clear resBS
 
 metric = 'auc';
 condPairList = info.condPairList;
@@ -51,7 +52,8 @@ for levelInd = 1:length(respFeatList)
 end
 
 %% Multiple comparisons correction on individual effects
-% (1) Two independent response features
+% (1) Two independent response features (amplitude and delay)
+disp('---(1) Two independent response features (amplitude and delay)')
 ind = ismember(respFeatList,{'cartNoDelay' 'delay'});
 
 tmp = ttest_P(ind,:);
@@ -68,15 +70,20 @@ tmp = wlcxnAll_P(ind,:);
 tmp(:) = mafdr(tmp(:),'BHFDR','true');
 wlcxnAll_FDR1(ind,:) = tmp;
 
-disp('---Two independent response features')
+disp('-- X One stimulus pair condition (average) = 2 comparisons')
 for levelInd = 1:length(respFeatList)
     if ind(levelInd)
-        disp(['respFeat[' respFeatList{levelInd} '], condPair[all]'])
+        disp(['respFeat[' respFeatList{levelInd} ']'])
         disp(['t test    : T   =' num2str(ttestAll_T(levelInd,1)) ', one-sided p(fdr)=' num2str(ttestAll_P(levelInd,1)) '(' num2str(ttestAll_FDR1(levelInd,1)) ')'])
         disp(['wlcxn test: rank=' num2str(wlcxnAll_R(levelInd,1)) '    , one-sided p(fdr)=' num2str(wlcxnAll_P(levelInd,1)) '(' num2str(wlcxnAll_FDR1(levelInd,1)) ')'])
         disp(' ')
+    end
+end
+disp('-- X Two stimulus pair condition (grat1VSgrat2 and gratVSplaid) = 4 comparisons')
+for levelInd = 1:length(respFeatList)
+    if ind(levelInd)
         for condPairInd = 1:length(condPairList)
-            disp(['respFeat[' respFeatList{levelInd} '], condPair[' condPairList{condPairInd} ']'])
+            disp(['respFeat[' respFeatList{levelInd} '] X condPair[' condPairList{condPairInd} ']'])
             disp(['t test    : T   =' num2str(ttest_T(levelInd,condPairInd)) ', one-sided p(fdr)=' num2str(ttest_P(levelInd,condPairInd)) '(' num2str(ttest_FDR1(levelInd,condPairInd)) ')'])
             disp(['wlcxn test: rank=' num2str(wlcxn_R(levelInd,condPairInd)) '    , one-sided p(fdr)=' num2str(wlcxn_P(levelInd,condPairInd)) '(' num2str(wlcxn_FDR1(levelInd,condPairInd)) ')'])
             disp(' ')
@@ -87,6 +94,7 @@ disp('---')
 disp(' ')
 
 % (2) Delay response feature only
+disp('---(2) Delay response feature only')
 ttestAll_FDR2 = nan(size(ttest_P));
 wlcxnAll_FDR2 = nan(size(wlcxn_P));
 ttest_FDR2 = nan(size(ttest_P));
@@ -99,13 +107,18 @@ tmp = wlcxn_P(ind,:);
 tmp(:) = mafdr(tmp(:),'BHFDR','true');
 wlcxn_FDR2(ind,:) = tmp;
 
-disp('---(2) Delay response feature only')
+disp('-- X One stimulus pair condition (average) = 1 comparisons')
 for levelInd = 1:length(respFeatList)
     if ind(levelInd)
-        disp(['respFeat[' respFeatList{levelInd} '], condPair[all]'])
-        disp(['t test    : T   =' num2str(ttestAll_T(levelInd,1)) ', one-sided p(fdr)=' num2str(ttestAll_P(levelInd,1)) '(' num2str(ttestAll_FDR2(levelInd,1)) ')'])
-        disp(['wlcxn test: rank=' num2str(wlcxnAll_R(levelInd,1)) '    , one-sided p(fdr)=' num2str(wlcxnAll_P(levelInd,1)) '(' num2str(wlcxnAll_FDR2(levelInd,1)) ')'])
+        disp(['respFeat[' respFeatList{levelInd} ']'])
+        disp(['t test    : T   =' num2str(ttestAll_T(levelInd,1)) ', one-sided p=' num2str(ttestAll_P(levelInd,1))])
+        disp(['wlcxn test: rank=' num2str(wlcxnAll_R(levelInd,1)) '    , one-sided p=' num2str(wlcxnAll_P(levelInd,1))])
         disp(' ')
+    end
+end
+disp('-- X Two stimulus pair condition (grat1VSgrat2 and gratVSplaid) = 2 comparisons')
+for levelInd = 1:length(respFeatList)
+    if ind(levelInd)
         for condPairInd = 1:length(condPairList)
             disp(['respFeat[' respFeatList{levelInd} '], condPair[' condPairList{condPairInd} ']'])
             disp(['t test    : T   =' num2str(ttest_T(levelInd,condPairInd)) ', one-sided p(fdr)=' num2str(ttest_P(levelInd,condPairInd)) '(' num2str(ttest_FDR2(levelInd,condPairInd)) ')'])
@@ -195,7 +208,7 @@ end
 
 % Post-hoc
 disp(' ')
-disp('post-hoc')
+disp('post-hoc, 2 comparisons')
 levelList2 = cellstr(unique(withinDesign.respFeat));
 tbl = cell(size(levelList2));
 for levelInd = 1:length(levelList2)
@@ -262,121 +275,21 @@ indF2 = ismember(withinDesign.(F2),{F2L2});
 t2 = t(:,indF1&indF2);
 [~,ttest_P,~,STATS] = ttest(table2array(t2(:,1)),table2array(t2(:,2)));
 ttest_T = STATS.tstat;
-[wlcxn_P,~,STATS] = signrank(table2array(t2(:,1)),table2array(t2(:,2)));
+[wlcxn_P,~,STATS] = signrank(table2array(t2(:,2)),table2array(t2(:,1))); % wierd: this function seems to require the first data argument to be the highest value for the rank to be computed properly...
 wlcxn_R = STATS.signedrank;
 disp(['t test    : T   =' num2str(ttest_T) ', p=' num2str(ttest_P)])
 disp(['wlcxn test: rank=' num2str(wlcxn_R) '    , p=' num2str(wlcxn_P)])
 disp(' ')
 
-
-
-
-disp('All conditions; amp-only vs cart')
+disp(['planned comparison: all condition averaged; ' F1L1 ' VS ' F1L2])
 respFeatInd = [2 3];
-respFeatList(respFeatInd)
+respFeatList(respFeatInd);
 tmp = squeeze(yAll(respFeatInd,:,:))';
 [H,P,CI,STATS] = ttest(tmp(:,1),tmp(:,2),'tail','left');
-['t=' num2str(STATS.tstat) ', one-sided p=' num2str(P)];
+disp(['t=' num2str(STATS.tstat) ', one-sided p=' num2str(P)]);
 
 
 
 
 
-
-
-
-
-
-% 
-% 
-% factorMult = 'condPair';
-% factor = 'respFeat';
-% % levelList2 = cellstr(unique(withinDesign.(factor)));
-% levelList2 = {'gratVSplaid'};
-% ind = ismember(withinDesign.respFeat,levelList2{levelInd});
-% t2 = t(:,ind);
-% withinDesign2 = withinDesign(ind,2);
-% withinModel2 = factor;
-% 
-% 
-% tbl = cell(size(levelList2));
-% for levelInd = 1:length(levelList2)
-%     ind = ismember(withinDesign.respFeat,levelList2{levelInd});
-%     t2 = t(:,ind);
-%     withinDesign2 = withinDesign(ind,2);
-%     withinModel2 = factor;
-%     rm = fitrm(t2,[t2.Properties.VariableNames{1} '-' t2.Properties.VariableNames{end} '~1'],'WithinDesign',withinDesign2);
-%     tbl{levelInd} = ranova(rm,'WithinModel',withinModel2);
-%     tbl_P(:,levelInd) = tbl{levelInd}(:,5);
-%     tbl_P.Properties.VariableNames(levelInd) = cellstr(levelList2{levelInd});
-% end
-% FDR = nan(size(tbl{levelInd},1),size(tbl_P,2));
-% for i = 1:2:size(tbl_P,1)
-%     FDR(i,:) = mafdr(table2array(tbl_P(i,:)),'BHFDR','true');
-% end
-% for levelInd = 1:length(levelList2)
-%     tbl{levelInd} = [tbl{levelInd} table(FDR(:,levelInd),'VariableNames',{'fdr'})];
-% end
-% for levelInd = 1:length(levelList2)
-%     disp(['ranova (' factorMult '[' levelList2{levelInd} ']): ' factor '[' F2L1 ',' F2L2 ']'])
-%     disp(tbl{levelInd}(:,[2 4 5 end]))
-%     disp(' ')
-% end
-% 
-% 
-% 
-% 
-% % (1) Two independent response features
-% % (2) Delay response feature only
-% 
-% tbl_P
-% 
-% 
-% 
-% 
-% 
-% 
-% 
-% 
-% for condPairInd = 1:length(condPairList)
-%     disp(['ranova: respFeat[' F1L1 ',' F1L2 '] X condPair[' F2L1 ',' F2L2 ']'])
-% 
-%     disp(['ranova (condPair[' condPairList{condPairInd} ']): respFeat[' F1L1 ',' F1L2 ']'])
-%     ind = ~cellfun('isempty',strfind(t.Properties.VariableNames,condPairList{condPairInd}));
-%     t2 = t(:,ind);
-%     withinDesign2 = withinDesign(ind,1);
-%     withinModel2 = 'respFeat';
-%     rm = fitrm(t2,[t2.Properties.VariableNames{1} '-' t2.Properties.VariableNames{end} '~1'],'WithinDesign',withinDesign2);
-%     tbl = ranova(rm,'WithinModel',withinModel2);
-%     disp(tbl(:,[2 4 5]))
-% end
-% 
-% 
-% 
-% %%
-% disp('ranova: respFeat[cartNoDelay,cart] X condPair[grat1VSgrat2,gratVSplaid]')
-% t = table(squeeze(y(1,1,:)),squeeze(y(1,2,:)),squeeze(y(3,1,:)),squeeze(y(3,2,:)));
-% t.Properties.VariableNames = {'cartNoDelay_grat1VSgrat2'...
-%     'cartNoDelay_gratVSplaid'...
-%     'cart_grat1VSgrat2'...
-%     'cart_gratVSplaid'};
-% withinDesign = table(categorical({'cartNoDelay' 'cartNoDelay' 'cart' 'cart'}')...
-%     ,categorical({'grat1VSgrat2' 'gratVSplaid' 'grat1VSgrat2' 'gratVSplaid'}'));
-% withinDesign.Properties.VariableNames = {'respFeat' 'condPair'};
-% withinModel = 'respFeat*condPair';
-% rm = fitrm(t,'cartNoDelay_grat1VSgrat2-cart_gratVSplaid~1','WithinDesign',withinDesign);
-% tbl = ranova(rm,'WithinModel',withinModel);
-% disp(tbl(:,[2 4 5]))
-% 
-% %Planned comparison
-% for condPairInd = 1:length(condPairList)
-%     disp(['ranova (condPair[' condPairList{condPairInd} ']): respFeat[cartNoDelay,cart]'])
-%     ind = ~cellfun('isempty',strfind(t.Properties.VariableNames,condPairList{condPairInd}));
-%     t2 = t(:,ind);
-%     withinDesign2 = withinDesign(ind,1);
-%     withinModel2 = 'respFeat';
-%     rm = fitrm(t2,[t2.Properties.VariableNames{1} '-' t2.Properties.VariableNames{end} '~1'],'WithinDesign',withinDesign2);
-%     tbl = ranova(rm,'WithinModel',withinModel2);
-%     disp(tbl(:,[2 4 5]))
-% end
 

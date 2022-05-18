@@ -34,9 +34,7 @@ visualizeOthers(p)
 
 %% Visualize and do stats on decoding
 plotAllDecoding(p);
-
-
-statsAllDecoding(p,resBS,info)
+statsAllDecoding(p);
 
 
 
