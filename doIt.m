@@ -28,6 +28,12 @@ processFeatSel(p)
 
 %% Decoding
 [resBS,resBShr,resWS,f,info,decodingOut] = runAllDecoding(p);
+visualizeOthers(p)
+
+
+
+
+
 
 
 

@@ -8,19 +8,28 @@ p.anaID = 'anaTmp'; %an ID for your output folder. Potentially useful if you mak
 addpath(genpath(fullfile(p.wd,'utilities')));
 addpath(genpath(fullfile(p.wd,'matlabFun')));
 
-% Matlab proprietary toolboxes:
-% -Image Processing
-% -Statistics and Machine Learning
-% -Mapping
-% -Curve Fitting
-% -Bioinformatics
+% % Matlab proprietary toolboxes:
+% % -Image Processing
+% % -Statistics and Machine Learning
+% % -Mapping
+% % -Curve Fitting
+% % -Bioinformatics
 
-% Matlab contributed toolboxes
+% Matlab community toolboxes
 matDependencyPath = fullfile(p.wd,'matlabFileExchange'); if ~exist(matDependencyPath,'dir'); mkdir(matDependencyPath); end
 %https://www.mathworks.com/matlabcentral/fileexchange/25536-red-blue-colormap
 %https://www.mathworks.com/matlabcentral/fileexchange/41961-nanconv
 %https://www.mathworks.com/matlabcentral/fileexchange/27991-tight_subplot-nh-nw-gap-marg_h-marg_w
 addpath(genpath(fullfile(matDependencyPath)));
+
+% Github dependencies
+gitDependencyPath = fullfile(p.wd,'..');
+% clone https://github.com/cjlin1/libsvm
+if ispc
+    addpath(genpath(fullfile(gitDependencyPath,'libsvm','windows')));
+else
+    error('you need to fix paths to libsvm githu repo for non-windows machines')
+end
 
 
 % gitDependencyPath = fullfile(p.paths.home,'Documents/GitHub/utilities');
@@ -85,17 +94,17 @@ p.dataPath.V1 = fullfile(p.wd,'data','V1');
 
 
 %% Logging
-p.figOption.verbose  = 0;
-p.termOption.verbose = 0;
+p.figOption.verbose  = 2; % 0, 1 or 2
+p.termOption.verbose = 2;
 
-p.termOption.save = 0; % save command window outputs to text file
+p.termOption.save = 1; % save command window outputs to text file
 if p.termOption.save
     diaryON(p)
 end
 
 
 %% Parameters for single-subject example
-p.figOption.save     = 0; % save figures
+p.figOption.save     = 1; % save figures
 p.figOption.subjInd  = 2;
 p.figOption.sessInd  = 1;
 p.figOption.condInd  = 1;

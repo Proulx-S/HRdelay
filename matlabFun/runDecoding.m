@@ -22,37 +22,38 @@ f = [];
 
 %% Define paths
 subjList = paths.subjList;
-repoPath = paths.repoPath;
+% repoPath = paths.repoPath;
     funPath = paths.funPath;
         inDir  = paths.inDir;
         inDir2  = paths.inDir2;
 %make sure everything is forward slash for mac, linux pc compatibility
-for tmp = {'repoPath' 'funPath' 'inDir' 'inDir2'}
+for tmp = {'funPath' 'inDir' 'inDir2'}
+% for tmp = {'repoPath' 'funPath' 'inDir' 'inDir2'}
     eval([char(tmp) '(strfind(' char(tmp) ',''\''))=''/'';']);
 end
 clear tmp
 
 
 
-%% Load data
+%% Load response data
 dAll = cell(size(subjList,1),1);
 for subjInd = 1:length(subjList)
-    curFile = fullfile(funPath,inDir,[subjList{subjInd} '.mat']);
+    curFile = fullfile(funPath,'resp',[subjList{subjInd} '.mat']);
     if verbose; disp(['loading: ' curFile]); end
     if ~permFlag
-        load(curFile,'res');
+        load(curFile,'resp');
     else
-        res = resPall{subjInd}; resPall{subjInd} = {};
+        resp = resPall{subjInd}; resPall{subjInd} = {};
 %         load(curFile,'resP');
 %         res = resP; clear resP
     end
-    dAll{subjInd} = res; clear res
+    dAll{subjInd} = resp; clear resp
 end
 d = dAll; clear dAll
 sessList = fields(d{1});
 % Load feature slection
 if ~permFlag
-    load(fullfile(funPath,inDir2,'featSel.mat'),'featSel');
+    load(fullfile(funPath,'featSel.mat'),'featSel');
 else
     featSel = featSelPall; clear featSelPall
 %     load(fullfile(funPath,inDir2,'featSel.mat'),'featSelP');
@@ -1209,3 +1210,378 @@ if isfield(resGroup,'acc_wilcoxonSignedrank')
     disp([' -wilcoxon on acc'])
     disp(['  sRank=' num2str(resGroup.acc_wilcoxonSignedrank,'%0.2f') '; ones-sided P=' num2str(resGroup.acc_wilcoxonP,'%0.3f')])
 end
+
+
+
+ 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+
+	
+
+function res = perfMetric(y,yHat,k,liteFlag)
+warning('off','stats:perfcurve:SubSampleWithMissingClasses')
+averageWR = 1;
+if ~exist('liteFlag','var')
+    liteFlag = false;
+end
+if ~exist('y','var')
+    res = struct(...
+        'y',[],...
+        'yHat',[],...
+        'nObs',[],...
+        'hit',[],...
+        'acc',[],...
+        'acc_CI5',[],...
+        'acc_CI95',[],...
+        'acc_thresh',[],...
+        'acc_p',[],...);
+        'auc',[],...
+        'auc_CI5',[],...
+        'auc_CI95',[],...
+        'distT',[],...
+        'distT_p',[],...
+        'distMean',[],...
+        'distStd',[]);
+    return
+end
+
+if averageWR
+    nRun = length(unique(k))*length(unique(y));
+    y = mean(reshape(y,[length(y)/nRun nRun]),1)';
+    if nRun~=size(yHat,1)
+        error('double-check that')
+    end
+    yHat = mean(reshape(yHat,[size(yHat,1)/nRun nRun size(yHat,3) size(yHat,4)]),1);
+    yHat = permute(yHat,[2 3 4 1]); % run x t x wSect
+end
+
+res.y = {y};
+res.nObs = length(y);
+res.yHat = {yHat};
+
+% Contitnue only if we have a pair of conditions
+if length(unique(y))>2
+    resTmp = perfMetric;
+    fieldList = fields(res);
+    for fieldInd = 1:length(fieldList)
+        resTmp.(fieldList{fieldInd}) = res.(fieldList{fieldInd});
+    end
+    res = resTmp;
+    return
+end
+
+% Lite version
+if liteFlag
+    res = perfMetric;
+    for tInd = 1:size(yHat,2)
+        % auc
+        [~,~,~,auc] = perfcurve(y,yHat(:,tInd),1);
+        res.auc(:,tInd) = auc(1);
+    end
+    return
+end
+
+
+% acc
+if size(yHat,2)==1
+    res.hit = sum((yHat<0)+1==y);
+    res.acc = res.hit./res.nObs;
+    [~,pci] = binofit(res.hit,res.nObs,0.1);
+    res.acc_CI5 = pci(1);
+    res.acc_CI95 = pci(2);
+    [~,pci] = binofit(res.nObs/2,res.nObs,0.1);
+    res.acc_thresh = pci(2);
+    res.acc_p = binocdf(res.hit,res.nObs,0.5,'upper');
+else
+    res.hit = [];
+    res.acc = [];
+    res.acc_CI5 = [];
+    res.acc_CI95 = [];
+    res.acc_thresh = [];
+    res.acc_p = [];
+end
+for tInd = 1:size(yHat,2)
+    % auc
+    [~,~,~,auc] = perfcurve(y,yHat(:,tInd),1,'NBOOT',2^10);
+    res.auc(:,tInd) = auc(1);
+    res.auc_CI5(:,tInd) = auc(2);
+    res.auc_CI95(:,tInd) = auc(3);
+    % distT
+    [~,P,~,STATS] = ttest(yHat(y==1,tInd),yHat(y==2,tInd));
+    res.distT(:,tInd) = STATS.tstat;
+    res.distT_p(:,tInd) = P;
+end
+% dist
+dist = yHat(y==1,:) - yHat(y==2,:);
+res.distMean = mean(dist,1);
+res.distStd = std(dist,[],1);
+
+
+function [resSess,resSubj,resGroup] = summarizePerf(res_sess)
+allField = fields(res_sess);
+for i = 1:length(allField)
+    if isnumeric(res_sess(1).(allField{i}))
+        tLength = length(res_sess(1).(allField{i}));
+        if tLength==1
+            resSess.(allField{i}) = nan(size(res_sess));
+        elseif tLength==0
+            resSess.(allField{i}) = [];
+        else % for the special case where we compute stats at each time delay relative to stimulus onset
+            resSess.(allField{i}) = nan([tLength size(res_sess)]);
+        end
+        if ~isempty(res_sess(1).(allField{i}))
+            resSess.(allField{i})(:) = [res_sess.(allField{i})];
+        end
+        if length(size(resSess.(allField{i})))>2
+            resSess.(allField{i}) = permute(resSess.(allField{i}),[2 3 1]);
+        end
+    elseif iscell(res_sess(1).(allField{i}))
+        resSess.(allField{i}) = cell(size(res_sess));
+        resSess.(allField{i})(:) = [res_sess.(allField{i})];
+    elseif ischar(res_sess(1).(allField{i}))
+        resSess.(allField{i}) = cell(size(res_sess));
+        resSess.(allField{i})(:) = {res_sess.(allField{i})};
+    elseif isstruct(res_sess(1).(allField{i}))
+        resSess.(allField{i}) = cell(size(res_sess));
+        resSess.(allField{i})(:) = {res_sess.(allField{i})};
+    else
+        error('code that')
+    end
+end
+resSess.info = 'subj x sess';
+resSess.distT_fdr = resSess.distT_p;
+resSess.distT_fdr(:) = mafdr(resSess.distT_p(:),'BHFDR',true);
+% resSess = orderfields(resSess,[1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 23 16 17 18 19 20 21 22]);
+
+% Continue only if having a pair of condtions
+if isempty(resSess.acc)
+    resSubj  = [];
+    resGroup = [];
+    return
+end
+
+resSubj.y = cell(size(resSess.y,1),1);
+resSubj.yHat = cell(size(resSess.yHat,1),1);
+for subjInd = 1:size(resSess.y,1)
+    resSubj.y{subjInd} = cell2mat(resSess.y(subjInd,:)');
+    resSubj.yHat{subjInd} = cell2mat(resSess.yHat(subjInd,:)');
+end
+resSubj.nObs = sum(resSess.nObs,2);
+if ~isempty(resSess.hit)
+    resSubj.hit = sum(resSess.hit,2);
+    resSubj.acc = resSubj.hit./resSubj.nObs;
+    [~,pci] = binofit(resSubj.hit,resSubj.nObs,0.1);
+    resSubj.acc_CI5 = pci(:,1);
+    resSubj.acc_CI95 = pci(:,2);
+    [~,pci] = binofit(resSubj.nObs/2,resSubj.nObs,0.1);
+    resSubj.acc_thresh = pci(:,2);
+    resSubj.acc_p = binocdf(resSubj.hit,resSubj.nObs,0.5,'upper');
+    resSubj.acc_fdr = mafdr(resSubj.acc_p,'BHFDR',true);
+else
+    resSubj.hit = [];
+    resSubj.acc = [];
+    resSubj.acc_CI5 = [];
+    resSubj.acc_CI95 = [];
+    resSubj.acc_thresh = [];
+    resSubj.acc_p = [];
+    resSubj.acc_fdr = [];
+end
+resSubj.auc = nan([size(resSubj.y) size(resSubj.yHat{1},2)]);
+resSubj.distT = nan([size(resSubj.y) size(resSubj.yHat{1},2)]);
+resSubj.distT_p = nan([size(resSubj.y) size(resSubj.yHat{1},2)]);
+resSubj.distMean = nan([size(resSubj.y) size(resSubj.yHat{1},2)]);
+resSubj.distStd = nan([size(resSubj.y) size(resSubj.yHat{1},2)]);
+for subjInd = 1:size(resSubj.y,1)
+    for tInd = 1:size(resSubj.yHat{subjInd},2)
+        [~,~,~,auc] = perfcurve(resSubj.y{subjInd},resSubj.yHat{subjInd}(:,tInd),1);
+        resSubj.auc(subjInd,:,tInd) = auc(1);
+        resSubj.auc_CI5(subjInd,:,tInd) = nan;
+        resSubj.auc_CI95(subjInd,:,tInd) = nan;
+        %     [~,~,~,auc] = perfcurve(resSubj.y{subjInd},resSubj.yHat{subjInd},1,'NBOOT',2^10);
+        %     resSubj.auc(subjInd) = auc(1);
+        %     resSubj.auc_CI5(subjInd) = auc(2);
+        %     resSubj.auc_CI95(subjInd) = auc(3);
+        
+        [~,P,~,STATS] = ttest(resSubj.yHat{subjInd}(resSubj.y{subjInd}==1,tInd),resSubj.yHat{subjInd}(resSubj.y{subjInd}==2,tInd));
+        resSubj.distT(subjInd,:,tInd) = STATS.tstat;
+        resSubj.distT_p(subjInd,:,tInd) = P;
+        
+%         resSubj.distMean(subjInd,:,tInd) = mean(resSess.distMean(subjInd,:,tInd),2);
+%         resSubj.distStd(subjInd,:,tInd) = std(resSess.distMean(subjInd,:,tInd),[],2);
+    end
+    resSubj.distMean(subjInd,:,:) = mean(resSess.distMean(subjInd,:,:),2);
+    resSubj.distStd(subjInd,:,:) = std(resSess.distMean(subjInd,:,:),[],2);
+end
+resSubj.nVoxOrig = round(median(resSess.nVoxOrig,2));
+resSubj.nVox = round(median(resSess.nVox,2));
+resSubj.chanSpace = resSess.chanSpace(:,1);
+resSubj.complexSpace = resSess.complexSpace(:,1);
+resSubj.svmKernel = resSess.svmKernel(:,1);
+
+resGroup.y = cell2mat(resSubj.y);
+resGroup.yHat = cell2mat(resSubj.yHat);
+resGroup.nObs = sum(resSubj.nObs,1);
+if ~isempty(resSubj.hit)
+    resGroup.hit = sum(resSubj.hit,1);
+    
+    resGroup.acc = resGroup.hit./resGroup.nObs;
+    [~,pci] = binofit(resGroup.hit,resGroup.nObs,0.1);
+    resGroup.acc_CI5 = pci(:,1);
+    resGroup.acc_CI95 = pci(:,2);
+    [~,pci] = binofit(resGroup.nObs/2,resGroup.nObs,0.1);
+    resGroup.acc_thresh = pci(:,2);
+    resGroup.acc_p = binocdf(resGroup.hit,resGroup.nObs,0.5,'upper');
+    [~,P,~,STATS] = ttest(resSubj.acc,0.5,'tail','right');
+    resGroup.acc_T = STATS.tstat;
+    resGroup.acc_P = P;
+    [P,~,STATS] = signrank(resSubj.acc,0.5,'tail','right');
+    resGroup.acc_wilcoxonSignedrank = STATS.signedrank;
+    resGroup.acc_wilcoxonP = P;
+else
+    resGroup.hit = [];
+    
+    resGroup.acc = [];
+    resGroup.acc_CI5 = [];
+    resGroup.acc_CI95 = [];
+    resGroup.acc_thresh = [];
+    resGroup.acc_p = [];
+    resGroup.acc_T = [];
+    resGroup.acc_P = [];
+    resGroup.acc_wilcoxonSignedrank = [];
+    resGroup.acc_wilcoxonP = [];
+end
+
+resGroup.auc = nan(1,1,size(resGroup.yHat,2));
+resGroup.auc_CI5 = nan(1,1,size(resGroup.yHat,2));
+resGroup.auc_CI95 = nan(1,1,size(resGroup.yHat,2));
+resGroup.auc_T = nan(1,1,size(resGroup.yHat,2));
+resGroup.auc_P = nan(1,1,size(resGroup.yHat,2));
+resGroup.auc_wilcoxonSignedrank = nan(1,1,size(resGroup.yHat,2));
+resGroup.auc_wilcoxonP = nan(1,1,size(resGroup.yHat,2));
+resGroup.distT = nan(1,1,size(resGroup.yHat,2));
+resGroup.distT_p = nan(1,1,size(resGroup.yHat,2));
+resGroup.distT_T = nan(1,1,size(resGroup.yHat,2));
+resGroup.distT_P = nan(1,1,size(resGroup.yHat,2));
+resGroup.distMean_T = nan(1,1,size(resGroup.yHat,2));
+resGroup.distMean_P = nan(1,1,size(resGroup.yHat,2));
+for tInd = 1:size(resGroup.yHat,2)
+    [~,~,~,auc] = perfcurve(resGroup.y,resGroup.yHat(:,tInd),1,'NBOOT',2^10);
+    resGroup.auc(tInd) = auc(1);
+    resGroup.auc_CI5(tInd) = auc(2);
+    resGroup.auc_CI95(tInd) = auc(3);
+    [~,P,~,STATS] = ttest(resSubj.auc(:,:,tInd),0.5,'tail','right');
+    resGroup.auc_T(tInd) = STATS.tstat;
+    resGroup.auc_P(tInd) = P;
+    [P,~,STATS] = signrank(resSubj.auc(:,:,tInd),0.5,'tail','right');
+    resGroup.auc_wilcoxonSignedrank(tInd) = STATS.signedrank;
+    resGroup.auc_wilcoxonP(tInd) = P;
+
+    [~,P,~,STATS] = ttest(resGroup.yHat(resGroup.y==1,tInd),resGroup.yHat(resGroup.y==2,tInd),'tail','right');
+    resGroup.distT(tInd) = STATS.tstat;
+    resGroup.distT_p(tInd) = P;
+    [~,P,~,STATS] = ttest(resSubj.distT(:,:,tInd),0,'tail','right');
+    resGroup.distT_T(tInd) = STATS.tstat;
+    resGroup.distT_P(tInd) = P;
+    [~,P,~,STATS] = ttest(resSubj.distMean(:,:,tInd),0,'tail','right');
+    resGroup.distMean_T(tInd) = STATS.tstat;
+    resGroup.distMean_P(tInd) = P;
+end
+resGroup.nVoxOrig = round(median(resSubj.nVoxOrig,1));
+resGroup.nVox = round(median(resSubj.nVox,1));
+resGroup.chanSpace = resSubj.chanSpace{1};
+

@@ -25,24 +25,24 @@ end
 
 
 %% Define paths
-subjList = p.meta.subjList;
-repoPath = p.dataPath;
-    funPath = fullfile(repoPath,'C-derived\DecodingHR\fun');
-        inDir  = ['d'];
-        inDir2  = ['e_' p.anaID];
-        outDir = ['f_' p.anaID];
-paths.subjList = subjList;
-paths.repoPath = repoPath;
-paths.funPath = funPath;
-paths.inDir = inDir;
-paths.inDir2 = inDir2;
-paths.outDir = outDir;
+% subjList = p.meta.subjList;
+% repoPath = p.dataPath;
+%     funPath = fullfile(repoPath,'C-derived\DecodingHR\fun');
+%         inDir  = ['d'];
+%         inDir2  = ['e_' p.anaID];
+%         outDir = ['f_' p.anaID];
+paths.subjList = p.meta.subjList;
+% paths.repoPath = repoPath;
+paths.funPath = p.dataPath.V1;
+paths.inDir = p.dataPath.V1;
+paths.inDir2 = p.dataPath.V1;
+paths.outDir = p.dataPath.V1;
 
-%make sure everything is forward slash for mac, linux pc compatibility
-for tmp = {'repoPath' 'funPath' 'outDir'}
-    eval([char(tmp) '(strfind(' char(tmp) ',''\''))=''/'';']);
-end
-clear tmp
+% %make sure everything is forward slash for mac, linux pc compatibility
+% for tmp = {'repoPath' 'funPath' 'outDir'}
+%     eval([char(tmp) '(strfind(' char(tmp) ',''\''))=''/'';']);
+% end
+% clear tmp
 
 
 
@@ -81,7 +81,7 @@ info.info = 'condPair x respFeat';
 
 if ~permFlag
     %% Save data
-    fullpath = fullfile(funPath,outDir);
+    fullpath = fullfile(p.wd,'results',p.anaID);
     if ~exist(fullpath,'dir'); mkdir(fullpath); end
     fullfilenameDecoding = fullfile(fullpath,'decoding');
     save(fullfilenameDecoding,'resBS','p','info');
@@ -91,7 +91,7 @@ if ~permFlag
     %% Save figures
     if p.figOption.verbose
         f = mat2cell([f{:}],1,ones(1,numel([f{:}])));
-        fullfilename = fullfile(p.figOption.finalDir,'decodingFig');
+        fullfilename = fullfile(p.figOption.outDir,'decodingFig');
         for i = 1:numel(f)
             curF = f{i};
             curF.Color = 'none';
