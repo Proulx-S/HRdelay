@@ -129,22 +129,20 @@ f.Color = 'w';
 
 
 %% Save
-if p.figOption.save
-    fullfilename = fullfile(p.figOption.outDir,'Fig4');
-    curF = f;
-    curF.Color = 'none';
-    set(findobj(curF.Children,'type','Axes'),'color','none')
-    curFile = fullfilename;
-    curExt = 'eps';
-    exportgraphics(curF,[curFile '.' curExt],'ContentType','vector'); if p.figOption.verbose; disp([curFile '.' curExt]); end
-    curExt = 'svg';
-    saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
-    curF.Color = 'w';
-    curExt = 'fig';
-    saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
-    curExt = 'jpg';
-    saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
-end
+fullfilename = fullfile(p.figOption.outDir,'Fig4');
+curF = f;
+curF.Color = 'none';
+set(findobj(curF.Children,'type','Axes'),'color','none')
+curFile = fullfilename;
+curExt = 'eps';
+exportgraphics(curF,[curFile '.' curExt],'ContentType','vector'); disp([curFile '.' curExt]);
+curExt = 'svg';
+saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
+curF.Color = 'w';
+curExt = 'fig';
+saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
+curExt = 'jpg';
+saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
 
 function [yBoot_90CI,yBoot_95CI] = bootThat(y,nBoot)
 nSubj = size(y,3);

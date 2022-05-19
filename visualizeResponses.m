@@ -83,30 +83,21 @@ featSel_act = featSel;
 
 
 %% Group effect
-fTrigGroup = plotTrigGroup(d,p,featSel,p.figOption.verbose>1);
-fHrGroup = plotHrGroup(d,p,featSel,p.figOption.verbose>1);
+fTrigGroup = plotTrigGroup(d,p,featSel,1);
+fHrGroup = plotHrGroup(d,p,featSel,1);
 
 
 subjInd = p.figOption.subjInd;
 sessInd = p.figOption.sessInd;
 %% Trigonometric (polar) representation
-if p.figOption.verbose==1
-    [fTrig,voxIndTrig,indFovNotAct,indFovAct] = plotTrig(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},0);
-elseif p.figOption.verbose>1
-    [fTrig,voxIndTrig,indFovNotAct,indFovAct] = plotTrig(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},1);
-end
+[fTrig,voxIndTrig,indFovNotAct,indFovAct] = plotTrig(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},1);
 
 
 %% Temporal represeantation
 fHr = [];
-if p.figOption.verbose==1
-    [fHr,voxIndHr] = plotHr(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},0);
-elseif p.figOption.verbose>1
-    [fHr,voxIndHr] = plotHr(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},1);
-end
+[fHr,voxIndHr] = plotHr(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},1);
 
 %% Time series
-p.dataPath.V1
 curFile = fullfile(p.dataPath.V1,[subjList{p.figOption.subjInd} '.mat']);
 fun = load(curFile);
 fun = fun.d.fun(p.figOption.sessInd);
@@ -184,63 +175,63 @@ fullfilename = fullfile(p.figOption.outDir,'Fig5A');
 curF = fTrigGroup;
 curFile = fullfilename;
 curExt = 'svg';
-saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
+saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
 curExt = 'eps';
-exportgraphics(curF,[curFile '.' curExt],'ContentType','vector'); if p.figOption.verbose; disp([curFile '.' curExt]); end
+exportgraphics(curF,[curFile '.' curExt],'ContentType','vector'); disp([curFile '.' curExt]);
 curExt = 'fig';
-saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
+saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
 curExt = 'jpg';
-saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
+saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
 
 fullfilename = fullfile(p.figOption.outDir,'Fig5B');
 curF = fHrGroup;
 curFile = fullfilename;
 curExt = 'svg';
-saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
+saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
 curExt = 'eps';
-exportgraphics(curF,[curFile '.' curExt],'ContentType','vector'); if p.figOption.verbose; disp([curFile '.' curExt]); end
+exportgraphics(curF,[curFile '.' curExt],'ContentType','vector'); disp([curFile '.' curExt]);
 curExt = 'fig';
-saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
+saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
 curExt = 'jpg';
-saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
+saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
 
 
 fullfilename = fullfile(p.figOption.outDir,'Fig2A');
 curF = fTrig;
 curFile = fullfilename;
 curExt = 'svg';
-saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
+saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
 curExt = 'eps';
-exportgraphics(curF,[curFile '.' curExt],'ContentType','vector'); if p.figOption.verbose; disp([curFile '.' curExt]); end
+exportgraphics(curF,[curFile '.' curExt],'ContentType','vector'); disp([curFile '.' curExt]);
 curExt = 'fig';
-saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
+saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
 curExt = 'jpg';
-saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
+saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
 
 fullfilename = fullfile(p.figOption.outDir,'Fig2B');
 curF = fHr;
 curFile = fullfilename;
 curExt = 'svg';
-saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
+saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
 curExt = 'eps';
-exportgraphics(curF,[curFile '.' curExt],'ContentType','vector'); if p.figOption.verbose; disp([curFile '.' curExt]); end
+exportgraphics(curF,[curFile '.' curExt],'ContentType','vector'); disp([curFile '.' curExt]);
 curExt = 'fig';
-saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
+saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
 curExt = 'jpg';
-saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
+saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
 
 fullfilename = fullfile(p.figOption.outDir,'Fig1C');
 curF = fTs;
 curFile = fullfilename;
 curExt = 'svg';
-saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
+saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
 curExt = 'eps';
-exportgraphics(curF,[curFile '.' curExt],'ContentType','vector'); if p.figOption.verbose; disp([curFile '.' curExt]); end
+exportgraphics(curF,[curFile '.' curExt],'ContentType','vector'); disp([curFile '.' curExt]);
 % curF.Color = 'w';
 curExt = 'fig';
-saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
+saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
 curExt = 'jpg';
-saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
+saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
 
 
 function f = plotTrigGroup(d,p,featSel,visibilityFlag)

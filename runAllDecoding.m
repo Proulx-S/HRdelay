@@ -54,7 +54,7 @@ respFeatList = p.svm.respFeatList;
 
 
 
-figOption_verbose = p.figOption.verbose;
+figOption_verbose = 1;
 
 
 resBS = cell(length(condPairList),length(respFeatList));

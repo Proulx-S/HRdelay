@@ -371,7 +371,9 @@ else
         resBS_sess(i) = perfMetric(Y{i},yHat{i},K{i});
     end
 end
-acc_fdr = mafdr([resBS_sess.acc_p],'BHFDR',true);
+% acc_fdr = mafdr([resBS_sess.acc_p],'BHFDR',true); % requires
+% bioinformatics toolbox
+[~, ~, ~, acc_fdr]=fdr_bh([resBS_sess.acc_p]);
 for i = 1:numel(d)
     resBS_sess(i).acc_fdr = acc_fdr(i);
     resBS_sess(i).nVoxOrig = size(d{i}.sin,1);
@@ -414,7 +416,8 @@ if p.svm.doWithin
     for i = 1:numel(d)
         resWS_sess(i) = perfMetric(Y{i},yHatK{i},K{i});
     end
-    acc_fdr = mafdr([resWS_sess.acc_p],'BHFDR',true);
+%     acc_fdr = mafdr([resWS_sess.acc_p],'BHFDR',true);
+    [~, ~, ~, acc_fdr]=fdr_bh([resWS_sess.acc_p]);
     for i = 1:numel(d)
         resWS_sess(i).acc_fdr = acc_fdr(i);
         resWS_sess(i).nVoxOrig = size(d{i}.sin,1);
@@ -1445,7 +1448,8 @@ for i = 1:length(allField)
 end
 resSess.info = 'subj x sess';
 resSess.distT_fdr = resSess.distT_p;
-resSess.distT_fdr(:) = mafdr(resSess.distT_p(:),'BHFDR',true);
+% resSess.distT_fdr(:) = mafdr(resSess.distT_p(:),'BHFDR',true);
+[~, ~, ~, resSess.distT_fdr(:)]=fdr_bh(resSess.distT_p(:));
 % resSess = orderfields(resSess,[1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 23 16 17 18 19 20 21 22]);
 
 % Continue only if having a pair of condtions
@@ -1471,7 +1475,9 @@ if ~isempty(resSess.hit)
     [~,pci] = binofit(resSubj.nObs/2,resSubj.nObs,0.1);
     resSubj.acc_thresh = pci(:,2);
     resSubj.acc_p = binocdf(resSubj.hit,resSubj.nObs,0.5,'upper');
-    resSubj.acc_fdr = mafdr(resSubj.acc_p,'BHFDR',true);
+%     resSubj.acc_fdr = mafdr(resSubj.acc_p,'BHFDR',true);
+    [~, ~, ~, resSubj.acc_fdr]=fdr_bh(resSubj.acc_p);
+    
 else
     resSubj.hit = [];
     resSubj.acc = [];

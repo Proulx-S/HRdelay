@@ -57,17 +57,17 @@ disp('---(1) Two independent response features (amplitude and delay)')
 ind = ismember(respFeatList,{'cartNoDelay' 'delay'});
 
 tmp = ttest_P(ind,:);
-tmp(:) = mafdr(tmp(:),'BHFDR','true');
+[~, ~, ~, tmp(:)] = fdr_bh(tmp(:));
 ttest_FDR1(ind,:) = tmp;
 tmp = wlcxn_P(ind,:);
-tmp(:) = mafdr(tmp(:),'BHFDR','true');
+[~, ~, ~, tmp(:)] = fdr_bh(tmp(:));
 wlcxn_FDR1(ind,:) = tmp;
 
 tmp = ttestAll_P(ind,:);
-tmp(:) = mafdr(tmp(:),'BHFDR','true');
+[~, ~, ~, tmp(:)] = fdr_bh(tmp(:));
 ttestAll_FDR1(ind,:) = tmp;
 tmp = wlcxnAll_P(ind,:);
-tmp(:) = mafdr(tmp(:),'BHFDR','true');
+[~, ~, ~, tmp(:)] = fdr_bh(tmp(:));
 wlcxnAll_FDR1(ind,:) = tmp;
 
 disp('-- X One stimulus pair condition (average) = 2 comparisons')
@@ -101,10 +101,10 @@ ttest_FDR2 = nan(size(ttest_P));
 wlcxn_FDR2 = nan(size(wlcxn_P));
 ind = ismember(respFeatList,{'delay'});
 tmp = ttest_P(ind,:);
-tmp(:) = mafdr(tmp(:),'BHFDR','true');
+[~, ~, ~, tmp(:)] = fdr_bh(tmp(:));
 ttest_FDR2(ind,:) = tmp;
 tmp = wlcxn_P(ind,:);
-tmp(:) = mafdr(tmp(:),'BHFDR','true');
+[~, ~, ~, tmp(:)] = fdr_bh(tmp(:));
 wlcxn_FDR2(ind,:) = tmp;
 
 disp('-- X One stimulus pair condition (average) = 1 comparisons')
@@ -135,17 +135,17 @@ disp(' ')
 % ind = ismember(respFeatList,{'cartNoDelay' 'cart'});
 % 
 % tmp = ttest_P(ind,:);
-% tmp(:) = mafdr(tmp(:),'BHFDR','true');
+% [~, ~, ~, tmp(:)] = fdr_bh(tmp(:));
 % ttest_FDR1(ind,:) = tmp;
 % tmp = wlcxn_P(ind,:);
-% tmp(:) = mafdr(tmp(:),'BHFDR','true');
+% [~, ~, ~, tmp(:)] = fdr_bh(tmp(:));
 % wlcxn_FDR1(ind,:) = tmp;
 % 
 % tmp = ttestAll_P(ind,:);
-% tmp(:) = mafdr(tmp(:),'BHFDR','true');
+% [~, ~, ~, tmp(:)] = fdr_bh(tmp(:));
 % ttestAll_FDR1(ind,:) = tmp;
 % tmp = wlcxnAll_P(ind,:);
-% tmp(:) = mafdr(tmp(:),'BHFDR','true');
+% [~, ~, ~, tmp(:)] = fdr_bh(tmp(:));
 % wlcxnAll_FDR1(ind,:) = tmp;
 % 
 % disp('---Addition of delay')
@@ -223,7 +223,7 @@ for levelInd = 1:length(levelList2)
 end
 FDR = nan(size(tbl{levelInd},1),size(tbl_P,2));
 for i = 1:2:size(tbl_P,1)
-    FDR(i,:) = mafdr(table2array(tbl_P(i,:)),'BHFDR','true');
+    [~, ~, ~, FDR(i,:)] = fdr_bh(table2array(tbl_P(i,:)));
 end
 for levelInd = 1:length(levelList2)
     tbl{levelInd} = [tbl{levelInd} table(FDR(:,levelInd),'VariableNames',{'fdr'})];
