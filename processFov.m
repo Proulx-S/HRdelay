@@ -54,9 +54,7 @@ figFile = 'SuppFig1';
 saveas(fAll{end},[fullfile(figDir,figFile) '.fig'])
 saveas(fAll{end},[fullfile(figDir,figFile) '.jpg'])
 
-if p.figOption.save
-    disp(['empiricalFov: Saved to ' figDir])
-end
+disp(['empiricalFov: Saved to ' figDir])
 disp(['empiricalFov: Cleaning up'])
 close(findall(groot,'Type','figure','visible','off'))
 disp(['empiricalFov: Done'])
