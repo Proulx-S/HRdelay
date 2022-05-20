@@ -98,7 +98,7 @@ fHr = [];
 [fHr,voxIndHr] = plotHr(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},1);
 
 %% Time series
-curFile = fullfile(p.dataPath.V1,[subjList{p.figOption.subjInd} '.mat']);
+curFile = fullfile(p.dataPath.V1,'ts',[subjList{p.figOption.subjInd} '.mat']);
 fun = load(curFile);
 fun = fun.d.fun(p.figOption.sessInd);
 runTs = squeeze(cat(5,fun.data{:}));

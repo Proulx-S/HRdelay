@@ -21,20 +21,10 @@ f = [];
 
 %% Define paths
 subjList = paths.subjList;
-% repoPath = paths.repoPath;
-    funPath = paths.funPath;
-%         inDir  = paths.inDir;
-%         inDir2  = paths.inDir2;
-%make sure everything is forward slash for mac, linux pc compatibility
-% for tmp = {'funPath' 'inDir' 'inDir2'}
-% % for tmp = {'repoPath' 'funPath' 'inDir' 'inDir2'}
-%     eval([char(tmp) '(strfind(' char(tmp) ',''\''))=''/'';']);
-% end
-% clear tmp
+funPath = paths.funPath;
 
-
+%% Load response data
 if ~exist('respP','var') || isempty(respP)
-    %% Load response data
     respAll = cell(size(subjList,1),1);
     for subjInd = 1:length(subjList)
         curFile = fullfile(funPath,'resp',[subjList{subjInd} '.mat']);
@@ -46,11 +36,9 @@ if ~exist('respP','var') || isempty(respP)
     sessList = info.sessList;
 else
     resp = respP;
-%     resp.sess1 = respP{subjInd,1}; respP{subjInd,1} = {};
-%     resp.sess2 = respP{subjInd,2}; respP{subjInd,2} = {};
 end
 
-% Load feature slection
+%% Load feature slection
 if ~exist('featSelP','var') || isempty(featSelP)
     load(fullfile(funPath,'featSel.mat'),'featSel');
 else
@@ -67,20 +55,6 @@ if ~permFlag
     disp(['Complex space: ' p.complexSpace]);
 end
 
-% %% Reorganize
-% dP = cell(size(d,2),length(sessList));
-% for subjInd = 1:length(d)
-%     for sessInd = 1:length(sessList)
-%         dP{subjInd,sessInd} = d{subjInd}.(sessList{sessInd});
-%         d{subjInd}.(sessList{sessInd}) = [];
-%         dP{subjInd,sessInd}.featSel = featSel{subjInd,sessInd};
-%     end
-% end
-% d = dP; clear dP
-
-% line_num=dbstack; % get this line number
-% disp(['line ' num2str(line_num(1).line)]) % displays the line number
-% toc
 
 %% Define feature selection
 if ~strcmp(featSel{1,1}.featSeq.info2,p.featSel.global.method)
@@ -97,41 +71,16 @@ for subjInd = 1:size(resp,1)
     end
 end
 
-% line_num=dbstack; % get this line number
-% disp(['line ' num2str(line_num(1).line)]) % displays the line number
-% toc
 
 %% Example plot of trigonometric (polar) representation
-subjInd = p.figOption.subjInd;
-sessInd = p.figOption.sessInd;
-if p.figOption.verbose==1
-    f = [f plotNorm(resp{subjInd,sessInd},p,featSel{subjInd,sessInd},[],0)];
-elseif p.figOption.verbose>1
+if 0
+    subjInd = p.figOption.subjInd;
+    sessInd = p.figOption.sessInd;
     f = [f plotNorm(resp{subjInd,sessInd},p,featSel{subjInd,sessInd},[],1)];
 end
-% if p.figOption.verbose>=1 && figOption.save
-%     error('code that')
-%     filename = fullfile(pwd,mfilename);
-%     if ~exist(filename,'dir'); mkdir(filename); end
-%     filename = fullfile(filename,p.chanSpace);
-%     f.Color = 'none';
-%     set(findobj(f.Children,'type','Axes'),'color','none')
-%     set(findobj(f.Children,'type','PolarAxes'),'color','none')
-%     saveas(f,[filename '.svg']); if verbose; disp([filename '.svg']); end
-%     f.Color = 'w';
-%     set(findobj(f.Children,'type','Axes'),'color','w')
-%     set(findobj(f.Children,'type','PolarAxes'),'color','w')
-%     saveas(f,[filename '.fig']); if verbose; disp([filename '.fig']); end
-%     saveas(f,[filename '.jpg']); if verbose; disp([filename '.jpg']); end
-% end
 
-% line_num=dbstack; % get this line number
-% disp(['line ' num2str(line_num(1).line)]) % displays the line number
-% toc
-
-
+%% Within-session SVM cross-validation (with cross-session feature selection)
 if p.svm.doWithin
-    %% Within-session SVM cross-validation (with cross-session feature selection)
     svmModelK = cell(size(resp));
     nrmlzK = cell(size(resp));
     yHatK = cell(size(resp));
@@ -179,11 +128,6 @@ if p.svm.doWithin
         nOrig(i) = length(featSelInd);
         n(i) = nnz(featSelInd);
     end
-
-    
-    % line_num=dbstack; % get this line number
-    % disp(['line ' num2str(line_num(1).line)]) % displays the line number
-    % toc
 end
 
 %% Within-session SVM training (and feature selection) + Cross-session SVM testing
@@ -227,10 +171,6 @@ for i = 1:numel(resp)
     n(i) = nnz(featSelInd);
 end
 
-% line_num=dbstack; % get this line number
-% disp(['line ' num2str(line_num(1).line)]) % displays the line number
-% toc
-
 % Testing
 for i = 1:numel(resp)
     if ~permFlag
@@ -254,14 +194,10 @@ for i = 1:numel(resp)
     [yHat{subjInd,testInd},~] = SVMtest(y,x,svmModel{subjInd,trainInd},[],[]);
 end
 
-% line_num=dbstack; % get this line number
-% disp(['line ' num2str(line_num(1).line)]) % displays the line number
-% toc
-
+%% Extract channel HR
 if ~permFlag...
         && strcmp(p.svm.kernel.type,'lin')...
         && strcmp(p.svm.complexSpace,'bouboulisDeg1')
-    %% Extract channel HR
     % Testing
     for i = 1:numel(resp)
         if ~permFlag
@@ -290,7 +226,7 @@ if ~permFlag...
             case 'cart'
                 % complexify x?
                 % realifiy w?
-                
+
                 % Quadrant-specific analysis:
                 % 1) +real
                 % 2) +real +imag
@@ -349,71 +285,75 @@ if ~permFlag...
 end
 
 
-%% Compute performance metrics (SLOW 10sec/16sec)
-% Between-sess
+%% Compute performance metrics (SLOW 10sec/16sec) -- Between-session
 if ~permFlag
     disp('BS perfMetric: computing')
 end
-resBS_2sessIn1 = repmat(perfMetric,[size(resp,1) 1]);
+
+% Here is a shortcut for when performing permutation test. Same as
+% summarizePerf.m, but only computing resBSsubj
 if permFlag
+    %metric based on 2 sessions concatenated into a single pseudo session ()
+    resBS_subj = repmat(perfMetric,[size(resp,1) 1]);
     for subjInd = 1:size(resp,1)
         k = cat(1,K{subjInd,1},K{subjInd,2}+max(K{subjInd,1}));
         y = cat(1,Y{subjInd,:});
         yhat = cat(1,yHat{subjInd,:});
-        resBS_2sessIn1(subjInd) = perfMetric(y,yhat,k,1);
-        resBS_2sessIn1(subjInd).nObs = size(y,1);
+        resBS_subj(subjInd) = perfMetric(y,yhat,k,1);
     end
-    resBS.auc = nan(size(resBS_2sessIn1,1),1);
-    resBS.nObs = nan(size(resBS_2sessIn1,1),1);
-    resBS.auc(:) = [resBS_2sessIn1.auc];
-    resBS.nObs(:) = [resBS_2sessIn1.nObs];
+    %output results to the root of resBS and exit
+    resBS.auc = nan(size(resBS_subj,1),1);
+    resBS.nObs = nan(size(resBS_subj,1),1);
+    resBS.auc(:) = [resBS_subj.auc];
+    resBS.nObs(:) = [resBS_subj.nObs];
     resBShr = [];
     resWS = [];
     f = [];
     return
-else
-    for i = 1:numel(resp)
-        resBS_2sessIn1(i) = perfMetric(Y{i},yHat{i},K{i});
-    end
 end
-% acc_fdr = mafdr([resBS_sess.acc_p],'BHFDR',true); % requires
-% bioinformatics toolbox
-[~, ~, ~, acc_fdr]=fdr_bh([resBS_2sessIn1.acc_p]);
+
+% Metric based on each session
+resBS_sess = repmat(perfMetric,size(resp));
 for i = 1:numel(resp)
-    resBS_2sessIn1(i).acc_fdr = acc_fdr(i);
-    resBS_2sessIn1(i).nVoxOrig = size(resp{i}.sin,1);
-    resBS_2sessIn1(i).nVox = nnz(featSel{i}.indIn);
-    resBS_2sessIn1(i).chanSpace = p.chanSpace;
-    resBS_2sessIn1(i).complexSpace = p.complexSpace;
-    resBS_2sessIn1(i).svmKernel = p.svm.kernel.type;
-    resBS_2sessIn1(i).condPair = p.condPair;
+    resBS_sess(i) = perfMetric(Y{i},yHat{i},K{i});
 end
-% resBS_sess = orderfields(resBS_sess,[1 2 3 4 5 6 7 8 9 15 10 11 12 13 14 16 17 18 19]);
-% resBS_sess = orderfields(resBS_sess,[1 2 3 4 5 6 7 8 9 17 10 11 12 13 14 15 16 18 19 20 21]);
+[~, ~, ~, acc_fdr]=fdr_bh([resBS_sess.acc_p]);
+for i = 1:numel(resp)
+    resBS_sess(i).acc_fdr = acc_fdr(i);
+    resBS_sess(i).nVoxOrig = size(resp{i}.sin,1);
+    resBS_sess(i).nVox = nnz(featSel{i}.indIn);
+    resBS_sess(i).chanSpace = p.chanSpace;
+    resBS_sess(i).complexSpace = p.complexSpace;
+    resBS_sess(i).svmKernel = p.svm.kernel.type;
+    resBS_sess(i).condPair = p.condPair;
+end
 disp('BS perfMetric: done')
 
+%% Don't remember what this is but it is not used
 if ~isempty(Yhr{1})
-% Between-sess Channel HR
-resBShr_sess = repmat(perfMetric,[size(resp,1) size(resp,2)]);
-disp('BShr perfMetric: computing')
-for i = 1:numel(resp)
-    disp(['sess' num2str(i) '/' num2str(numel(resp))])
-    resBShr_sess(i) = perfMetric(Yhr{i},yHatHr{i},Khr{i});
-end
-for i = 1:numel(resp)
-    resBShr_sess(i).yHat_nSpec = {permute(yHatHr_nSpec{i},[1 3 4 2])};
-end
-for i = 1:numel(resp)
-    resBShr_sess(i).acc_fdr = [];
-    resBShr_sess(i).nVoxOrig = size(resp{i}.sin,1);
-    resBShr_sess(i).nVox = nnz(featSel{i}.indIn);
-    resBShr_sess(i).chanSpace = p.chanSpace;
-    resBShr_sess(i).condPair = p.condPair;
-end
-% resBShr_sess = orderfields(resBShr_sess,[1 2 3 4 5 6 7 8 9 17 10 11 12 13 14 15 16 18 19 20 21 22]);
-disp('BShr perfMetric: done')
+    % Between-sess Channel HR
+    resBShr_sess = repmat(perfMetric,[size(resp,1) size(resp,2)]);
+    disp('BShr perfMetric: computing')
+    for i = 1:numel(resp)
+        disp(['sess' num2str(i) '/' num2str(numel(resp))])
+        resBShr_sess(i) = perfMetric(Yhr{i},yHatHr{i},Khr{i});
+    end
+    for i = 1:numel(resp)
+        resBShr_sess(i).yHat_nSpec = {permute(yHatHr_nSpec{i},[1 3 4 2])};
+    end
+    for i = 1:numel(resp)
+        resBShr_sess(i).acc_fdr = [];
+        resBShr_sess(i).nVoxOrig = size(resp{i}.sin,1);
+        resBShr_sess(i).nVox = nnz(featSel{i}.indIn);
+        resBShr_sess(i).chanSpace = p.chanSpace;
+        resBShr_sess(i).condPair = p.condPair;
+    end
+    % resBShr_sess = orderfields(resBShr_sess,[1 2 3 4 5 6 7 8 9 17 10 11 12 13 14 15 16 18 19 20 21 22]);
+    disp('BShr perfMetric: done')
 end
 
+
+%% Within-session performance metric
 if p.svm.doWithin
     % Within-sess
     disp('WS perfMetric: computing')
@@ -421,7 +361,6 @@ if p.svm.doWithin
     for i = 1:numel(resp)
         resWS_sess(i) = perfMetric(Y{i},yHatK{i},K{i});
     end
-%     acc_fdr = mafdr([resWS_sess.acc_p],'BHFDR',true);
     [~, ~, ~, acc_fdr]=fdr_bh([resWS_sess.acc_p]);
     for i = 1:numel(resp)
         resWS_sess(i).acc_fdr = acc_fdr(i);
@@ -432,17 +371,13 @@ if p.svm.doWithin
         resWS_sess(i).svmKernel = p.svm.kernel.type;
         resWS_sess(i).condPair = p.condPair;
     end
-    % resWS_sess = orderfields(resWS_sess,[1 2 3 4 5 6 7 8 9 17 10 11 12 13 14 15 16 18 19 20 21]);
     disp('WS perfMetric: done')
 end
 
-% line_num=dbstack; % get this line number
-% disp(['line ' num2str(line_num(1).line)]) % displays the line number
-% toc
 
-%% Summarize group performances (SLOW 4sec/16sec)
+%% Summarize performances (SLOW 4sec/16sec)
 disp('perfMetric summary: computing')
-[resBSsess,resBSsubj,resBSgroup] = summarizePerf(resBS_2sessIn1);
+[resBSsess,resBSsubj,resBSgroup] = summarizePerf(resBS_sess);
 if exist('resBShr_sess','var')
     [resBShrSess,~,~] = summarizePerf(resBShr_sess);
 end
@@ -451,31 +386,6 @@ if p.svm.doWithin
     [resWSsess,resWSsubj,resWSgroup] = summarizePerf(resWS_sess);
     disp('perfMetric summary: computing')
 end
-
-% % Combine WS and BS
-% fieldList = fields(resBSsubj);
-% for i = 1:length(fieldList)
-%     if isnumeric(resBSsubj.(fieldList{i}))
-%         resSubj.(fieldList{i}) = mean(cat(3,resWSsubj.(fieldList{i}),resBSsubj.(fieldList{i})),3);
-%     end
-% end
-% [~,P,~,STATS] = ttest(resSubj.acc,0.5,'tail','right');
-% resGroup.acc_T = STATS.tstat;
-% resGroup.acc_P = P;
-% [~,P,~,STATS] = ttest(resSubj.auc,0.5,'tail','right');
-% resGroup.auc_T = STATS.tstat;
-% resGroup.auc_P = P;
-% [P,~,STATS] = signrank(resSubj.acc,0.5,'tail','right');
-% resGroup.acc_wilcoxonSignedrank = STATS.signedrank;
-% resGroup.acc_wilcoxonP = P;
-% [P,~,STATS] = signrank(resSubj.auc,0.5,'tail','right');
-% resGroup.auc_wilcoxonSignedrank = STATS.signedrank;
-% resGroup.auc_wilcoxonP = P;
-
-
-% line_num=dbstack; % get this line number
-% disp(['line ' num2str(line_num(1).line)]) % displays the line number
-% toc
 
 %% Print info and output
 if ~permFlag
@@ -516,12 +426,9 @@ else
     resWS = [];
 end
 
-% line_num=dbstack; % get this line number
-% disp(['line ' num2str(line_num(1).line)]) % displays the line number
-% toc
 
+%% Plot between-session vs within-session
 if p.svm.doWithin
-    %% Plot between-session vs within-session
     if ~permFlag
         % Decoding
         sz = size(resWS.sess.acc);
@@ -580,11 +487,6 @@ if p.svm.doWithin
         uistack(patch([0 0 0.5 0.5 0],[0.5 0 0 0.5 0.5],[1 1 1].*0.7),'bottom')
     end
 end
-
-
-% line_num=dbstack; % get this line number
-% disp(['line ' num2str(line_num(1).line)]) % displays the line number
-% toc
 
 
 function [ind2,info] = getFeatInd(featMap,featSelInfo,method,ind,dir)
@@ -1280,6 +1182,7 @@ if liteFlag
         % auc
         [~,~,~,auc] = perfcurve(y,yHat(:,tInd),1);
         res.auc(:,tInd) = auc(1);
+        res.nObs(:,tInd) = size(yHat,1);
     end
     return
 end

@@ -15,7 +15,7 @@ extractResponses(p);
 
 %% Define the retinotopic representation of the stimulus field of view (data-driven with priors from a probabilistic retinotopic atlas)
 doWhat = 'download';
-% 'run' -> run it yourself (several minutes)
+% 'run' -> run it yourself (several minutes; and will likely use some of Matlab's proprietary toolboxes)
 % 'download' -> download precomputed data from repository
 % 'run_forced' -> same as above, but forces to rerun instead of loading
 % locally saved data
@@ -27,7 +27,8 @@ processFov(p,doWhat);
 processFeatSel(p);
 
 %% Decoding
-[resBS,resBShr,resWS,f,info,decodingOut] = runAllDecoding(p);
+runAllDecoding(p);
+% [resBS,resBShr,resWS,f,info,decodingOut] = runAllDecoding(p);
 
 %% Visualize and print stats on BOLD responses
 visualizeResponses(p)
@@ -38,7 +39,7 @@ statsAllDecoding(p);
 
 
 
-p.perm.n = 2^4;
+p.perm.n = 2^2;
 permFlag = 1;
 disp('***************************')
 disp('Permutation test: computing')
@@ -75,7 +76,11 @@ save(outFile,'resBSP','-append');
 disp(['Permutations appended to ' outFile ' as variable respBSP'])
 
 
+plotAllDecoding(p);
 return
+
+
+
 
 
 

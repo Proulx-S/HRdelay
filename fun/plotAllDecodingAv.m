@@ -2,6 +2,10 @@ function f = plotAllDecodingAv(p,res,info)
 p.figOption.save = 0;
 verbose  = 0;
 
+% Grrrrr, to be consistent with how auc is computed during the permutation
+% test, we should not use res{condPairInd,respFeatInd}.subj.(metric) as
+% below, but res{condPairInd,respFeatInd}.auc. In the former case, auc is
+% computed on each session 
 nBoot = p.boot.n;
 metric = 'auc';
 condPairList = info.condPairList;

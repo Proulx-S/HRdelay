@@ -8,7 +8,7 @@ p.anaID = 'anaTmp'; %an ID for your output folder. Potentially useful if you mak
 addpath(genpath(fullfile(p.wd,'fun')));
 
 % Matlab proprietary toolboxes (may not all be needed):
-% -Statistics and Machine Learning
+% -Statistics and Machine Learning (fcdf.m for computing significant voxel activation)
 
 % -Image Processing
 % -Mapping
@@ -100,24 +100,16 @@ p.meta.subjList = {'02jp' '03sk' '04sp' '05bm' '06sb' '07bj'}';
 
 
 %% Paths
-% p.figPath = fullfile(p.wd,'figures'); if ~exist(p.figPath,'dir'); mkdir(p.figPath); end
 p.figOption.outDir = fullfile(p.wd,'figures',p.anaID); if ~exist(p.figOption.outDir,'dir'); mkdir(p.figOption.outDir); end
 p.termOption.outDir = fullfile(p.wd,'terminalOutputs',p.anaID); if ~exist(p.termOption.outDir,'dir'); mkdir(p.termOption.outDir); end
 p.dataPath.V1 = fullfile(p.wd,'data','V1');
 
 
 %% Logging
-% p.figOption.verbose  = 2; % 0, 1 or 2
-% p.termOption.verbose = 2;
-
-% p.termOption.save = 1; % save command window outputs to text file
-% if p.termOption.save
-    diaryON(p)
-% end
+diaryON(p)
 
 
 %% Parameters for single-subject example
-% p.figOption.save     = 1; % save figures
 p.figOption.subjInd  = 2;
 p.figOption.sessInd  = 1;
 p.figOption.condInd  = 1;

@@ -5,7 +5,7 @@ disp('extractResponses.m')
 % cycle by fitting a sinusoidal response model and a deconvolution model.
 
 %% Define paths
-dataIn = p.dataPath.V1;
+dataIn = fullfile(p.dataPath.V1,'ts');
 dataOut = fullfile(p.dataPath.V1,'resp');
 if ~exist(dataOut,'dir')
     mkdir(dataOut)
