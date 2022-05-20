@@ -24,7 +24,7 @@ doWhat = 'download';
 processFov(p,doWhat);
 
 %% Feature selection
-processFeatSel(p)
+processFeatSel(p);
 
 %% Decoding
 [resBS,resBShr,resWS,f,info,decodingOut] = runAllDecoding(p);
@@ -46,12 +46,12 @@ disp('***************************')
 for permInd = 1:p.perm.n
     disp(['Perm ' num2str(permInd) '/' num2str(p.perm.n)])
     if permInd==1
-        respAll = [];
-        featSel_fov = [];
+        resp = [];
+        fov = [];
     end
-    [respPall,respAll] = permuteLabels(p,respAll);
-    [featSelPall,featSel_fov] = processFeatSel(p,respPall,featSel_fov);
-    [respBSP,respBShrP,respWSP,fP,infoP] = runAllDecoding(p,respPall,featSelPall);
+    [respP,resp] = permuteLabels(p,resp);
+    [featSelP,fov] = processFeatSel(p,respP,fov);
+    [respBSP,respBShrP,respWSP,fP,infoP] = runAllDecoding(p,respP,featSelP);
     if permInd == 1
         auc = nan([size(respBSP) p.perm.n]);
     end
@@ -159,12 +159,12 @@ if p.perm.doIt
         for permInd = 1:p.perm.n
             disp(['Perm ' num2str(permInd) '/' num2str(p.perm.n)])
             if permInd==1
-                respAll = [];
-                featSel_fov = [];
+                resp = [];
+                featSel = [];
             end
-            [respPall,respAll] = permuteLabels(p,respAll);
-            [featSelPall,featSel_fov] = processFeatSel(p,respPall,featSel_fov);
-            [respBSP,respBShrP,respWSP,fP,infoP] = runAllDecoding(p,respPall,featSelPall);
+            [respP,resp] = permuteLabels(p,resp);
+            [featSelP,featSel] = processFeatSel(p,respP,featSel);
+            [respBSP,respBShrP,respWSP,fP,infoP] = runAllDecoding(p,respP,featSelP);
             if permInd == 1
                 auc = nan([size(respBSP) p.perm.n]);
             end

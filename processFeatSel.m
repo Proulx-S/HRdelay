@@ -1,23 +1,29 @@
-function [featSelP,featSel_fov] = processFeatSel(p,permFlag,resPall,featSel_fov)
+function [featSel,fov] = processFeatSel(p,d,fov)
 disp('----------------')
 disp('processFeatSel.m')
-if ~exist('permFlag','var')
+
+if ~exist('d','var')
     permFlag = 0;
+else
+    permFlag = 1;
 end
 
-%% Load response data
-[d,info] = loadData(p);
+if ~exist('d','var') || isempty(d)
+    %% Load response data
+    [d,info] = loadData(p);
+end
 
 %% Load fov data
-[p,d,featSel_fov] = loadFov(p,d);
+if ~exist('fov','var') || isempty(fov)
+    [p,d,fov] = loadFov(p,d);
+end
 
 %% Functional feature selection
 featSel = cell(size(d));
-f = cell(size(d));
 for sessInd = 1:size(d,2)
     for subjInd = 1:size(d,1)
-        disp(['processFeatSel: subj' num2str(subjInd) ',sess' num2str(sessInd)])
-        [featSel{subjInd,sessInd}] = getFeatSel(d{subjInd,sessInd},p,featSel_fov{subjInd,sessInd});
+        if ~permFlag; disp(['processFeatSel: subj' num2str(subjInd) ',sess' num2str(sessInd)]); end
+        [featSel{subjInd,sessInd}] = getFeatSel(d{subjInd,sessInd},p,fov.areaAndFov{subjInd,sessInd});
         featSel{subjInd,sessInd}.GLMs.random.sinDesign = d{subjInd,sessInd}.sinDesign;
         featSel{subjInd,sessInd}.GLMs.random.hrDesign = d{subjInd,sessInd}.hrDesign;
         featSel{subjInd,sessInd}.GLMs.random.infoDesign = d{subjInd,sessInd}.infoDesign;
@@ -25,8 +31,8 @@ for sessInd = 1:size(d,2)
     end
 end
 % save to featSel.mat
-fullfilename = fullfile(p.dataPath.V1,'featSel.mat');
 if ~permFlag
+    fullfilename = fullfile(p.dataPath.V1,'featSel.mat');
     disp('Feature Selection: saving')
     save(fullfilename,'featSel')
     disp(['Feature Selection: saved to ' fullfilename])
@@ -34,32 +40,18 @@ end
 
 function [d,info] = loadData(p)
 dataIn = fullfile(p.dataPath.V1,'resp');
-dAll = cell(length(p.meta.subjList),1);
+d = cell(length(p.meta.subjList),1);
 for subjInd = 1:length(p.meta.subjList)
     curFile = fullfile(dataIn,[p.meta.subjList{subjInd} '.mat']);
     disp([p.meta.subjList{subjInd} ': loading responses']);
     load(curFile,'resp');
-    dAll{subjInd} = resp;
+    d{subjInd} = resp;
 end
+[d, info] = reorgData(p,d);
 disp('responses loaded')
-d = dAll; clear dAll
-sessList = fields(d{1});
-dP = cell(size(d,2),length(sessList));
-for subjInd = 1:length(d)
-    for sessInd = 1:length(sessList)
-        sess = ['sess' num2str(sessInd)];
-        dP{subjInd,sessInd} = d{subjInd}.(sessList{sessInd});
-        d{subjInd}.(sessList{sessInd}) = [];
-    end
-end
-d = dP; clear dP
-
-info.info = 'subj x sess';
-info.sessList = sessList';
-info.subjList = p.meta.subjList;
 
 
-function [p,d,featSel_fov] = loadFov(p,d)
+function [p,d,fov] = loadFov(p,d)
 disp('Loading FOV')
 fov = load(fullfile(p.dataPath.V1,'fov.mat'),'cont','voxProp','pEmpirical','areaAndFov');
 %Pack cont into featSel_areaAndFov and voxProp into d
@@ -71,9 +63,8 @@ for subjInd = 1:size(d,1)
         d{subjInd,sessInd}.voxProp.R = fov.voxProp{subjInd,sessInd}.R;
     end
 end
-%Pack pEmirical into p
+%Pack pEmpirical into p
 p.featSel.fov.empricalFov = fov.pEmpirical;
-featSel_fov = fov.areaAndFov; clear fov
 disp('Loaded FOV')
 
 
@@ -97,7 +88,7 @@ end
 
 
 
-%% Voxels representing stimulus fov
+%% Voxels representing stimulus fov (not affected by permutations)
 curInfo1 = {'retinoFov'};
 featVal = featSel_fov.featVal;
 pVal = nan(size(featVal));
@@ -162,7 +153,7 @@ allFeatIndIn(end+1) = {uniformizeOutputs(curIndIn,condIndPairList)};
 % end
 
 
-%% Most significant response vectors
+%% Most significant response vectors (not affected by permutations)
 if p.featSel.respVecSig.doIt
     curInfo1 = {'respVecSig'};
     featVal = interceptStat; clear interceptStat
@@ -207,7 +198,7 @@ if p.featSel.respVecSig.doIt
 end
 
 
-%% Non vein voxels
+%% Non vein voxels (not affected by permutations)
 if p.featSel.vein.doIt
     curInfo1 = {'vein'};
     
@@ -243,7 +234,7 @@ if p.featSel.vein.doIt
     end
 end
 
-%% Most discrimant voxels (of the activated voxels)
+%% Most discrimant voxels (affected by permutations)
 if p.featSel.respVecDiff.doIt
     curInfo1 = {'respVecDiff'};
     featVal = condStat;
@@ -318,18 +309,18 @@ featSel.featSeq.condPairList = permute(condIndPairList,[1 3 2]);
 featSel.featSeq.info = 'vox X featSel X condPair';
 featSel.featSeq.info2 = p.featSel.global.method;
 
-% Compute quantile
-for featInd = 1:size(featSel.featSeq.featQtile,2)
-    for condIndPairInd = 1:size(featSel.featSeq.featQtile,3)
-        x = featSel.featSeq.featVal(:,featInd,condIndPairInd);
-        startInd = featSel.featSeq.featIndStart(:,featInd,condIndPairInd);
-        %                 startInd = true(size(x));
-        [fx,x2] = ecdf(x(startInd));
-        x2 = x2(2:end); fx = fx(2:end);
-        [~,b] = ismember(x,x2);
-        featSel.featSeq.featQtile(b~=0,featInd,condIndPairInd) = fx(b(b~=0));
-    end
-end
+% % Compute quantile
+% for featInd = 1:size(featSel.featSeq.featQtile,2)
+%     for condIndPairInd = 1:size(featSel.featSeq.featQtile,3)
+%         x = featSel.featSeq.featVal(:,featInd,condIndPairInd);
+%         startInd = featSel.featSeq.featIndStart(:,featInd,condIndPairInd);
+%         %                 startInd = true(size(x));
+%         [fx,x2] = ecdf(x(startInd));
+%         x2 = x2(2:end); fx = fx(2:end);
+%         [~,b] = ismember(x,x2);
+%         featSel.featSeq.featQtile(b~=0,featInd,condIndPairInd) = fx(b(b~=0));
+%     end
+% end
 
 function [featVal,pVal,featVal2,pVal2] = getDiscrimStats(d,p,condIndPair,statLabel)
 if ~exist('statLabel','var') || isempty(statLabel)

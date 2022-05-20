@@ -1,4 +1,4 @@
-function [resBS,resBShr,resWS,f] = runDecoding(p,verbose,paths,resPall,featSelPall)
+function [resBS,resBShr,resWS,f] = runDecoding(p,verbose,paths,respP,featSelP)
 if ~exist('verbose','var')
     verbose = 1;
 end
@@ -10,10 +10,10 @@ if ~isfield(p,'chanSpace') || isempty(p.chanSpace)
     p.chanSpace = 'cart'; % 'cart_HTbSess' 'cartNoAmp_HTbSess' 'cartNoDelay_HTbSess'
     % 'hr' 'hrNoAmp' 'cart' 'cartNoAmp' cartNoAmp_HT 'cartReal', 'cartImag', 'pol', 'polMag' 'polMag_T' or 'polDelay'
 end
-if ~exist('resPall','var') || isempty(resPall)
+if ~exist('respP','var') || isempty(respP)
     permFlag = 0;
-    resPall = [];
-    featSelPall = [];
+    respP = [];
+    featSelP = [];
 else
     permFlag = 1;
 end
@@ -34,47 +34,51 @@ end
 clear tmp
 
 
-
-%% Load response data
-dAll = cell(size(subjList,1),1);
-for subjInd = 1:length(subjList)
-    curFile = fullfile(funPath,'resp',[subjList{subjInd} '.mat']);
-    if verbose; disp(['loading: ' curFile]); end
-    if ~permFlag
+if ~permFlag
+    %% Load response data
+    d = cell(size(subjList,1),1);
+    for subjInd = 1:length(subjList)
+        curFile = fullfile(funPath,'resp',[subjList{subjInd} '.mat']);
+        if verbose; disp(['loading: ' curFile]); end
         load(curFile,'resp');
-    else
-        resp = resPall{subjInd}; resPall{subjInd} = {};
-%         load(curFile,'resP');
-%         res = resP; clear resP
+        d{subjInd} = resp; clear resp
     end
-    dAll{subjInd} = resp; clear resp
+    [d, info] = reorgData(p,d);
+    sessList = info.sessList;
+else
+    resp.sess1 = respP{subjInd,1}; respP{subjInd,1} = {};
+    resp.sess2 = respP{subjInd,2}; respP{subjInd,2} = {};
 end
-d = dAll; clear dAll
-sessList = fields(d{1});
+
 % Load feature slection
 if ~permFlag
     load(fullfile(funPath,'featSel.mat'),'featSel');
 else
-    featSel = featSelPall; clear featSelPall
+    featSel = featSelP; clear featSelP
 %     load(fullfile(funPath,inDir2,'featSel.mat'),'featSelP');
 %     featSel = featSelP; clear featSelP
 end
+for sessInd = 1:numel(d)
+    d{sessInd}.featSel = featSel{sessInd};
+end
+
+
 if verbose
     disp('---');
     disp(['Channel space: ' p.chanSpace '-' p.condPair]);
     disp(['Complex space: ' p.complexSpace]);
 end
 
-%% Reorganize
-dP = cell(size(d,2),length(sessList));
-for subjInd = 1:length(d)
-    for sessInd = 1:length(sessList)
-        dP{subjInd,sessInd} = d{subjInd}.(sessList{sessInd});
-        d{subjInd}.(sessList{sessInd}) = [];
-        dP{subjInd,sessInd}.featSel = featSel{subjInd,sessInd};
-    end
-end
-d = dP; clear dP
+% %% Reorganize
+% dP = cell(size(d,2),length(sessList));
+% for subjInd = 1:length(d)
+%     for sessInd = 1:length(sessList)
+%         dP{subjInd,sessInd} = d{subjInd}.(sessList{sessInd});
+%         d{subjInd}.(sessList{sessInd}) = [];
+%         dP{subjInd,sessInd}.featSel = featSel{subjInd,sessInd};
+%     end
+% end
+% d = dP; clear dP
 
 % line_num=dbstack; % get this line number
 % disp(['line ' num2str(line_num(1).line)]) % displays the line number
