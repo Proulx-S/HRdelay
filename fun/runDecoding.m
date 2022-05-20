@@ -1,21 +1,20 @@
-function [resBS,resBShr,resWS,f] = runDecoding(p,verbose,paths,respP,featSelP)
-if ~exist('verbose','var')
-    verbose = 1;
+function [resBS,resBShr,resWS,f] = runDecoding(p,permFlag,paths,respP,featSelP)
+if ~exist('permFlag','var')
+    permFlag = 0;
 end
-% if ~exist('figOption','var') || isempty(figOption)
-%     figOption.save = 0;
-%     figOption.subj = 1; % 'all' or subjInd
-% end
+if permFlag
+    p.figOption.verbose = 0;
+end
 if ~isfield(p,'chanSpace') || isempty(p.chanSpace)
     p.chanSpace = 'cart'; % 'cart_HTbSess' 'cartNoAmp_HTbSess' 'cartNoDelay_HTbSess'
     % 'hr' 'hrNoAmp' 'cart' 'cartNoAmp' cartNoAmp_HT 'cartReal', 'cartImag', 'pol', 'polMag' 'polMag_T' or 'polDelay'
 end
+
 if ~exist('respP','var') || isempty(respP)
-    permFlag = 0;
     respP = [];
+end
+if ~exist('featSelP','var') || isempty(featSelP)
     featSelP = [];
-else
-    permFlag = 1;
 end
 f = [];
 % tic
@@ -24,46 +23,45 @@ f = [];
 subjList = paths.subjList;
 % repoPath = paths.repoPath;
     funPath = paths.funPath;
-        inDir  = paths.inDir;
-        inDir2  = paths.inDir2;
+%         inDir  = paths.inDir;
+%         inDir2  = paths.inDir2;
 %make sure everything is forward slash for mac, linux pc compatibility
-for tmp = {'funPath' 'inDir' 'inDir2'}
-% for tmp = {'repoPath' 'funPath' 'inDir' 'inDir2'}
-    eval([char(tmp) '(strfind(' char(tmp) ',''\''))=''/'';']);
-end
-clear tmp
+% for tmp = {'funPath' 'inDir' 'inDir2'}
+% % for tmp = {'repoPath' 'funPath' 'inDir' 'inDir2'}
+%     eval([char(tmp) '(strfind(' char(tmp) ',''\''))=''/'';']);
+% end
+% clear tmp
 
 
-if ~permFlag
+if ~exist('respP','var') || isempty(respP)
     %% Load response data
-    d = cell(size(subjList,1),1);
+    respAll = cell(size(subjList,1),1);
     for subjInd = 1:length(subjList)
         curFile = fullfile(funPath,'resp',[subjList{subjInd} '.mat']);
-        if verbose; disp(['loading: ' curFile]); end
+        disp(['loading: ' curFile]);
         load(curFile,'resp');
-        d{subjInd} = resp; clear resp
+        respAll{subjInd} = resp; clear resp
     end
-    [d, info] = reorgData(p,d);
+    [resp, info] = reorgData(p,respAll);
     sessList = info.sessList;
 else
-    resp.sess1 = respP{subjInd,1}; respP{subjInd,1} = {};
-    resp.sess2 = respP{subjInd,2}; respP{subjInd,2} = {};
+    resp = respP;
+%     resp.sess1 = respP{subjInd,1}; respP{subjInd,1} = {};
+%     resp.sess2 = respP{subjInd,2}; respP{subjInd,2} = {};
 end
 
 % Load feature slection
-if ~permFlag
+if ~exist('featSelP','var') || isempty(featSelP)
     load(fullfile(funPath,'featSel.mat'),'featSel');
 else
     featSel = featSelP; clear featSelP
-%     load(fullfile(funPath,inDir2,'featSel.mat'),'featSelP');
-%     featSel = featSelP; clear featSelP
 end
-for sessInd = 1:numel(d)
-    d{sessInd}.featSel = featSel{sessInd};
+for sessInd = 1:numel(resp)
+    resp{sessInd}.featSel = featSel{sessInd};
 end
 
 
-if verbose
+if ~permFlag
     disp('---');
     disp(['Channel space: ' p.chanSpace '-' p.condPair]);
     disp(['Complex space: ' p.complexSpace]);
@@ -91,8 +89,8 @@ end
 featSelSteps_labelList = featSel{1,1}.featSeq.featSelList;
 featSelConds_labelList = featSel{1,1}.featSeq.condPairList;
 [ind_nSpecFeatSel,ind_nSpecFeatSelCond,ind_specFeatSel,ind_specFeatSelCond] = defineFeatSel(featSelSteps_labelList,featSelConds_labelList,p.featSel.global.method,p.condPair);
-for subjInd = 1:size(d,1)
-    for sessInd = 1:size(d,2)
+for subjInd = 1:size(resp,1)
+    for sessInd = 1:size(resp,2)
         featSel{subjInd,sessInd}.indIn = ...
             all(featSel{subjInd,sessInd}.featSeq.featIndIn(:,ind_nSpecFeatSel,ind_nSpecFeatSelCond),2)...
             & all(featSel{subjInd,sessInd}.featSeq.featIndIn(:,ind_specFeatSel,ind_specFeatSelCond),2);
@@ -107,9 +105,9 @@ end
 subjInd = p.figOption.subjInd;
 sessInd = p.figOption.sessInd;
 if p.figOption.verbose==1
-    f = [f plotNorm(d{subjInd,sessInd},p,featSel{subjInd,sessInd},[],0)];
+    f = [f plotNorm(resp{subjInd,sessInd},p,featSel{subjInd,sessInd},[],0)];
 elseif p.figOption.verbose>1
-    f = [f plotNorm(d{subjInd,sessInd},p,featSel{subjInd,sessInd},[],1)];
+    f = [f plotNorm(resp{subjInd,sessInd},p,featSel{subjInd,sessInd},[],1)];
 end
 % if p.figOption.verbose>=1 && figOption.save
 %     error('code that')
@@ -134,26 +132,26 @@ end
 
 if p.svm.doWithin
     %% Within-session SVM cross-validation (with cross-session feature selection)
-    svmModelK = cell(size(d));
-    nrmlzK = cell(size(d));
-    yHatK = cell(size(d));
-    yHatK_tr = cell(size(d));
-    Y = cell(size(d));
-    K = cell(size(d));
-    Yhr = cell(size(d));
-    Khr = cell(size(d));
-    nOrig = nan(size(d));
-    n = nan(size(d));
+    svmModelK = cell(size(resp));
+    nrmlzK = cell(size(resp));
+    yHatK = cell(size(resp));
+    yHatK_tr = cell(size(resp));
+    Y = cell(size(resp));
+    K = cell(size(resp));
+    Yhr = cell(size(resp));
+    Khr = cell(size(resp));
+    nOrig = nan(size(resp));
+    n = nan(size(resp));
     
-    if verbose
+    if ~permFlag
         disp('Within-session SVM cross-validation')
         disp('with between-session feature selection')
     end
-    for i = 1:numel(d)
-        if verbose
-            disp(['-training and testing sess ' num2str(i) '/' num2str(numel(d))])
+    for i = 1:numel(resp)
+        if ~permFlag
+            disp(['-training and testing sess ' num2str(i) '/' num2str(numel(resp))])
         end
-        [subjInd,sessInd] = ind2sub(size(d),i);
+        [subjInd,sessInd] = ind2sub(size(resp),i);
         switch sessInd
             case 1
                 sessIndCross = 2;
@@ -164,7 +162,7 @@ if p.svm.doWithin
         end
         
         % get data
-        [X,y,k] = getXYK(d{subjInd,sessInd},p);
+        [X,y,k] = getXYK(resp{subjInd,sessInd},p);
         
         % cross-session feature selection
         featSelInd = featSel{subjInd,sessIndCross}.indIn;
@@ -189,32 +187,32 @@ if p.svm.doWithin
 end
 
 %% Within-session SVM training (and feature selection) + Cross-session SVM testing
-if verbose
+if ~permFlag
     disp('Between-session SVM cross-validation')
     disp('with feature selection from the training session')
 end
-svmModel = cell(size(d));
-nrmlz = cell(size(d));
-yHat_tr = cell(size(d));
-yHat = cell(size(d));
-yHatHr = cell(size(d));
-yHatHr_nSpec = cell(size(d));
+svmModel = cell(size(resp));
+nrmlz = cell(size(resp));
+yHat_tr = cell(size(resp));
+yHat = cell(size(resp));
+yHatHr = cell(size(resp));
+yHatHr_nSpec = cell(size(resp));
 if ~p.svm.doWithin
-    Y = cell(size(d));
-    K = cell(size(d));
-    Yhr = cell(size(d));
-    Khr = cell(size(d));
-    nOrig = nan(size(d));
-    n = nan(size(d));
+    Y = cell(size(resp));
+    K = cell(size(resp));
+    Yhr = cell(size(resp));
+    Khr = cell(size(resp));
+    nOrig = nan(size(resp));
+    n = nan(size(resp));
 end
 % Training
-for i = 1:numel(d)
-    if verbose
-        disp(['-training sess ' num2str(i) '/' num2str(numel(d))])
+for i = 1:numel(resp)
+    if ~permFlag
+        disp(['-training sess ' num2str(i) '/' num2str(numel(resp))])
     end
-    [subjInd,trainInd] = ind2sub(size(d),i);
+    [subjInd,trainInd] = ind2sub(size(resp),i);
     % get training data
-    [X,y,k] = getXYK(d{subjInd,trainInd},p);
+    [X,y,k] = getXYK(resp{subjInd,trainInd},p);
     % same-session feature-selection
     featSelInd = featSel{subjInd,trainInd}.indIn;
     x = X(:,featSelInd);
@@ -234,11 +232,11 @@ end
 % toc
 
 % Testing
-for i = 1:numel(d)
-    if verbose
-        disp(['-testing sess ' num2str(i) '/' num2str(numel(d))])
+for i = 1:numel(resp)
+    if ~permFlag
+        disp(['-testing sess ' num2str(i) '/' num2str(numel(resp))])
     end
-    [subjInd,testInd] = ind2sub(size(d),i);
+    [subjInd,testInd] = ind2sub(size(resp),i);
     switch testInd
         case 1
             trainInd = 2;
@@ -248,7 +246,7 @@ for i = 1:numel(d)
             error('X')
     end
     % get test data
-    [X,y,~] = getXYK(d{subjInd,testInd},p);
+    [X,y,~] = getXYK(resp{subjInd,testInd},p);
     % cross-session feature selection
     featSelInd = featSel{subjInd,trainInd}.indIn;
     x = X(:,featSelInd);
@@ -265,11 +263,11 @@ if ~permFlag...
         && strcmp(p.svm.complexSpace,'bouboulisDeg1')
     %% Extract channel HR
     % Testing
-    for i = 1:numel(d)
-        if verbose
-            disp(['-channel timeseries for sess ' num2str(i) '/' num2str(numel(d))])
+    for i = 1:numel(resp)
+        if ~permFlag
+            disp(['-channel timeseries for sess ' num2str(i) '/' num2str(numel(resp))])
         end
-        [subjInd,testInd] = ind2sub(size(d),i);
+        [subjInd,testInd] = ind2sub(size(resp),i);
         switch testInd
             case 1
                 trainInd = 2;
@@ -282,7 +280,7 @@ if ~permFlag...
         pTmp = p;
         pTmp.condPair = 'all';
         hrFlag = true;
-        [x,y,k] = getXYK(d{subjInd,testInd},pTmp,hrFlag);
+        [x,y,k] = getXYK(resp{subjInd,testInd},pTmp,hrFlag);
         % cross-session feature selection
         featSelInd = featSel{subjInd,trainInd}.indIn;
         x = x(:,featSelInd,:);
@@ -353,12 +351,12 @@ end
 
 %% Compute performance metrics (SLOW 10sec/16sec)
 % Between-sess
-if verbose
+if ~permFlag
     disp('BS perfMetric: computing')
 end
-resBS_sess = repmat(perfMetric,[size(d,1) size(d,2)]);
+resBS_sess = repmat(perfMetric,[size(resp,1) size(resp,2)]);
 if permFlag
-    for i = 1:size(d,1)
+    for i = 1:size(resp,1)
         k = cat(1,K{i,1},K{i,2}+max(K{i,1}));
         y = cat(1,Y{i,:});
         yhat = cat(1,yHat{i,:});
@@ -371,16 +369,16 @@ if permFlag
     f = [];
     return
 else
-    for i = 1:numel(d)
+    for i = 1:numel(resp)
         resBS_sess(i) = perfMetric(Y{i},yHat{i},K{i});
     end
 end
 % acc_fdr = mafdr([resBS_sess.acc_p],'BHFDR',true); % requires
 % bioinformatics toolbox
 [~, ~, ~, acc_fdr]=fdr_bh([resBS_sess.acc_p]);
-for i = 1:numel(d)
+for i = 1:numel(resp)
     resBS_sess(i).acc_fdr = acc_fdr(i);
-    resBS_sess(i).nVoxOrig = size(d{i}.sin,1);
+    resBS_sess(i).nVoxOrig = size(resp{i}.sin,1);
     resBS_sess(i).nVox = nnz(featSel{i}.indIn);
     resBS_sess(i).chanSpace = p.chanSpace;
     resBS_sess(i).complexSpace = p.complexSpace;
@@ -393,18 +391,18 @@ disp('BS perfMetric: done')
 
 if ~isempty(Yhr{1})
 % Between-sess Channel HR
-resBShr_sess = repmat(perfMetric,[size(d,1) size(d,2)]);
+resBShr_sess = repmat(perfMetric,[size(resp,1) size(resp,2)]);
 disp('BShr perfMetric: computing')
-for i = 1:numel(d)
-    disp(['sess' num2str(i) '/' num2str(numel(d))])
+for i = 1:numel(resp)
+    disp(['sess' num2str(i) '/' num2str(numel(resp))])
     resBShr_sess(i) = perfMetric(Yhr{i},yHatHr{i},Khr{i});
 end
-for i = 1:numel(d)
+for i = 1:numel(resp)
     resBShr_sess(i).yHat_nSpec = {permute(yHatHr_nSpec{i},[1 3 4 2])};
 end
-for i = 1:numel(d)
+for i = 1:numel(resp)
     resBShr_sess(i).acc_fdr = [];
-    resBShr_sess(i).nVoxOrig = size(d{i}.sin,1);
+    resBShr_sess(i).nVoxOrig = size(resp{i}.sin,1);
     resBShr_sess(i).nVox = nnz(featSel{i}.indIn);
     resBShr_sess(i).chanSpace = p.chanSpace;
     resBShr_sess(i).condPair = p.condPair;
@@ -416,15 +414,15 @@ end
 if p.svm.doWithin
     % Within-sess
     disp('WS perfMetric: computing')
-    resWS_sess = repmat(perfMetric,[size(d,1) size(d,2)]);
-    for i = 1:numel(d)
+    resWS_sess = repmat(perfMetric,[size(resp,1) size(resp,2)]);
+    for i = 1:numel(resp)
         resWS_sess(i) = perfMetric(Y{i},yHatK{i},K{i});
     end
 %     acc_fdr = mafdr([resWS_sess.acc_p],'BHFDR',true);
     [~, ~, ~, acc_fdr]=fdr_bh([resWS_sess.acc_p]);
-    for i = 1:numel(d)
+    for i = 1:numel(resp)
         resWS_sess(i).acc_fdr = acc_fdr(i);
-        resWS_sess(i).nVoxOrig = size(d{i}.sin,1);
+        resWS_sess(i).nVoxOrig = size(resp{i}.sin,1);
         resWS_sess(i).nVox = nnz(featSel{i}.indIn);
         resWS_sess(i).chanSpace = p.chanSpace;
         resWS_sess(i).complexSpace = p.complexSpace;
@@ -477,7 +475,7 @@ end
 % toc
 
 %% Print info and output
-if verbose
+if ~permFlag
     disp('-----------------')
     if p.svm.doWithin
         disp('*Within-session*')
@@ -521,7 +519,7 @@ end
 
 if p.svm.doWithin
     %% Plot between-session vs within-session
-    if verbose
+    if ~permFlag
         % Decoding
         sz = size(resWS.sess.acc);
         resBS_tmp = resBS;

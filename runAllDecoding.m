@@ -1,25 +1,27 @@
-function [resBS,resBShr,resWS,f,info,fullfilenameDecoding] = runAllDecoding(p,resPall,featSelPall)
+function [resBS,resBShr,resWS,f,info,fullfilenameDecoding] = runAllDecoding(p,permFlag,respP,featSelP)
 % if ~exist('verbose','var')
 %     verbose = 1;
 % end
-if ~isfield(p,'perm')
-    p.perm.doIt = 0;
-end
-if ~exist('resPall','var')
+% if ~isfield(p,'perm')
+%     p.perm.doIt = 0;
+% end
+if ~exist('permFlag','var')
     permFlag = 0;
-    resPall = [];
-else
-    permFlag = 1;
 end
-if ~exist('featSelPall','var')
-    featSelPall = [];
+
+if ~exist('respP','var') || isempty(respP)
+    respP = [];
 end
+if ~exist('featSelP','var') || isempty(featSelP)
+    featSelP = [];
+end
+
 if permFlag
     p.figOption.verbose = 0;
     p.termOption.verbose = 0;
-    verbose = 0;
-else
-    verbose = 1;
+
+
+
 end
 
 
@@ -48,7 +50,7 @@ paths.outDir = p.dataPath.V1;
 
 
 %%
-figOption = p.figOption;
+
 condPairList = p.svm.condPairList;
 respFeatList = p.svm.respFeatList;
 
@@ -71,7 +73,7 @@ for respFeatInd = 1:length(respFeatList)
             p.figOption.verbose = figOption_verbose;
         end
         p.condPair = condPairList{condPairInd};
-        [resBS{condPairInd,respFeatInd},resBShr{condPairInd,respFeatInd},resWS{condPairInd,respFeatInd},f{condPairInd,respFeatInd}] = runDecoding(p,verbose,paths,resPall,featSelPall);
+        [resBS{condPairInd,respFeatInd},resBShr{condPairInd,respFeatInd},resWS{condPairInd,respFeatInd},f{condPairInd,respFeatInd}] = runDecoding(p,permFlag,paths,respP,featSelP);
     end
 end
 p.figOption.verbose = figOption_verbose;

@@ -1,11 +1,9 @@
-function [featSel,fov] = processFeatSel(p,d,fov)
+function [featSel,fov] = processFeatSel(p,permFlag,d,fov)
 disp('----------------')
 disp('processFeatSel.m')
 
-if ~exist('d','var')
+if ~exist('permFlag','var')
     permFlag = 0;
-else
-    permFlag = 1;
 end
 
 if ~exist('d','var') || isempty(d)

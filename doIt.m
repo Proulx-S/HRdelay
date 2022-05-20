@@ -39,7 +39,7 @@ statsAllDecoding(p);
 
 
 p.perm.n = 2^2;
-
+permFlag = 1;
 disp('***************************')
 disp('Permutation test: computing')
 disp('***************************')
@@ -50,12 +50,13 @@ for permInd = 1:p.perm.n
         fov = [];
     end
     [respP,resp] = permuteLabels(p,resp);
-    [featSelP,fov] = processFeatSel(p,respP,fov);
-    [respBSP,respBShrP,respWSP,fP,infoP] = runAllDecoding(p,respP,featSelP);
+    [featSelP,fov] = processFeatSel(p,permFlag,respP,fov);
+    [respBSP,respBShrP,respWSP,fP,infoP] = runAllDecoding(p,permFlag,respP,featSelP);
     if permInd == 1
         auc = nan([size(respBSP) p.perm.n]);
     end
     tmp = reshape([respBSP{:}],size(respBSP));
+    tmp = reshape([tmp.subj],size(tmp));
     tmp = reshape(permute([tmp.auc],[2 3 1]),[size(tmp) size(tmp(1).auc,1)]);
     auc(:,:,permInd) = mean(tmp,3); clear tmp
 end
