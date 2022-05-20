@@ -118,7 +118,8 @@ p.figOption.sliceInd = 7;
 
 %% Permutations
 p.perm.doIt = 1;
-p.perm.n = 2^13;
+% p.perm.n = 2^13;
+p.perm.n = 2^2;
 
 
 %% Bootstrapping
