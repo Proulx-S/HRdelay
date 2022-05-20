@@ -45,8 +45,6 @@ saveas(f.L{p.figOption.subjInd,p.figOption.sessInd}(figInd),[fullfile(figDir,fig
 figFile = 'Fig3Aright';
 saveas(f.R{p.figOption.subjInd,p.figOption.sessInd}(figInd),[fullfile(figDir,figFile) '.fig'])
 saveas(f.R{p.figOption.subjInd,p.figOption.sessInd}(figInd),[fullfile(figDir,figFile) '.jpg'])
-close(f.R{:})
-close(f.L{:})
 
 % in supplement
 fAll{end}.Visible = 'on';

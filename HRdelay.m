@@ -1,5 +1,5 @@
 %% Info
-% This script reproduces all figures from S. Proulx et al., Neuroimage, in
+% This script reproduces figures from S. Proulx et al., Neuroimage, in
 % preperation.
 clear all
 close all
@@ -10,17 +10,15 @@ initAnalysis; % where to define paths, analysis parameters and some other genera
 %% Get data (preprocessed BOLD volumes, only V1 ROI voxels, one .mat file per subject)
 downloadData;
 
-%% Extract responses from timeseries
+%% Extract sinusoidal and model-free responses from timeseries
 extractResponses(p);
 
 %% Define the retinotopic representation of the stimulus field of view (data-driven with priors from a probabilistic retinotopic atlas)
 doWhat = 'download';
-% 'run' -> run it yourself (several minutes; and will likely use some of Matlab's proprietary toolboxes)
+% 'run' -> run it yourself (several minutes; uses some more Matlab proprietary toolboxes, see initAnalysis.m)
 % 'download' -> download precomputed data from repository
-% 'run_forced' -> same as above, but forces to rerun instead of loading
-% locally saved data
-% 'download_forced' -> same as above, but forces to redownload instead of loading
-% locally saved data
+% 'run_forced' -> same as above, but forces to rerun instead of loading locally saved data
+% 'download_forced' -> same as above, but forces to redownload instead of loading locally saved data
 processFov(p,doWhat);
 
 %% Feature selection
@@ -28,7 +26,6 @@ processFeatSel(p);
 
 %% Decoding
 runAllDecoding(p);
-% [resBS,resBShr,resWS,f,info,decodingOut] = runAllDecoding(p);
 
 %% Visualize and print stats on BOLD responses
 visualizeResponses(p)
@@ -41,6 +38,8 @@ statsAllDecoding(p);
 runPermDecoding(p)
 plotAllDecoding(p);
 return
+
+
 
 
 

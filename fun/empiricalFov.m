@@ -120,7 +120,7 @@ end
 
 function voxProp = flattenEccDist(d,hemi,p,plotFlag)
 if ~exist('plotFlag','var')
-    plotFlag = p.figOption.verbose;
+    plotFlag = 0;
 end
 eccRef = p.fov.eccLim';
 
@@ -650,13 +650,10 @@ for subjInd = 1:size(d,1)
 end
 
 
-function [featVal,featMethod,featIndIn,featInfo,f] = getAreaAndFov(cont,voxProp,p)
-
+function [featVal,featMethod,featIndIn,featInfo,f] = getAreaAndFov(cont,voxProp,p,visibleFlag)
 warning('off','MATLAB:polyshape:repairedBySimplify')
-if p.figOption.verbose==0
+if ~exist('visibleFlag','var')
     visibleFlag = 0;
-elseif p.figOption.verbose>=1
-    visibleFlag = 1;
 end
 
 %% Precompute stats on response vector (random effect)
