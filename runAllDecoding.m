@@ -19,9 +19,6 @@ end
 if permFlag
     p.figOption.verbose = 0;
     p.termOption.verbose = 0;
-
-
-
 end
 
 

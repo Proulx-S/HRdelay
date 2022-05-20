@@ -1,9 +1,10 @@
 function [featSel,fov] = processFeatSel(p,permFlag,d,fov)
-disp('----------------')
-disp('processFeatSel.m')
-
 if ~exist('permFlag','var')
     permFlag = 0;
+end
+if ~permFlag
+    disp('----------------')
+    disp('processFeatSel.m')
 end
 
 if ~exist('d','var') || isempty(d)

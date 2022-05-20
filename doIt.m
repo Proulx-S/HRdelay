@@ -38,7 +38,7 @@ statsAllDecoding(p);
 
 
 
-p.perm.n = 2^2;
+p.perm.n = 2^4;
 permFlag = 1;
 disp('***************************')
 disp('Permutation test: computing')
@@ -51,12 +51,12 @@ for permInd = 1:p.perm.n
     end
     [respP,resp] = permuteLabels(p,resp);
     [featSelP,fov] = processFeatSel(p,permFlag,respP,fov);
-    [respBSP,respBShrP,respWSP,fP,infoP] = runAllDecoding(p,permFlag,respP,featSelP);
+    [resBSP,resBShrP,resWSP,fP,infoP] = runAllDecoding(p,permFlag,respP,featSelP);
     if permInd == 1
-        auc = nan([size(respBSP) p.perm.n]);
+        auc = nan([size(resBSP) p.perm.n]);
     end
-    tmp = reshape([respBSP{:}],size(respBSP));
-    tmp = reshape([tmp.subj],size(tmp));
+    tmp = reshape([resBSP{:}],size(resBSP));
+%     tmp = reshape([tmp.subj],size(tmp));
     tmp = reshape(permute([tmp.auc],[2 3 1]),[size(tmp) size(tmp(1).auc,1)]);
     auc(:,:,permInd) = mean(tmp,3); clear tmp
 end
@@ -66,14 +66,16 @@ disp('**********************')
 % Save permutations
 disp('Saving permutations')
 auc = permute(auc,[3 1 2]);
+resBSP = cell(size(resBSP));
 for i = 1:numel(auc(1,:))
-    resBS{i}.subj.aucP = auc(:,i);
+    resBSP{i}.subj.aucP = permute(auc(:,i),[2 3 1]);
 end
-save([decodingOut 'P'],'resBS','info');
-disp(['Permutations saved to ' decodingOut 'P'])
+outFile = fullfile(p.wd,'results',p.anaID,'decoding.mat');
+save(outFile,'resBSP','-append');
+disp(['Permutations appended to ' outFile ' as variable respBSP'])
 
 
-
+return
 
 
 
@@ -165,11 +167,11 @@ if p.perm.doIt
             end
             [respP,resp] = permuteLabels(p,resp);
             [featSelP,featSel] = processFeatSel(p,respP,featSel);
-            [respBSP,respBShrP,respWSP,fP,infoP] = runAllDecoding(p,respP,featSelP);
+            [resBSP,resBShrP,resWSP,fP,infoP] = runAllDecoding(p,respP,featSelP);
             if permInd == 1
-                auc = nan([size(respBSP) p.perm.n]);
+                auc = nan([size(resBSP) p.perm.n]);
             end
-            tmp = reshape([respBSP{:}],size(respBSP));
+            tmp = reshape([resBSP{:}],size(resBSP));
             tmp = reshape(permute([tmp.auc],[2 3 1]),[size(tmp) size(tmp(1).auc,1)]);
             auc(:,:,permInd) = mean(tmp,3); clear tmp
         end

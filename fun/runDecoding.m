@@ -354,36 +354,39 @@ end
 if ~permFlag
     disp('BS perfMetric: computing')
 end
-resBS_sess = repmat(perfMetric,[size(resp,1) size(resp,2)]);
+resBS_2sessIn1 = repmat(perfMetric,[size(resp,1) 1]);
 if permFlag
-    for i = 1:size(resp,1)
-        k = cat(1,K{i,1},K{i,2}+max(K{i,1}));
-        y = cat(1,Y{i,:});
-        yhat = cat(1,yHat{i,:});
-        resBS_sess(i) = perfMetric(y,yhat,k,1);
+    for subjInd = 1:size(resp,1)
+        k = cat(1,K{subjInd,1},K{subjInd,2}+max(K{subjInd,1}));
+        y = cat(1,Y{subjInd,:});
+        yhat = cat(1,yHat{subjInd,:});
+        resBS_2sessIn1(subjInd) = perfMetric(y,yhat,k,1);
+        resBS_2sessIn1(subjInd).nObs = size(y,1);
     end
-    resBS.auc = nan(size(resBS_sess,1),1);
-    resBS.auc(:) = [resBS_sess.auc];
+    resBS.auc = nan(size(resBS_2sessIn1,1),1);
+    resBS.nObs = nan(size(resBS_2sessIn1,1),1);
+    resBS.auc(:) = [resBS_2sessIn1.auc];
+    resBS.nObs(:) = [resBS_2sessIn1.nObs];
     resBShr = [];
     resWS = [];
     f = [];
     return
 else
     for i = 1:numel(resp)
-        resBS_sess(i) = perfMetric(Y{i},yHat{i},K{i});
+        resBS_2sessIn1(i) = perfMetric(Y{i},yHat{i},K{i});
     end
 end
 % acc_fdr = mafdr([resBS_sess.acc_p],'BHFDR',true); % requires
 % bioinformatics toolbox
-[~, ~, ~, acc_fdr]=fdr_bh([resBS_sess.acc_p]);
+[~, ~, ~, acc_fdr]=fdr_bh([resBS_2sessIn1.acc_p]);
 for i = 1:numel(resp)
-    resBS_sess(i).acc_fdr = acc_fdr(i);
-    resBS_sess(i).nVoxOrig = size(resp{i}.sin,1);
-    resBS_sess(i).nVox = nnz(featSel{i}.indIn);
-    resBS_sess(i).chanSpace = p.chanSpace;
-    resBS_sess(i).complexSpace = p.complexSpace;
-    resBS_sess(i).svmKernel = p.svm.kernel.type;
-    resBS_sess(i).condPair = p.condPair;
+    resBS_2sessIn1(i).acc_fdr = acc_fdr(i);
+    resBS_2sessIn1(i).nVoxOrig = size(resp{i}.sin,1);
+    resBS_2sessIn1(i).nVox = nnz(featSel{i}.indIn);
+    resBS_2sessIn1(i).chanSpace = p.chanSpace;
+    resBS_2sessIn1(i).complexSpace = p.complexSpace;
+    resBS_2sessIn1(i).svmKernel = p.svm.kernel.type;
+    resBS_2sessIn1(i).condPair = p.condPair;
 end
 % resBS_sess = orderfields(resBS_sess,[1 2 3 4 5 6 7 8 9 15 10 11 12 13 14 16 17 18 19]);
 % resBS_sess = orderfields(resBS_sess,[1 2 3 4 5 6 7 8 9 17 10 11 12 13 14 15 16 18 19 20 21]);
@@ -439,7 +442,7 @@ end
 
 %% Summarize group performances (SLOW 4sec/16sec)
 disp('perfMetric summary: computing')
-[resBSsess,resBSsubj,resBSgroup] = summarizePerf(resBS_sess);
+[resBSsess,resBSsubj,resBSgroup] = summarizePerf(resBS_2sessIn1);
 if exist('resBShr_sess','var')
     [resBShrSess,~,~] = summarizePerf(resBShr_sess);
 end
@@ -1215,106 +1218,6 @@ if isfield(resGroup,'acc_wilcoxonSignedrank')
     disp([' -wilcoxon on acc'])
     disp(['  sRank=' num2str(resGroup.acc_wilcoxonSignedrank,'%0.2f') '; ones-sided P=' num2str(resGroup.acc_wilcoxonP,'%0.3f')])
 end
-
-
-
- 1
- 2
- 3
- 4
- 5
- 6
- 7
- 8
- 9
-10
-11
-12
-13
-14
-15
-16
-17
-18
-19
-20
-21
-22
-23
-24
-25
-26
-27
-28
-29
-30
-31
-32
-33
-34
-35
-36
-37
-38
-39
-40
-41
-42
-43
-44
-45
-46
-47
-48
-49
-50
-51
-52
-53
-54
-55
-56
-57
-58
-59
-60
-61
-62
-63
-64
-65
-66
-67
-68
-69
-70
-71
-72
-73
-74
-75
-76
-77
-78
-79
-80
-81
-82
-83
-84
-85
-86
-87
-88
-89
-90
-91
-92
-93
-94
-95
-96
-97
 
 	
 

@@ -1,6 +1,15 @@
 function f = plotAllDecoding(p)
-load(fullfile(p.wd,'results',p.anaID,'decoding.mat'),'resBS','info');
+inFile = fullfile(p.wd,'results',p.anaID,'decoding.mat');
+load(inFile,'resBS','info');
 res = resBS; clear resBS
+
+variableInfo = who('-file', inFile);
+if ismember('resBSP', variableInfo) % returns true
+    load(inFile,'resBSP');
+    for i = 1:numel(res)
+        res{i}.subj.aucP = resBSP{i}.subj.aucP;
+    end
+end
 
 f1 = plotAllDecodingAv(p,res,info);
 f2 = plotAllDecodingOriVsPlaid(p,res,info);

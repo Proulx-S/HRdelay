@@ -35,10 +35,15 @@ Thumbs.db
 ######################
 *.log
 
-# External dependencies
+# Folders
 ######################
 matlabFileExchange
 matlabFileExchange/
-#/matlabFileExchange/**
-#/matlabFileExchange/**/**
-#/matlabFileExchange/**/**/**
+results
+results/
+terminalOutputs
+terminalOutputs/
+figures
+figures/
+data
+data/

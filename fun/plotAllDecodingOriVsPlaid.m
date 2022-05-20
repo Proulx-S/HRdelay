@@ -53,13 +53,16 @@ ax = gca;
 
 
 if isfield(res{1}.subj,'aucP')
+
     tmp = reshape([res{:}],size(res));
     tmp = reshape([tmp.subj],size(tmp));
-    tmp = reshape(permute([tmp.aucP],[2 3 1]),[size(tmp) size(tmp(1).aucP,1)]);
-    aucP = permute(tmp,[3 1 2]);
+    aucP = permute(reshape(cat(1,tmp.aucP),[size(tmp) size(tmp(1).aucP,3)]),[3 1 2]);
+    % perm x condPair x respFeat
     aucP = cat(2,aucP(:,1,:),mean(aucP(:,[2 3],:),2));
+
     info.condPairList = cat(1,condPairList2(1),{'gratVSplaid'});
     
+    % Plot null distribution (keeping it invisible)
     fTmp = figure('windowstyle','docked','visible',verbose);
     binWidth = 5;
     t = tiledlayout(3,1,'TileIndexing','columnmajor');
@@ -92,7 +95,7 @@ if isfield(res{1}.subj,'aucP')
     
     
     
-    
+    % Add the null distribution to the bar graph
     figure(f)
     hBarP = cell(length(info.condPairList),length(info.respFeatList));
     for condPairInd = 1:length(info.condPairList)
@@ -126,7 +129,7 @@ if isfield(res{1}.subj,'aucP')
     hTex2 = text(axLim(2),axLim(4),['n=' num2str(length(res{1}.subj.subjList))],'VerticalAlignment','top','horizontalAlignment','right');
 end
 
-
+% Add single subject
 barGroupCent = hBar(1).XData(1);
 barCent = hBar(1).XEndPoints(1);
 delta = (barGroupCent-barCent)*hBar(1).BarWidth;
@@ -172,20 +175,20 @@ uistack(hP,'bottom')
 legend(hBar,condPairList2,'Box','off')
 
 %% Save
-if p.figOption.save
+% if p.figOption.save
     fullfilename = fullfile(p.figOption.outDir,'Fig4right');
     curF = f;
     curF.Color = 'none';
     set(findobj(curF.Children,'type','Axes'),'color','none')
     curFile = fullfilename;
     curExt = 'svg';
-    saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
+    saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
     curF.Color = 'w';
     curExt = 'fig';
-    saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
+    saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
     curExt = 'jpg';
-    saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
-end
+    saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
+% end
 
 function [yBoot_90CI,yBoot_95CI] = bootThat(y,nBoot)
 nSubj = size(y,3);

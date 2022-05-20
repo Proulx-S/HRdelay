@@ -1,4 +1,4 @@
-function f = plotAllDecoding2(p,res,info)
+function f = plotAllDecodingAv(p,res,info)
 p.figOption.save = 0;
 verbose  = 0;
 
@@ -55,11 +55,16 @@ ax = gca;
 if isfield(res{1}.subj,'aucP')
     tmp = reshape([res{:}],size(res));
     tmp = reshape([tmp.subj],size(tmp));
-    tmp = reshape(permute([tmp.aucP],[2 3 1]),[size(tmp) size(tmp(1).aucP,1)]);
-    aucP = permute(tmp,[3 1 2]);
+    aucP = permute(reshape(cat(1,tmp.aucP),[size(tmp) size(tmp(1).aucP,3)]),[3 1 2]);
+    % perm x condPair x respFeat
     aucP = mean(aucP,2);
-    info.condPairList = {'all'};
+
+%     tmp = reshape(permute([tmp.aucP],[2 3 1]),[size(tmp) size(tmp(1).aucP,1)]);
+%     aucP = permute(tmp,[3 1 2]);
+%     aucP = mean(aucP,2);
+    info.condPairList = {'allPair'};
     
+    % Plot null distribution (keeping it invisible)
     fTmp = figure('windowstyle','docked','visible',verbose);
     binWidth = 5;
     t = tiledlayout(3,1,'TileIndexing','columnmajor');
@@ -92,7 +97,7 @@ if isfield(res{1}.subj,'aucP')
     
     
     
-    
+    % Add the null distribution to the bar graph
     figure(f)
     BarWidth = 0.5;
     scaleDown = -0.025;
@@ -116,6 +121,8 @@ if isfield(res{1}.subj,'aucP')
     axLim = axis;
     hTex1 = text(axLim(1),axLim(4),[num2str(size(res{1}.subj.aucP,1)) ' permutations/bootstraps'],'VerticalAlignment','top');
     hTex2 = text(axLim(2),axLim(4),['n=' num2str(length(res{1}.subj.subjList))],'VerticalAlignment','top','horizontalAlignment','right');
+
+    close(fTmp)
 end
 
 
@@ -140,6 +147,8 @@ end
 %         x(respFeatInd,condInd,:) = hBar(barInd).XEndPoints(respFeatInd) + offset;
 %     end
 % end
+
+% Add single subject
 xTmp = 1:3;%permute(x,[3 1 2]);
 yTmp = permute(mean(y,2),[3 1 2]);
 Mrkr = 'osd^v><ph';
@@ -164,20 +173,20 @@ uistack(hP,'bottom')
 
 
 %% Save
-if p.figOption.save
+% if p.figOption.save
     fullfilename = fullfile(p.figOption.outDir,'Fig4left');
     curF = f;
     curF.Color = 'none';
     set(findobj(curF.Children,'type','Axes'),'color','none')
     curFile = fullfilename;
     curExt = 'svg';
-    saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
+    saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
     curF.Color = 'w';
     curExt = 'fig';
-    saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
+    saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
     curExt = 'jpg';
-    saveas(curF,[curFile '.' curExt]); if p.figOption.verbose; disp([curFile '.' curExt]); end
-end
+    saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
+% end
 
 function [yBoot_90CI,yBoot_95CI] = bootThat(y,nBoot)
 nSubj = size(y,3);
