@@ -1,10 +1,11 @@
-# Is Measuring the Hemodynamic Response Delay Relevant for the Study of Neural Functions
 CC-BY_4.0
+# BOLD RESPONSE DELAYS REPRESENT LOCAL CORTICAL PROCESSING
+__Analysis Code to Reproduce Paper Figures__  
+Code (Proulx, S. _et al._ Neuroimage 2022, _in preperation_)
 
-__A WORK IN PROGRESS__
-
-## Code for Neuroimage 2021, _in preperation_
 __TO-DOS:__
-- Clean up to leave only the essential
-- Move the main branch into a dev branch
-- Move this branch into a release branch
+- [x] Clean up to leave only the essential
+- [ ] Add analysis requested by reviewers
+
+## Instruction
+Run examine and run HRdelay.m

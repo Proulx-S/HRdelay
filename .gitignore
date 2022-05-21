@@ -29,3 +29,21 @@ Thumbs.db
 ######################
 *.svg
 *.jpg
+*.eps
+
+# Log files #
+######################
+*.log
+
+# Folders
+######################
+matlabFileExchange
+matlabFileExchange/
+results
+results/
+terminalOutputs
+terminalOutputs/
+figures
+figures/
+data
+data/
