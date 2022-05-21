@@ -8,4 +8,4 @@ __TO-DOS:__
 - [ ] Add analysis requested by reviewers
 
 ## Instruction
-Run examine and run HRdelay.m
+Examine and run HRdelay.m
