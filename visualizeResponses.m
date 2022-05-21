@@ -271,6 +271,7 @@ tmp = (angle(mean(tmp(1:2,:),1)) - angle(tmp(3,:)))/pi*6;
 tmp2 = mean(X,3);
 tmp2 = (angle(mean(tmp2(1:2,:),1)) - angle(tmp2(3,:)))/pi*6;
 disp(['plaid-grat=' num2str(tmp) 'sec (range: ' num2str(min(tmp2),'%0.3f') '-' num2str(max(tmp2),'%0.3f') ')'])
+
 disp(['t=' num2str(STATS.tstat) ', p=' num2str(P)])
 disp('-------')
 disp(' ')
@@ -330,7 +331,7 @@ for yInd = 1:3
     hPolAv{yInd}.MarkerEdgeColor = 'k';
 end
 
-hPolEr = {};    
+hPolEr = {};
 for yInd = 1:3
     tmpX = permute(Xnorm(yInd,:),[2 1]);
     n = size(tmpX,1);
@@ -544,12 +545,12 @@ for i = 1:size(d,1)
     end
     hrEr(:,1) = hrEr(:,1) - hrAv;
     hrEr(:,2) = hrAv - hrEr(:,2);
-    
+
     hrAv = cat(1,hrAv,hrAv(1));
     hrEr = cat(1,hrEr,hrEr(1,:));
-    
+
     t2 = (1:length(hrAv))-1;
-    
+
     hShadedSubj{i} = shadedErrorBar(t2',hrAv,hrEr,'lineprops',{'Color' [1 1 1].*0.8}); hold on
     delete(hShadedSubj{i}.edge)
 end
@@ -648,7 +649,7 @@ for yInd = 1:length(yList)
     %     hPol1vox{yInd} = polarplot(angle(mean(x(yList(yInd)==y,b),1)),abs(mean(x(yList(yInd)==y,b),1)),'.'); hold on
 end
 
-hPol2vox = {};    
+hPol2vox = {};
 for yInd = 1:length(yList)
     tmpX = squeeze(x(yList(yInd)==y,b));
     n = size(tmpX,1);
@@ -666,7 +667,7 @@ for yInd = 1:length(yList)
 %     hPol1vox{yInd} = polar(angle(mean(x(yList(yInd)==y,b),1)),abs(mean(x(yList(yInd)==y,b),1)),'.'); hold on
     hPol2vox{yInd} = plot(polyCont);
     hPol2vox{yInd}.LineStyle = 'none';
-    hPol2vox{yInd}.FaceColor = hPol1vox{yInd}.Color;    
+    hPol2vox{yInd}.FaceColor = hPol1vox{yInd}.Color;
 end
 set([hPol1vox{:}],'MarkerSize',15)
 
@@ -829,7 +830,7 @@ for yInd = 1:length(yList)
     tmpXsin = squeeze(xSin(yList(yInd)==y,b));
     tmpXsin = real(tmpXsin)*sin(linspace(0,2*pi,13)) ...
         + imag(tmpXsin)*cos(linspace(0,2*pi,13));
-    
+
 %     tmpX(tmpX>=0) = log(tmpX(tmpX>=0)+1);
 %     tmpX(tmpX<0) = -log(-tmpX(tmpX<0)+1);
     n = size(tmpX,1);
@@ -874,6 +875,3 @@ ax.Box = 'off';
 
 % ax.XAxis.TickValues = 0:1:11;
 ax.XAxis.TickValues = 0:3:12;
-
-
-
