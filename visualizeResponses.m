@@ -9,18 +9,6 @@ end
 
 %% Define paths
 subjList = p.meta.subjList;
-% repoPath = p.paths.repo.in;
-%         funPath = fullfile(repoPath,'C-derived\DecodingHR\fun');
-%             inDir  = 'd';
-%             inDir2  = ['e_' p.anaID];
-%             inDir3  = 'c';
-% %make sure everything is forward slash for mac, linux pc compatibility
-% for tmp = {'repoPath' 'funPath' 'inDir'}
-%     eval([char(tmp) '(strfind(' char(tmp) ',''\''))=''/'';']);
-% end
-% clear tmp
-
-
 
 %% Load data
 dAll = cell(size(subjList,1),1);
@@ -85,6 +73,11 @@ featSel_act = featSel;
 %% Group effect
 fTrigGroup = plotTrigGroup(d,p,featSel,1);
 fHrGroup = plotHrGroup(d,p,featSel,1);
+
+% %%%%%%%%%
+% % For CerebCort reviews
+% fHrGroup = plotHrGroup2(d,p,featSel,1);
+% %%%%%%%%%
 
 
 subjInd = p.figOption.subjInd;
@@ -571,6 +564,160 @@ ax.YTick = -3:1:3;
 ax.YLim(2) = -ax.YLim(1);
 grid on
 ax.Box = 'off';
+
+
+
+function f = plotHrGroup2(d,p,featSel,visibilityFlag)
+nBoot = p.boot.n;
+if ~exist('visibilityFlag','var')
+    visibilityFlag = 1;
+end
+
+%% Get data
+X = nan([3 size(d)]);
+for i = 1:numel(d)
+    [x,y,~] = getXYK(d{i},p);
+    x = x(:,featSel{i}.indIn);
+    for yInd = 1:3
+        tmpX = x(y==yInd,:);
+        X(yInd,i) = mean(tmpX(:));
+    end
+end
+x = X; clear X
+x = permute(x,[1 4 2 3]);
+
+%% Remove random-effect of subject
+rho = abs(x) ./ abs(mean(x,1)) .* abs(mean(x(:)));
+theta = wrapToPi(angle(x) - angle(mean(x,1)) + angle(mean(x(:))));
+[u,v] = pol2cart(-theta,rho);
+x = complex(u,v);
+
+%% Plot fits
+tmpX = squeeze(mean(x,4))';
+t = 0:0.1:12;
+tmpXsin = nan([length(t) size(tmpX)]);
+tmpXsin(:,:) = ( real(tmpX(:))*sin(t/6*pi) ...
+    + imag(tmpX(:))*cos(t/6*pi) )';
+% tmpXsin(:,:) = ( real(tmpX(:))*sin(linspace(0,2*pi,13)) ...
+%     + imag(tmpX(:))*cos(linspace(0,2*pi,13)) )';
+tmpXsin = permute(tmpXsin,[2 3 1]);
+
+%     tmpX(tmpX>=0) = log(tmpX(tmpX>=0)+1);
+%     tmpX(tmpX<0) = -log(-tmpX(tmpX<0)+1);
+n = size(tmpX,1);
+tmpXsinMean = mean(tmpXsin(:,:),1);
+tmpXsinBoot = nan(nBoot,size(tmpXsin(:,:),2));
+for bootInd = 1:nBoot
+    boot = nan(n,1);
+    for i = 1:n
+        boot(i) = randperm(n,1);
+    end
+    tmpXsinBoot(bootInd,:) = mean(tmpXsin(boot,:),1);
+end
+tmpXsinEr = prctile(tmpXsinBoot,[97.5 2.5],1);
+tmpXsinEr(1,:) = tmpXsinEr(1,:) - tmpXsinMean;
+tmpXsinEr(2,:) = tmpXsinMean - tmpXsinEr(2,:);
+
+hrFitAv = nan([3 length(t)]);
+hrFitEr = nan([2 3 length(t)]);
+hrFitAv(:) = tmpXsinMean;
+hrFitEr(:,:) = tmpXsinEr;
+
+if visibilityFlag
+    f = figure('WindowStyle','docked','visible','on');
+else
+    f = figure('WindowStyle','docked','visible','off');
+end
+hTmp = plot([1 2 3; 1 2 3]);
+cList = cat(1,hTmp.Color);
+delete(hTmp)
+hShaded = {};
+for yInd = 1:3
+    hShaded{yInd} = shadedErrorBar(t,hrFitAv(yInd,:),squeeze(hrFitEr(:,yInd,:)),'lineprops',{'Color' cList(yInd,:)}); hold on
+    delete(hShaded{yInd}.edge)
+end
+%     hPlot2vox{yInd} = plot(t,tmpXmean,'Color',cList(yInd,:)); hold on
+%     hPlot1vox{yInd}
+%     hPlot1vox{yInd} = plot(t,tmpX,'-','Color',cList(yInd,:)); hold on
+hShaded = [hShaded{:}];
+
+
+%% Plot individual conditions
+hShadedSubj = {};
+hrAvAll = [];
+hrErAll = [];
+for i = 1:size(d,1)
+    hr1 = permute(squeeze(mean(d{i,1}.hr(featSel{i}.indIn,:,:,:,:,:),1)),[3 1 2]);
+    hr1 = hr1 - mean(hr1,1);
+    hr2 = permute(squeeze(mean(d{i,2}.hr(featSel{i}.indIn,:,:,:,:,:),1)),[3 1 2]);
+    hr2 = hr2 - mean(hr2,1);
+    hr = cat(2,hr1,hr2);
+%     hr = hr(:,:);
+%     hrAv(:,i) = mean(hr,2);
+    hrAv = mean(hr,2);
+    hrEr = nan(size(hrAv,1),2,size(hrAv,3));
+    for iii = 1:size(hr,3)
+        for ii = 1:size(hr,1)
+            hrEr(ii,:,iii) = bootci(p.boot.n,{@mean,hr(ii,:,iii)},'Type','per','Alpha',0.05);
+        end
+    end
+    hrEr(:,1,:) = hrEr(:,1,:) - hrAv;
+    hrEr(:,2,:) = hrAv - hrEr(:,2,:);
+
+    hrAv = cat(1,hrAv,hrAv(1,:,:));
+    hrEr = cat(1,hrEr,hrEr(1,:,:));
+
+    t2 = (1:length(hrAv))-1;
+
+    figure('WindowStyle','docked'); hold on
+    for iii = 1:size(hrAv,3)
+        tmp = shadedErrorBar(t2',hrAv(:,:,iii),hrEr(:,:,iii),'lineprops',{'Color' cList(iii,:)}); hold on
+        delete(tmp.edge)
+    end
+    title(['subj' num2str(i)])
+
+    hrAvAll = cat(4,hrAvAll,hrAv);
+    hrErAll = cat(4,hrErAll,hrEr);
+end
+
+clear hrErAll
+hrAvAll = permute(hrAvAll,[1 4 3 2]);
+hrErAll = nan(size(hrAvAll,1),2,size(hrAvAll,3));
+for iii = 1:size(hrAvAll,3)
+    for ii = 1:size(hrAvAll,1)
+        hrErAll(ii,:,iii) = bootci(p.boot.n,{@mean,hrAvAll(ii,:,iii)},'Type','per','Alpha',0.05);
+    end
+end
+hrAvAll = mean(hrAvAll,2);
+hrErAll(:,1,:) = hrErAll(:,1,:) - hrAvAll;
+hrErAll(:,2,:) = hrAvAll - hrErAll(:,2,:);
+
+figure('WindowStyle','docked'); hold on
+for iii = 1:size(hrAv,3)
+    tmp = shadedErrorBar(t2',hrAvAll(:,:,iii),hrErAll(:,:,iii),'lineprops',{'Color' cList(iii,:)}); hold on
+    delete(tmp.edge)
+end
+
+
+% hShadedSubj = [hShadedSubj{:}];
+% mainLine = [hShadedSubj.mainLine];
+% patch = [hShadedSubj.patch];
+% uistack(mainLine,'bottom')
+% uistack(patch,'bottom')
+% 
+% %% Decorations
+% set(mainLine,'Color',[1 1 1].*0.7)
+% set(patch,'FaceColor',[1 1 1].*0.7)
+% set(patch,'Visible','on')
+% ax = gca;
+% ax.PlotBoxAspectRatio = [1.1 1 1];
+% ax.XTick = 0:3:12;
+% ax.YTick = -3:1:3;
+% ax.YLim(2) = -ax.YLim(1);
+% grid on
+% ax.Box = 'off';
+
+
 
 
 
