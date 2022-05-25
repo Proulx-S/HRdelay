@@ -44,7 +44,7 @@ featSelSteps_labelList = featSel{1,1}.featSeq.featSelList;
 featSelConds_labelList = featSel{1,1}.featSeq.condPairList;
 
 
-method = 'onlyRetinoFov'; % 'onlyRetinoFov' 'upToActivation'
+method = 'onlyRetinoFov'; % 'onlyRetinoFov' 'upToActivation' 'allFeat'
 condPair = 'all';
 [ind_nSpecFeatSel,ind_nSpecFeatSelCond,ind_specFeatSel,ind_specFeatSelCond] = defineFeatSel(featSelSteps_labelList,featSelConds_labelList,method,condPair);
 for subjInd = 1:size(d,1)
@@ -57,7 +57,7 @@ end
 featSel_fov = featSel;
 
 
-method = 'upToActivation'; % 'onlyRetinoFov' 'upToActivation'
+method = 'allFeat'; % 'onlyRetinoFov' 'upToActivation' 'allFeat'
 condPair = 'all';
 [ind_nSpecFeatSel,ind_nSpecFeatSelCond,ind_specFeatSel,ind_specFeatSelCond] = defineFeatSel(featSelSteps_labelList,featSelConds_labelList,method,condPair);
 for subjInd = 1:size(d,1)
@@ -67,7 +67,7 @@ for subjInd = 1:size(d,1)
             & all(featSel{subjInd,sessInd}.featSeq.featIndIn(:,ind_specFeatSel,ind_specFeatSelCond),2);
     end
 end
-featSel_act = featSel;
+featSel_all = featSel;
 
 
 %% Group effect
@@ -83,12 +83,12 @@ fHrGroup = plotHrGroup(d,p,featSel,1);
 subjInd = p.figOption.subjInd;
 sessInd = p.figOption.sessInd;
 %% Trigonometric (polar) representation
-[fTrig,voxIndTrig,indFovNotAct,indFovAct] = plotTrig(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},1);
+[fTrig,voxIndTrig,indFovNotAct,indFovAct] = plotTrig(d{subjInd,sessInd},p,featSel_all{subjInd,sessInd},featSel_fov{subjInd,sessInd},1);
 
 
 %% Temporal represeantation
 fHr = [];
-[fHr,voxIndHr] = plotHr(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},1);
+[fHr,voxIndHr] = plotHr(d{subjInd,sessInd},p,featSel_all{subjInd,sessInd},featSel_fov{subjInd,sessInd},1);
 
 %% Time series
 curFile = fullfile(p.dataPath.V1,'ts',[subjList{p.figOption.subjInd} '.mat']);
@@ -158,8 +158,11 @@ uistack(findobj(ax.Children,'type','Patch'),'bottom')
 figure(fHr)
 ax = findobj(fHr.Children,'type','Axes');
 hTmp = findobj(ax.Children,'type','Errorbar');
-hTmp.Marker = '^';
-hTmp.MarkerFaceColor = [1 1 1].*0.6;
+hTmp.Marker = 'o';
+hTmp.MarkerSize = 2.5;
+% hTmp.MarkerFaceColor = [1 1 1].*0.6;
+hTmp.MarkerFaceColor = 'k';
+hTmp.MarkerEdgeColor = 'k';
 
 
 
@@ -946,26 +949,25 @@ voxInd = false(size(act));
 voxInd(b) = true;
 
 
-%% Plot the one voxel
-tmpX = squeeze(x(:,b,:));
-n = size(tmpX,1);
-tmpXmean = mean(tmpX,1);
-tmpXboot = nan(nBoot,size(tmpX,2));
-for bootInd = 1:nBoot
-    boot = nan(n,1);
-    for i = 1:n
-        boot(i) = randperm(n,1);
-    end
-    tmpXboot(bootInd,:) = mean(tmpX(boot,:),1);
-end
-tmpXer = prctile(tmpXboot,[97.5 2.5],1);
-tmpXer(1,:) = tmpXer(1,:) - tmpXmean;
-tmpXer(2,:) = tmpXmean - tmpXer(2,:);
-hPlot2vox = errorbar(t,tmpXmean,tmpXmean-tmpXer(2,:),tmpXer(1,:)-tmpXmean,'ok');
-hPlot2vox.CapSize = 0;
-hPlot2vox.MarkerEdgeColor = 'k';
-hPlot2vox.MarkerFaceColor = 'w';%hPlot2vox.MarkerEdgeColor;
-
+% %% Plot the one voxel
+% tmpX = squeeze(x(:,b,:));
+% n = size(tmpX,1);
+% tmpXmean = mean(tmpX,1);
+% tmpXboot = nan(nBoot,size(tmpX,2));
+% for bootInd = 1:nBoot
+%     boot = nan(n,1);
+%     for i = 1:n
+%         boot(i) = randperm(n,1);
+%     end
+%     tmpXboot(bootInd,:) = mean(tmpX(boot,:),1);
+% end
+% tmpXer = prctile(tmpXboot,[97.5 2.5],1);
+% tmpXer(1,:) = tmpXer(1,:) - tmpXmean;
+% tmpXer(2,:) = tmpXmean - tmpXer(2,:);
+% hPlot2vox = errorbar(t,tmpXmean,tmpXmean-tmpXer(2,:),tmpXer(1,:)-tmpXmean,'ok');
+% hPlot2vox.CapSize = 0;
+% hPlot2vox.MarkerEdgeColor = 'k';
+% hPlot2vox.MarkerFaceColor = 'w';%hPlot2vox.MarkerEdgeColor;
 
 
 %% Plot conditions for the one voxel
@@ -1006,6 +1008,29 @@ for yInd = 1:length(yList)
 %     hPlot1vox{yInd} = plot(t,tmpX,'-','Color',cList(yInd,:)); hold on
 end
 hPlot1vox = [hPlot1vox{:}];
+
+
+%% Plot ROI hr
+tmpX = squeeze(mean(xFov,2));
+tmpXmean = mean(tmpX,1);
+tmpXer = bootci(p.boot.n,@mean,tmpX);
+
+% n = size(tmpX,1);
+% tmpXboot = nan(nBoot,size(tmpX,2));
+% for bootInd = 1:nBoot
+%     boot = nan(n,1);
+%     for i = 1:n
+%         boot(i) = randperm(n,1);
+%     end
+%     tmpXboot(bootInd,:) = mean(tmpX(boot,:),1);
+% end
+% tmpXer = prctile(tmpXboot,[97.5 2.5],1);
+tmpXer(1,:) = tmpXer(1,:) - tmpXmean;
+tmpXer(2,:) = tmpXmean - tmpXer(2,:);
+hPlot2 = errorbar(t,tmpXmean,tmpXer(2,:),tmpXer(1,:),'ok');
+hPlot2.CapSize = 0;
+hPlot2.MarkerEdgeColor = 'k';
+hPlot2.MarkerFaceColor = 'w';%hPlot2vox.MarkerEdgeColor;
 
 
 %% Decorations

@@ -5,7 +5,7 @@ for i = 1:length(featSelSteps_labelList)
     featSelSteps_labelList(i) = tmp(1);
 end
 switch method
-    case 'allData'
+    case 'allFeat'
         % Non-condition-specific featSel steps
         ind_nSpecFeatSel = ismember(featSelSteps_labelList,{'retinoFov' 'act' 'respVecSig' 'vein' 'respVecDiff'});
         % which condition set
