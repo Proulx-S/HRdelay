@@ -208,7 +208,8 @@ fullfilename = fullfile(p.figOption.outDir,'Fig2B');
 curF = fHr;
 curFile = fullfilename;
 curExt = 'svg';
-saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
+% saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
+print(curF,[curFile '.' curExt],'-painters','-dsvg')
 curExt = 'eps';
 exportgraphics(curF,[curFile '.' curExt],'ContentType','vector'); disp([curFile '.' curExt]);
 curExt = 'fig';
