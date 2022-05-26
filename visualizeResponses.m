@@ -454,6 +454,7 @@ uistack(hPol)
 uistack(hPolAv)
 set(hPolAv,'MarkerSize',5)
 set(hPolAv,'MarkerEdgeColor','none')
+ax.PlotBoxAspectRatio = [1 1 1];
 
 
 function f = plotHrGroup2(d,p,indIn,visibilityFlag)
