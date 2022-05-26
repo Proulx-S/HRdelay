@@ -69,21 +69,26 @@ for subjInd = 1:size(d,1)
 end
 featSel_all = featSel;
 
-
-%% Group effect
-fTrigGroup = plotTrigGroup(d,p,featSel_all,1);
-fHrGroup = plotHrGroup(d,p,featSel_all,1);
-
-%%%%%%%%%
-% For CerebCort reviews
-fHrCond = plotHrCond(d,p,featSel_fov);
-%%%%%%%%%
+indIn_allFeat = featSel_all;
+indIn_allFeat = reshape([indIn_allFeat{:}],size(indIn_allFeat));
+indIn_allFeat = reshape({indIn_allFeat.indIn},size(indIn_allFeat));
+indIn_fov = featSel_fov;
+indIn_fov = reshape([indIn_fov{:}],size(indIn_fov));
+indIn_fov = reshape({indIn_fov.indIn},size(indIn_fov));
 
 
+%% Trigonometric (polar) representation, single-subject example
 subjInd = p.figOption.subjInd;
 sessInd = p.figOption.sessInd;
-%% Trigonometric (polar) representation
-[fTrig,voxIndTrig,indFovNotAct,indFovAct] = plotTrig(d{subjInd,sessInd},p,featSel_all{subjInd,sessInd},featSel_fov{subjInd,sessInd},1);
+[fTrig,~,~,~] = plotTrig(d{subjInd,sessInd},p,indIn_allFeat{subjInd,sessInd},indIn_fov{subjInd,sessInd},featSel{subjInd,sessInd},1);
+
+
+%% Group effect
+fHrGroup = plotHrGroup2(d,p,indIn_allFeat,1); %for Fig5B, plots the measured hr instead of the fitted hr
+% fHrGroup = plotHrGroup(d,p,featSel_all,1);
+fTrigGroup = plotTrigGroup(d,p,indIn_allFeat,1);
+% fHrCond = plotHrCond(d,p,indIn_fov);
+
 
 
 %% Temporal represeantation
@@ -231,7 +236,7 @@ curExt = 'jpg';
 saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
 
 
-function f = plotTrigGroup(d,p,featSel,visibilityFlag)
+function f = plotTrigGroup(d,p,indIn,visibilityFlag)
 nBoot = p.boot.n;
 if ~exist('visibilityFlag','var')
     visibilityFlag = 1;
@@ -241,7 +246,7 @@ end
 X = nan([3 size(d)]);
 for i = 1:numel(d)
     [x,y,~] = getXYK(d{i},p);
-    x = x(:,featSel{i}.indIn);
+    x = x(:,indIn{i});
     for yInd = 1:3
         tmpX = x(y==yInd,:);
         X(yInd,i) = mean(tmpX(:));
@@ -451,6 +456,147 @@ set(hPolAv,'MarkerSize',5)
 set(hPolAv,'MarkerEdgeColor','none')
 
 
+function f = plotHrGroup2(d,p,indIn,visibilityFlag)
+nBoot = p.boot.n;
+if ~exist('visibilityFlag','var')
+    visibilityFlag = 1;
+end
+
+%% Get data
+X = nan([3 size(d)]);
+for i = 1:numel(d)
+    [x,y,~] = getXYK(d{i},p);
+    x = x(:,indIn{i});
+    for yInd = 1:3
+        tmpX = x(y==yInd,:);
+        X(yInd,i) = mean(tmpX(:));
+    end
+end
+x = X; clear X
+x = permute(x,[1 4 2 3]);
+
+
+%% Plot individual subjects
+hrAvAll = nan([12 size(d,1)]);
+hrEr1All = nan([12 size(d,1)]);
+hrEr2All = nan([12 size(d,1)]);
+for i = 1:size(d,1)
+    hr1 = permute(squeeze(mean(d{i,1}.hr(indIn{i,1},:,:,:,:,:),1)),[3 1 2]);
+    hr1 = hr1 - mean(hr1,1);
+    hr2 = permute(squeeze(mean(d{i,2}.hr(indIn{i,2},:,:,:,:,:),1)),[3 1 2]);
+    hr2 = hr2 - mean(hr2,1);
+    hr = cat(2,hr1,hr2);
+    hr = hr(:,:);
+    hrAv = mean(hr,2);
+    hrEr = nan([size(hr,1) 2]);
+    for ii = 1:size(hr,1)
+        hrEr(ii,:) = bootci(p.boot.n,{@mean,hr(ii,:)},'Type','per','Alpha',0.05);
+    end
+%     hrEr(:,1) = hrEr(:,1) - hrAv;
+%     hrEr(:,2) = hrAv - hrEr(:,2);
+    hrAvAll(:,i) = hrAv;
+    hrEr1All(:,i) = hrEr(:,1) - hrAv;
+    hrEr2All(:,i) = hrAv - hrEr(:,2);
+end
+f = figure('WindowStyle','docked');
+hTmp = plot([1 2 3; 1 2 3]);
+cList = cat(1,hTmp.Color);
+delete(hTmp)
+hShadedSubj = {};
+hrAv = cat(1,hrAvAll,hrAvAll(1,:));
+hrEr1 = cat(1,hrEr1All,hrEr1All(1,:));
+hrEr2 = cat(1,hrEr2All,hrEr2All(1,:));
+t2 = (1:size(hrAv,1))-1;
+for i = 1:size(hrAv,2)
+    hShadedSubj{i} = shadedErrorBar(t2',hrAv(:,i),cat(2,hrEr1(:,i),hrEr2(:,i)),'lineprops',{'Color' [1 1 1].*0.8}); hold on
+    delete(hShadedSubj{i}.edge)
+end
+
+% Remove between-subject effects
+hrSin = permute(mean(x,4),[2 3 1]);
+hr = hrAvAll;
+hrNorm = normHr(hr,hrSin);
+hrAvAll = hrNorm;
+hr = hrEr1All;
+hrNorm = normHr(hr,hrSin);
+hrEr1All = hrNorm;
+hr = hrEr2All;
+hrNorm = normHr(hr,hrSin);
+hrEr2All = hrNorm;
+fNorm = figure('WindowStyle','docked');
+hTmp = plot([1 2 3; 1 2 3]);
+cList = cat(1,hTmp.Color);
+delete(hTmp)
+hShadedSubjNorm = {};
+hrAv = cat(1,hrAvAll,hrAvAll(1,:));
+hrEr1 = cat(1,hrEr1All,hrEr1All(1,:));
+hrEr2 = cat(1,hrEr2All,hrEr2All(1,:));
+t2 = (1:size(hrAv,1))-1;
+for i = 1:size(hrAv,2)
+    hShadedSubjNorm{i} = shadedErrorBar(t2',hrAv(:,i),cat(2,hrEr1(:,i),hrEr2(:,i)),'lineprops',{'Color' [1 1 1].*0.8}); hold on
+    delete(hShadedSubjNorm{i}.edge)
+end
+
+delete(fNorm); clear hShadedSubjNorm
+figure(f)
+hShadedSubj = [hShadedSubj{:}];
+mainLine = [hShadedSubj.mainLine];
+patch = [hShadedSubj.patch];
+uistack(mainLine,'bottom')
+uistack(patch,'bottom')
+
+%% Plot response averaged across participants for each condition
+figure(f)
+hShadedCond = {};
+hrAv = nan([12 size(d,1) 3]);
+for i = 1:size(d,1)
+    hr1 = permute(squeeze(mean(d{i,1}.hr(indIn{i,1},:,:,:,:,:),1)),[3 1 2]);
+    hr1 = hr1 - mean(hr1,1);
+    hr2 = permute(squeeze(mean(d{i,2}.hr(indIn{i,2},:,:,:,:,:),1)),[3 1 2]);
+    hr2 = hr2 - mean(hr2,1);
+    hr = cat(2,hr1,hr2);
+    hrAv(:,i,:) = mean(hr,2);
+end
+% Remove between-subject effects
+hrSin = permute(mean(x,4),[2 3 1]);
+hrAvNorm = normHr(hrAv,hrSin);
+% figure('WindowStyle','docked'); hold on
+% plot(mean(hrAv,3))
+% figure('WindowStyle','docked'); hold on
+% plot(mean(hrAvNorm,3))
+
+hr = hrAvNorm; clear hrAvNorm hrAv
+hrAv = mean(hr,2);
+hrEr = nan([size(hrAv,1) 2 size(hrAv,3)]);
+for iii = 1:size(hr,3)
+    for ii = 1:size(hr,1)
+        hrEr(ii,:,iii) = bootci(p.boot.n,{@mean,hr(ii,:,iii)},'Type','per','Alpha',0.05);
+    end
+end
+hrEr(:,1,:) = hrEr(:,1,:) - hrAv;
+hrEr(:,2,:) = hrAv - hrEr(:,2,:);
+
+hrAv = cat(1,hrAv,hrAv(1,:,:));
+hrEr = cat(1,hrEr,hrEr(1,:,:));
+
+t2 = (1:size(hrAv,1))-1;
+for condInd = 1:size(hrAv,3)
+    hShadedCond{i} = shadedErrorBar(t2',hrAv(:,:,condInd),hrEr(:,:,condInd),'lineprops',{'Color' cList(condInd,:)}); hold on
+    delete(hShadedCond{i}.edge)
+end
+
+%% Decorations
+set(mainLine,'Color',[1 1 1].*0.7)
+set(patch,'FaceColor',[1 1 1].*0.7)
+set(patch,'Visible','on')
+ax = gca;
+ax.PlotBoxAspectRatio = [1.1 1 1];
+ax.XTick = 0:3:12;
+ax.YTick = -3:1:3;
+ax.YLim(2) = -ax.YLim(1);
+grid on
+ax.Box = 'off';
+
 function f = plotHrGroup(d,p,featSel,visibilityFlag)
 nBoot = p.boot.n;
 if ~exist('visibilityFlag','var')
@@ -571,8 +717,7 @@ grid on
 ax.Box = 'off';
 
 
-
-function f = plotHrCond(d,p,featSel)
+function f = plotHrCond(d,p,indIn)
 
 %% Plot individual conditions
 hShadedSubj = {};
@@ -585,9 +730,9 @@ delete(hTmp)
 delete(gca)
 for i = 1:size(d,1)
     subplot(3,2,i)
-    hr1 = permute(squeeze(mean(d{i,1}.hr(featSel{i}.indIn,:,:,:,:,:),1)),[3 1 2]);
+    hr1 = permute(squeeze(mean(d{i,1}.hr(indIn{i,1},:,:,:,:,:),1)),[3 1 2]);
     hr1 = hr1 - mean(hr1,1);
-    hr2 = permute(squeeze(mean(d{i,2}.hr(featSel{i}.indIn,:,:,:,:,:),1)),[3 1 2]);
+    hr2 = permute(squeeze(mean(d{i,2}.hr(indIn{i,2},:,:,:,:,:),1)),[3 1 2]);
     hr2 = hr2 - mean(hr2,1);
     hr = cat(2,hr1,hr2);
     hrAv = mean(hr,2);
@@ -651,7 +796,7 @@ end
 
 
 
-function [f,voxInd,indFovNotAct,indFovAct] = plotTrig(d,p,featSel1,featSel2,visibilityFlag)
+function [f,voxInd,ind_fovMinusAllFeat,ind_allFeat] = plotTrig(d,p,indIn1,indIn2,featSel,visibilityFlag)
 nBoot = p.boot.n;
 if ~exist('visibilityFlag','var')
     visibilityFlag = 1;
@@ -664,10 +809,10 @@ end
 [u,v] = pol2cart(angle(X),abs(X));
 x = complex(u,v);
 
-indFovNotAct = featSel2.indIn & ~featSel1.indIn;
-indFovAct = featSel1.indIn;
-xFovNotAct = x(:,indFovNotAct);
-xFovAct = x(:,indFovAct);
+ind_fovMinusAllFeat = indIn2 & ~indIn1;
+ind_allFeat = indIn1;
+xfovMinusAllFeat = x(:,ind_fovMinusAllFeat);
+x_allFeat = x(:,ind_allFeat);
 
 
 if visibilityFlag
@@ -676,7 +821,7 @@ else
     f = figure('WindowStyle','docked','visible','off');
 end
 
-[u,v] = pol2cart(angle(mean(xFovNotAct,1)),log(abs(mean(xFovNotAct,1))+1));
+[u,v] = pol2cart(angle(mean(xfovMinusAllFeat,1)),log(abs(mean(xfovMinusAllFeat,1))+1));
 hPolFov = plot(u,v,'.'); hold on
 % hPolFov = polar(angle(mean(xFov,1)),abs(mean(xFov,1)),'.'); hold on
 % hPolFov = polarplot(angle(mean(xFov,1)),abs(mean(xFov,1)),'.'); hold on
@@ -685,7 +830,7 @@ hPolFov.MarkerEdgeColor = 'k';
 hPolFov.MarkerSize = eps;
 
 
-[u,v] = pol2cart(angle(mean(xFovAct,1)),log(abs(mean(xFovAct,1))+1));
+[u,v] = pol2cart(angle(mean(x_allFeat,1)),log(abs(mean(x_allFeat,1))+1));
 hPolAct= plot(u,v,'.'); hold on
 % hPolAct = polar(angle(mean(xAct,1)),abs(mean(xAct,1)),'.'); hold on
 % hPolAct = polarplot(angle(mean(xAct,1)),abs(mean(xAct,1)),'.'); hold on
@@ -694,7 +839,7 @@ hPolAct.MarkerEdgeColor = [1 1 1]-eps;
 hPolAct.MarkerSize = eps;
 
 
-featSelSteps_labelList = featSel1.featSeq.featSelList;
+featSelSteps_labelList = featSel.featSeq.featSelList;
 for i = 1:length(featSelSteps_labelList)
     tmp = strsplit(featSelSteps_labelList{i},':');
     featSelSteps_labelList(i) = tmp(1);
@@ -702,12 +847,12 @@ end
 
 featSelStep_ind = ismember(featSelSteps_labelList,{'act' 'respVecSig'});
 condPair_ind = logical([1 0 0 0]);
-if ~all(featSel1.featSeq.condPairList{condPair_ind}==[1 2 3])
+if ~all(featSel.featSeq.condPairList{condPair_ind}==[1 2 3])
     error('lazy coding')
 end
 
-act = sqrt(sum(featSel1.featSeq.featVal(:,featSelStep_ind,condPair_ind).^2,2));
-[~,b] = min(abs(prctile(act(featSel1.indIn),80)-act));
+act = sqrt(sum(featSel.featSeq.featVal(:,featSelStep_ind,condPair_ind).^2,2));
+[~,b] = min(abs(prctile(act(featSel.indIn),80)-act));
 voxInd = false(size(act));
 voxInd(b) = true;
 
@@ -974,3 +1119,5 @@ ax.Box = 'off';
 
 % ax.XAxis.TickValues = 0:1:11;
 ax.XAxis.TickValues = 0:3:12;
+
+
