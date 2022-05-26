@@ -84,7 +84,7 @@ sessInd = p.figOption.sessInd;
 
 
 %% Group effect
-fHrGroup = plotHrGroup2(d,p,indIn_allFeat,1); %for Fig5B, plots the measured hr instead of the fitted hr
+[fHrGroup,fHrGroupNorm] = plotHrGroup2(d,p,indIn_allFeat,1); %for Fig5B, plots the measured hr instead of the fitted hr
 % fHrGroup = plotHrGroup(d,p,featSel_all,1);
 fTrigGroup = plotTrigGroup(d,p,indIn_allFeat,1);
 % fHrCond = plotHrCond(d,p,indIn_fov);
@@ -186,6 +186,18 @@ saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
 
 fullfilename = fullfile(p.figOption.outDir,'Fig5B');
 curF = fHrGroup;
+curFile = fullfilename;
+curExt = 'svg';
+saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
+curExt = 'eps';
+exportgraphics(curF,[curFile '.' curExt],'ContentType','vector'); disp([curFile '.' curExt]);
+curExt = 'fig';
+saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
+curExt = 'jpg';
+saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
+
+fullfilename = fullfile(p.figOption.outDir,'FigS2');
+curF = fHrGroupNorm;
 curFile = fullfilename;
 curExt = 'svg';
 saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
@@ -457,7 +469,7 @@ set(hPolAv,'MarkerEdgeColor','none')
 ax.PlotBoxAspectRatio = [1 1 1];
 
 
-function f = plotHrGroup2(d,p,indIn,visibilityFlag)
+function [f,fNorm] = plotHrGroup2(d,p,indIn,visibilityFlag)
 nBoot = p.boot.n;
 if ~exist('visibilityFlag','var')
     visibilityFlag = 1;
@@ -538,13 +550,6 @@ for i = 1:size(hrAv,2)
     delete(hShadedSubjNorm{i}.edge)
 end
 
-delete(fNorm); clear hShadedSubjNorm
-figure(f)
-hShadedSubj = [hShadedSubj{:}];
-mainLine = [hShadedSubj.mainLine];
-patch = [hShadedSubj.patch];
-uistack(mainLine,'bottom')
-uistack(patch,'bottom')
 
 %% Plot response averaged across participants for each condition
 figure(f)
@@ -587,6 +592,29 @@ for condInd = 1:size(hrAv,3)
 end
 
 %% Decorations
+figure(f); h = hShadedSubj;
+h = [h{:}];
+mainLine = [h.mainLine];
+patch = [h.patch];
+uistack(mainLine,'bottom')
+uistack(patch,'bottom')
+set(mainLine,'Color',[1 1 1].*0.7)
+set(patch,'FaceColor',[1 1 1].*0.7)
+set(patch,'Visible','on')
+ax = gca;
+ax.PlotBoxAspectRatio = [1.1 1 1];
+ax.XTick = 0:3:12;
+ax.YTick = -3:1:3;
+ax.YLim(2) = -ax.YLim(1);
+grid on
+ax.Box = 'off';
+
+figure(fNorm); h = hShadedSubjNorm;
+h = [h{:}];
+mainLine = [h.mainLine];
+patch = [h.patch];
+uistack(mainLine,'bottom')
+uistack(patch,'bottom')
 set(mainLine,'Color',[1 1 1].*0.7)
 set(patch,'FaceColor',[1 1 1].*0.7)
 set(patch,'Visible','on')
