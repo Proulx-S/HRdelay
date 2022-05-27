@@ -626,6 +626,18 @@ ax.YLim(2) = -ax.YLim(1);
 grid on
 ax.Box = 'off';
 
+YData = cat(1,fNorm.Children.Children(:).YData);
+XData = cat(1,fNorm.Children.Children(:).XData);
+for i = 1:length(fNorm.Children.Children)
+    YHalfRange(i) = min(YData(i,:)) + (max(YData(i,:))-min(YData(i,:)))/2;
+    XData01(i) = interp1(YData(i,1:6),XData(i,1:6),YHalfRange(i));
+    XData02(i) = interp1(YData(i,7:end),XData(i,7:end),YHalfRange(i));
+    XWidth(i) = XData02(i) - XData01(i);
+    hXWidth(i) = line([XData01(i) XData02(i)],YHalfRange(i).*[1 1]);
+end
+disp(['Positive lobe width half peak-to-peak height = ' num2str(mean(XWidth)) 'sec (range:' num2str(min(XWidth)) '-' num2str(max(XWidth)) ')'])
+
+
 function f = plotHrGroup(d,p,featSel,visibilityFlag)
 nBoot = p.boot.n;
 if ~exist('visibilityFlag','var')
