@@ -84,7 +84,7 @@ sessInd = p.figOption.sessInd;
 
 
 %% Group effect
-[fHrGroup,fHrGroupNorm] = plotHrGroup2(d,p,indIn_allFeat,1); %for Fig5B, plots the measured hr instead of the fitted hr
+[fHrGroup,fHrGroupNorm,fSin] = plotHrGroup2(d,p,indIn_allFeat,1); %for Fig5B, plots the measured hr instead of the fitted hr
 % fHrGroup = plotHrGroup(d,p,featSel_all,1);
 fTrigGroup = plotTrigGroup(d,p,indIn_allFeat,1);
 % fHrCond = plotHrCond(d,p,indIn_fov);
@@ -200,6 +200,19 @@ fullfilename = fullfile(p.figOption.outDir,'FigS2');
 curF = fHrGroupNorm;
 curFile = fullfilename;
 curExt = 'svg';
+saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
+curExt = 'eps';
+exportgraphics(curF,[curFile '.' curExt],'ContentType','vector'); disp([curFile '.' curExt]);
+curExt = 'fig';
+saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
+curExt = 'jpg';
+saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
+
+fullfilename = fullfile(p.figOption.outDir,'FigS3');
+curF = fSin;
+curFile = fullfilename;
+curExt = 'svg';
+% print(curF,[curFile '.' curExt],'-painters','-dsvg')
 saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
 curExt = 'eps';
 exportgraphics(curF,[curFile '.' curExt],'ContentType','vector'); disp([curFile '.' curExt]);
@@ -469,7 +482,7 @@ set(hPolAv,'MarkerEdgeColor','none')
 ax.PlotBoxAspectRatio = [1 1 1];
 
 
-function [f,fNorm] = plotHrGroup2(d,p,indIn,visibilityFlag)
+function [f,fNorm,fSin] = plotHrGroup2(d,p,indIn,visibilityFlag)
 nBoot = p.boot.n;
 if ~exist('visibilityFlag','var')
     visibilityFlag = 1;
@@ -536,6 +549,7 @@ hrEr1All = hrNorm;
 hr = hrEr2All;
 hrNorm = normHr(hr,hrSin);
 hrEr2All = hrNorm;
+
 fNorm = figure('WindowStyle','docked');
 hTmp = plot([1 2 3; 1 2 3]);
 cList = cat(1,hTmp.Color);
@@ -549,6 +563,22 @@ for i = 1:size(hrAv,2)
     hShadedSubjNorm{i} = shadedErrorBar(t2',hrAv(:,i),cat(2,hrEr1(:,i),hrEr2(:,i)),'lineprops',{'Color' [1 1 1].*0.8}); hold on
     delete(hShadedSubjNorm{i}.edge)
 end
+
+
+%% Add sinewaves
+fSin = figure('WindowStyle','docked');
+copyobj(f.Children,fSin);
+tmpX = permute(x,[3 1 2 4]);
+tmpX = mean(tmpX(:,:),2);
+t3 = linspace(t2(1),t2(end),100);
+for subjInd = 1:length(tmpX)
+    YData = abs(tmpX(subjInd))*sin(t3/12*2*pi+angle(tmpX(subjInd)));
+    plot(t3,YData,':r')
+end
+
+figure(fNorm)
+YData = abs(mean(tmpX))*sin(t3/12*2*pi+angle(mean(tmpX)));
+h = plot(t3,YData,':r');
 
 
 %% Plot response averaged across participants for each condition
@@ -592,15 +622,7 @@ for condInd = 1:size(hrAv,3)
 end
 
 %% Decorations
-figure(f); h = hShadedSubj;
-h = [h{:}];
-mainLine = [h.mainLine];
-patch = [h.patch];
-uistack(mainLine,'bottom')
-uistack(patch,'bottom')
-set(mainLine,'Color',[1 1 1].*0.7)
-set(patch,'FaceColor',[1 1 1].*0.7)
-set(patch,'Visible','on')
+figure(f);
 ax = gca;
 ax.PlotBoxAspectRatio = [1.1 1 1];
 ax.XTick = 0:3:12;
@@ -609,15 +631,7 @@ ax.YLim(2) = -ax.YLim(1);
 grid on
 ax.Box = 'off';
 
-figure(fNorm); h = hShadedSubjNorm;
-h = [h{:}];
-mainLine = [h.mainLine];
-patch = [h.patch];
-uistack(mainLine,'bottom')
-uistack(patch,'bottom')
-set(mainLine,'Color',[1 1 1].*0.7)
-set(patch,'FaceColor',[1 1 1].*0.7)
-set(patch,'Visible','on')
+figure(fSin);
 ax = gca;
 ax.PlotBoxAspectRatio = [1.1 1 1];
 ax.XTick = 0:3:12;
@@ -626,9 +640,20 @@ ax.YLim(2) = -ax.YLim(1);
 grid on
 ax.Box = 'off';
 
-YData = cat(1,fNorm.Children.Children(:).YData);
-XData = cat(1,fNorm.Children.Children(:).XData);
-for i = 1:length(fNorm.Children.Children)
+figure(fNorm);
+ax = gca;
+ax.PlotBoxAspectRatio = [1.1 1 1];
+ax.XTick = 0:3:12;
+ax.YTick = -3:1:3;
+ax.YLim(2) = -ax.YLim(1);
+grid on
+ax.Box = 'off';
+
+fNorm.Children.Children.Tag
+ind = contains({fNorm.Children.Children.Tag},'shadedErrorBar_mainLine');
+YData = cat(1,fNorm.Children.Children(ind).YData);
+XData = cat(1,fNorm.Children.Children(ind).XData);
+for i = 1:size(YData,1)
     YHalfRange(i) = min(YData(i,:)) + (max(YData(i,:))-min(YData(i,:)))/2;
     XData01(i) = interp1(YData(i,1:6),XData(i,1:6),YHalfRange(i));
     XData02(i) = interp1(YData(i,7:end),XData(i,7:end),YHalfRange(i));
@@ -636,7 +661,6 @@ for i = 1:length(fNorm.Children.Children)
     hXWidth(i) = line([XData01(i) XData02(i)],YHalfRange(i).*[1 1]);
 end
 disp(['Positive lobe width half peak-to-peak height = ' num2str(mean(XWidth)) 'sec (range:' num2str(min(XWidth)) '-' num2str(max(XWidth)) ')'])
-
 
 function f = plotHrGroup(d,p,featSel,visibilityFlag)
 nBoot = p.boot.n;
