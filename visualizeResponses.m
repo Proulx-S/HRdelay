@@ -344,9 +344,9 @@ Mrkr = 'osd^v><ph';
 hPol = cell(1,6);
 for subjInd = 1:6
     [u,v] = pol2cart(angle(mean(X(:,subjInd),1)),log(abs(mean(X(:,subjInd),1))+1));
-    hPol{yInd,subjInd} = plot(u,v,Mrkr(subjInd),'Color',[1 1 1].*0.5); hold on
-    hPol{yInd,subjInd}.MarkerFaceColor = hPol{yInd,subjInd}.Color;
-    hPol{yInd,subjInd}.MarkerEdgeColor = 'none';
+    hPol{1,subjInd} = plot(u,v,Mrkr(subjInd),'Color',[1 1 1].*0.5); hold on
+    hPol{1,subjInd}.MarkerFaceColor = hPol{1,subjInd}.Color;
+    hPol{1,subjInd}.MarkerEdgeColor = 'none';
 end
 
 set(gca,'ColorOrderIndex',1)
@@ -371,12 +371,81 @@ for yInd = 1:3
         tmpXboot(bootInd,:) = mean(tmpX(boot,:),1);
     end
     polyCont = credibleInt2D([real(tmpXboot) imag(tmpXboot)],0.05);
+    pause(0.1)
     [theta,rho] = cart2pol(polyCont.Vertices(:,1),polyCont.Vertices(:,2));
-    [polyCont.Vertices(:,1),polyCont.Vertices(:,2)] = pol2cart(theta,log(rho+1));
+    try
+        [polyCont.Vertices(:,1),polyCont.Vertices(:,2)] = pol2cart(theta,log(rho+1));
+    catch
+        keyboard
+    end
     hPolEr{yInd} = plot(polyCont);
     hPolEr{yInd}.LineStyle = 'none';
     hPolEr{yInd}.FaceColor = hPolAv{yInd}.Color;
+    drawnow
 end
+
+hPolErSubj = {};
+% get run-by-run data
+Xsubj = cell(size(d));
+for i = 1:numel(d)
+    [x,y,~] = getXYK(d{i},p);
+    x = x(:,indIn{i});
+    for yInd = 1:3
+        tmpX = x(y==yInd,:);
+        Xsubj{i}(yInd,:) = mean(tmpX,2);
+    end
+end
+% catenate sessions
+for subjInd = 1:size(Xsubj,1)
+    Xsubj{subjInd,1} = cat(2,Xsubj{subjInd,:});
+    Xsubj{subjInd,2} = [];
+end
+Xsubj(:,2) = [];
+% remove condition effect
+for subjInd = 1:length(Xsubj)
+    Xsubj{subjInd} = Xsubj{subjInd} - mean(Xsubj{subjInd},2) + mean(Xsubj{subjInd}(:));
+    Xsubj{subjInd} = Xsubj{subjInd}(:);
+end
+% bootstrap and plot
+for subjInd = 1:length(Xsubj)
+    tmpX = Xsubj{subjInd};
+    n = length(tmpX);
+    tmpXboot = nan(nBoot,1);
+    for bootInd = 1:nBoot
+        boot = nan(n,1);
+        for i = 1:n
+            boot(i) = randperm(n,1);
+        end
+        tmpXboot(bootInd) = mean(tmpX(boot));
+    end
+    mean_bold(subjInd,:) = abs(mean(tmpX));
+    mean_sec(subjInd,:) = angle(mean(tmpX));
+    CI95_bold(subjInd,:) = prctile(abs(tmpXboot),[2.5 97.5]);
+    CI95_sec(subjInd,:) = prctile(angle(tmpXboot),[2.5 97.5])/pi*6;
+    polyCont = credibleInt2D([real(tmpXboot) imag(tmpXboot)],0.05);
+    pause(0.1)
+    [theta,rho] = cart2pol(polyCont.Vertices(:,1),polyCont.Vertices(:,2));
+    try
+        [polyCont.Vertices(:,1),polyCont.Vertices(:,2)] = pol2cart(theta,log(rho+1));
+    catch
+        keyboard
+    end
+    hPolErSubj{subjInd} = plot(polyCont);
+    hPolErSubj{subjInd}.LineStyle = 'none';
+    hPolErSubj{subjInd}.FaceColor = hPol{subjInd}.Color;
+    drawnow
+end
+tmp = table(mean_bold,CI95_bold(:,1),CI95_bold(:,2),range(CI95_bold,2),'VariableNames',{'mean','2.5%','97.5%','span'},'RowNames',p.meta.subjList);
+tmp = cat(1,tmp,table(mean(mean_bold),mean(CI95_bold(:,1)),mean(CI95_bold(:,2)),mean(range(CI95_bold,2)),'VariableNames',{'mean','2.5%','97.5%','span'},'RowNames',{'average'}));
+disp('')
+disp('amp (%BOLD):')
+disp(tmp);
+tmp = table(mean_sec,CI95_sec(:,1),CI95_sec(:,2),range(CI95_sec,2),'VariableNames',{'mean','2.5%','97.5%','span'},'RowNames',p.meta.subjList);
+tmp = cat(1,tmp,table(mean(mean_sec),mean(CI95_sec(:,1)),mean(CI95_sec(:,2)),mean(range(CI95_sec,2)),'VariableNames',{'mean','2.5%','97.5%','span'},'RowNames',{'average'}));
+disp('')
+disp('delay (sec):')
+disp(tmp);
+
 
 ax = f.Children;
 
@@ -387,7 +456,7 @@ xxPoly = nan([length(allPoly) 2]);
 yyPoly = nan([length(allPoly) 2]);
 for i = 1:length(allPoly)
     xx = allPoly(i).Shape.Vertices(:,1);
-    yy = allPoly(i).Shape.Vertices(:,1);
+    yy = allPoly(i).Shape.Vertices(:,2);
     [theta,rho] = cart2pol(xx,yy);
     rhoPoly(i,:) = [min(rho) max(rho)];
     thetaPoly(i,:) = [min(theta) max(theta)];
@@ -410,11 +479,12 @@ for i = 1:length(allLine)
 end
 rhoLim = [min([rhoPoly(:); rhoLine(:)]) max([rhoPoly(:); rhoLine(:)])];
 thetaLim = [min([thetaPoly(:); thetaLine(:)]) max([thetaPoly(:); thetaLine(:)])];
-xxLim = [min([xxLine(:); xxLine(:)]) max([xxPoly(:); xxLine(:)])];
-yyLim = [min([yyLine(:); yyLine(:)]) max([yyPoly(:); yyLine(:)])];
-
-
-rhoTickMinorVal = [0:0.1:2]';
+xxLim = [min([xxPoly(:); xxLine(:)]) max([xxPoly(:); xxLine(:)])];
+yyLim = [min([yyPoly(:); yyLine(:)]) max([yyPoly(:); yyLine(:)])];
+rrLim = max([range(xxLim) range(yyLim)]);
+xxLim = mean(xxLim).*[1 1] + rrLim/2.*[-1 1];
+yyLim = mean(yyLim).*[1 1] + rrLim/2.*[-1 1];
+rhoTickMinorVal = [0:0.1:2.2]';
 theta = repmat(linspace(0,2*pi,1000),[length(rhoTickMinorVal) 1]);
 [gu,gv] = pol2cart(theta,log(rhoTickMinorVal+1));
 hGridRhoMinor = plot(gu',gv','Color',[1 1 1].*0.5);
@@ -950,11 +1020,15 @@ for yInd = 1:length(yList)
     end
     polyCont = credibleInt2D([real(tmpXboot) imag(tmpXboot)],0.05);
     [theta,rho] = cart2pol(polyCont.Vertices(:,1),polyCont.Vertices(:,2));
-    [polyCont.Vertices(:,1),polyCont.Vertices(:,2)] = pol2cart(theta,log(rho+1));
-%     hPol1vox{yInd} = polar(angle(mean(x(yList(yInd)==y,b),1)),abs(mean(x(yList(yInd)==y,b),1)),'.'); hold on
+    try
+        [polyCont.Vertices(:,1),polyCont.Vertices(:,2)] = pol2cart(theta,log(rho+1));
+    catch
+        keyboard
+    end
     hPol2vox{yInd} = plot(polyCont);
     hPol2vox{yInd}.LineStyle = 'none';
     hPol2vox{yInd}.FaceColor = hPol1vox{yInd}.Color;
+    drawnow
 end
 set([hPol1vox{:}],'MarkerSize',15)
 

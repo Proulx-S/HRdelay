@@ -54,6 +54,14 @@ curRepoPath = fullfile(gitDependencyPath,curRepo);
 disp(curRepoURL)
 if exist(fullfile(curRepoPath,'.git'),'dir'); disp(['already in ' curRepoPath]); else, eval(['!git clone ' curRepoURL ' ' curRepoPath]); end
 addpath(genpath(curRepoPath));
+% circstat
+curRepo = 'circstat';
+curRepoURL = 'https://github.com/circstat/circstat-matlab.git';
+curRepoPath = fullfile(gitDependencyPath,curRepo);
+disp(curRepoURL)
+if exist(fullfile(curRepoPath,'.git'),'dir'); disp(['already in ' curRepoPath]); else, eval(['!git clone ' curRepoURL ' ' curRepoPath]); end
+addpath(genpath(curRepoPath));
+
 
 %% Parameters for feature selection
 % Within visual field region of the stimulus
