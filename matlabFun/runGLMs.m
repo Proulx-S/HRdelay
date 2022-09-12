@@ -51,6 +51,10 @@ end
 for runInd = 1:size(d.data,1)
     d.data{runInd} = (d.data{runInd}-d.base{runInd}) ./ d.base{runInd} .* 100;
     d.dataDtrd{runInd} = d.dataDtrd{runInd} ./ d.base{runInd} .* 100;
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    %%% For reviewer 2, comment 5. %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    d.dataDtrdAbs{runInd,1} = d.dataDtrd{runInd} + d.base{runInd};
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 end
     
 %% 
@@ -72,7 +76,12 @@ res.featSel.vein.map = cat(5,...
     cat(4,v.map{d.condLabel==1 & ~d.excl}),...
     cat(4,v.map{d.condLabel==2 & ~d.excl}),...
     cat(4,v.map{d.condLabel==3 & ~d.excl})); clear v
-res.dataDtrd = d.dataDtrd; clear d
+res.dataDtrd = d.dataDtrd;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% For reviewer 2, comment 5. %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+res.dataDtrdAbs = d.dataDtrdAbs;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+clear d
 
 function res = fitSinFixed(d,p)
 %% First exclude

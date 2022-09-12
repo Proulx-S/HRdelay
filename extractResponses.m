@@ -25,6 +25,11 @@ for subjInd = 1:length(p.meta.subjList)
         dDtrd.(sess) = rmfield(data.d.fun(sessInd),{'data' 'design' 'extraRegr'});
         dDtrd.(sess).data = resp.(sess).dataDtrd;
         resp.(sess) = rmfield(resp.(sess),'dataDtrd');
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%% For reviewer 2, comment 5. %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        dDtrd.(sess).dataBeforePercent = resp.(sess).dataDtrdAbs;
+        resp.(sess) = rmfield(resp.(sess),'dataDtrdAbs');
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     end
     % Add info to res
     resp.sess1.voxProp = data.d.voxProp;
