@@ -50,6 +50,9 @@ if ispc
     addpath(genpath(fullfile(curRepoPath,'windows')));
 else
     addpath(genpath(fullfile(curRepoPath,'matlab')));
+    owd = pwd;
+    cd(fullfile(curRepoPath,'matlab'))
+    make
 %     error('you need to fix paths to libsvm github repo for non-windows machines');
 end
 % shadedErrorBar
