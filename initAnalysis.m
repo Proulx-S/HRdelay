@@ -46,7 +46,12 @@ curRepoURL = 'https://github.com/cjlin1/libsvm.git';
 curRepoPath = fullfile(gitDependencyPath,curRepo);
 disp(curRepoURL)
 if exist(fullfile(curRepoPath,'.git'),'dir'); disp(['already in ' curRepoPath]); else, eval(['!git clone ' curRepoURL ' ' curRepoPath]); end
-if ispc; addpath(genpath(fullfile(curRepoPath,'windows'))); else, error('you need to fix paths to libsvm githu repo for non-windows machines'); end
+if ispc
+    addpath(genpath(fullfile(curRepoPath,'windows')));
+else
+    addpath(genpath(fullfile(curRepoPath,'matlab')));
+%     error('you need to fix paths to libsvm github repo for non-windows machines');
+end
 % shadedErrorBar
 curRepo = 'shadedErrorBar';
 curRepoURL = 'https://github.com/raacampbell/shadedErrorBar.git';
