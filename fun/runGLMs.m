@@ -56,7 +56,7 @@ end
 %% 
 if verbose; disp('Extract hr'); end
 res1 = fitHrMixed(d,p);
-if verbose; disp('Extract sin responses and fixed-effect stats'); end
+if verbose; disp('Extract sin responses and mixed-effect stats'); end
 res2 = fitSinMixed(d,p);
 
 res.sin = res2.hr; res2.hr = [];
@@ -240,17 +240,24 @@ end
 
 %% Extrac responses
 hr = cell(size(d.data));
+betas = cell(size(d.data));
 for runInd = 1:size(f.full.betas,1)
     designInfo = f.full.designInfo{runInd};
     hrInfo = designInfo(1,:);
-    tmpSin = f.full.betas{runInd}(:,:,:,ismember(hrInfo,'sin'));
-    tmpCos = f.full.betas{runInd}(:,:,:,ismember(hrInfo,'cos'));
+    betas{runInd} = f.full.betas{runInd};
+    tmpSin = betas{runInd}(:,:,:,ismember(hrInfo,'sin'));
+    tmpCos = betas{runInd}(:,:,:,ismember(hrInfo,'cos'));
     hr{runInd} = complex(tmpSin,tmpCos);
 end
 res.hr = cat(5,...
     cat(4,hr{d.condLabel==1}),...
     cat(4,hr{d.condLabel==2}),...
     cat(4,hr{d.condLabel==3}));
+res.betas = cat(5,...
+    cat(3,betas{d.condLabel==1}),...
+    cat(3,betas{d.condLabel==2}),...
+    cat(3,betas{d.condLabel==3}));
+res.betas = permute(res.betas,[1 2 6 3 5 4]);
 
 %% Extract baseline
 baseData = cell(size(d.data));
@@ -270,9 +277,10 @@ res.base = cat(5,...
     cat(4,baseData{d.condLabel==2}),...
     cat(4,baseData{d.condLabel==3}));
 
-res.info = 'x X y X x X rep X cond';
+res.info = 'x X y X z X rep X cond X regr';
 res.design = f.full.design{1};
 res.design(f.full.censorPts{1},:) = 0;
+res.designInfo = 't X regr';
 if ~opt.extraOutput
     res.F = F;
 end
