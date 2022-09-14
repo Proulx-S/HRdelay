@@ -428,6 +428,10 @@ for subjInd = 1:length(Xsubj)
     try
         [polyCont.Vertices(:,1),polyCont.Vertices(:,2)] = pol2cart(theta,log(rho+1));
     catch
+        figure('WindowStyle','docked')
+        scatter(polyCont.Vertices(:,1),polyCont.Vertices(:,2)); hold on
+        [a,b] = pol2cart(theta,log(rho+1));
+        scatter(a,b)
         keyboard
     end
     hPolErSubj{subjInd} = plot(polyCont);
