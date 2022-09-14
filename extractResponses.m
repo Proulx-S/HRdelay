@@ -21,7 +21,9 @@ for subjInd = 1:length(p.meta.subjList)
     for sessInd = 1:size(data.d.fun,2)
         disp([subj ': extracting responses from timeseries (sess' num2str(sessInd) '/' num2str(size(data.d.fun,2)) ')'])
         sess = ['sess' num2str(sessInd)];
-        resp.(sess) = runGLMs(data.d.fun(1,sessInd),data.p,0);
+        
+        [resp.(sess),dBase.fun(1,sessInd).dataBase] = runGLMs(data.d.fun(1,sessInd),data.p,0);
+        
         dDtrd.(sess) = rmfield(data.d.fun(sessInd),{'data' 'design' 'extraRegr'});
         dDtrd.(sess).data = resp.(sess).dataDtrd;
         resp.(sess) = rmfield(resp.(sess),'dataDtrd');
@@ -38,5 +40,9 @@ for subjInd = 1:length(p.meta.subjList)
     save(fullfile(dataIn,[subj '_dDtrd.mat']),'dDtrd')
     disp([subj ': saved to ''' fullfile(dataIn,[subj '_dDtrd.mat']) ''''])
     clear dDtrd
+    disp([subj ': saving baseline timeseries'])
+    save(fullfile(dataIn,[subj '_dBase.mat']),'dBase')
+    disp([subj ': saved to ''' fullfile(dataIn,[subj '_dBase.mat']) ''''])
+    clear dBase
 end
 

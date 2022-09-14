@@ -1,4 +1,4 @@
-function res = runGLMs(d,p,verbose)
+function [res,dataBase] = runGLMs(d,p,verbose)
 if ~exist('verbose','var')
     verbose = 1;
 end
@@ -34,7 +34,17 @@ end
 opt.excl = 0;
 opt.extraOutput = 1;
 % Detrend
-[~,d.base,d.dataDtrd] = fitSinMixed(d,p,opt); clear opt
+[~,d.base,d.dataDtrd,dataBase] = fitSinMixed(d,p,opt); clear opt
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% %%% For reviewer 2, comment 5. %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% figure('WindowStyle','docked')
+% plot(squeeze(mean(d.data{1},1))); hold on
+% tmp = dataBase{1};
+% tmp(:,:,:,d.censorPts{1}) = nan;
+% plot(squeeze(mean(tmp,1)));
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 v.map = cell(size(d.data));
 v.var = cell(size(d.data));
 v.base = cell(size(d.data));
@@ -44,7 +54,6 @@ for runInd = 1:size(d.data,1)
     v.var{runInd} = std(d.dataDtrd{runInd}(:,:,:,~d.censorPts{runInd}),[],4);
     v.base{runInd} = d.base{runInd};
     v.map{runInd} = v.var{runInd}./v.base{runInd};
-    
 end
 
 %% Convert to percent BOLD
@@ -142,7 +151,7 @@ f.(nullLabel) = rmfield(f.(nullLabel),{'yHat' 'yHatSS' 'yHatSS_n' 'yErr' 'yErrSS
 
 res.F = F;
 
-function [res,baseData,dataDtrd] = fitSinMixed(d,p,opt)
+function [res,baseData,dataDtrd,baseTs] = fitSinMixed(d,p,opt)
 if ~exist('opt','var')
     opt.excl = 1;
 end
@@ -261,6 +270,7 @@ res.betas = permute(res.betas,[1 2 6 3 5 4]);
 
 %% Extract baseline
 baseData = cell(size(d.data));
+baseTs = cell(size(d.data));
 for runInd = 1:size(f.full.betas,1)
     designInfo = f.full.designInfo{runInd};
     baseInfo = designInfo(4,:);
@@ -268,9 +278,13 @@ for runInd = 1:size(f.full.betas,1)
     baseInd = ismember(baseInfo,baseLabel);
     betas = permute(f.full.betas{runInd}(:,:,:,baseInd),[4 1 2 3]);
     baseData{runInd} = nan(p.xyzSz);
+    baseTs{runInd} = nan([size(d.poly{runInd},1) p.xyzSz]);
     for voxInd = 1:prod(p.xyzSz)
-        baseData{runInd}(voxInd) = mean(d.poly{runInd}(~d.censorPts{runInd},:)*betas(:,voxInd),1);
+        baseTsCur = d.poly{runInd}*betas(:,voxInd);
+        baseData{runInd}(voxInd) = mean(baseTsCur(~d.censorPts{runInd},:),1);
+        baseTs{runInd}(:,voxInd) = baseTsCur;
     end
+    baseTs{runInd} = permute(baseTs{runInd},[2 3 4 1]);
 end
 res.base = cat(5,...
     cat(4,baseData{d.condLabel==1}),...
