@@ -99,9 +99,16 @@ fHr = [];
 curFile = fullfile(p.dataPath.V1,'ts',[subjList{p.figOption.subjInd} '.mat']);
 fun = load(curFile);
 fun = fun.d.fun(p.figOption.sessInd);
-runTs = squeeze(cat(5,fun.data{:}));
 runLabel = fun.condLabel;
+runTs = squeeze(cat(5,fun.data{:}));
 runTs = squeeze(mean(runTs(:,:,runLabel==3),1));
+
+curFileBase = fullfile(p.dataPath.V1,'ts',[subjList{p.figOption.subjInd} '_dBase.mat']);
+funBase = load(curFileBase);
+funBase = funBase.dBase.fun(p.figOption.sessInd);
+runTsBase = squeeze(cat(5,funBase.dataBase{:}));
+runTsBase = squeeze(mean(runTsBase(:,:,runLabel==3),1));
+
 runTs_av = mean(runTs,2)';
 runTs_er = bootci(p.boot.n,{@(x)mean(x),runTs'},'Type','percentile');
 runTs_er = [runTs_er(2,:) - runTs_av
@@ -371,11 +378,16 @@ for yInd = 1:3
         tmpXboot(bootInd,:) = mean(tmpX(boot,:),1);
     end
     polyCont = credibleInt2D([real(tmpXboot) imag(tmpXboot)],0.05);
-    pause(0.1)
+    pause(1)
     [theta,rho] = cart2pol(polyCont.Vertices(:,1),polyCont.Vertices(:,2));
+    pause(1)
     try
         [polyCont.Vertices(:,1),polyCont.Vertices(:,2)] = pol2cart(theta,log(rho+1));
     catch
+        size(polyCont.Vertices)
+        size([theta rho])
+        [theta2,rho2] = cart2pol(polyCont.Vertices(:,1),polyCont.Vertices(:,2));
+        size([theta2 rho2])
         keyboard
     end
     hPolEr{yInd} = plot(polyCont);
@@ -408,6 +420,7 @@ for subjInd = 1:length(Xsubj)
 end
 % bootstrap and plot
 for subjInd = 1:length(Xsubj)
+    drawnow
     tmpX = Xsubj{subjInd};
     n = length(tmpX);
     tmpXboot = nan(nBoot,1);
@@ -422,16 +435,20 @@ for subjInd = 1:length(Xsubj)
     mean_sec(subjInd,:) = angle(mean(tmpX));
     CI95_bold(subjInd,:) = prctile(abs(tmpXboot),[2.5 97.5]);
     CI95_sec(subjInd,:) = prctile(angle(tmpXboot),[2.5 97.5])/pi*6;
+    drawnow
     polyCont = credibleInt2D([real(tmpXboot) imag(tmpXboot)],0.05);
-    pause(0.1)
+    drawnow
+%     pause(1)
     [theta,rho] = cart2pol(polyCont.Vertices(:,1),polyCont.Vertices(:,2));
+    drawnow
+%     pause(1)
     try
         [polyCont.Vertices(:,1),polyCont.Vertices(:,2)] = pol2cart(theta,log(rho+1));
     catch
-        figure('WindowStyle','docked')
-        scatter(polyCont.Vertices(:,1),polyCont.Vertices(:,2)); hold on
-        [a,b] = pol2cart(theta,log(rho+1));
-        scatter(a,b)
+        size(polyCont.Vertices)
+        size([theta rho])
+        [theta2,rho2] = cart2pol(polyCont.Vertices(:,1),polyCont.Vertices(:,2));
+        size([theta2 rho2])
         keyboard
     end
     hPolErSubj{subjInd} = plot(polyCont);
@@ -1023,10 +1040,16 @@ for yInd = 1:length(yList)
         tmpXboot(bootInd,:) = mean(tmpX(boot,:),1);
     end
     polyCont = credibleInt2D([real(tmpXboot) imag(tmpXboot)],0.05);
+    pause(1)
     [theta,rho] = cart2pol(polyCont.Vertices(:,1),polyCont.Vertices(:,2));
+    pause(1)
     try
         [polyCont.Vertices(:,1),polyCont.Vertices(:,2)] = pol2cart(theta,log(rho+1));
     catch
+        size(polyCont.Vertices)
+        size([theta rho])
+        [theta2,rho2] = cart2pol(polyCont.Vertices(:,1),polyCont.Vertices(:,2));
+        size([theta2 rho2])
         keyboard
     end
     hPol2vox{yInd} = plot(polyCont);
