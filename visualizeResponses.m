@@ -114,6 +114,8 @@ runTs_er = bootci(p.boot.n,{@(x)mean(x),runTs'},'Type','percentile');
 runTs_er = [runTs_er(2,:) - runTs_av
 runTs_av - runTs_er(1,:)];
 
+runTsBase_av = mean(runTsBase,2)';
+
 fTs = figure('windowstyle','docked');
 t = 0:119;
 hErr = shadedErrorBar(t,runTs_av,runTs_er);
@@ -124,6 +126,14 @@ ax.Box = 'off'; ax.Color = 'none';
 ax.XTick = 0:12:120;
 ax.XGrid = 'on';
 ax.XTickLabelRotation = 0;
+%add fitted baseline
+censor = fullfile(p.dataPath.V1,'resp',[subjList{p.figOption.subjInd} '.mat']);
+censor = load(censor);
+censor = censor.resp.(['sess' num2str(p.figOption.sessInd)]).sinDesign;
+censor = all(censor==0,2);
+runTsBase_av(censor) = nan;
+hold on
+plot(t,runTsBase_av,'r')
 
 
 %% Add-on
