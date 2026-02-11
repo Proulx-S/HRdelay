@@ -1,4 +1,4 @@
-function [areaAndFov,cont,voxProp,pEmpirical,fAll,f] = empiricalFov(d,p)
+function [areaAndFov,cont,voxProp,pEmpirical,fAll,f] = empiricalFov(d,p,voxProp)
 
 %% Initiate params
 pEmpirical.padFac             = 1.2;
@@ -12,11 +12,22 @@ pEmpirical.auto(2).marginRadiusList = 0.40; % ecc
 p.featSel.fov.empirical = pEmpirical;
 
 %% Precompute flattened voxel ecc distribution on fov and delay map
-disp('flattening ecc distributions')
-voxProp.L = flattenEccDist(d,'L',p);
-voxProp.R = flattenEccDist(d,'R',p);
-% voxProp.L = flattenEccDist(d,'L',p,1);
-% voxProp.R = flattenEccDist(d,'R',p,1);
+if ~exist('voxProp','var') || isempty(voxProp)
+    disp('flattening ecc distributions')
+    voxProp.L = flattenEccDist(d,'L',p);
+    voxProp.R = flattenEccDist(d,'R',p);
+    % voxProp.L = flattenEccDist(d,'L',p,1);
+    % voxProp.R = flattenEccDist(d,'R',p,1);
+else
+    disp('using precomputed flattened ecc distributions')
+    voxProp = voxProp(:,1);
+    voxProp = [voxProp{:}];
+    voxPropL = {voxProp.L}';
+    voxPropR = {voxProp.R}';
+    clear voxProp
+    voxProp.L = voxPropL;
+    voxProp.R = voxPropR;
+end
 
 
 disp('preparing delay maps')
@@ -49,23 +60,53 @@ for subjInd = 1:size(d,1)
         [featValLR.(hemi),featMethodLR.(hemi),featIndInLR.(hemi),featInfoLR.(hemi),f.(hemi){subjInd,sessInd}] = getAreaAndFov(cont.(hemi){subjInd,sessInd},voxProp{subjInd,sessInd}.(hemi),p);
         hemi = 'R';
         [featValLR.(hemi),featMethodLR.(hemi),featIndInLR.(hemi),featInfoLR.(hemi),f.(hemi){subjInd,sessInd}] = getAreaAndFov(cont.(hemi){subjInd,sessInd},voxProp{subjInd,sessInd}.(hemi),p);
+
         
+        % % NOTES:
+        % if subjInd == p.figOption.subjInd && sessInd == p.figOption.sessInd
+        %     % in cont = prepareDelayFovContour(d),
+        %     % the original response vectors d.sin were normalized to an average magnitude of one and overall phase of zero, giving vecUV
+        %     dSin = mean(d{subjInd,sessInd}.sin(voxProp{subjInd,sessInd}.(hemi).hemifield,:),2);
+        %     figure; histogram(angle(dSin),100); hold on
+        %     polNorm = cont.(hemi){subjInd,sessInd}.polNorm;
+        %     theta = angle(dSin) - polNorm.thetaShift;
+        %     rho   = abs(  dSin) ./polNorm.rhoScale  ;
+        %     [u,v] = pol2cart(theta,rho);
+        %     vecUV = complex(u,v);
+        %     vecUV = wrapToPi(angle(vecUV));
+        %     histogram(vecUV,100);
+        %     % then we take the absolute value of the [-pi pi] phase, so small values are positive responses and large values are negative responses.
+        %     vecUV = abs(vecUV);
+        %     histogram(vecUV,100);
+        %     % This gives featValLR.(hemi), on which the boundary between positively and negatively responding regions are based.
+        %     max(abs(featValLR.(hemi)-vecUV))
+        %     % So let's carry over the original phase and the normalization phase
+        % end
+
         % Combine hemifields
-        featVal = nan(size(voxProp{subjInd,sessInd}.(hemi).hemifield));
-        featIndIn = nan(size(voxProp{subjInd,sessInd}.(hemi).hemifield));
+        phaseDelay     = nan(size(voxProp{subjInd,sessInd}.(hemi).hemifield));
+        phaseDelayNorm = nan(size(voxProp{subjInd,sessInd}.(hemi).hemifield));
+        featVal        = nan(size(voxProp{subjInd,sessInd}.(hemi).hemifield));
+        featIndIn      = nan(size(voxProp{subjInd,sessInd}.(hemi).hemifield));
         hemi = 'L';
+        phaseDelay(voxProp{subjInd,sessInd}.(hemi).hemifield) = angle(mean(d{subjInd,sessInd}.sin(voxProp{subjInd,sessInd}.(hemi).hemifield,:),2));
+        phaseDelayNorm(voxProp{subjInd,sessInd}.(hemi).hemifield) = cont.(hemi){subjInd,sessInd}.polNorm.thetaShift;
         featVal(voxProp{subjInd,sessInd}.(hemi).hemifield) = featValLR.(hemi);
         featIndIn(voxProp{subjInd,sessInd}.(hemi).hemifield) = featIndInLR.(hemi);
         hemi = 'R';
+        phaseDelay(voxProp{subjInd,sessInd}.(hemi).hemifield) = angle(mean(d{subjInd,sessInd}.sin(voxProp{subjInd,sessInd}.(hemi).hemifield,:),2));
+        phaseDelayNorm(voxProp{subjInd,sessInd}.(hemi).hemifield) = cont.(hemi){subjInd,sessInd}.polNorm.thetaShift;
         featVal(voxProp{subjInd,sessInd}.(hemi).hemifield) = featValLR.(hemi);
         featIndIn(voxProp{subjInd,sessInd}.(hemi).hemifield) = featIndInLR.(hemi);
         featMethod = featMethodLR.L;
         featInfo = featInfoLR.L;
         
-        areaAndFov{subjInd,sessInd}.featVal = featVal; clear featVal featValLR;
-        areaAndFov{subjInd,sessInd}.featIndIn = featIndIn; clear featIndIn featIndInLR;
-        areaAndFov{subjInd,sessInd}.featMethod = featMethod; clear featMethod featMethodLR;
-        areaAndFov{subjInd,sessInd}.featInfo = featInfo; clear featInfo featInfoLR;
+        areaAndFov{subjInd,sessInd}.featVal        = featVal; clear featVal featValLR;
+        areaAndFov{subjInd,sessInd}.featIndIn      = featIndIn; clear featIndIn featIndInLR;
+        areaAndFov{subjInd,sessInd}.featMethod     = featMethod; clear featMethod featMethodLR;
+        areaAndFov{subjInd,sessInd}.featInfo       = featInfo; clear featInfo featInfoLR;
+        areaAndFov{subjInd,sessInd}.phaseDelay     = phaseDelay; clear phaseDelay;
+        areaAndFov{subjInd,sessInd}.phaseDelayNorm = phaseDelayNorm; clear phaseDelayNorm;
     end
 end
 
@@ -632,12 +673,17 @@ for subjInd = 1:size(d,1)
     end
     for sessInd = 1:size(d,2)
         vecUV = mean(d{subjInd,sessInd}.sin(curVoxProp.hemifield,:),2);
-        
+
         % Prepare surface
         [~,U,V,densityXY,X,Y] = pol2surf(curVoxProp,padFac);
         outXY = isnan(densityXY); clear densityXY
-        [vecUV,~] = polarSpaceNormalization(vecUV,'cartRoi');
+        [vecUV,polNorm] = polarSpaceNormalization(vecUV,'cartRoi');
         vecUV = abs(angle(vecUV));
+
+
+
+
+
         
         % Output
         cont{subjInd,sessInd}.U = U;
@@ -646,6 +692,8 @@ for subjInd = 1:size(d,1)
         cont{subjInd,sessInd}.X = X;
         cont{subjInd,sessInd}.Y = Y;
         cont{subjInd,sessInd}.outXY = outXY;
+        cont{subjInd,sessInd}.polNorm = polNorm;
+        % cont{subjInd,sessInd}.vecUV_orig = vecUV_orig;
     end
 end
 

@@ -1,4 +1,5 @@
 function [x,polNorm] = polarSpaceNormalization(x,chanSpace,te,phaseOffset)
+polNorm.orig = x;
 [x,sz] = reDim1(x);
 if ~exist('te','var') || isempty(te)
     te = false(size(x,1),1);
