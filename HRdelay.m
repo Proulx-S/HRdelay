@@ -50,7 +50,7 @@ saveas(f, 'SuppFig1hist.svg')
 
 
 
-return
+
 
 %% Feature selection
 processFeatSel(p);
