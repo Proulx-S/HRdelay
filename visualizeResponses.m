@@ -67,6 +67,7 @@ for subjInd = 1:size(d,1)
     end
 end
 featSel_fov = featSel;
+featSel_fov{1,1}.featSeq.featSelList(ind_nSpecFeatSel)
 
 
 method = 'upToActivation'; % 'onlyRetinoFov' 'upToActivation'
@@ -80,11 +81,12 @@ for subjInd = 1:size(d,1)
     end
 end
 featSel_act = featSel;
+featSel_act{1,1}.featSeq.featSelList(ind_nSpecFeatSel)
 
 
 %% Group effect
-fTrigGroup = plotTrigGroup(d,p,featSel,1);
-fHrGroup = plotHrGroup(d,p,featSel,1);
+[fTrigGroup,fSuppCorrelation] = plotTrigGroup(d,p,featSel,1); % Fig5A, FigSuppCorrelation
+fHrGroup = plotHrGroup(d,p,featSel,1); % Fig5B
 
 
 subjInd = p.figOption.subjInd;
@@ -208,6 +210,19 @@ saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
 curExt = 'jpg';
 saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
 
+fullfilename = fullfile(p.figOption.outDir,'FigSuppCorrelation');
+curF = fSuppCorrelation;
+curFile = fullfilename;
+curExt = 'svg';
+saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
+curExt = 'eps';
+exportgraphics(curF,[curFile '.' curExt],'ContentType','vector'); disp([curFile '.' curExt]);
+curExt = 'fig';
+saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
+curExt = 'jpg';
+saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
+
+
 fullfilename = fullfile(p.figOption.outDir,'Fig2B');
 curF = fHr;
 curFile = fullfilename;
@@ -234,7 +249,7 @@ curExt = 'jpg';
 saveas(curF,[curFile '.' curExt]); disp([curFile '.' curExt]);
 
 
-function f = plotTrigGroup(d,p,featSel,visibilityFlag)
+function [f,f2] = plotTrigGroup(d,p,featSel,visibilityFlag)
 nBoot = p.boot.n;
 if ~exist('visibilityFlag','var')
     visibilityFlag = 1;
@@ -252,49 +267,62 @@ for i = 1:numel(d)
 end
 
 %% Stats
-% tmpX = cat(1,mean(X(1:2,:,:),1),X(3,:,:));
-tmpX = angle(X);
-tmpX = permute(mean(tmpX,3),[2 1]);
-t = table(tmpX(:,1),tmpX(:,2),tmpX(:,3),...
-'VariableNames',{'cond1','cond2','cond3'});
-Meas = table([1 2 3]','VariableNames',{'cond'});
-rm = fitrm(t,'cond1-cond3~1','WithinDesign',Meas);
-ranovatbl = ranova(rm);
-[H,P,CI,STATS] = ttest(mean(table2array(t(:,1:2)),2),table2array(t(:,3)));
 disp(' ')
 disp('-------')
 disp('Delay')
+tmpX = angle(X); % take the delay
+tmpX = permute(mean(tmpX,3),[2 1]); % average across sessions (no phase wrap)
 disp('One-way (3-level) ANOVA')
-disp(ranovatbl)
-tmp = mean(X(:,:),2);
-tmp = (angle(mean(tmp(1:2,:),1)) - angle(tmp(3,:)))/pi*6;
-tmp2 = mean(X,3);
-tmp2 = (angle(mean(tmp2(1:2,:),1)) - angle(tmp2(3,:)))/pi*6;
-disp(['plaid-grat=' num2str(tmp) 'sec (range: ' num2str(min(tmp2),'%0.3f') '-' num2str(max(tmp2),'%0.3f') ')'])
-
-disp(['t=' num2str(STATS.tstat) ', p=' num2str(P)])
-disp('-------')
-disp(' ')
-
-tmpX = abs(X);
-tmpX = permute(mean(tmpX,3),[2 1]);
 t = table(tmpX(:,1),tmpX(:,2),tmpX(:,3),...
 'VariableNames',{'cond1','cond2','cond3'});
 Meas = table([1 2 3]','VariableNames',{'cond'});
 rm = fitrm(t,'cond1-cond3~1','WithinDesign',Meas);
 ranovatbl = ranova(rm);
-[H,P,CI,STATS] = ttest(mean(table2array(t(:,1:2)),2),table2array(t(:,3)));
+disp(ranovatbl)
+delayGrat   = -mean(table2array(t(:,1:2)),2)./pi*6; % average orientations and convert to seconds (no phase wrap)
+delayPlaid = -table2array(t(:,3))./pi*6; % convert to seconds (no phase wrap)
+[H,P,CI,STATS] = ttest(delayPlaid,delayGrat);
+disp(['plaid-grat=' num2str(mean(delayPlaid - delayGrat)) 'sec (range: ' num2str(min(delayPlaid - delayGrat),'%0.3f') ' to ' num2str(max(delayPlaid - delayGrat),'%0.3f') ')'])
+disp(['t=' num2str(STATS.tstat) ', p=' num2str(P)])
+[p, h, stats] = signrank(delayPlaid,delayGrat);
+disp(['signedRank=' num2str(stats.signedrank) ', p=' num2str(p)])
+disp('-------')
+disp(' ')
+
 disp(' ')
 disp('-------')
 disp('Amplitude')
-disp('One-way (3-level) ANOVA on amplitude')
+tmpX = abs(X); % take the amplitude
+tmpX = permute(mean(tmpX,3),[2 1]); % average across sessions (no phase wrap)
+disp('One-way (3-level) ANOVA')
+t = table(tmpX(:,1),tmpX(:,2),tmpX(:,3),...
+'VariableNames',{'cond1','cond2','cond3'});
+Meas = table([1 2 3]','VariableNames',{'cond'});
+rm = fitrm(t,'cond1-cond3~1','WithinDesign',Meas);
+ranovatbl = ranova(rm);
 disp(ranovatbl)
-tmp = mean(X(:,:),2);
-tmp = abs(tmp(3,:)) - abs(mean(tmp(1:2,:),1));
-disp(['plaid-grat=' num2str(tmp) '%BOLD'])
+ampGrat  = mean(table2array(t(:,1:2)),2); % average orientations and convert to seconds (no phase wrap)
+ampPlaid = table2array(t(:,3)); % convert to seconds (no phase wrap)
+[H,P,CI,STATS] = ttest(ampPlaid,ampGrat);
+disp(['plaid-grat=' num2str(mean(ampPlaid - ampGrat)) '%BOLD (range: ' num2str(min(ampPlaid - ampGrat),'%0.3f') ' to ' num2str(max(ampPlaid - ampGrat),'%0.3f') ')'])
 disp(['t=' num2str(STATS.tstat) ', p=' num2str(P)])
+[p, h, stats] = signrank(ampPlaid,ampGrat);
+disp(['signedRank=' num2str(stats.signedrank) ', p=' num2str(p)])
 disp('-------')
 disp(' ')
+
+disp(' ')
+disp('-------')
+disp('Delay vs Amplitude')
+[rPearson,pPearson]   = corr(delayPlaid-delayGrat,ampPlaid-ampGrat,'Type','Pearson');
+[rSpearman,pSpearman] = corr(delayPlaid-delayGrat,ampPlaid-ampGrat,'Type','Spearman');
+% [rPearson,pPearson]   = corr(delayPlaid-delayGrat,(ampPlaid-ampGrat)./ampGrat.*100,'Type','Pearson');
+% [rSpearman,pSpearman] = corr(delayPlaid-delayGrat,(ampPlaid-ampGrat)./ampGrat.*100,'Type','Spearman');
+disp(['Pearson''s rho=' num2str(rPearson,'%0.2f') ', p=' num2str(pPearson,'%0.2f')])
+disp(['Spearman''s rho=' num2str(rSpearman,'%0.2f') ', p=' num2str(pSpearman,'%0.2f')])
+disp('-------')
+disp(' ')
+
 
 %% Remove random-effect of subject
 rho = abs(X) ./ abs(mean(X,1)) .* abs(mean(X(:)));
@@ -454,6 +482,41 @@ set(hPolAv,'MarkerSize',5)
 set(hPolAv,'MarkerEdgeColor','none')
 
 
+%% Amplitude vs. Delay (supplementary figure)
+f2 = figure;
+scatter(delayPlaid-delayGrat , ampPlaid-ampGrat); hold on
+% scatter(delayPlaid-delayGrat , (ampPlaid-ampGrat)./ampGrat.*100); hold on
+xlabel('plaid-grat delay difference (s)')
+ylabel('plaid-grat amplitude difference')
+title({
+    'Amplitude vs. Delay'
+    ['Pearson''s rho=' num2str(rPearson,'%0.2f') ', p=' num2str(pPearson,'%0.2f')]
+    ['Spearman''s rho=' num2str(rSpearman,'%0.2f') ', p=' num2str(pSpearman,'%0.2f')]
+})
+xLim = xlim; xLim(1) = 0; xlim(xLim)
+grid on
+axis square
+hold on; lsline
+
+
+% ax2 = findobj(f.Children,'type','Axes');
+% f2.Color = 'none';
+% ax2.Color = 'none';
+% hScat = findobj(ax2.Children,'type','Scatter');
+% hScat.MarkerFaceColor = 'k'; hScat.MarkerEdgeColor = 'none';
+% hLine = findobj(ax2.Children,'type','Line');
+% hLine.Color = 0.7.*[1 1 1];
+% grid minor
+% saveas(f2, 'FigSuppCorrelation.svg')
+
+
+
+
+
+
+
+
+
 function f = plotHrGroup(d,p,featSel,visibilityFlag)
 nBoot = p.boot.n;
 if ~exist('visibilityFlag','var')
@@ -610,8 +673,8 @@ hPolFov.MarkerSize = eps;
 
 [u,v] = pol2cart(angle(mean(xFovAct,1)),log(abs(mean(xFovAct,1))+1));
 hPolAct= plot(u,v,'.'); hold on
-% hPolAct = polar(angle(mean(xAct,1)),abs(mean(xAct,1)),'.'); hold on
-% hPolAct = polarplot(angle(mean(xAct,1)),abs(mean(xAct,1)),'.'); hold on
+% hPolAct = polar(angle(mean(xFovAct,1)),abs(mean(xFovAct,1)),'.'); hold on
+% hPolAct = polarplot(angle(mean(xFovAct,1)),abs(mean(xFovAct,1)),'.'); hold on
 hPolAct.MarkerFaceColor = [1 1 1]-eps;
 hPolAct.MarkerEdgeColor = [1 1 1]-eps;
 hPolAct.MarkerSize = eps;
@@ -751,9 +814,12 @@ end
 [xSin,~,~] = getXYK(d,p,0);
 [x,y,~] = getXYK(d,p,1);
 x = cat(3,x,x(:,:,1));
-xFov = x(:,featSel2.indIn & ~featSel1.indIn,:);
-xAct = x(:,featSel1.indIn,:);
-t = (1:size(xAct,3))-1;
+
+
+xFov       = x(:,featSel2.indIn                  ,:);
+xFovNotAct = x(:,featSel2.indIn & ~featSel1.indIn,:);
+xFovAct    = x(:,featSel1.indIn                  ,:);
+t = (1:size(xFovAct,3))-1;
 
 if visibilityFlag
     f = figure('WindowStyle','docked','visible','on');
@@ -761,14 +827,14 @@ else
     f = figure('WindowStyle','docked','visible','off');
 end
 
-tmpX = squeeze(mean(xFov,1));
+tmpX = squeeze(mean(xFovNotAct,1));
 % tmpX(tmpX>=0) = log(tmpX(tmpX>=0)+1);
 % tmpX(tmpX<0) = -log(-tmpX(tmpX<0)+1);
 hPlotFov = plot(t,tmpX,'Color','k'); hold on
 set(hPlotFov,'Color',[get(hPlotFov(1),'Color') 0.15])
 set(hPlotFov,'LineWidth',eps);
 
-tmpX = squeeze(mean(xAct,1));
+tmpX = squeeze(mean(xFovAct,1));
 % tmpX(tmpX>=0) = log(tmpX(tmpX>=0)+1);
 % tmpX(tmpX<0) = -log(-tmpX(tmpX<0)+1);
 hPlotAct = plot(t,tmpX,'w'); hold on
@@ -799,25 +865,25 @@ voxInd = false(size(act));
 voxInd(b) = true;
 
 
-%% Plot the one voxel
-tmpX = squeeze(x(:,b,:));
-n = size(tmpX,1);
-tmpXmean = mean(tmpX,1);
-tmpXboot = nan(nBoot,size(tmpX,2));
-for bootInd = 1:nBoot
-    boot = nan(n,1);
-    for i = 1:n
-        boot(i) = randperm(n,1);
-    end
-    tmpXboot(bootInd,:) = mean(tmpX(boot,:),1);
-end
-tmpXer = prctile(tmpXboot,[97.5 2.5],1);
-tmpXer(1,:) = tmpXer(1,:) - tmpXmean;
-tmpXer(2,:) = tmpXmean - tmpXer(2,:);
-hPlot2vox = errorbar(t,tmpXmean,tmpXmean-tmpXer(2,:),tmpXer(1,:)-tmpXmean,'ok');
-hPlot2vox.CapSize = 0;
-hPlot2vox.MarkerEdgeColor = 'k';
-hPlot2vox.MarkerFaceColor = 'w';%hPlot2vox.MarkerEdgeColor;
+% %% Plot the one voxel
+% tmpX = squeeze(x(:,b,:));
+% n = size(tmpX,1);
+% tmpXmean = mean(tmpX,1);
+% tmpXboot = nan(nBoot,size(tmpX,2));
+% for bootInd = 1:nBoot
+%     boot = nan(n,1);
+%     for i = 1:n
+%         boot(i) = randperm(n,1);
+%     end
+%     tmpXboot(bootInd,:) = mean(tmpX(boot,:),1);
+% end
+% tmpXer = prctile(tmpXboot,[97.5 2.5],1);
+% tmpXer(1,:) = tmpXer(1,:) - tmpXmean;
+% tmpXer(2,:) = tmpXmean - tmpXer(2,:);
+% hPlot2vox = errorbar(t,tmpXmean,tmpXmean-tmpXer(2,:),tmpXer(1,:)-tmpXmean,'ok');
+% hPlot2vox.CapSize = 0;
+% hPlot2vox.MarkerEdgeColor = 'k';
+% hPlot2vox.MarkerFaceColor = 'w';%hPlot2vox.MarkerEdgeColor;
 
 
 
@@ -860,14 +926,31 @@ for yInd = 1:length(yList)
 end
 hPlot1vox = [hPlot1vox{:}];
 
+%% FOV and selected FOV voxels
+runTs = squeeze(mean(xFov,2));
+runTs_av = mean(runTs,1);
+runTs_er = bootci(p.boot.n,{@(x)mean(x,1),runTs},'Type','percentile');
+runTs_erNeg = runTs_av - runTs_er(1,:);
+runTs_erPos = runTs_er(2,:) - runTs_av;
+
+hErr = errorbar(t,runTs_av,runTs_erNeg,runTs_erPos); hold on
+hErr.Marker='.';
+hErr.LineStyle='none';
+hErr.MarkerEdgeColor='k';
+hErr.Color='k';
+hErr.CapSize=0;
+ylim([-11 11])
+
+
+
 
 %% Decorations
-tmpX = mean(xAct,1);
+tmpX = mean(xFovAct,1);
 ylim([-1 1].*max(abs(tmpX(:))))
 % ylim([-1/3 1/3].*max(abs(ylim)))
 
 % uistack(hPlot1vox,'top')
-legend([hPlotFov(1) hPlotAct(1) [hPlot1vox.mainLine] [hPlot1vox.patch]],{'fov vox' 'selected fov vox' 'grat1' 'grat2' 'plaid' '95' '95' '95'},'box','off','Location','NorthWest')
+legend([hPlotFov(1) hPlotAct(1) [hPlot1vox.mainLine] [hPlot1vox.patch] hErr],{'fov vox' 'selected fov vox' 'grat1' 'grat2' 'plaid' '+/-95%CI' '+/-95%CI' '+/-95%CI' 'fov mean +/-95%CI'},'box','off','Location','NorthWest')
 % legend([hPlotFov(1) hPlotAct(1) hPlot1vox(1,:)],{'fov vox' 'selected fov vox' 'grat1' 'grat2' 'plaid'},'box','off')
 % f.Color = 'w';
 ax = gca;

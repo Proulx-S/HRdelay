@@ -1,6 +1,7 @@
 %% Info
-% This script reproduces figures from S. Proulx et al., Neuroimage, in
+% This script reproduces figures from S. Proulx et al., Cerebral Cortex, in
 % preperation.
+figure('MenuBar','none','ToolBar','none');
 clear all
 close all
 
@@ -14,7 +15,7 @@ downloadData;
 extractResponses(p);
 
 %% Define the retinotopic representation of the stimulus field of view (data-driven with priors from a probabilistic retinotopic atlas)
-doWhat = 'run_forced_butSkipFlattenEccDist';
+doWhat = 'download';
 % 'run'             -> run it yourself, but will not run when locally saved data is available (several minutes; uses some more Matlab proprietary toolboxes, see initAnalysis.m)
 % 'run_forced'      -> same as above, but forces to rerun instead of loading locally saved data
 % 'download'        -> download precomputed data from repository, but will not download when locally saved data is available
@@ -22,35 +23,34 @@ doWhat = 'run_forced_butSkipFlattenEccDist';
 % 'run_forced_butSkipFlattenEccDist' -> same as run_forced, but skips forced run of flattenEccDist (very long step)
 processFov(p,doWhat);
 
+% % Figure 3A histogram inset
+% open('/Users/sebastienproulx/HRdelay/figures/myAnalysis/Fig3Ahist.fig')
+% f = gcf;
+% ax = gca;
+% ax.Children(3).FaceColor = 'k';
+% ax.Children(3).EdgeColor = 'none';
+% f.Color = 'none';
+% ax.Color = 'none';
+% ax.Box = 'off';
+% ax.YAxis.Visible = 'off';
+% ax.XTick = [];
+% % saveas(f, 'Fig3Ahist.svg')
 
-% Figure 3A histogram inset
-open('/Users/sebastienproulx/HRdelay/figures/myAnalysis/Fig3Ahist.fig')
-f = gcf;
-ax = gca;
-ax.Children(3).FaceColor = 'k';
-ax.Children(3).EdgeColor = 'none';
-f.Color = 'none';
-ax.Color = 'none';
-ax.Box = 'off';
-ax.YAxis.Visible = 'off';
-ax.XTick = [];
-saveas(f, 'Fig3Ahist.svg')
-
-% Figure SuppFig1B histograms
-open('/Users/sebastienproulx/HRdelay/figures/myAnalysis/SuppFig1hist.fig')
-f = gcf;
-ax = f.Children;
-hHist = findobj([ax.Children],'Type','Histogram');
-set(hHist,'FaceColor','k','EdgeColor','none');
-f.Color = 'none';
-set(ax,'Color','none');
-set(ax,'XTick',-pi/2:pi/2:(pi+pi/2));
-set(ax,'XTickLabel',-3:3:9);
-saveas(f, 'SuppFig1hist.svg')
-
+% % Figure SuppFig1B histograms
+% open('/Users/sebastienproulx/HRdelay/figures/myAnalysis/SuppFig1hist.fig')
+% f = gcf;
+% ax = f.Children;
+% hHist = findobj([ax.Children],'Type','Histogram');
+% set(hHist,'FaceColor','k','EdgeColor','none');
+% f.Color = 'none';
+% set(ax,'Color','none');
+% set(ax,'XTick',-pi/2:pi/2:(pi+pi/2));
+% set(ax,'XTickLabel',-3:3:9);
+% % saveas(f, 'SuppFig1hist.svg')
 
 
 
+return
 
 %% Feature selection
 processFeatSel(p);

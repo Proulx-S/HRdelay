@@ -39,10 +39,10 @@ outFile = fullfile(p.dataPath.V1,'fov.mat');
 
 
 
+[d,info] = loadData(p);
 switch doWhat
     case {'run' 'run_forced' 'run_forced_butSkipFlattenEccDist'}
         if ~exist(outFile,'file') || strcmp(doWhat,'run_forced') || strcmp(doWhat,'run_forced_butSkipFlattenEccDist')
-            [d,info] = loadData(p);
             disp('empiricalFov: Computing')
             if strcmp(doWhat,'run_forced_butSkipFlattenEccDist')
                 load(outFile,'voxProp');
@@ -88,11 +88,12 @@ saveas(f.R{p.figOption.subjInd,p.figOption.sessInd}(figInd),[fullfile(figDir,fig
 % phase histogram inset for Fig3A
 phaseDelay = areaAndFov{p.figOption.subjInd,p.figOption.sessInd}.phaseDelay - areaAndFov{p.figOption.subjInd,p.figOption.sessInd}.phaseDelayNorm;
 phaseDelay = wrapToPi(-phaseDelay-pi/2)+pi/2;
-f.hist = figure;
+f.hist = figure('Visible','off');
 histogram(phaseDelay,linspace(-pi/2,pi+pi/2,50)); axis tight
 xline([0 pi]);
 xlabel('phase delay relative to phase of average response (rad)');
 figFile = 'Fig3Ahist';
+f.hist.Visible = 'on';
 saveas(f.hist,[fullfile(figDir,figFile) '.fig'])
 saveas(f.hist,[fullfile(figDir,figFile) '.jpg'])
 
@@ -104,7 +105,7 @@ figFile = 'SuppFig1';
 saveas(fAll{end},[fullfile(figDir,figFile) '.fig'])
 saveas(fAll{end},[fullfile(figDir,figFile) '.jpg'])
 % phase histogram inset for SuppFig1
-fAllHist = figure; ax = cell(size(areaAndFov,1),size(areaAndFov,2));
+fAllHist = figure('Visible','off'); ax = cell(size(areaAndFov,1),size(areaAndFov,2));
 clear dd ddPhase
 for subjInd = 1:size(areaAndFov,1)
     for sessInd = 1:size(areaAndFov,2)
@@ -126,6 +127,7 @@ for subjInd = 1:size(areaAndFov,1)
     xlabel('vox phase - roi phase (rad)')
 end
 figFile = 'SuppFig1hist';
+fAll{end}.Visible = 'on';
 saveas(fAllHist,[fullfile(figDir,figFile) '.fig'])
 saveas(fAllHist,[fullfile(figDir,figFile) '.jpg'])
 
@@ -137,7 +139,7 @@ for subjInd = 1:size(areaAndFov,1)
 end
 dd = cat(1,dd{:,1});
 % polarhistogram(angle(dd),100);
-fCatHist = figure;
+fCatHist = figure('Visible','off');
 histogram(wrapToPi(angle(dd)-pi/2)+pi/2,linspace(-pi/2,pi+pi/2,50)); axis tight
 xline([0 pi]);
 figFile = 'groupPhaseHist';
