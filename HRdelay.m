@@ -1,7 +1,7 @@
 %% Info
 % This script reproduces figures from S. Proulx et al., Cerebral Cortex, in
 % preperation.
-figure('MenuBar','none','ToolBar','none');
+% figure('MenuBar','none','ToolBar','none');
 clear all
 close all
 
@@ -13,6 +13,8 @@ downloadData;
 
 %% Extract sinusoidal and model-free responses from timeseries
 extractResponses(p);
+
+
 
 %% Define the retinotopic representation of the stimulus field of view (data-driven with priors from a probabilistic retinotopic atlas)
 doWhat = 'download';
@@ -50,7 +52,6 @@ processFov(p,doWhat);
 
 
 
-return
 
 %% Feature selection
 processFeatSel(p);

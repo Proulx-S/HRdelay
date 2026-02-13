@@ -256,13 +256,15 @@ if ~exist('visibilityFlag','var')
 end
 
 %% Get data
-X = nan([3 size(d)]);
+X    = nan([3 size(d)]);
+Xrun = cell(size(d));
 for i = 1:numel(d)
     [x,y,~] = getXYK(d{i},p);
     x = x(:,featSel{i}.indIn);
     for yInd = 1:3
         tmpX = x(y==yInd,:);
         X(yInd,i) = mean(tmpX(:));
+        Xrun{i}(yInd,:) = mean(tmpX,2);
     end
 end
 
@@ -281,11 +283,11 @@ ranovatbl = ranova(rm);
 disp(ranovatbl)
 delayGrat   = -mean(table2array(t(:,1:2)),2)./pi*6; % average orientations and convert to seconds (no phase wrap)
 delayPlaid = -table2array(t(:,3))./pi*6; % convert to seconds (no phase wrap)
-[H,P,CI,STATS] = ttest(delayPlaid,delayGrat);
+[H,pTtest,CI,STATS] = ttest(delayPlaid,delayGrat);
 disp(['plaid-grat=' num2str(mean(delayPlaid - delayGrat)) 'sec (range: ' num2str(min(delayPlaid - delayGrat),'%0.3f') ' to ' num2str(max(delayPlaid - delayGrat),'%0.3f') ')'])
-disp(['t=' num2str(STATS.tstat) ', p=' num2str(P)])
-[p, h, stats] = signrank(delayPlaid,delayGrat);
-disp(['signedRank=' num2str(stats.signedrank) ', p=' num2str(p)])
+disp(['t=' num2str(STATS.tstat) ', p=' num2str(pTtest)])
+[pSignedRank, h, stats] = signrank(delayPlaid,delayGrat);
+disp(['signedRank=' num2str(stats.signedrank) ', p=' num2str(pSignedRank)])
 disp('-------')
 disp(' ')
 
@@ -303,11 +305,11 @@ ranovatbl = ranova(rm);
 disp(ranovatbl)
 ampGrat  = mean(table2array(t(:,1:2)),2); % average orientations and convert to seconds (no phase wrap)
 ampPlaid = table2array(t(:,3)); % convert to seconds (no phase wrap)
-[H,P,CI,STATS] = ttest(ampPlaid,ampGrat);
+[H,pTtest,CI,STATS] = ttest(ampPlaid,ampGrat);
 disp(['plaid-grat=' num2str(mean(ampPlaid - ampGrat)) '%BOLD (range: ' num2str(min(ampPlaid - ampGrat),'%0.3f') ' to ' num2str(max(ampPlaid - ampGrat),'%0.3f') ')'])
-disp(['t=' num2str(STATS.tstat) ', p=' num2str(P)])
-[p, h, stats] = signrank(ampPlaid,ampGrat);
-disp(['signedRank=' num2str(stats.signedrank) ', p=' num2str(p)])
+disp(['t=' num2str(STATS.tstat) ', p=' num2str(pTtest)])
+[pSignedRank, h, stats] = signrank(ampPlaid,ampGrat);
+disp(['signedRank=' num2str(stats.signedrank) ', p=' num2str(pSignedRank)])
 disp('-------')
 disp(' ')
 
@@ -485,31 +487,61 @@ set(hPolAv,'MarkerEdgeColor','none')
 %% Amplitude vs. Delay (supplementary figure)
 f2 = figure;
 scatter(delayPlaid-delayGrat , ampPlaid-ampGrat); hold on
-% scatter(delayPlaid-delayGrat , (ampPlaid-ampGrat)./ampGrat.*100); hold on
+for subjInd = 1:6
+    Xrun{subjInd,1} = cat(2,Xrun{subjInd,:});
+end
+Xrun(:,2) = [];
+for subjInd = 1:6
+    delayPlaidRun{subjInd} = -                    angle(Xrun{subjInd}(3  ,:))       ./pi*6; % no phase wrap
+    delayGratRun{subjInd}  = -angle( mean( exp(1i*angle(Xrun{subjInd}(1:2,:))) ,1) )./pi*6; % no phase wrap
+    ampPlaidRun{subjInd}   =                        abs(Xrun{subjInd}(3  ,:))       ;
+    ampGratRun{subjInd}    =         mean(          abs(Xrun{subjInd}(1:2,:))  ,1  );    
+end
+for subjInd = 1:6
+    delayEffect{subjInd} = delayPlaidRun{subjInd} - delayGratRun{subjInd};
+    ampEffect{subjInd}   = ampPlaidRun{subjInd}   - ampGratRun{subjInd};
+end
+for subjInd = 1:6
+    delayEffectAv(subjInd) = mean(delayEffect{subjInd});
+    er = bootci(p.boot.n,{@mean,delayEffect{subjInd}},'Type','percentile');
+    delayEffectErNeg(subjInd) = delayEffectAv(subjInd) - er(1,:);
+    delayEffectErPos(subjInd) = er(2,:) - delayEffectAv(subjInd);
+    ampEffectAv(subjInd) = mean(ampEffect{subjInd});
+    er = bootci(p.boot.n,{@mean,ampEffect{subjInd}},'Type','percentile');
+    ampEffectErNeg(subjInd) = ampEffectAv(subjInd) - er(1,:);
+    ampEffectErPos(subjInd) = er(2,:) - ampEffectAv(subjInd);
+end
+hold on
+
+f2 = figure;
+% for subjInd = 1:6
+%     hScat = scatter(delayPlaid(subjInd)-delayGrat(subjInd) , ampPlaid(subjInd)-ampGrat(subjInd),'filled'); hold on
+%     hErr = errorbar(delayEffectAv(subjInd),ampEffectAv(subjInd),delayEffectErNeg(subjInd),delayEffectErPos(subjInd),ampEffectErNeg(subjInd),ampEffectErPos(subjInd),'CapSize',0,'LineStyle','none','Marker','none','Color',hScat.CData);
+% end
+hScat = scatter(delayPlaid-delayGrat , ampPlaid-ampGrat); hold on
+hScat.Visible = 'off';
+hErr = errorbar(delayEffectAv,ampEffectAv,delayEffectErNeg,delayEffectErPos,ampEffectErNeg,ampEffectErPos);
+hErr.CapSize = 0;
+hErr.LineStyle = 'none';
+hErr.Marker = 'o';
+hErr.MarkerEdgeColor = 'none';
+hErr.Color = 'k';
+hErr.MarkerFaceColor = 'k';
+grid on
+grid minor
+axis tight square
+hLine = lsline;
+hLine.LineStyle = '--';
+xLim = xlim; xLim = [-1.05 1.05].*max(abs(xLim)); xlim(xLim)
+yLim = ylim; yLim = [-1.05 1.05].*max(abs(yLim)); ylim(yLim)
+xline(0,'k'); yline(0,'k');
 xlabel('plaid-grat delay difference (s)')
-ylabel('plaid-grat amplitude difference')
+ylabel('plaid-grat amplitude difference (%BOLD)')
 title({
-    'Amplitude vs. Delay'
+    'Amplitude vs. Delay (averaging runs instead of sessions)'
     ['Pearson''s rho=' num2str(rPearson,'%0.2f') ', p=' num2str(pPearson,'%0.2f')]
     ['Spearman''s rho=' num2str(rSpearman,'%0.2f') ', p=' num2str(pSpearman,'%0.2f')]
 })
-xLim = xlim; xLim(1) = 0; xlim(xLim)
-grid on
-axis square
-hold on; lsline
-
-
-% ax2 = findobj(f.Children,'type','Axes');
-% f2.Color = 'none';
-% ax2.Color = 'none';
-% hScat = findobj(ax2.Children,'type','Scatter');
-% hScat.MarkerFaceColor = 'k'; hScat.MarkerEdgeColor = 'none';
-% hLine = findobj(ax2.Children,'type','Line');
-% hLine.Color = 0.7.*[1 1 1];
-% grid minor
-% saveas(f2, 'FigSuppCorrelation.svg')
-
-
 
 
 
