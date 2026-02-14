@@ -261,19 +261,41 @@ Xrun = cell(size(d));
 for i = 1:numel(d)
     [x,y,~] = getXYK(d{i},p);
     x = x(:,featSel{i}.indIn);
+    % sort conditions
     for yInd = 1:3
         tmpX = x(y==yInd,:);
         X(yInd,i) = mean(tmpX(:));
         Xrun{i}(yInd,:) = mean(tmpX,2);
     end
 end
+for subjInd = 1:size(d,1)
+    Xrun{subjInd,1} = cat(2,Xrun{subjInd,:});
+end
+Xrun(:,2) = [];
 
-%% Stats
+%% Delay estimate precision
+phaseWrap = nan(size(d,1),3);
+delayCI = nan(size(d,1),3,2);
+for subjInd = 1:size(d,1)
+    for condInd = 1:3
+        phaseWrap(subjInd,condInd) = any(angle(Xrun{subjInd}(condInd,:))>0);
+        delayCI(subjInd,condInd,:) = bootci(p.boot.n,{@mean,-angle(Xrun{subjInd}(condInd,:))./pi*6},'Type','per');
+    end
+end
+any(phaseWrap(:)); % no phase wrap
+delayCIwidth = diff(delayCI,[],3);
+disp(['delay CI width (mean)=' num2str(mean(delayCIwidth(:))) 'sec'])
+disp(['delay CI width (min)=' num2str(min(delayCIwidth(:))) 'sec'])
+disp(['delay CI width (max)=' num2str(max(delayCIwidth(:))) 'sec'])
+
+%% Stats -- main effects
 disp(' ')
 disp('-------')
 disp('Delay')
-tmpX = angle(X); % take the delay
-tmpX = permute(mean(tmpX,3),[2 1]); % average across sessions (no phase wrap)
+% tmpX = angle(X); % take the delay
+% tmpX = permute(mean(tmpX,3),[2 1]); % average across sessions (no phase wrap)
+tmpX = permute(mean(X,3),[2 1]); % average across sessions
+tmpX = angle(tmpX); % take the delay
 disp('One-way (3-level) ANOVA')
 t = table(tmpX(:,1),tmpX(:,2),tmpX(:,3),...
 'VariableNames',{'cond1','cond2','cond3'});
@@ -294,8 +316,10 @@ disp(' ')
 disp(' ')
 disp('-------')
 disp('Amplitude')
-tmpX = abs(X); % take the amplitude
-tmpX = permute(mean(tmpX,3),[2 1]); % average across sessions (no phase wrap)
+% tmpX = abs(X); % take the amplitude
+% tmpX = permute(mean(tmpX,3),[2 1]); % average across sessions
+tmpX = permute(mean(X,3),[2 1]); % average across sessions
+tmpX = abs(tmpX); % take the amplitude
 disp('One-way (3-level) ANOVA')
 t = table(tmpX(:,1),tmpX(:,2),tmpX(:,3),...
 'VariableNames',{'cond1','cond2','cond3'});
@@ -313,30 +337,21 @@ disp(['signedRank=' num2str(stats.signedrank) ', p=' num2str(pSignedRank)])
 disp('-------')
 disp(' ')
 
-disp(' ')
-disp('-------')
-disp('Delay vs Amplitude')
-[rPearson,pPearson]   = corr(delayPlaid-delayGrat,ampPlaid-ampGrat,'Type','Pearson');
-[rSpearman,pSpearman] = corr(delayPlaid-delayGrat,ampPlaid-ampGrat,'Type','Spearman');
-% [rPearson,pPearson]   = corr(delayPlaid-delayGrat,(ampPlaid-ampGrat)./ampGrat.*100,'Type','Pearson');
-% [rSpearman,pSpearman] = corr(delayPlaid-delayGrat,(ampPlaid-ampGrat)./ampGrat.*100,'Type','Spearman');
-disp(['Pearson''s rho=' num2str(rPearson,'%0.2f') ', p=' num2str(pPearson,'%0.2f')])
-disp(['Spearman''s rho=' num2str(rSpearman,'%0.2f') ', p=' num2str(pSpearman,'%0.2f')])
-disp('-------')
-disp(' ')
 
+%% Plot -- main effects
 
-%% Remove random-effect of subject
+% Remove random-effect of subject
 rho = abs(X) ./ abs(mean(X,1)) .* abs(mean(X(:)));
 theta = wrapToPi(angle(X) - angle(mean(X,1)) + angle(mean(X(:))));
 [u,v] = pol2cart(theta,rho);
 Xnorm = complex(u,v);
 
-%% Average sessions
-X = mean(X,3);
+% Average sessions
+X     = mean(X,3);
 Xnorm = mean(Xnorm,3);
 
 
+% Plot
 if visibilityFlag
     f = figure('WindowStyle','docked','visible','on');
 else
@@ -434,7 +449,6 @@ set(hGridRhoMajor,'Color',[1 1 1].*0.5)
 
 thetaTickMinorVal = 0:0.1:12;
 rho = repmat([rhoTickMinorVal(1); rhoTickMinorVal(end)],[1 length(thetaTickMinorVal)]);
-% rho = repmat([0; max(axis)],[1 length(thetaTickVal)]);
 [gu,gv] = pol2cart(thetaTickMinorVal/12*2*pi,log(rho+1));
 hGridThetaMinor = plot(gu,gv,'k');
 uistack(hGridThetaMinor,'bottom')
@@ -442,7 +456,6 @@ set(hGridThetaMinor,'Color',[1 1 1].*0.8)
 
 thetaTickMajorVal = 0:1:12;
 rho = repmat([rhoTickMinorVal(1); rhoTickMinorVal(end)],[1 length(thetaTickMajorVal)]);
-% rho = repmat([0; max(axis)],[1 length(thetaTickVal)]);
 [gu,gv] = pol2cart(thetaTickMajorVal/12*2*pi,log(rho+1));
 hGridThetaMajor = plot(gu,gv,'k');
 uistack(hGridThetaMajor,'bottom')
@@ -461,7 +474,6 @@ refPts = complex(mean(xxLim),mean(yyLim));
 TickMinorVal = complex(xx(:),yy(:));
 [a,b] = sort(abs(TickMinorVal - refPts),'ascend');
 for i = 1:4
-%     plot(TickMinorVal(b(i)),'or');
     tmpText = [num2str(abs(angle(TickMinorVal(b(i)))/pi*6)) 'sec, ' num2str(exp(abs(TickMinorVal(b(i))))-1) '%BOLD'];
     text(real(TickMinorVal(b(i))),imag(TickMinorVal(b(i))),tmpText)
 end
@@ -484,13 +496,7 @@ set(hPolAv,'MarkerSize',5)
 set(hPolAv,'MarkerEdgeColor','none')
 
 
-%% Amplitude vs. Delay (supplementary figure)
-f2 = figure;
-scatter(delayPlaid-delayGrat , ampPlaid-ampGrat); hold on
-for subjInd = 1:6
-    Xrun{subjInd,1} = cat(2,Xrun{subjInd,:});
-end
-Xrun(:,2) = [];
+%% Stats and plot -- delay vs amp correlation (Supplementary Figure 3)
 for subjInd = 1:6
     delayPlaidRun{subjInd} = -                    angle(Xrun{subjInd}(3  ,:))       ./pi*6; % no phase wrap
     delayGratRun{subjInd}  = -angle( mean( exp(1i*angle(Xrun{subjInd}(1:2,:))) ,1) )./pi*6; % no phase wrap
@@ -511,14 +517,20 @@ for subjInd = 1:6
     ampEffectErNeg(subjInd) = ampEffectAv(subjInd) - er(1,:);
     ampEffectErPos(subjInd) = er(2,:) - ampEffectAv(subjInd);
 end
-hold on
+
+disp(' ')
+disp('-------')
+disp('Delay vs Amplitude (averaging runs instead of sessions)')
+[rPearson,pPearson]   = corr(delayEffectAv',ampEffectAv','Type','Pearson');
+[rSpearman,pSpearman] = corr(delayEffectAv',ampEffectAv','Type','Spearman');
+disp(['Pearson''s rho=' num2str(rPearson,'%0.2f') ', p=' num2str(pPearson,'%0.2f')])
+disp(['Spearman''s rho=' num2str(rSpearman,'%0.2f') ', p=' num2str(pSpearman,'%0.2f')])
+disp('-------')
+disp(' ')
+
 
 f2 = figure;
-% for subjInd = 1:6
-%     hScat = scatter(delayPlaid(subjInd)-delayGrat(subjInd) , ampPlaid(subjInd)-ampGrat(subjInd),'filled'); hold on
-%     hErr = errorbar(delayEffectAv(subjInd),ampEffectAv(subjInd),delayEffectErNeg(subjInd),delayEffectErPos(subjInd),ampEffectErNeg(subjInd),ampEffectErPos(subjInd),'CapSize',0,'LineStyle','none','Marker','none','Color',hScat.CData);
-% end
-hScat = scatter(delayPlaid-delayGrat , ampPlaid-ampGrat); hold on
+hScat = scatter(delayEffectAv,ampEffectAv); hold on
 hScat.Visible = 'off';
 hErr = errorbar(delayEffectAv,ampEffectAv,delayEffectErNeg,delayEffectErPos,ampEffectErNeg,ampEffectErPos);
 hErr.CapSize = 0;

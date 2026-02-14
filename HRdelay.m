@@ -55,6 +55,7 @@ processFov(p,doWhat);
 
 %% Feature selection
 processFeatSel(p);
+return
 
 %% Decoding
 runAllDecoding(p);
