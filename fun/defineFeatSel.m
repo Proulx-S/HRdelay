@@ -62,6 +62,30 @@ switch method
         else
             ind_specFeatSelCond = featSelConds_labelList{condPair};
         end
+    case 'v1ROI'
+        % Non-condition-specific featSel steps
+        ind_nSpecFeatSel = ismember(featSelSteps_labelList,{''});
+        % which condition set
+        ind_nSpecFeatSelCond = [1 2 3];
+        % Condition-specific fetSel steps
+        ind_specFeatSel = ismember(featSelSteps_labelList,{''});
+        % which condition set
+        if ischar(condPair)
+            switch condPair
+                case 'grat1VSgrat2'
+                    ind_specFeatSelCond = [1 2];
+                case 'grat1VSplaid'
+                    ind_specFeatSelCond = [1 3];
+                case 'grat2VSplaid'
+                    ind_specFeatSelCond = [2 3];
+                case 'all'
+                    ind_specFeatSelCond = [1 2 3];
+                otherwise
+                    error('X')
+            end
+        else
+            ind_specFeatSelCond = featSelConds_labelList{condPair};
+        end
     case 'onlyRetinoFov'
         % Non-condition-specific featSel steps
         ind_nSpecFeatSel = ismember(featSelSteps_labelList,{'retinoFov'});

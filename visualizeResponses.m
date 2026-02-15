@@ -56,6 +56,21 @@ featSelSteps_labelList = featSel{1,1}.featSeq.featSelList;
 featSelConds_labelList = featSel{1,1}.featSeq.condPairList;
 
 
+% No feature selection: Include all V1 ROI voxels
+method = 'v1ROI'; % 'v1ROI' 'onlyRetinoFov' 'upToActivation'
+condPair = 'all';
+[ind_nSpecFeatSel,ind_nSpecFeatSelCond,ind_specFeatSel,ind_specFeatSelCond] = defineFeatSel(featSelSteps_labelList,featSelConds_labelList,method,condPair);
+for subjInd = 1:size(d,1)
+    for sessInd = 1:size(d,2)
+        featSel{subjInd,sessInd}.indIn = ...
+            all(featSel{subjInd,sessInd}.featSeq.featIndIn(:,ind_nSpecFeatSel,ind_nSpecFeatSelCond),2)...
+            & all(featSel{subjInd,sessInd}.featSeq.featIndIn(:,ind_specFeatSel,ind_specFeatSelCond),2);
+    end
+end
+featSel_v1 = featSel;
+featSel_v1{1,1}.featSeq.featSelList(ind_nSpecFeatSel)
+
+% Minimal feature selection: Include all V1 ROI voxels then select voxels (1) within stimulus FOV
 method = 'onlyRetinoFov'; % 'onlyRetinoFov' 'upToActivation'
 condPair = 'all';
 [ind_nSpecFeatSel,ind_nSpecFeatSelCond,ind_specFeatSel,ind_specFeatSelCond] = defineFeatSel(featSelSteps_labelList,featSelConds_labelList,method,condPair);
@@ -70,6 +85,7 @@ featSel_fov = featSel;
 featSel_fov{1,1}.featSeq.featSelList(ind_nSpecFeatSel)
 
 
+% Final feature selection: Include all V1 ROI voxels then select voxels (1) within stimulus FOV, (2) that are significantly activated, (3) least likely to be veins and (4) most discriminative
 method = 'upToActivation'; % 'onlyRetinoFov' 'upToActivation'
 condPair = 'all';
 [ind_nSpecFeatSel,ind_nSpecFeatSelCond,ind_specFeatSel,ind_specFeatSelCond] = defineFeatSel(featSelSteps_labelList,featSelConds_labelList,method,condPair);
@@ -93,11 +109,14 @@ subjInd = p.figOption.subjInd;
 sessInd = p.figOption.sessInd;
 %% Trigonometric (polar) representation
 [fTrig,voxIndTrig,indFovNotAct,indFovAct] = plotTrig(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},1);
+[fTrig_v1,voxIndTrig_v1,indFovNotAct_v1,indFovAct_v1] = plotTrig(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_v1{subjInd,sessInd},1);
 
 
 %% Temporal represeantation
 fHr = [];
-[fHr,voxIndHr] = plotHr(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},1);
+[fHr,voxIndHr]       = plotHr(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_fov{subjInd,sessInd},1);
+fHr_v1 = [];
+[fHr_v1,voxIndHr_v1] = plotHr(d{subjInd,sessInd},p,featSel_act{subjInd,sessInd},featSel_v1{subjInd,sessInd},1);
 
 %% Time series
 curFile = fullfile(p.dataPath.V1,'ts',[subjList{p.figOption.subjInd} '.mat']);
@@ -971,18 +990,36 @@ end
 hPlot1vox = [hPlot1vox{:}];
 
 %% FOV and selected FOV voxels
-runTs = squeeze(mean(xFov,2));
+% runTs = squeeze(mean(xFov,2));
+% runTs_av = mean(runTs,1);
+% runTs_er = bootci(p.boot.n,{@(x)mean(x,1),runTs},'Type','percentile');
+% runTs_erNeg = runTs_av - runTs_er(1,:);
+% runTs_erPos = runTs_er(2,:) - runTs_av;
+
+% hErr = errorbar(t,runTs_av,runTs_erNeg,runTs_erPos); hold on
+% hErr.Marker='o';
+% hErr.LineStyle='none';
+% hErr.MarkerEdgeColor='k';
+% hErr.MarkerFaceColor='k';
+% hErr.Color='k';
+% hErr.CapSize=0;
+% hErr.MarkerSize = 2;
+% ylim([-11 11])
+
+runTs = squeeze(mean(xFovAct,2));
 runTs_av = mean(runTs,1);
 runTs_er = bootci(p.boot.n,{@(x)mean(x,1),runTs},'Type','percentile');
 runTs_erNeg = runTs_av - runTs_er(1,:);
 runTs_erPos = runTs_er(2,:) - runTs_av;
 
-hErr = errorbar(t,runTs_av,runTs_erNeg,runTs_erPos); hold on
-hErr.Marker='.';
-hErr.LineStyle='none';
-hErr.MarkerEdgeColor='k';
-hErr.Color='k';
-hErr.CapSize=0;
+hErrAct = errorbar(t,runTs_av,runTs_erNeg,runTs_erPos); hold on
+hErrAct.Marker='o';
+hErrAct.LineStyle='none';
+hErrAct.MarkerFaceColor='w';
+hErrAct.MarkerEdgeColor='k';
+hErrAct.Color='k';
+hErrAct.CapSize=0;
+hErrAct.MarkerSize = 2;
 ylim([-11 11])
 
 
@@ -994,9 +1031,8 @@ ylim([-1 1].*max(abs(tmpX(:))))
 % ylim([-1/3 1/3].*max(abs(ylim)))
 
 % uistack(hPlot1vox,'top')
-legend([hPlotFov(1) hPlotAct(1) [hPlot1vox.mainLine] [hPlot1vox.patch] hErr],{'fov vox' 'selected fov vox' 'grat1' 'grat2' 'plaid' '+/-95%CI' '+/-95%CI' '+/-95%CI' 'fov mean +/-95%CI'},'box','off','Location','NorthWest')
-% legend([hPlotFov(1) hPlotAct(1) hPlot1vox(1,:)],{'fov vox' 'selected fov vox' 'grat1' 'grat2' 'plaid'},'box','off')
-% f.Color = 'w';
+% legend([hPlotFov(1) hPlotAct(1) [hPlot1vox.mainLine] [hPlot1vox.patch] hErr],{'fov vox' 'selected fov vox' 'grat1' 'grat2' 'plaid' '+/-95%CI' '+/-95%CI' '+/-95%CI' 'fov mean +/-95%CI'},'box','off','Location','NorthWest')
+legend([hPlotFov(1) hPlotAct(1) [hPlot1vox.mainLine] [hPlot1vox.patch] hErrAct],{'all v1 vox' 'selected vox' 'grat1' 'grat2' 'plaid' '+/-95%CI' '+/-95%CI' '+/-95%CI' 'selected vox mean +/-95%CI'},'box','off','Location','NorthWest')
 ax = gca;
 ax.Box = 'off';
 

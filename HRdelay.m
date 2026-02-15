@@ -11,7 +11,7 @@ initAnalysis; % where to define paths, analysis parameters and some other genera
 %% Get data (preprocessed BOLD volumes, only V1 ROI voxels, one .mat file per subject, total<600MB)
 downloadData;
 
-%% Extract sinusoidal and model-free responses from timeseries
+%% Extract sinusoidal and model-free responses from timeseries in the V1 ROI (all V1 voxels included at this stage)
 extractResponses(p);
 
 
@@ -55,7 +55,6 @@ processFov(p,doWhat);
 
 %% Feature selection
 processFeatSel(p);
-return
 
 %% Decoding
 runAllDecoding(p);
