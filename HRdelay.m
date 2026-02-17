@@ -51,8 +51,6 @@ processFov(p,doWhat);
 % % saveas(f, 'SuppFig1hist.svg')
 
 
-
-
 %% Feature selection
 processFeatSel(p);
 

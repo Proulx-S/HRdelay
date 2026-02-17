@@ -30,11 +30,11 @@ matDependencyUrlList = {
 for i = 1:length(matDependencyNameList)
     curLink = matDependencyUrlList{i};
     curZip = fullfile(matDependencyPath,'x.zip');
-    websave(curZip,curLink,weboptions('timeout',15));
     [~,b,~] = fileparts(matDependencyNameList{i});
     curFolder = fullfile(matDependencyPath,b);
-    unzip(curZip,curFolder)
-    delete(curZip)
+    % websave(curZip,curLink,weboptions('timeout',15));
+    % unzip(curZip,curFolder)
+    % delete(curZip)
     addpath(genpath(curFolder))
 end
 
