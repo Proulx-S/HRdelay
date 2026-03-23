@@ -2,12 +2,9 @@
 [![DOI](https://zenodo.org/badge/306986751.svg)](https://zenodo.org/badge/latestdoi/306986751)  
 # Bold Response Delays Represent Local Cortical Processing
 __Analysis Code to Reproduce Figures__, by Sébastien Proulx  
-Manuscript by Sébastien Proulx and Reza Farivar under review in Cerebral Cortex (CerCor-2021-00872)
+Manuscript by Sébastien Proulx and Reza Farivar accepted for publication in Cerebral Cortex (doi:10.1093/cercor/bhag040)  
 
-
-__TO-DOS:__
-- [x] Clean up to leave only the essential
-- [ ] Add analysis requested by reviewers
+Related data available at https://doi.org/10.5281/zenodo.7058825
 
 ## Instruction
 Examine and run HRdelay.m
