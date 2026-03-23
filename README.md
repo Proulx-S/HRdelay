@@ -4,7 +4,7 @@
 __Analysis Code to Reproduce Figures__, by Sébastien Proulx  
 Manuscript by Sébastien Proulx and Reza Farivar accepted for publication in Cerebral Cortex (doi:10.1093/cercor/bhag040)  
 
-Related data available at https://doi.org/10.5281/zenodo.7058825
+Related data available at https://doi.org/10.5281/zenodo.5183027
 
 ## Instruction
 Examine and run HRdelay.m
