@@ -1,6 +1,6 @@
 disp('--------------')
 disp('downloadData.m')
-%% Download intermediary data (<600MB total) from Zenodo repository DOI:10.5281/zenodo.7058825 (https://doi.org/10.5281/zenodo.7058825)
+%% Download intermediary data (<600MB total) from Zenodo repository DOI:10.5281/zenodo.5183027 (https://doi.org/10.5281/zenodo.5183027)
 forceDownload = 0;
 if ~exist(p.dataPath.V1,'dir')
     mkdir(p.dataPath.V1)
@@ -11,13 +11,13 @@ if ~exist(outDir,'dir')
 end
 
 for subjInd = 1:length(p.meta.subjList)
-    curLink = ['https://zenodo.org/record/7058825/files/' p.meta.subjList{subjInd} '.mat?download=1'];
+    curLink = ['https://zenodo.org/record/5183027/files/' p.meta.subjList{subjInd} '.mat?download=1'];
     curFile = fullfile(outDir,[p.meta.subjList{subjInd} '.mat']);
     if ~exist(curFile,'file') || forceDownload
-        disp(['Downloading ' p.meta.subjList{subjInd} ' from https://doi.org/10.5281/zenodo.7058825'])
+        disp(['Downloading ' p.meta.subjList{subjInd} ' from https://doi.org/10.5281/zenodo.5183027'])
         websave(curFile,curLink,weboptions('timeout',15));
         disp(['Downloaded to ' curFile])
     else
-        disp([p.meta.subjList{subjInd} ' already downloaded from https://doi.org/10.5281/zenodo.7058825'])
+        disp([p.meta.subjList{subjInd} ' already downloaded from https://doi.org/10.5281/zenodo.5183027'])
     end
 end
